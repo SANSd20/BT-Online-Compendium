@@ -4,9 +4,9 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Beta 1 Slice 3 is implemented.** The React + TypeScript + Vite application now includes Archetype v0.1 and Point Buy v0.1 on the shared Character/Rules foundation, versioned JSON character files, browser-local persistence, import/export, and a placeholder entry screen for the later Life Module method.
+**Beta 1 Slice 4 is implemented.** The React + TypeScript + Vite application now includes Archetype v0.1, Point Buy v0.1, and a narrow Life Modules v0.1 state-machine foundation on the shared Character/Rules model, with versioned JSON character files, browser-local persistence, and import/export.
 
-All eight published Core archetypes can create, display, save, export, and import characters with source provenance. Point Buy v0.1 creates a Normal Human draft, tracks the creation budget, and purchases Attributes plus a deliberately limited set of Skills/subskills and positive/negative Traits. This is not a completed Character Creator: Life Modules, complete catalogs and legality checks, Planetary work, and playable-sheet runtime behavior remain outside this slice.
+All eight published Core archetypes can create, display, save, export, and import characters with source provenance. Point Buy v0.1 creates a Normal Human draft, tracks the creation budget, and purchases Attributes plus a deliberately limited set of Skills/subskills and positive/negative Traits. Life Modules v0.1 covers the universal Stage 0 package, Capellan Confederation/Capellan Commonality, and the Blue Collar and Back Woods Stage 1 modules. It tracks module-purchasing XP separately, applies concrete awards, and retains unresolved choices and final-validation prerequisites. This is not a completed Character Creator: most Life Module content, full award resolution/finalization, complete catalogs and legality checks, Planetary work, and playable-sheet runtime behavior remain outside this slice.
 
 The primary product direction is an offline/PWA-capable, local-first web application whose Character Generator can later evolve into a playable character sheet. Initial character persistence is local browser storage plus import/export through a versioned portable format; server accounts and cloud character storage are not initial requirements.
 
@@ -22,11 +22,11 @@ Planetary functionality is supporting infrastructure. It does not replace or sup
 
 ## Repository map
 
-- [`src/domain/`](src/domain/) — shared Character/rules models and focused Archetype/Point Buy catalogs
-- [`src/engine/`](src/engine/) — shared character factory plus Archetype and Point Buy engines
+- [`src/domain/`](src/domain/) — shared Character/rules models and focused Archetype, Point Buy, and Life Module catalogs
+- [`src/engine/`](src/engine/) — shared character factory plus Archetype, Point Buy, and Life Module engines
 - [`src/validation/`](src/validation/) — typed validation results and minimal structural validation
 - [`src/persistence/`](src/persistence/) — versioned JSON codec, local repository, and browser import/export
-- [`src/ui/`](src/ui/) — app shell, Archetype v0.1, Point Buy v0.1, and the Life Module placeholder
+- [`src/ui/`](src/ui/) — app shell and functional Archetype v0.1, Point Buy v0.1, and Life Modules v0.1 routes
 - [`docs/PROJECT-STATE.md`](docs/PROJECT-STATE.md) — purpose, approved direction, statuses, sequence, and resume point
 - [`docs/SOURCE-AUTHORITY.md`](docs/SOURCE-AUTHORITY.md) — rules scope, errata policy, provenance, and planetary upstream authority
 - [`docs/CHARACTER-AND-RULES-ARCHITECTURE.md`](docs/CHARACTER-AND-RULES-ARCHITECTURE.md) — established Character Generator domain and engine requirements
@@ -47,11 +47,11 @@ Use `npm run check` to run lint, unit tests, TypeScript compilation, and the pro
 
 ## Current resume points
 
-Repository bootstrap and Beta 1 Slices 1–3 are complete. The implemented app is local-first and requires no server, database, or account.
+Repository bootstrap and Beta 1 Slices 1–4 are complete. The implemented app is local-first and requires no server, database, or account.
 
 The Core + Companion rules audit is in progress. Its next audit target is **Campaign / Rules Configuration reconciliation**, specifically the boundaries among durable character state, current campaign rules, creation-rules provenance, and per-character GM exceptions.
 
-The next recommended implementation slice, only when separately authorized, is **Life Modules v0.1 state-machine foundation** with a minimal audited module set. It must use the same Character/Rules engine and calculate legal next actions rather than becoming a fixed wizard. Planetary Data Foundation Rollout 1 remains designed but unimplemented and also requires separate authorization.
+The next recommended implementation slice, only when separately authorized, is **Life Modules v0.2 award resolution and finalization foundation**: allocate the currently retained `/Any`, language, multi-choice, and flexible awards, re-evaluate prerequisites, and expose the legal stop/continue decision before expanding deeply into later-stage content. Planetary Data Foundation Rollout 1 remains designed but unimplemented and also requires separate authorization.
 
 ## Status vocabulary
 

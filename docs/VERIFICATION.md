@@ -77,6 +77,25 @@ The Point Buy screen supports naming, standard or GM-adjusted starting XP, Attri
 - Versioned import/export retains enough data to reproduce and audit results.
 - Unresolved rules yield an explicit unresolved state rather than invented behavior.
 
+## Beta 1 Slice 4 verification
+
+Slice 4 extends the same `npm run check` gate. Automated coverage verifies:
+
+- the Life Module catalog contains exactly the audited universal Stage 0 package, Capellan Confederation/Capellan Commonality, Blue Collar, and Back Woods entries;
+- duplicate module IDs are detected and unknown module requests are rejected;
+- a sourced Life Module draft begins with a standard 5,000-XP module-purchasing pool or records a GM-adjusted positive whole-number allotment;
+- the universal package deducts 850 XP and applies +100 XP to every Attribute, concrete Language awards, and Perception XP;
+- Capellan/Commonality deducts 150 XP and applies its fixed Attribute, positive/negative and parameterized Trait, Skill, and structured subskill awards;
+- Blue Collar and Back Woods deduct their published costs and apply concrete fixed awards without allowing awards to finance the module pool;
+- unresolved language, `/Any`, multi-choice, and flexible awards persist as source-bound pending records;
+- Back Woods affiliation, STR 4+, and BOD 5+ prerequisites are recorded, with unsatisfied Attribute minimums retained for final validation rather than blocking selection;
+- partial XP remains distinct from attained Attribute levels, Trait Points/activation, and Skill levels, including `null` versus Level +0;
+- overspending is rejected and malformed pool/history reconciliation fails validation;
+- Life Module history, awards, pending state, prerequisites, and provenance round-trip through the versioned JSON format; and
+- all prior Archetype and Point Buy regression tests continue to pass.
+
+Manual UI verification should confirm the route exposes phase, module-pool status, selected modules, applied awards, unresolved awards, prerequisite status, local save, and export. A Stage 1 selection with unresolved awards must remain in Stage 1 resolution and must not be presented as finalized or advanced to Stage 2.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

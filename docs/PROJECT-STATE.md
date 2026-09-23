@@ -2,7 +2,7 @@
 
 ## Purpose
 
-BT Online Compendium is intended to provide a web-based BattleTech *A Time of War* rules compendium and Character Generator. The long-term Character Generator direction includes a persistable playable-character sheet, but playable-sheet functionality is not part of Beta 1 Slices 1–3.
+BT Online Compendium is intended to provide a web-based BattleTech *A Time of War* rules compendium and Character Generator. The long-term Character Generator direction includes a persistable playable-character sheet, but playable-sheet functionality is not part of Beta 1 Slices 1–4.
 
 ## Product direction
 
@@ -25,10 +25,11 @@ Saved characters must retain enough underlying information to reproduce and audi
 | Beta 1 Slice 1 application foundation | Implemented and verified | React/TypeScript/Vite shell, shared models, validation, local saves, JSON import/export, placeholder routes |
 | Beta 1 Slice 2 Archetype v0.1 | Implemented and verified | All eight Core archetypes create shared-schema characters with provenance, local save, JSON import/export, display, and golden tests |
 | Beta 1 Slice 3 Point Buy v0.1 | Implemented and verified | Normal Human Attribute purchasing plus focused Skill/subskill and Trait purchasing with budget enforcement and provenance |
-| Shared Character/Rules engine | Foundation implemented and exercised | Archetype and Point Buy use the common representation and factory; Life Modules remain a placeholder |
+| Beta 1 Slice 4 Life Modules v0.1 | Implemented and verified | Stage 0/1 state machine, separate module pool, audited four-entry catalog, concrete awards, pending choices, prerequisite tracking, persistence, and UI |
+| Shared Character/Rules engine | Foundation implemented and exercised | Archetype, Point Buy, and Life Modules use the common representation, ledgers, validation, persistence, and provenance |
 | Archetype v0.1 | Implemented | Published packages are source-faithful, non-customizable starting configurations |
 | Point Buy v0.1 | Implemented | Core 5,000-XP default, GM-adjusted allotment recording, Attribute/Skill/Trait costs, negative-Trait ceiling, drafts, persistence, and focused catalogs |
-| Life Modules | Designed substantially; not implemented | Placeholder route only; state machine and module content remain deferred |
+| Life Modules v0.1 | Implemented, deliberately narrow | Universal Stage 0, Capellan/Commonality, Blue Collar, and Back Woods only; choice allocation, later stages, and full catalog remain deferred |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
 | Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |
@@ -107,7 +108,7 @@ Life Modules must not be a blind fixed wizard. The UI and rules engine need to d
 The application currently provides:
 
 - a React + TypeScript + Vite browser application and responsive shell;
-- working hash-based Archetype and Point Buy routes plus a placeholder Life Module route;
+- working hash-based Archetype, Point Buy, and Life Module routes;
 - one shared character factory and Character Definition for all three routes;
 - distinct creation-pool, allocated, and earned/unspent gameplay XP fields;
 - typed foundations for Attributes, Traits, structured Skills, identities, affiliations, phenotype, equipment, vehicles, chronology, provenance, and future Play State;
@@ -118,6 +119,11 @@ The application currently provides:
 - a shared-engine Point Buy workflow with a standard 5,000-XP default, recorded GM-adjusted allotments, eight minimum Normal Human Attributes, remaining/allocated XP reconciliation, overspend prevention, and the Core 10-percent negative-Trait XP ceiling;
 - cumulative standard Skill costs for Levels +0 through +10 and an explicit `null` untrained versus Level +0 trained state;
 - a focused Point Buy catalog containing Perception, Language subskills, Martial Arts, Small Arms, Technician subskills, Ambidextrous, Patient, Unattractive, and variable Reputation;
+- a focused Life Module catalog containing the universal Stage 0 package, Capellan Confederation/Capellan Commonality, Blue Collar, and Back Woods;
+- a Life Module state machine covering universal Stage 0, affiliation selection, Stage 1 selection, and an explicit Stage 1 award-resolution state;
+- a Life Module purchasing pool separate from statistic ledgers, with module costs unable to be financed by positive or negative awards;
+- fixed Attribute, Trait, Skill, structured subskill, and parameterized-Trait awards on the shared ledgers, including partial XP and source provenance;
+- durable pending records for unresolved language, `/Any`, multi-choice, and flexible awards, plus final-validation prerequisite records for Back Woods;
 - creation-time rules snapshots, optional-rule settings, and narrow GM-exception records;
 - a versioned portable character envelope;
 - browser-local save/list/load/delete behavior;
@@ -125,7 +131,9 @@ The application currently provides:
 - a minimal typed validation-result framework; and
 - automated tests for the shared factory, all eight Archetype golden fixtures, schema round-trip, `null` versus Level 0 Skills, local persistence, and structural validation.
 
-The Archetype and Point Buy screens both use the common catalog → creation → validation → local save → export/import path. Life Modules remain a placeholder.
+All three creation screens use the common catalog → creation → validation → local save → export/import path. The Life Module route additionally exposes current phase, module-pool accounting, selected history, applied awards, unresolved awards, and prerequisite status.
+
+Life Modules v0.1 intentionally does not allocate its retained FedSuns-language, `/Any`, multi-choice, or flexible awards. Because Core requires all module awards to be resolved before advancement, selecting Blue Collar or Back Woods leaves the draft in `stage-1-resolution`; it does not silently advance or finalize. Stage 2–4 content, Changing Affiliations, full affiliation-language resolution, Skill Fields, Life Events, Optimization, negative-Trait XP purchasing, and exhaustive final validation remain deferred.
 
 The Core introduction describes the archetypes as 4,500-XP packages, but independently summing the printed Attribute, Trait, and Skill XP produces different totals for several sheets. Corrected Third Printing values are preserved without speculative repair, the declared package total and calculated line-item total remain separate, and each mismatch is recorded as a catalog note. Errata v4.0 does not provide a correction for these sheets.
 
@@ -154,6 +162,6 @@ The next rules-audit target is **Campaign / Rules Configuration reconciliation**
 
 Audit resume point: **Campaign / Rules Configuration reconciliation.**
 
-Implementation resume point: **Beta 1 Slice 4 — Life Modules v0.1 state-machine foundation on the implemented shared Character/Rules engine**, only when separately authorized.
+Implementation resume point: **Life Modules v0.2 — pending-award resolution and finalization foundation**, only when separately authorized. Resolve the v0.1 pending award types and re-evaluate prerequisites before broad catalog expansion.
 
 Planetary Rollout 1 remains a separate future authorization. Do not automatically proceed from a queued or documented rollout.

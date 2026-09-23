@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import type { CharacterDefinition, CreationMethod } from '../domain/character/model'
 import { LocalStorageCharacterRepository } from '../persistence/characterRepository'
 import { ArchetypeScreen } from './screens/ArchetypeScreen'
-import { CreationMethodScreen } from './screens/CreationMethodScreen'
 import { HomeScreen } from './screens/HomeScreen'
+import { LifeModulesScreen } from './screens/LifeModulesScreen'
 import { PointBuyScreen } from './screens/PointBuyScreen'
 import { useHashRoute } from './useHashRoute'
 
@@ -41,8 +41,10 @@ export function App() {
         <ArchetypeScreen onSave={save} />
       ) : method === 'point-buy' ? (
         <PointBuyScreen onSave={save} />
+      ) : method === 'life-modules' ? (
+        <LifeModulesScreen onSave={save} />
       ) : method ? (
-        <CreationMethodScreen method={method} onSave={save} />
+        <HomeScreen characters={characters} onImport={save} onDelete={remove} />
       ) : (
         <HomeScreen characters={characters} onImport={save} onDelete={remove} />
       )}

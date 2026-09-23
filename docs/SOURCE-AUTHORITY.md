@@ -15,7 +15,9 @@ Applicable errata—including *A Time of War Companion Errata v1.1*—must be ac
 
 Rules and derived results must preserve source/provenance information.
 
-Beta 1 records these three current sources as versioned catalog metadata and captures them in each new character's creation-rules snapshot. Slice 2 adds the eight published Core archetype packages from Corrected Third Printing pages 52–59. Slice 3 adds the focused Point Buy foundation from Core pages 49, 51, 60, 95, 107, and 121–122. Neither slice adds Companion templates or a complete rules catalog. The historical First Printing is not included in the active runtime catalog.
+Beta 1 records these three current sources as versioned catalog metadata and captures them in each new character's creation-rules snapshot. Slice 2 adds the eight published Core archetype packages from Corrected Third Printing pages 52–59. Slice 3 adds the focused Point Buy foundation from Core pages 49, 51, 60, 95, 107, and 121–122. Slice 4 adds the universal Stage 0 package, Capellan Confederation/Capellan Commonality, Blue Collar, and Back Woods from the Corrected Third Printing. These slices do not add Companion templates or a complete rules catalog. The historical First Printing is not included in the active runtime catalog.
+
+AToW Errata v4.0 was checked against the selected Slice 4 modules. No erratum changes the implemented Capellan Confederation/Capellan Commonality, Blue Collar, or Back Woods data. Nearby Independent/Astrokaszy and extreme-gravity corrections are outside this minimal set.
 
 AToW Errata v4.0 was checked for corrections to the Point Buy starting allotment, Attribute/Trait costs, Skill XP table, and negative-Trait limit; no applicable correction to those rules was identified. The Corrected Third Printing values therefore remain authoritative for Point Buy v0.1.
 

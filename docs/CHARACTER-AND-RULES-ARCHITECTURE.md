@@ -1,10 +1,10 @@
 # Character and Rules Architecture
 
-## Beta 1 Slice 3 implementation boundary
+## Beta 1 Slice 4 implementation boundary
 
-The implemented foundation provides typed Character and rules models, one shared character factory, minimal structural validation, a versioned save envelope, browser-local persistence, JSON import/export, Archetype v0.1, Point Buy v0.1, and a placeholder UI route for Life Modules.
+The implemented foundation provides typed Character and rules models, one shared character factory, minimal structural validation, a versioned save envelope, browser-local persistence, JSON import/export, Archetype v0.1, Point Buy v0.1, and Life Modules v0.1.
 
-The rules catalog contains source/version descriptors, the eight published Core archetype packages, and focused Point Buy catalogs. It does not claim that Life Module or the full Core + Companion catalog has been entered.
+The rules catalog contains source/version descriptors, the eight published Core archetype packages, focused Point Buy catalogs, and four audited Core Life Module entries: the universal Stage 0 package, Capellan Confederation/Capellan Commonality, Blue Collar, and Back Woods. It does not claim that the full Life Module or Core + Companion catalog has been entered.
 
 Archetype definitions retain their stable ID, display name, source, Attributes, Traits, structured Skills/subskills, specialties, equipment, C-bills, phenotype, and source notes. Creation maps them into the same saved Character Definition intended for the later methods. The published package is not customized in Archetype v0.1.
 
@@ -22,6 +22,8 @@ Point Buy v0.1 implements the Corrected Third Printing pages 49, 51, 60, 95, 107
 - explicit untrained `level = null` versus trained Level +0.
 
 The Point Buy UI saves drafts with unspent XP, but structural validation warns that they cannot enter play. A character marked `finalized` is invalid unless remaining creation XP is zero. Slice 3 does not expose finalization because required affiliation, full catalogs, prerequisites, and exhaustive legality validation are not yet implemented.
+
+Life Modules v0.1 implements the Stage 0 universal → Stage 0 affiliation → Stage 1 selection → Stage 1 resolution path. It keeps the module-purchasing pool separate from awarded statistic XP, records selected-module history, applies concrete fixed awards to the shared ledgers, and preserves pending language, `/Any`, multi-choice, and flexible awards. It also records Back Woods' STR and BOD minimums as end-of-creation prerequisite issues. Pending awards prevent the state from claiming advancement beyond Stage 1. Later stages, choice allocation UI, prerequisite re-evaluation/finalization, and the full catalog remain deferred.
 
 The `playState` property is only a versioned extension point. No playable-sheet runtime system or UI is implemented.
 

@@ -110,6 +110,53 @@ export interface CreationXpState {
   allocated: number
 }
 
+export interface LifeModuleXpPool {
+  starting: number
+  spent: number
+  remaining: number
+}
+
+export type LifeModulePhase =
+  | 'stage-0-universal'
+  | 'stage-0-affiliation'
+  | 'stage-1-selection'
+  | 'stage-1-resolution'
+  | 'stage-2-or-finalization'
+
+export interface PendingLifeModuleAward {
+  id: string
+  moduleId: string
+  awardId: string
+  kind: 'language-choice' | 'any-skill-choice' | 'multi-skill-choice' | 'flexible-xp'
+  description: string
+  xpPerGrant: number
+  remainingGrants: number
+  allowedTargetTypes: Array<'attribute' | 'trait' | 'skill'>
+  source: SourceCitation
+}
+
+export interface LifeModulePrerequisiteIssue {
+  id: string
+  moduleId: string
+  prerequisiteId: string
+  description: string
+  status: 'outstanding' | 'satisfied' | 'gm-override'
+  finalValidationRequired: boolean
+}
+
+export interface LifeModuleCreationState {
+  source: SourceCitation
+  startingAllotment: 'standard' | 'gm-adjusted'
+  phase: LifeModulePhase
+  currentStage: 0 | 1 | 2
+  moduleXp: LifeModuleXpPool
+  selectedModuleIds: string[]
+  affiliationLanguage?: string
+  pendingAwards: PendingLifeModuleAward[]
+  prerequisiteIssues: LifeModulePrerequisiteIssue[]
+  limitations: string[]
+}
+
 export interface CharacterXpState {
   creation: CreationXpState
   earnedGameplayUnspent: number
@@ -135,13 +182,18 @@ export interface CreationState {
     startingAllotment: 'standard' | 'gm-adjusted'
     limitations: string[]
   }
+  lifeModules?: LifeModuleCreationState
 }
 
 export interface LifeModuleHistoryEntry {
   moduleId: string
-  stage: number
+  displayName: string
+  stage: 0 | 1 | 2 | 3 | 4
+  costXp: number
   selectedAt: string
   provenanceIds: string[]
+  source: SourceCitation
+  notes: string[]
 }
 
 export interface PlayStateFoundation {

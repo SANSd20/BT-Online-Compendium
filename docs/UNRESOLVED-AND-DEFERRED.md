@@ -54,7 +54,8 @@ The data layer must not make those semantic decisions.
 - Resolution of printed Archetype XP/score discrepancies unless an authoritative correction or explicit project interpretation is established. Slice 2 preserves the printed data and records the mismatches.
 - Point Buy catalog expansion beyond the Slice 3 focused Skill and Trait subset.
 - Point Buy phenotype selection, Exceptional Attribute interaction, Fast/Slow Learner cost columns, partial XP allocation controls, multiple instances of one Trait, specialties, affiliation selection, full prerequisites/oppositions, complete required-Skill finalization, and equipment purchasing.
-- Life Module state machine and module data; the foundation route remains a placeholder after Slice 3.
+- Life Module catalog expansion beyond the Slice 4 universal Stage 0, Capellan Confederation/Capellan Commonality, Blue Collar, and Back Woods entries.
+- Allocation UI and resolution for the Slice 4 pending FedSuns-language, `/Any`, multi-choice, and flexible awards; prerequisite re-evaluation and finalization; Stage 2–4 content; Changing Affiliations; Skill Fields; Life Events; and Optimization.
 - Full Core + Companion rules-catalog data entry.
 - Persistable playable-sheet functionality.
 - Server/database/accounts and cloud character storage.
@@ -66,4 +67,4 @@ The data layer must not make those semantic decisions.
 
 ## Current scope boundary
 
-Beta 1 Slices 1–3 supersede the bootstrap's implementation prohibition only for the explicitly authorized application foundation, Core Archetype v0.1, and Point Buy v0.1. They do not authorize Life Modules, resolution of open rules questions, playable-sheet runtime behavior, post-Beta publications, or progression through any planetary rollout.
+Beta 1 Slices 1–4 supersede the bootstrap's implementation prohibition only for the explicitly authorized application foundation, Core Archetype v0.1, Point Buy v0.1, and the narrow Life Modules v0.1 scope recorded above. They do not authorize broader Life Module content, resolution of open rules questions, playable-sheet runtime behavior, post-Beta publications, or progression through any planetary rollout.

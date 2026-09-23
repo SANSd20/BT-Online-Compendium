@@ -7,6 +7,7 @@ import {
 } from '../domain/pointBuy/catalog'
 import { calculateNegativeTraitXp, calculatePointBuyAllocatedXp } from '../domain/pointBuy/calculations'
 import type { ValidationIssue, ValidationResult } from './model'
+import { getLifeModule } from '../domain/lifeModules/catalog'
 
 function issue(
   id: string,
@@ -53,6 +54,9 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
   if (character.creation.method === 'point-buy') {
     validatePointBuy(character, issues)
   }
+  if (character.creation.method === 'life-modules') {
+    validateLifeModules(character, issues)
+  }
 
   const identityIds = new Set(character.identities.entries.map((identity) => identity.id))
   const primaryIdentities = character.identities.entries.filter((identity) => identity.kind === 'primary')
@@ -94,7 +98,8 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
     }
   }
   const validateAwards = (path: string, awards: Array<{ provenanceId: string }>) => {
-    if ((character.creation.method === 'archetype' || character.creation.method === 'point-buy') && awards.length === 0) {
+    const requiresCreationProvenance = character.creation.method !== 'life-modules' || character.creation.lifeModules !== undefined
+    if (requiresCreationProvenance && awards.length === 0) {
       issues.push(issue('creation.provenance.required', path, 'Creation-derived values require source awards.'))
     }
     awards.forEach((award, index) => {
@@ -119,6 +124,73 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
   return {
     valid: !issues.some((item) => item.severity === 'error'),
     issues,
+  }
+}
+
+function validateLifeModules(character: CharacterDefinition, issues: ValidationIssue[]): void {
+  const state = character.creation.lifeModules
+  if (!state?.source.sourceId) {
+    const isUninitializedFoundation = character.lifeModuleHistory.length === 0 && character.xp.creation.starting === 0
+    if (!isUninitializedFoundation) {
+      issues.push(issue('life-modules.state.required', 'creation.lifeModules', 'Life Module creation state and source are required.'))
+    }
+    return
+  }
+  const { starting, spent, remaining } = state.moduleXp
+  if (!Number.isInteger(starting) || starting <= 0 || !Number.isInteger(spent) || spent < 0 || !Number.isInteger(remaining) || remaining < 0) {
+    issues.push(issue('life-modules.xp.valid', 'creation.lifeModules.moduleXp', 'Life Module XP values must be non-negative whole numbers with a positive starting pool.'))
+  }
+  if (remaining !== starting - spent || character.xp.creation.remaining !== remaining) {
+    issues.push(issue('life-modules.xp.balance', 'creation.lifeModules.moduleXp', 'Life Module spending and remaining XP do not reconcile.'))
+  }
+  const selectedIds = new Set<string>()
+  const provenanceIds = new Set(character.provenance.map((entry) => entry.id))
+  let calculatedCost = 0
+  for (const [index, entry] of character.lifeModuleHistory.entries()) {
+    if (selectedIds.has(entry.moduleId)) issues.push(issue('life-modules.module.duplicate', `lifeModuleHistory.${index}.moduleId`, 'A Life Module cannot be selected more than once in Slice 4.'))
+    selectedIds.add(entry.moduleId)
+    try {
+      const definition = getLifeModule(entry.moduleId)
+      calculatedCost += definition.costXp
+      if (entry.costXp !== definition.costXp || entry.stage !== definition.stage || !entry.source.sourceId) {
+        issues.push(issue('life-modules.module.malformed', `lifeModuleHistory.${index}`, 'Life Module history does not match its catalog definition.'))
+      }
+    } catch (error) {
+      issues.push(issue('life-modules.module.unknown', `lifeModuleHistory.${index}.moduleId`, error instanceof Error ? error.message : 'Unknown Life Module.'))
+    }
+    if (entry.provenanceIds.length === 0 || entry.provenanceIds.some((id) => !provenanceIds.has(id))) {
+      issues.push(issue('life-modules.module.provenance', `lifeModuleHistory.${index}.provenanceIds`, 'Selected Life Modules require valid provenance references.'))
+    }
+  }
+  if (calculatedCost !== spent) issues.push(issue('life-modules.cost.balance', 'creation.lifeModules.moduleXp.spent', 'Selected module costs do not match recorded Life Module spending.'))
+  if (state.selectedModuleIds.length !== character.lifeModuleHistory.length || state.selectedModuleIds.some((id) => !selectedIds.has(id))) {
+    issues.push(issue('life-modules.selection.balance', 'creation.lifeModules.selectedModuleIds', 'Selected module state does not match module history.'))
+  }
+  const hasUniversal = selectedIds.has('stage0.universal-fixed-xp')
+  const hasAffiliation = selectedIds.has('stage0.capellan-confederation.capellan-commonality')
+  const stage1Count = character.lifeModuleHistory.filter((entry) => entry.stage === 1).length
+  if (!hasUniversal) issues.push(issue('life-modules.universal.outstanding', 'lifeModuleHistory', 'The universal Stage 0 package is still required.', { severity: 'warning' }))
+  if (!hasAffiliation) issues.push(issue('life-modules.affiliation.outstanding', 'lifeModuleHistory', 'A Stage 0 affiliation is still required.', { severity: 'warning' }))
+  if (stage1Count !== 1) issues.push(issue('life-modules.stage-1.outstanding', 'lifeModuleHistory', 'Exactly one Stage 1 module is required.', { severity: stage1Count === 0 ? 'warning' : 'error' }))
+  state.pendingAwards.forEach((award, index) => {
+    if (
+      !selectedIds.has(award.moduleId) ||
+      !award.awardId ||
+      !Number.isFinite(award.xpPerGrant) ||
+      !Number.isInteger(award.remainingGrants) ||
+      award.remainingGrants <= 0 ||
+      award.allowedTargetTypes.length === 0 ||
+      !award.source.sourceId
+    ) {
+      issues.push(issue('life-modules.pending-award.malformed', `creation.lifeModules.pendingAwards.${index}`, 'Pending Life Module award state is malformed.'))
+    }
+  })
+  if (state.pendingAwards.length > 0) issues.push(issue('life-modules.awards.unresolved', 'creation.lifeModules.pendingAwards', `${state.pendingAwards.length} source-bound award allocation${state.pendingAwards.length === 1 ? ' remains' : 's remain'} unresolved.`, { severity: 'warning' }))
+  if (state.prerequisiteIssues.some((entry) => entry.status === 'outstanding')) {
+    issues.push(issue('life-modules.prerequisites.outstanding', 'creation.lifeModules.prerequisiteIssues', 'One or more Life Module prerequisites remain outstanding for final validation.', { severity: 'warning', kind: 'prerequisite', gmOverrideAllowed: true }))
+  }
+  if (character.creation.status === 'finalized' && (state.pendingAwards.length > 0 || state.prerequisiteIssues.some((entry) => entry.status === 'outstanding'))) {
+    issues.push(issue('life-modules.finalization.blocked', 'creation.status', 'A Life Module character cannot be finalized with unresolved awards or outstanding prerequisites.'))
   }
 }
 

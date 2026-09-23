@@ -11,7 +11,7 @@ interface HomeScreenProps {
 const methods: Array<{ method: CreationMethod; label: string; description: string }> = [
   { method: 'archetype', label: 'Archetype', description: 'Choose one of eight published Core packages and create a sourced local character.' },
   { method: 'point-buy', label: 'Point Buy', description: 'Build a Normal Human draft with Core Attribute, Skill/subskill, and focused Trait purchasing.' },
-  { method: 'life-modules', label: 'Life Modules', description: 'Foundation route only; no fixed wizard or module data is added.' },
+  { method: 'life-modules', label: 'Life Modules', description: 'Build Stage 0 and Stage 1 with the audited Slice 4 Core module set and explicit unresolved rule state.' },
 ]
 
 export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) {
@@ -34,9 +34,9 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
   return (
     <main>
       <section className="hero">
-        <p className="eyebrow">Beta 1 · Slice 3</p>
+        <p className="eyebrow">Beta 1 · Slice 4</p>
         <h1>Character Creator</h1>
-        <p>Create a sourced Core Archetype or Point Buy character through the shared Character/Rules engine. Life Modules remain intentionally deferred.</p>
+        <p>Create a sourced Core character through Archetype, Point Buy, or the narrow Life Modules v0.1 state machine on one shared Character/Rules engine.</p>
       </section>
 
       <section aria-labelledby="methods-heading">
@@ -52,7 +52,7 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
               <span className="step">0{index + 1}</span>
               <h3>{label}</h3>
               <p>{description}</p>
-              <a className="button" href={`#/${method}`}>{method === 'archetype' ? 'Choose archetype' : method === 'point-buy' ? 'Start Point Buy' : 'Open placeholder'}</a>
+              <a className="button" href={`#/${method}`}>{method === 'archetype' ? 'Choose archetype' : method === 'point-buy' ? 'Start Point Buy' : 'Start Life Modules'}</a>
             </article>
           ))}
         </div>
