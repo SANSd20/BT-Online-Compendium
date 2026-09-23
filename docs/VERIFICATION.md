@@ -170,6 +170,26 @@ Slice 8 extends the same `npm run check` gate. Automated coverage verifies:
 
 Manual UI verification should confirm the Stage 3 stop offers explicit Stage 4 continuation, Agitator shows its 900-XP cost and four-year contribution, age displays as 23, pending awards use the existing controls, the Attribute cap is visible through validation behavior, and the Stage 4 stop does not imply repeat execution, Optimization, finalization, or PDF export support.
 
+## Alpha Slice 9 verification
+
+Slice 9 extends the same `npm run check` gate. Automated coverage verifies:
+
+- a resolved Stage 4 Alpha stop can explicitly enter final review without changing the recorded module-purchasing pool;
+- the final-allocation pool starts from the module-pool remainder and separately reconciles allocations, Optimization returns, and remaining XP;
+- final XP can target existing Attributes, Skills/subskills, and modeled Traits, with overspending rejected and player-choice provenance retained;
+- Attribute, Trait, and Standard Skill active values derive only from fully attained XP thresholds while partial XP remains durable;
+- final prerequisite status is re-evaluated after allocations and Optimization;
+- supported Optimization preview detects Attribute, Skill, positive-Trait, negative-Trait, and modeled-maximum excess where applicable;
+- applying Optimization is explicit, Life-Modules-only, returns XP to the final-allocation pool, and records before/after values plus source provenance;
+- modeled Gregarious/Introvert and Illiterate/Language +4 conflicts are reported rather than silently resolved;
+- the negative-Trait XP purchase cap is 10 percent of starting allotment while purchase execution remains deferred;
+- unresolved awards, unallocated XP, unmet prerequisites, Optimization opportunities, opposed Traits, and Attribute minimum failures block `ready-for-final-touches`;
+- `ready-for-final-touches` does not change the character's draft status or imply equipment, PDF, final lock, or ready-for-play support;
+- local storage and versioned JSON preserve final-review allocations and Optimization history; and
+- all prior Archetype, Point Buy, and Life Module regression tests continue to pass.
+
+Manual UI verification should confirm final review exposes the separate allocation pool, existing-stat targets, derived values, Optimization previews with explicit Apply controls, review blockers, the deferred negative-Trait cap, and accurate scope warnings.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

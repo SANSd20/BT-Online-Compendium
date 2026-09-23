@@ -1,4 +1,4 @@
-import type { CharacterDefinition } from '../domain/character/model'
+import type { CharacterDefinition, LifeModuleOptimizationRecord } from '../domain/character/model'
 import {
   POINT_BUY_ATTRIBUTE_MAXIMUMS,
   getPointBuySkill,
@@ -10,6 +10,18 @@ import type { ValidationIssue, ValidationResult } from './model'
 import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
+import {
+  deriveAttributeLevel,
+  deriveStandardSkillLevel,
+  deriveTraitPoints,
+  finalReviewDestinationKey,
+  getFinalReviewBlockers,
+  getModeledOpposedTraitConflicts,
+  getOptimizationPreview,
+  isModeledNegativeTrait,
+  negativeTraitXpPurchaseCap,
+  traitModeledRange,
+} from '../domain/lifeModules/finalReview'
 
 function issue(
   id: string,
@@ -58,6 +70,8 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
   }
   if (character.creation.method === 'life-modules') {
     validateLifeModules(character, issues)
+  } else if (character.creation.lifeModules?.finalReview) {
+    issues.push(issue('life-modules.optimization.method.invalid', 'creation.lifeModules.finalReview', 'Life Module final review and Optimization cannot be applied to a non-Life-Modules character.'))
   }
 
   const identityIds = new Set(character.identities.entries.map((identity) => identity.id))
@@ -146,7 +160,8 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   if (!Number.isInteger(starting) || starting <= 0 || !Number.isInteger(spent) || spent < 0 || !Number.isInteger(remaining) || remaining < 0) {
     issues.push(issue('life-modules.xp.valid', 'creation.lifeModules.moduleXp', 'Life Module XP values must be non-negative whole numbers with a positive starting pool.'))
   }
-  if (remaining !== starting - spent || character.xp.creation.remaining !== remaining) {
+  const expectedCreationRemaining = state.finalReview?.allocationPool.remaining ?? remaining
+  if (remaining !== starting - spent || character.xp.creation.remaining !== expectedCreationRemaining) {
     issues.push(issue('life-modules.xp.balance', 'creation.lifeModules.moduleXp', 'Life Module spending and remaining XP do not reconcile.'))
   }
   const selectedIds = new Set<string>()
@@ -196,10 +211,11 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   if (stage3Count > 1) issues.push(issue('life-modules.stage-3.multiple', 'lifeModuleHistory', 'Repeated Stage 3 schooling is not supported.'))
   if (state.currentStage === 3 && stage3Count === 0) issues.push(issue('life-modules.stage-3.outstanding', 'lifeModuleHistory', 'A Stage 3 school has not yet been selected for this continuation.', { severity: 'warning' }))
   validateSkillFieldGrants(character, issues, provenanceIds, stage3Count)
-  if (stage4Count > 1) issues.push(issue('life-modules.stage-4.multiple', 'lifeModuleHistory', 'Multiple Stage 4 modules are not supported in Alpha Slice 8.'))
-  if (new Set(stage4Entries.map((entry) => entry.moduleId)).size !== stage4Count) issues.push(issue('life-modules.stage-4.repeat.unsupported', 'lifeModuleHistory', 'Repeated Stage 4 execution is not supported in Alpha Slice 8.'))
+  if (stage4Count > 1) issues.push(issue('life-modules.stage-4.multiple', 'lifeModuleHistory', 'Multiple Stage 4 modules are not supported in Alpha Slice 9.'))
+  if (new Set(stage4Entries.map((entry) => entry.moduleId)).size !== stage4Count) issues.push(issue('life-modules.stage-4.repeat.unsupported', 'lifeModuleHistory', 'Repeated Stage 4 execution is not supported in Alpha Slice 9.'))
   if (state.currentStage === 4 && stage4Count === 0 && state.phase !== 'stage-4-selection') issues.push(issue('life-modules.stage-4.outstanding', 'lifeModuleHistory', 'A Stage 4 module has not yet been selected for this continuation.', { severity: 'warning' }))
   validateStage4(character, issues, provenanceIds, stage4Entries)
+  validateFinalReview(character, issues, stage4Count)
   if (!Array.isArray(state.pendingAwards) || !Array.isArray(state.resolvedAwards) || !Array.isArray(state.choiceGrantRequirements)) {
     issues.push(issue('life-modules.award-state.malformed', 'creation.lifeModules', 'Pending and resolved Life Module award collections are required.'))
     return
@@ -239,7 +255,9 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     issues.push(issue('life-modules.prerequisites.outstanding', 'creation.lifeModules.prerequisiteIssues', 'One or more Life Module prerequisites remain outstanding for final validation.', { severity: 'warning', kind: 'prerequisite', gmOverrideAllowed: true }))
   }
   if (stage1Count === 1) {
-    const expectedPhase = state.phase === 'stage-4-selection' && stage4Count === 0 && stage3Count === 1 && state.pendingAwards.length === 0 && !hasOutstandingPrerequisite
+    const expectedPhase = state.finalReview
+      ? getFinalReviewBlockers(character).length === 0 ? 'ready-for-final-touches' : 'alpha-final-review'
+      : state.phase === 'stage-4-selection' && stage4Count === 0 && stage3Count === 1 && state.pendingAwards.length === 0 && !hasOutstandingPrerequisite
       ? 'stage-4-selection'
       : stage4Count === 1
         ? state.pendingAwards.length > 0
@@ -284,7 +302,130 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     }
   }
   if (character.creation.status === 'finalized') {
-    issues.push(issue('life-modules.finalization.unsupported', 'creation.status', 'Full Life Module finalization is not implemented in Alpha Slice 8.'))
+    issues.push(issue('life-modules.finalization.unsupported', 'creation.status', 'Full Life Module finalization is not implemented in Alpha Slice 9.'))
+  }
+}
+
+function validateFinalReview(
+  character: CharacterDefinition,
+  issues: ValidationIssue[],
+  stage4Count: number,
+): void {
+  const state = character.creation.lifeModules!
+  const review = state.finalReview
+  if (!review) return
+  const pool = review.allocationPool
+  if (
+    review.version !== 1 ||
+    !review.enteredAt ||
+    stage4Count !== 1 ||
+    !Array.isArray(review.allocations) ||
+    !Array.isArray(review.optimizations) ||
+    !Number.isInteger(pool.starting) || pool.starting < 0 ||
+    !Number.isInteger(pool.allocated) || pool.allocated < 0 ||
+    !Number.isInteger(pool.optimizationReturned) || pool.optimizationReturned < 0 ||
+    !Number.isInteger(pool.remaining) || pool.remaining < 0 ||
+    pool.starting !== state.moduleXp.remaining ||
+    pool.remaining !== pool.starting + pool.optimizationReturned - pool.allocated
+  ) issues.push(issue('life-modules.final-review.pool.malformed', 'creation.lifeModules.finalReview', 'Final-review state and allocation-pool accounting are malformed.'))
+  if (pool.remaining > 0) issues.push(issue('life-modules.final-review.xp.unallocated', 'creation.lifeModules.finalReview.allocationPool.remaining', `${pool.remaining} XP remains for final allocation.`, { severity: 'warning' }))
+
+  for (const [index, allocation] of review.allocations.entries()) {
+    const provenance = character.provenance.find((entry) => entry.id === allocation.provenanceId)
+    if (!allocation.id || !allocation.allocatedAt || !Number.isInteger(allocation.xp) || allocation.xp <= 0 || provenance?.kind !== 'player-choice' || !provenance.source?.sourceId || !finalReviewTargetExists(character, allocation.destination)) {
+      issues.push(issue('life-modules.final-allocation.malformed', `creation.lifeModules.finalReview.allocations.${index}`, 'Final-allocation entry has an invalid amount, target, timestamp, or provenance.'))
+    }
+  }
+  if (review.allocations.reduce((total, entry) => total + entry.xp, 0) !== pool.allocated) {
+    issues.push(issue('life-modules.final-allocation.balance', 'creation.lifeModules.finalReview.allocations', 'Final-allocation records do not match the allocated XP total.'))
+  }
+
+  for (const [index, optimization] of review.optimizations.entries()) {
+    const provenance = character.provenance.find((entry) => entry.id === optimization.provenanceId)
+    if (
+      !optimization.id || !optimization.appliedAt ||
+      !Number.isInteger(optimization.beforeXp) || !Number.isInteger(optimization.afterXp) ||
+      !Number.isInteger(optimization.returnedXp) || optimization.returnedXp <= 0 ||
+      optimization.returnedXp !== Math.abs(optimization.beforeXp - optimization.afterXp) ||
+      provenance?.kind !== 'derived' || !provenance.source?.sourceId ||
+      !optimizationRecordTargetsFullyAttained(optimization) ||
+      !finalReviewTargetExists(character, optimization.destination)
+    ) issues.push(issue('life-modules.optimization.malformed', `creation.lifeModules.finalReview.optimizations.${index}`, 'Optimization record has invalid XP, target, timestamp, or provenance.'))
+  }
+  if (review.optimizations.reduce((total, entry) => total + entry.returnedXp, 0) !== pool.optimizationReturned) {
+    issues.push(issue('life-modules.optimization.balance', 'creation.lifeModules.finalReview.optimizations', 'Optimization records do not match the XP returned to the final-allocation pool.'))
+  }
+
+  character.attributes.forEach((entry, index) => {
+    const derived = deriveAttributeLevel(entry.accumulatedXp)
+    if (entry.purchasedLevel !== derived) issues.push(issue('life-modules.final-level.attribute.malformed', `attributes.${index}.purchasedLevel`, 'Attribute score does not match its fully attained XP threshold.'))
+    if ((derived ?? 0) < 1) issues.push(issue('life-modules.final-level.attribute.minimum', `attributes.${index}`, `${entry.attributeId} must attain score 1 before Final Touches.`))
+    const maximum = POINT_BUY_ATTRIBUTE_MAXIMUMS[entry.attributeId]
+    if (maximum !== undefined && (derived ?? 0) > maximum) issues.push(issue('life-modules.final-level.attribute.maximum', `attributes.${index}`, `${entry.attributeId} exceeds the modeled Normal Human maximum of ${maximum}.`))
+  })
+  character.skills.forEach((entry, index) => {
+    const derived = deriveStandardSkillLevel(entry.accumulatedXp)
+    if (entry.level !== derived) issues.push(issue('life-modules.final-level.skill.malformed', `skills.${index}.level`, 'Skill level does not match its highest fully attained Standard threshold.'))
+    if (entry.accumulatedXp > 570) issues.push(issue('life-modules.final-level.skill.maximum', `skills.${index}.accumulatedXp`, 'Skill XP exceeds the modeled Standard Level +10 maximum and must be optimized.'))
+  })
+  character.traits.forEach((entry, index) => {
+    const derived = deriveTraitPoints(entry.accumulatedXp)
+    if (entry.attainedTp !== derived || entry.active !== (derived !== null)) issues.push(issue('life-modules.final-level.trait.malformed', `traits.${index}`, 'Trait TP/active state does not match its fully attained XP threshold.'))
+    const range = traitModeledRange(entry.traitId)
+    if (range && derived !== null && (derived < range.minimum || derived > range.maximum)) issues.push(issue('life-modules.final-level.trait.range', `traits.${index}`, `${entry.displayName ?? entry.traitId} is outside its modeled TP range.`))
+    if (isModeledNegativeTrait(entry.traitId) && entry.accumulatedXp > 0) issues.push(issue('life-modules.negative-trait.positive-xp', `traits.${index}`, `${entry.displayName ?? entry.traitId} is a modeled negative Trait with positive XP and requires explicit Optimization.`))
+  })
+
+  for (const conflict of getModeledOpposedTraitConflicts(character)) {
+    issues.push(issue('life-modules.opposed-traits.conflict', 'traits', conflict.description))
+  }
+  if (getOptimizationPreview(character).length > 0) issues.push(issue('life-modules.optimization.outstanding', 'creation.lifeModules.finalReview', 'One or more explicit Optimization opportunities remain.', { severity: 'warning' }))
+  validateConflictingPrerequisites(character, issues)
+
+  const cap = negativeTraitXpPurchaseCap(state.moduleXp.starting)
+  if (
+    review.negativeTraitXpPurchase.capXp !== cap ||
+    review.negativeTraitXpPurchase.purchasedXp !== 0 ||
+    review.negativeTraitXpPurchase.uiStatus !== 'deferred'
+  ) issues.push(issue('life-modules.negative-trait-xp.malformed', 'creation.lifeModules.finalReview.negativeTraitXpPurchase', 'Negative-Trait XP purchase metadata is malformed or unsupported.'))
+  issues.push(issue('life-modules.negative-trait-xp.deferred', 'creation.lifeModules.finalReview.negativeTraitXpPurchase', `Up to ${cap} XP may eventually be purchased through fully attained negative Traits; the purchase UI is deferred.`, { severity: 'information', kind: 'availability' }))
+
+  const blockers = getFinalReviewBlockers(character)
+  const expectedReadiness = blockers.length === 0 ? 'ready-for-final-touches' : 'review-required'
+  if (review.readiness !== expectedReadiness) issues.push(issue('life-modules.final-review.readiness.malformed', 'creation.lifeModules.finalReview.readiness', `Final-review readiness should be ${expectedReadiness}.`))
+  if (expectedReadiness === 'ready-for-final-touches') {
+    issues.push(issue('life-modules.final-touches.ready', 'creation.lifeModules.finalReview.readiness', 'Character is ready for Final Touches; equipment purchasing, PDF export, and full finalization remain unsupported.', { severity: 'information', kind: 'availability' }))
+  } else {
+    blockers.forEach((blocker) => issues.push(issue(`life-modules.final-review.blocked.${blocker.id}`, 'creation.lifeModules.finalReview', blocker.message, { severity: 'warning' })))
+  }
+}
+
+function optimizationRecordTargetsFullyAttained(record: LifeModuleOptimizationRecord): boolean {
+  if (record.reason === 'negative-trait-positive-xp') return record.beforeXp > 0 && record.afterXp === 0
+  if (record.reason === 'negative-trait-threshold') return record.beforeXp < 0 && record.afterXp < record.beforeXp && Math.abs(record.afterXp) % 100 === 0
+  if (record.afterXp < 0 || record.afterXp >= record.beforeXp) return false
+  if (record.destination.type === 'attribute' || record.destination.type === 'trait') return record.afterXp % 100 === 0
+  if (record.afterXp === 0) return record.beforeXp < standardSkillXpCost(0)
+  return deriveStandardSkillLevel(record.afterXp) !== null && record.afterXp === standardSkillXpCost(deriveStandardSkillLevel(record.afterXp))
+}
+
+function finalReviewTargetExists(character: CharacterDefinition, destination: { type: string; targetId: string; parameter?: { kind: string; value: string }; parameters?: Record<string, string | number | boolean> }): boolean {
+  if (destination.type === 'attribute') return character.attributes.some((entry) => entry.attributeId === destination.targetId)
+  if (destination.type === 'trait') return character.traits.some((entry) => entry.traitId === destination.targetId && JSON.stringify(entry.parameters) === JSON.stringify(destination.parameters ?? {}))
+  if (destination.type === 'skill') return character.skills.some((entry) => finalReviewDestinationKey({ type: 'skill', targetId: entry.address.skillId, displayName: entry.displayName ?? entry.address.skillId, parameter: entry.address.parameter }) === finalReviewDestinationKey({ ...destination, type: 'skill', displayName: destination.targetId }))
+  return false
+}
+
+function validateConflictingPrerequisites(character: CharacterDefinition, issues: ValidationIssue[]): void {
+  const selected = character.creation.lifeModules?.selectedModuleIds ?? []
+  const prerequisites = selected.flatMap((moduleId) => {
+    try { return getLifeModule(moduleId).prerequisites.map((entry) => ({ moduleId, entry })) } catch { return [] }
+  })
+  for (const required of prerequisites) {
+    if (required.entry.kind !== 'trait') continue
+    const traitId = required.entry.traitId
+    const conflict = prerequisites.find((item) => item.entry.kind === 'trait-absent' && item.entry.traitId === traitId)
+    if (conflict) issues.push(issue('life-modules.prerequisites.conflict', 'creation.lifeModules.prerequisiteIssues', `Conflicting prerequisites for ${traitId} affect ${required.moduleId} and ${conflict.moduleId}.`, { kind: 'prerequisite', gmOverrideAllowed: true }))
   }
 }
 
@@ -373,7 +514,7 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
       issues.push(issue('life-modules.skill-field.unknown', `creation.lifeModules.selectedSkillFields.${index}.fieldId`, error instanceof Error ? error.message : 'Unknown Skill Field.'))
       continue
     }
-    if (seen.has(grant.fieldId)) issues.push(issue('life-modules.skill-field.duplicate', `creation.lifeModules.selectedSkillFields.${index}.fieldId`, 'A Skill Field may not be selected more than once in Alpha Slice 8.'))
+    if (seen.has(grant.fieldId)) issues.push(issue('life-modules.skill-field.duplicate', `creation.lifeModules.selectedSkillFields.${index}.fieldId`, 'A Skill Field may not be selected more than once in Alpha Slice 9.'))
     seen.add(grant.fieldId)
     const school = character.lifeModuleHistory.find((entry) => entry.moduleId === grant.schoolModuleId && entry.stage === 3)
     let schoolDefinition: LifeModuleDefinition | undefined

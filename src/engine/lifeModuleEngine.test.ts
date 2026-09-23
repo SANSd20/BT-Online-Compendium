@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
+import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
-import { applyAgitator, applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from './lifeModuleEngine'
+import { applyAgitator, applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
+import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from './lifeModuleFinalReview'
+import { createPointBuyCharacter } from './pointBuyEngine'
 
 function completeStage0() {
   let character = createLifeModuleCharacter('Xiang', 5000)
@@ -49,6 +52,16 @@ function completeTechnicalCollegeStage3() {
   const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'technical-college.flexible')!
   character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 150)
   return resolvePendingLifeModuleAward(character, flexible.id, { type: 'trait', targetId: 'trait.patient', displayName: 'Patient' }, 50)
+}
+
+function completeAgitatorStage4() {
+  let character = applyAgitator(continueToStage4(completeTechnicalCollegeStage3()))
+  character = resolveByAward(character, 'agitator.skill.driving', 'skill.driving', 'Driving/Ground Car', 'Ground Car')
+  character = resolveByAward(character, 'agitator.skill.prestidigitation', 'skill.prestidigitation', 'Prestidigitation/Sleight of Hand', 'Sleight of Hand')
+  character = resolveByAward(character, 'agitator.skill.streetwise-affiliation', 'skill.streetwise', 'Streetwise/Capellan', 'Capellan')
+  const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'agitator.flexible')!
+  character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 50)
+  return resolvePendingLifeModuleAward(character, flexible.id, { type: 'skill', targetId: 'skill.acting', displayName: 'Acting' }, 75)
 }
 
 describe('Life Module engine', () => {
@@ -484,5 +497,121 @@ describe('Life Module engine', () => {
     expect(decoded.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'agitator.flexible')?.remainingXp).toBe(125)
     expect(decoded.chronology.at(-1)?.date).toBe('age:23')
     expect(validateCharacter(decoded).valid).toBe(true)
+  })
+
+  it('enters final review with a separate allocation pool and deferred negative-Trait cap', () => {
+    const character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    const review = character.creation.lifeModules!.finalReview!
+    expect(character.creation.lifeModules!.phase).toBe('alpha-final-review')
+    expect(character.creation.lifeModules!.moduleXp).toEqual({ starting: 5000, spent: 3326, remaining: 1674 })
+    expect(review.allocationPool).toEqual({ starting: 1674, allocated: 0, optimizationReturned: 0, remaining: 1674 })
+    expect(review.negativeTraitXpPurchase).toEqual({ capXp: 500, purchasedXp: 0, uiStatus: 'deferred' })
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).toContain('life-modules.final-review.xp.unallocated')
+  })
+
+  it('allocates final XP to existing Attributes, Skills, and modeled Traits without overspending', () => {
+    let character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    character = allocateFinalReviewXp(character, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 25)
+    character = allocateFinalReviewXp(character, { type: 'skill', targetId: 'skill.acting', displayName: 'Acting' }, 5)
+    character = allocateFinalReviewXp(character, { type: 'trait', targetId: 'trait.patient', displayName: 'Patient' }, 50)
+    expect(character.creation.lifeModules!.finalReview!.allocationPool).toMatchObject({ allocated: 80, remaining: 1594 })
+    expect(character.attributes.find((entry) => entry.attributeId === 'STR')).toMatchObject({ accumulatedXp: 230, purchasedLevel: 2 })
+    expect(character.skills.find((entry) => entry.address.skillId === 'skill.acting')).toMatchObject({ accumulatedXp: 130, level: 4 })
+    expect(character.traits.find((entry) => entry.traitId === 'trait.patient')).toMatchObject({ accumulatedXp: 100, attainedTp: 1, active: true })
+    expect(() => allocateFinalReviewXp(character, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 1595)).toThrow('overspend')
+    expect(character.creation.lifeModules!.finalReview!.allocations.every((entry) => character.provenance.some((provenance) => provenance.id === entry.provenanceId))).toBe(true)
+  })
+
+  it('derives only fully attained levels and previews supported Optimization', () => {
+    const character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    const str = character.attributes.find((entry) => entry.attributeId === 'STR')!
+    const acting = character.skills.find((entry) => entry.address.skillId === 'skill.acting')!
+    const patient = character.traits.find((entry) => entry.traitId === 'trait.patient')!
+    str.accumulatedXp = 325
+    acting.accumulatedXp = 75
+    patient.accumulatedXp = 200
+    const preview = previewLifeModuleOptimization(character)
+    expect(preview).toEqual(expect.arrayContaining([
+      expect.objectContaining({ beforeXp: 325, afterXp: 300, returnedXp: 25 }),
+      expect.objectContaining({ beforeXp: 75, afterXp: 50, returnedXp: 25 }),
+      expect.objectContaining({ beforeXp: 200, afterXp: 100, returnedXp: 100 }),
+    ]))
+  })
+
+  it('re-evaluates final prerequisites after final allocation', () => {
+    let character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    const intelligence = character.attributes.find((entry) => entry.attributeId === 'INT')!
+    intelligence.accumulatedXp = 399
+    intelligence.purchasedLevel = 3
+    reevaluateLifeModulePrerequisites(character)
+    expect(character.creation.lifeModules!.prerequisiteIssues.some((entry) => entry.prerequisiteId === 'technician-vehicle.int' && entry.status === 'outstanding')).toBe(true)
+    character = allocateFinalReviewXp(character, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 1)
+    expect(character.creation.lifeModules!.prerequisiteIssues.some((entry) => entry.prerequisiteId === 'technician-vehicle.int' && entry.status === 'satisfied')).toBe(true)
+  })
+
+  it('applies Optimization explicitly, returns XP, and records provenance', () => {
+    let character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    const str = character.attributes.find((entry) => entry.attributeId === 'STR')!
+    str.accumulatedXp = 325
+    str.purchasedLevel = 3
+    const opportunity = previewLifeModuleOptimization(character).find((entry) => entry.destination.type === 'attribute' && entry.destination.targetId === 'STR')!
+    character = applyLifeModuleOptimization(character, opportunity.id)
+    const review = character.creation.lifeModules!.finalReview!
+    expect(character.attributes.find((entry) => entry.attributeId === 'STR')).toMatchObject({ accumulatedXp: 300, purchasedLevel: 3 })
+    expect(review.allocationPool).toMatchObject({ optimizationReturned: 25, remaining: 1699 })
+    expect(review.optimizations[0]).toMatchObject({ beforeXp: 325, afterXp: 300, returnedXp: 25 })
+    expect(character.provenance.some((entry) => entry.id === review.optimizations[0].provenanceId && entry.kind === 'derived')).toBe(true)
+    const insufficientSkill = previewLifeModuleOptimization(character).find((entry) => entry.destination.type === 'skill' && entry.beforeXp > 0 && entry.beforeXp < 20)!
+    character = applyLifeModuleOptimization(character, insufficientSkill.id)
+    expect(character.creation.lifeModules!.finalReview!.optimizations.at(-1)).toMatchObject({ afterXp: 0 })
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).not.toContain('life-modules.optimization.malformed')
+    expect(() => previewLifeModuleOptimization(createPointBuyCharacter('Not Life Modules'))).toThrow('only to Life Module')
+  })
+
+  it('validates modeled opposed Traits and Illiterate against Language Level +4', () => {
+    const character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    const provenanceId = character.provenance[0].id
+    character.traits.push(
+      { traitId: 'trait.introvert', displayName: 'Introvert', accumulatedXp: -100, attainedTp: -1, active: true, parameters: {}, sourceAwards: [{ id: 'test-introvert', xp: -100, provenanceId }] },
+      { traitId: 'trait.illiterate', displayName: 'Illiterate', accumulatedXp: -100, attainedTp: -1, active: true, parameters: {}, sourceAwards: [{ id: 'test-illiterate', xp: -100, provenanceId }] },
+    )
+    character.traits.find((entry) => entry.traitId === 'trait.gregarious')!.accumulatedXp = 100
+    character.traits.find((entry) => entry.traitId === 'trait.gregarious')!.attainedTp = 1
+    character.traits.find((entry) => entry.traitId === 'trait.gregarious')!.active = true
+    const language = character.skills.find((entry) => entry.address.skillId === 'skill.language')!
+    language.accumulatedXp = 120
+    language.level = 4
+    const conflicts = validateCharacter(character).issues.filter((entry) => entry.id === 'life-modules.opposed-traits.conflict')
+    expect(conflicts).toHaveLength(2)
+    expect(() => applyLifeModuleOptimization(character, previewLifeModuleOptimization(character)[0].id)).toThrow('opposed Trait conflicts')
+  })
+
+  it('round-trips final-review allocations and Optimization history', () => {
+    let character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    character = allocateFinalReviewXp(character, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 25)
+    const opportunity = previewLifeModuleOptimization(character).find((entry) => entry.destination.type === 'attribute' && entry.destination.targetId === 'STR')!
+    character = applyLifeModuleOptimization(character, opportunity.id)
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-09-23T00:00:00.000Z'))
+    expect(decoded).toEqual(character)
+    expect(decoded.creation.lifeModules!.finalReview!.allocations).toHaveLength(1)
+    expect(decoded.creation.lifeModules!.finalReview!.optimizations.length).toBeGreaterThan(0)
+  })
+
+  it('marks a fully allocated, prerequisite-satisfied, fully attained draft ready only for Final Touches', () => {
+    const character = completeAgitatorStage4()
+    for (const opportunity of getDomainOptimizationPreview(character)) {
+      if (opportunity.destination.type === 'attribute') character.attributes.find((entry) => entry.attributeId === opportunity.destination.targetId)!.accumulatedXp = opportunity.afterXp
+      if (opportunity.destination.type === 'trait') character.traits.find((entry) => entry.traitId === opportunity.destination.targetId && JSON.stringify(entry.parameters) === JSON.stringify(opportunity.destination.parameters ?? {}))!.accumulatedXp = opportunity.afterXp
+      if (opportunity.destination.type === 'skill') character.skills.find((entry) => entry.address.skillId === opportunity.destination.targetId && entry.address.parameter?.value === opportunity.destination.parameter?.value)!.accumulatedXp = opportunity.afterXp
+    }
+    character.creation.lifeModules!.moduleXp.starting = character.creation.lifeModules!.moduleXp.spent
+    character.creation.lifeModules!.moduleXp.remaining = 0
+    character.xp.creation.starting = character.creation.lifeModules!.moduleXp.spent
+    character.xp.creation.remaining = 0
+    const reviewed = enterLifeModuleFinalReview(character)
+    expect(reviewed.creation.lifeModules!.phase).toBe('ready-for-final-touches')
+    expect(reviewed.creation.lifeModules!.finalReview!.readiness).toBe('ready-for-final-touches')
+    expect(validateCharacter(reviewed).issues.map((entry) => entry.id)).toContain('life-modules.final-touches.ready')
+    expect(reviewed.creation.status).toBe('draft')
   })
 })

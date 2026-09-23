@@ -52,9 +52,9 @@ export function createLifeModuleCharacter(
     prerequisiteIssues: [],
     stopState: 'not-eligible',
     limitations: [
-      'Alpha Slice 8 includes the Stage 0/1/2 minimal catalog, Technical College with two Technician Skill Fields, and Agitator at Stage 4.',
+      'Alpha Slice 9 includes the Stage 0/1/2 minimal catalog, Technical College with two Technician Skill Fields, Agitator at Stage 4, and final-review/Optimization foundations.',
       'The current minimal catalog can resolve language, /Affiliation, /Any, multi-choice, and flexible awards.',
-      'Broad Stage 3/4 and Skill Field catalogs, repeated schooling and Stage 4 execution, Changing Affiliations, Life Events, Optimization, and exhaustive final validation are deferred.',
+      'Broad Stage 3/4 and Skill Field catalogs, repeated schooling and Stage 4 execution, Changing Affiliations, Life Events, equipment, PDF export, and true finalization are deferred.',
     ],
   }
   character.provenance.push({ id: provenanceId, kind: 'published', description: 'Life Module character creation rules', source: { ...LIFE_MODULE_RULES_SOURCE } })
@@ -168,7 +168,7 @@ export function applyTechnicalCollege(
 ): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-3-selection') throw new Error('A Stage 3 school is not the current legal action.')
-  if (character.lifeModuleHistory.some((entry) => entry.stage === 3)) throw new Error('Repeated Stage 3 schooling is not supported in Alpha Slice 8.')
+  if (character.lifeModuleHistory.some((entry) => entry.stage === 3)) throw new Error('Repeated Stage 3 schooling is not supported in Alpha Slice 9.')
   const school = getLifeModule(TECHNICAL_COLLEGE_ID)
   validateSchoolFieldSelection(school, fieldIds)
   const selections = fieldIds.map((fieldId) => ({ field: getSkillField(fieldId), offer: school.skillFieldSelection!.offers.find((entry) => entry.fieldId === fieldId)! }))
@@ -222,7 +222,7 @@ export function applyAgitator(character: CharacterDefinition): CharacterDefiniti
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-4-selection') throw new Error('A Stage 4 module is not the current legal action.')
   if (character.lifeModuleHistory.some((entry) => entry.stage === 4)) {
-    throw new Error('Repeated or multiple Stage 4 modules are not supported in Alpha Slice 8.')
+    throw new Error('Repeated or multiple Stage 4 modules are not supported in Alpha Slice 9.')
   }
   const module = getLifeModule(AGITATOR_ID)
   const next = applyModule(character, module, {})
@@ -410,7 +410,7 @@ function applyDestinationAward(character: CharacterDefinition, destination: Life
 
 function addPendingAward(pending: PendingLifeModuleAward[], module: LifeModuleDefinition, award: Exclude<LifeModuleAward, { kind: 'fixed' }>): void {
   if (award.kind === 'choice-package' || award.kind === 'conditional' || award.kind === 'field-grant') {
-    throw new Error(`Award type ${award.kind} is modeled but not supported by the Alpha Slice 8 engine.`)
+    throw new Error(`Award type ${award.kind} is modeled but not supported by the Alpha Slice 9 engine.`)
   }
   pending.push(pendingAwardFrom(module, award))
 }
@@ -436,10 +436,7 @@ function pendingAwardFrom(module: LifeModuleDefinition, award: Exclude<LifeModul
 
 function updateLifeModuleProgress(character: CharacterDefinition): CharacterDefinition {
   const state = requireLifeModules(character)
-  state.prerequisiteIssues = state.selectedModuleIds.flatMap((moduleId) => {
-    const module = getLifeModule(moduleId)
-    return module.prerequisites.map((entry) => evaluatePrerequisite(character, moduleId, entry, state.prerequisiteIssues))
-  }).concat(state.selectedSkillFields.flatMap((grant) => getSkillField(grant.fieldId).prerequisites.map((entry) => evaluatePrerequisite(character, grant.fieldId, entry, state.prerequisiteIssues))))
+  reevaluateLifeModulePrerequisites(character)
   const hasStage1 = character.lifeModuleHistory.some((entry) => entry.stage === 1)
   if (!hasStage1) return character
   const hasStage2 = character.lifeModuleHistory.some((entry) => entry.stage === 2)
@@ -464,6 +461,15 @@ function updateLifeModuleProgress(character: CharacterDefinition): CharacterDefi
     state.phase = 'alpha-partial-stop'
     state.stopState = 'alpha-partial-stop'
   }
+  return character
+}
+
+export function reevaluateLifeModulePrerequisites(character: CharacterDefinition): CharacterDefinition {
+  const state = requireLifeModules(character)
+  state.prerequisiteIssues = state.selectedModuleIds.flatMap((moduleId) => {
+    const module = getLifeModule(moduleId)
+    return module.prerequisites.map((entry) => evaluatePrerequisite(character, moduleId, entry, state.prerequisiteIssues))
+  }).concat(state.selectedSkillFields.flatMap((grant) => getSkillField(grant.fieldId).prerequisites.map((entry) => evaluatePrerequisite(character, grant.fieldId, entry, state.prerequisiteIssues))))
   return character
 }
 

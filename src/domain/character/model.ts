@@ -135,6 +135,8 @@ export type LifeModulePhase =
   | 'stage-4-resolution'
   | 'stage-4-prerequisite-review'
   | 'alpha-stage-4-stop'
+  | 'alpha-final-review'
+  | 'ready-for-final-touches'
 
 export interface ResolvedLifeModuleDestination {
   type: 'attribute' | 'trait' | 'skill'
@@ -207,6 +209,44 @@ export interface SkillFieldGrantRecord {
   source: SourceCitation
 }
 
+export interface LifeModuleFinalAllocationRecord {
+  id: string
+  destination: ResolvedLifeModuleDestination
+  xp: number
+  allocatedAt: string
+  provenanceId: string
+}
+
+export interface LifeModuleOptimizationRecord {
+  id: string
+  destination: ResolvedLifeModuleDestination
+  beforeXp: number
+  afterXp: number
+  returnedXp: number
+  reason: 'excess-xp' | 'modeled-maximum' | 'negative-trait-threshold' | 'negative-trait-positive-xp'
+  appliedAt: string
+  provenanceId: string
+}
+
+export interface LifeModuleFinalReviewState {
+  version: 1
+  enteredAt: string
+  readiness: 'review-required' | 'ready-for-final-touches'
+  allocationPool: {
+    starting: number
+    allocated: number
+    optimizationReturned: number
+    remaining: number
+  }
+  allocations: LifeModuleFinalAllocationRecord[]
+  optimizations: LifeModuleOptimizationRecord[]
+  negativeTraitXpPurchase: {
+    capXp: number
+    purchasedXp: number
+    uiStatus: 'deferred'
+  }
+}
+
 export interface LifeModuleCreationState {
   awardResolutionVersion: 0 | 1
   source: SourceCitation
@@ -222,6 +262,7 @@ export interface LifeModuleCreationState {
   choiceGrantRequirements: LifeModuleChoiceGrantRequirement[]
   prerequisiteIssues: LifeModulePrerequisiteIssue[]
   stopState: 'not-eligible' | 'alpha-partial-stop' | 'alpha-stage-2-stop' | 'alpha-stage-3-stop' | 'alpha-stage-4-stop'
+  finalReview?: LifeModuleFinalReviewState
   limitations: string[]
 }
 

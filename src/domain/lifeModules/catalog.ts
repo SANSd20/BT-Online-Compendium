@@ -230,7 +230,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'technical-college.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 200, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
     notes: ['Civilian Stage 3 school. Base cost is 600 XP plus selected Skill Field costs.'],
-    deferredRules: ['Repeated Stage 3 schooling is not supported in Alpha Slice 8.'],
+    deferredRules: ['Repeated Stage 3 schooling is not supported in Alpha Slice 9.'],
   },
   {
     id: AGITATOR_ID,
@@ -271,7 +271,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'agitator.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 125, allowedTargetTypes: ['attribute', 'trait', 'skill'], maxXpPerTarget: { attribute: 50 } },
     ],
     notes: ['Stage 4 Real Life module. Adds four years to character chronology.'],
-    deferredRules: ['Repeated Stage 4 execution and multiple Stage 4 modules are not supported in Alpha Slice 8.'],
+    deferredRules: ['Repeated Stage 4 execution and multiple Stage 4 modules are not supported in Alpha Slice 9.'],
   },
 ]
 

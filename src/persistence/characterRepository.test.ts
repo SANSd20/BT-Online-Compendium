@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createPointBuyCharacter } from '../engine/pointBuyEngine'
 import { BLUE_COLLAR_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
 import { applyAgitator, applyCapellanCommonality, applyStage1Module, applyStage2Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../engine/lifeModuleEngine'
+import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../engine/lifeModuleFinalReview'
 import { LocalStorageCharacterRepository, type StorageLike } from './characterRepository'
 
 class MemoryStorage implements StorageLike {
@@ -79,7 +80,7 @@ describe('LocalStorageCharacterRepository', () => {
     expect(restored?.chronology.at(-1)?.date).toBe('age:19')
   })
 
-  it('preserves Stage 4 module, repeat policy, chronology, and pending awards in local storage', () => {
+  it('preserves Stage 4 and final-review allocation/Optimization state in local storage', () => {
     let character = createLifeModuleCharacter('Local Agitator')
     character = applyUniversalStage0(character, 'Mandarin Chinese')
     character = applyCapellanCommonality(character, 'Russian')
@@ -110,6 +111,22 @@ describe('LocalStorageCharacterRepository', () => {
     expect(restored?.lifeModuleHistory.at(-1)?.repeatPolicy?.sameModuleRepeat).toBe('deferred')
     expect(restored?.chronology.at(-1)?.date).toBe('age:23')
     expect(restored?.creation.lifeModules?.pendingAwards.find((entry) => entry.awardId === 'agitator.flexible')?.remainingXp).toBe(125)
+
+    character = resolveAward(character, 'agitator.skill.driving', 'skill.driving', 'Driving/Ground Car', 'Ground Car')
+    character = resolveAward(character, 'agitator.skill.prestidigitation', 'skill.prestidigitation', 'Prestidigitation/Sleight of Hand', 'Sleight of Hand')
+    character = resolveAward(character, 'agitator.skill.streetwise-affiliation', 'skill.streetwise', 'Streetwise/Capellan', 'Capellan')
+    flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'agitator.flexible')!
+    character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 50)
+    character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'skill', targetId: 'skill.acting', displayName: 'Acting' }, 75)
+    character = enterLifeModuleFinalReview(character)
+    character = allocateFinalReviewXp(character, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 25)
+    const optimization = previewLifeModuleOptimization(character).find((entry) => entry.destination.type === 'attribute' && entry.destination.targetId === 'STR')!
+    character = applyLifeModuleOptimization(character, optimization.id)
+    repository.save(character)
+    const reviewed = repository.get(character.id)
+    expect(reviewed).toEqual(character)
+    expect(reviewed?.creation.lifeModules?.finalReview?.allocations).toHaveLength(1)
+    expect(reviewed?.creation.lifeModules?.finalReview?.optimizations).toHaveLength(1)
   })
 })
 

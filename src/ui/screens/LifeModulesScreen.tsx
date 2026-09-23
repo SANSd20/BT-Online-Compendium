@@ -2,7 +2,9 @@ import { useState, type FormEvent } from 'react'
 import type { CharacterDefinition, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
+import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
+import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 
@@ -29,6 +31,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const [secondaryLanguage, setSecondaryLanguage] = useState('Russian')
   const [character, setCharacter] = useState<CharacterDefinition | null>(null)
   const [resolutionDrafts, setResolutionDrafts] = useState<Record<string, ResolutionDraft>>({})
+  const [finalAllocationTarget, setFinalAllocationTarget] = useState('attribute:STR')
+  const [finalAllocationXp, setFinalAllocationXp] = useState(1)
   const [message, setMessage] = useState('')
 
   function start(event: FormEvent<HTMLFormElement>) {
@@ -65,14 +69,21 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
 
   const state = character?.creation.lifeModules
   const validation = character ? validateCharacter(character) : null
+  const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
+  const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
+
+  function allocateFinalXp() {
+    if (!character) return
+    operate(() => allocateFinalReviewXp(character, finalReviewDestination(character, finalAllocationTarget), finalAllocationXp), 'Final-allocation XP applied.')
+  }
 
   return (
     <main className="creation-page life-modules-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Alpha · Slice 8</p>
+        <p className="eyebrow">Alpha · Slice 9</p>
         <h1>Life Modules</h1>
-        <p>Build a sourced draft through Stage 0, Stage 1, Stage 2, Technical College, and the audited Agitator Stage 4 branch. Module-purchasing XP remains separate from XP awarded to character statistics.</p>
+        <p>Build a sourced draft through the audited Agitator branch, then explicitly review final XP, derived levels, prerequisites, and Optimization. Equipment and full finalization remain deferred.</p>
       </section>
 
       {!character ? (
@@ -166,9 +177,40 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               </div>
             )}
             {state.phase === 'stage-4-resolution' && <p className="notice">Agitator is selected. Resolve Driving/Any, Prestidigitation/Any, Streetwise/Affiliation, and all flexible XP below.</p>}
-            {state.phase === 'stage-4-prerequisite-review' && <p className="notice">All Stage 4 awards are resolved, but one or more earlier prerequisites remain outstanding for eventual final validation.</p>}
-            {state.phase === 'alpha-stage-4-stop' && <p className="notice">The minimal Agitator Stage 4 branch is complete at age {currentAge(character) ?? 'unknown'}. Repeated Stage 4 execution, optimization, and finalization remain unsupported.</p>}
+            {state.phase === 'stage-4-prerequisite-review' && <div className="life-action"><p className="notice">All Stage 4 awards are resolved, but one or more prerequisites remain outstanding. Enter final review to allocate XP and re-evaluate them.</p><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened with outstanding prerequisites.')}>Enter final review</button></div>}
+            {state.phase === 'alpha-stage-4-stop' && <div className="life-action"><p className="notice">The minimal Agitator Stage 4 branch is complete at age {currentAge(character) ?? 'unknown'}. Enter final review to allocate remaining XP and explicitly apply Optimization.</p><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened.')}>Enter final review</button></div>}
+            {state.phase === 'alpha-final-review' && <p className="notice">Final review is in progress. Resolve every blocker below before the character can be marked ready for Final Touches.</p>}
+            {state.phase === 'ready-for-final-touches' && <p className="notice">This draft is ready for Final Touches. Equipment purchasing, PDF export, true character locking, and ready-for-play status remain unsupported.</p>}
           </section>
+
+          {state.finalReview && <section className="life-stage-panel">
+            <p className="eyebrow">Final review</p>
+            <h2>{state.finalReview.readiness === 'ready-for-final-touches' ? 'Ready for Final Touches' : 'Review required'}</h2>
+            <div className="xp-dashboard" aria-label="Final allocation XP status">
+              <div><span>Starting final pool</span><strong>{state.finalReview.allocationPool.starting.toLocaleString()}</strong></div>
+              <div><span>Allocated</span><strong>{state.finalReview.allocationPool.allocated.toLocaleString()}</strong></div>
+              <div><span>Optimization returned</span><strong>{state.finalReview.allocationPool.optimizationReturned.toLocaleString()}</strong></div>
+              <div><span>Remaining</span><strong>{state.finalReview.allocationPool.remaining.toLocaleString()}</strong></div>
+            </div>
+            <h3>Allocate remaining XP</h3>
+            <div className="row-actions">
+              <label>Existing statistic
+                <select value={finalAllocationTarget} onChange={(event) => setFinalAllocationTarget(event.target.value)}>
+                  {character.attributes.map((entry) => <option key={`attribute:${entry.attributeId}`} value={`attribute:${entry.attributeId}`}>Attribute · {entry.attributeId}</option>)}
+                  {character.traits.map((entry, index) => <option key={`trait:${index}`} value={`trait:${index}`}>Trait · {entry.displayName}</option>)}
+                  {character.skills.map((entry, index) => <option key={`skill:${index}`} value={`skill:${index}`}>Skill · {entry.displayName}</option>)}
+                </select>
+              </label>
+              <label>XP<input type="number" min="1" max={state.finalReview.allocationPool.remaining} step="1" value={finalAllocationXp} onChange={(event) => setFinalAllocationXp(Number(event.target.value))} /></label>
+              <button className="button" type="button" disabled={state.finalReview.allocationPool.remaining === 0} onClick={allocateFinalXp}>Allocate XP</button>
+            </div>
+            <h3>Optimization preview</h3>
+            {optimizationPreview.length === 0 ? <p>No supported Optimization opportunities remain.</p> : <ul className="module-history">{optimizationPreview.map((entry) => <li key={entry.id}><div><strong>{entry.destination.displayName}</strong><span>{signed(entry.beforeXp)} → {signed(entry.afterXp)} XP · return {entry.returnedXp} XP · {entry.reason}</span></div><button className="button secondary" type="button" onClick={() => operate(() => applyLifeModuleOptimization(character, entry.id), 'Optimization applied and returned XP to final allocation.')}>Apply</button></li>)}</ul>}
+            <h3>Review blockers</h3>
+            {finalReviewBlockers.length === 0 ? <p>No final-review blockers remain.</p> : <ul>{finalReviewBlockers.map((entry) => <li key={entry.id}>{entry.message}</li>)}</ul>}
+            <p className="scope-note">Negative-Trait XP purchase cap: {state.finalReview.negativeTraitXpPurchase.capXp} XP. The purchase UI is intentionally deferred.</p>
+            <p className="scope-note">Final review does not purchase equipment, export PDF, lock the character, or mark it ready for play.</p>
+          </section>}
 
           <section className="life-stage-panel">
             <h2>Selected modules</h2>
@@ -286,4 +328,21 @@ function skillName(skillId: string): string {
 function currentAge(character: CharacterDefinition): number | null {
   const ages = character.chronology.map((entry) => Number(entry.date.match(/^age:(\d+)$/)?.[1])).filter(Number.isFinite)
   return ages.length > 0 ? Math.max(...ages) : null
+}
+
+function finalReviewDestination(character: CharacterDefinition, selection: string): ResolvedLifeModuleDestination {
+  const [type, identifier] = selection.split(':')
+  if (type === 'attribute') return { type, targetId: identifier, displayName: identifier }
+  const index = Number(identifier)
+  if (type === 'trait') {
+    const entry = character.traits[index]
+    if (!entry) throw new Error('Select a valid existing Trait destination.')
+    return { type, targetId: entry.traitId, displayName: entry.displayName ?? entry.traitId, parameters: { ...entry.parameters } }
+  }
+  if (type === 'skill') {
+    const entry = character.skills[index]
+    if (!entry) throw new Error('Select a valid existing Skill destination.')
+    return { type, targetId: entry.address.skillId, displayName: entry.displayName ?? entry.address.skillId, ...(entry.address.parameter ? { parameter: { ...entry.address.parameter } } : {}) }
+  }
+  throw new Error('Select a valid final-allocation destination.')
 }

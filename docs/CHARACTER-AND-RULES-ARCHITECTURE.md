@@ -1,8 +1,8 @@
 # Character and Rules Architecture
 
-## Alpha Slice 8 implementation boundary
+## Alpha Slice 9 implementation boundary
 
-The implemented foundation provides typed Character and rules models, one shared character factory, structural validation, a versioned save envelope, browser-local persistence, JSON import/export, Archetype v0.1, Point Buy v0.1, and Life Modules v0.5. The project remains Alpha; Beta 1 requires completed Core + Companion character creation and PDF export.
+The implemented foundation provides typed Character and rules models, one shared character factory, structural validation, a versioned save envelope, browser-local persistence, JSON import/export, Archetype v0.1, Point Buy v0.1, and Life Modules v0.6. The project remains Alpha; Beta 1 requires completed Core + Companion character creation and PDF export.
 
 The rules catalog contains source/version descriptors, the eight published Core archetype packages, focused Point Buy catalogs, eight audited Core Life Module entries through Agitator, and two audited Skill Fields: Technician/Civilian and Technician/Vehicle. It does not claim that the full Life Module, Skill Field, or Core + Companion catalog has been entered.
 
@@ -23,9 +23,11 @@ Point Buy v0.1 implements the Corrected Third Printing pages 49, 51, 60, 95, 107
 
 The Point Buy UI saves drafts with unspent XP, but structural validation warns that they cannot enter play. A character marked `finalized` is invalid unless remaining creation XP is zero. Slice 3 does not expose finalization because required affiliation, full catalogs, prerequisites, and exhaustive legality validation are not yet implemented.
 
-Life Modules v0.5 implements the Stage 0 universal → Stage 0 affiliation → Stage 1 → Stage 2 → Technical College Stage 3 → Agitator Stage 4 path, with an explicit Alpha stop before each optional continuation. It keeps the module-purchasing pool separate from awarded statistic XP, records selected-module and Field history, applies fixed awards to the shared ledgers, and resolves pending language, affiliation, `/Any`, multi-choice, and flexible allocations incrementally. Every resolved allocation retains its source award, concrete destination, XP, provenance, and resolution time; partial completion leaves the remaining grant count or pooled XP durable.
+Life Modules v0.6 implements the Stage 0 universal → Stage 0 affiliation → Stage 1 → Stage 2 → Technical College Stage 3 → Agitator Stage 4 path, with an explicit Alpha stop before each optional continuation and a final-review state after Stage 4. It keeps the module-purchasing pool separate from awarded statistic XP, records selected-module and Field history, applies fixed awards to shared ledgers, and resolves pending language, affiliation, `/Any`, multi-choice, and flexible allocations incrementally. Every resolved allocation retains its source award, concrete destination, XP, provenance, and resolution time.
 
-Prerequisites are re-evaluated after each allocation. Stage 2 retains its source caps of 35 XP per Skill and 200 XP per Attribute or Trait. Stage 3 records Technician/Civilian and Technician/Vehicle as Skill Field grants rather than playable Skills. The selected school and Fields cost 816 XP total and advance age from 16 to 19. Agitator then costs 900 XP, adds four years, and calculates age 23 from the age-16 boundary plus recorded Stage 3 and Stage 4 time. Its flexible pool allows 125 XP across Attributes, Traits, or Skills while limiting any one Attribute to 50 XP. The module history preserves repeat-policy metadata but repeat execution remains blocked. Resolved Stage 4 drafts reach `alpha-stage-4-stop`; complete finalization, Optimization, repeated Stage 4, and broad catalogs remain deferred.
+Prerequisites are re-evaluated after each allocation. Stage 2 retains its source caps; Stage 3 records Skill Fields as grants rather than playable Skills; and Agitator reaches age 23 with repeat-policy metadata while repeat execution remains blocked. Resolved Stage 4 drafts may explicitly enter `alpha-final-review`. The immutable module-pool remainder seeds a separate final-allocation pool. Final allocation targets existing Attribute, Trait, and Skill instances and records player-choice provenance. Attained values derive from fully purchased thresholds, so partial XP remains durable without increasing the active value.
+
+Optimization is Life-Modules-only and explicit. A preview identifies supported excess or out-of-range XP; applying one opportunity records before/after XP, returned XP, reason, time, rules source, and provenance, then credits only the final-allocation pool. It never finances modules. Current opposed-Trait checks cover modeled Gregarious/Introvert and Illiterate versus a Language at Level +4 or higher. The negative-Trait XP purchase cap is calculated as 10 percent of starting allotment, but purchase execution remains deferred. `ready-for-final-touches` means only that current final-review blockers are clear; equipment, PDF export, true final lock, and ready-for-play status remain unsupported.
 
 The `playState` property is only a versioned extension point. No playable-sheet runtime system or UI is implemented.
 
@@ -146,7 +148,7 @@ When multiple requirements affect the same statistic, apply the rules-defined mo
 
 Partial XP invested in Attributes, Traits, and Skills is legitimate durable state. Accumulated XP and attained value remain separate concepts.
 
-Optimization is an explicit optional creation operation; never perform it silently. Buying additional creation XP through negative Traits is a separate optional operation subject to the Core limit of 10 percent of starting XP. The same applicable ceiling governs Point Buy.
+Optimization is an explicit optional creation operation; never perform it silently. Alpha Slice 9 previews and applies supported Life Module Optimization with durable provenance. Buying additional creation XP through negative Traits is a separate optional operation subject to the Core limit of 10 percent of starting XP; Slice 9 records the cap but does not expose purchase UI. The same applicable ceiling governs Point Buy.
 
 The starting creation XP pool must be exhausted before normal play. Allocated XP that does not yet attain the next Attribute, Trait, or Skill level remains on that statistic. Keep separate:
 

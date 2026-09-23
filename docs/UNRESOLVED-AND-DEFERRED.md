@@ -54,9 +54,10 @@ The data layer must not make those semantic decisions.
 - Resolution of printed Archetype XP/score discrepancies unless an authoritative correction or explicit project interpretation is established. Slice 2 preserves the printed data and records the mismatches.
 - Point Buy catalog expansion beyond the Slice 3 focused Skill and Trait subset.
 - Point Buy phenotype selection, Exceptional Attribute interaction, Fast/Slow Learner cost columns, partial XP allocation controls, multiple instances of one Trait, specialties, affiliation selection, full prerequisites/oppositions, complete required-Skill finalization, and equipment purchasing.
-- Life Module catalog expansion beyond the eight audited entries implemented through Alpha Slice 8: universal Stage 0, Capellan Confederation/Capellan Commonality, Stage 1 Blue Collar and Back Woods, Stage 2 Back Woods and High School, Stage 3 Technical College, and Stage 4 Agitator.
+- Life Module catalog expansion beyond the eight audited entries implemented through Alpha Slice 9: universal Stage 0, Capellan Confederation/Capellan Commonality, Stage 1 Blue Collar and Back Woods, Stage 2 Back Woods and High School, Stage 3 Technical College, and Stage 4 Agitator.
 - Stage 3 schools beyond Technical College, Skill Fields beyond Technician/Civilian and Technician/Vehicle, Stage 4 modules beyond Agitator, repeated Stage 3 schooling, repeated or multiple Stage 4 execution, and Stage 4 career-field logic.
-- Exhaustive affiliation-language catalog validation, full prerequisite finalization, Changing Affiliations, Life Events, and Optimization. Alpha Slice 8 resolves pending awards in the current minimal branch but does not implement these broader systems.
+- Exhaustive affiliation-language validation, complete prerequisite-conflict handling, Changing Affiliations, Life Events, the full opposed-Trait catalog, and Optimization beyond currently modeled ledgers. Alpha Slice 9 implements explicit final allocation and supported Optimization only for the narrow current branch.
+- Negative-Trait XP purchase execution, equipment purchasing, true final character locking, ready-for-play state, and PDF export. Slice 9 stores the 10-percent purchase cap and may report `ready-for-final-touches`, but implements none of these later steps.
 - Full Core + Companion rules-catalog data entry.
 - Persistable playable-sheet functionality.
 - Server/database/accounts and cloud character storage.
@@ -68,4 +69,4 @@ The data layer must not make those semantic decisions.
 
 ## Current scope boundary
 
-Alpha Slices 1–8 supersede the bootstrap's implementation prohibition only for the explicitly authorized application foundation, Core Archetype v0.1, Point Buy v0.1, and the narrow Life Modules v0.5 scope recorded above. They do not authorize broader Life Module content, resolution of open rules questions, PDF export, playable-sheet runtime behavior, post-Beta publications, or progression through any planetary rollout. Beta 1 remains a future milestone requiring completed Core + Companion character creation and PDF export.
+Alpha Slices 1–9 supersede the bootstrap's implementation prohibition only for the explicitly authorized application foundation, Core Archetype v0.1, Point Buy v0.1, and the narrow Life Modules v0.6 scope recorded above. They do not authorize broader Life Module content, equipment purchasing, true finalization, resolution of open rules questions, PDF export, playable-sheet runtime behavior, post-Beta publications, or progression through any planetary rollout. Beta 1 remains a future milestone requiring completed Core + Companion character creation and PDF export.
