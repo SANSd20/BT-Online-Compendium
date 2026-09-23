@@ -2,7 +2,7 @@ import type { RulesCatalog, RulesSnapshot } from './model'
 
 export const ALPHA_RULES_CATALOG: RulesCatalog = {
   id: 'atow.core-companion',
-  version: 'alpha-slice-7',
+  version: 'alpha-slice-8',
   sources: [
     {
       id: 'atow-core-corrected-third',
@@ -24,7 +24,7 @@ export const ALPHA_RULES_CATALOG: RulesCatalog = {
       role: 'supplemental',
     },
   ],
-  // Slices 2-4 add focused creation-method catalogs separately; general rules data entry remains deferred.
+  // Alpha Slices 2-8 add focused creation-method catalogs separately; general rules data entry remains deferred.
   rules: [],
 }
 

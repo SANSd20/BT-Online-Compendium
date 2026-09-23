@@ -15,13 +15,15 @@ Applicable errata—including *A Time of War Companion Errata v1.1*—must be ac
 
 Rules and derived results must preserve source/provenance information.
 
-The Alpha rules catalog records these three current sources as versioned metadata and captures them in each new character's creation-rules snapshot. Alpha Slice 2 adds the eight published Core archetype packages from Corrected Third Printing pages 52–59. Alpha Slice 3 adds the focused Point Buy foundation from Core pages 49, 51, 60, 95, 107, and 121–122. Alpha Slice 4 adds the initial Stage 0/1 modules, Alpha Slice 5 resolves their pending awards, and Alpha Slice 6 adds Stage 2 Back Woods and High School. Alpha Slice 7 adds the audited Technical College branch and the Technician/Civilian and Technician/Vehicle Skill Fields from the supplied Core audit. These slices do not add Companion templates or complete Life Module or Skill Field catalogs. The historical First Printing is not included in the active runtime catalog.
+The Alpha rules catalog records these three current sources as versioned metadata and captures them in each new character's creation-rules snapshot. Alpha Slice 2 adds the eight published Core archetype packages from Corrected Third Printing pages 52–59. Alpha Slice 3 adds the focused Point Buy foundation from Core pages 49, 51, 60, 95, 107, and 121–122. Alpha Slice 4 adds the initial Stage 0/1 modules, Alpha Slice 5 resolves their pending awards, and Alpha Slice 6 adds Stage 2 Back Woods and High School. Alpha Slice 7 adds the audited Technical College branch and the Technician/Civilian and Technician/Vehicle Skill Fields. Alpha Slice 8 adds the audited Agitator Stage 4 branch and repeat-policy metadata. These slices do not add Companion templates or complete Life Module or Skill Field catalogs. The historical First Printing is not included in the active runtime catalog.
 
 AToW Errata v4.0 was checked against the selected Alpha Slice 4 modules. No erratum changes the implemented Capellan Confederation/Capellan Commonality, Blue Collar, or Back Woods data. Nearby Independent/Astrokaszy and extreme-gravity corrections are outside this minimal set.
 
 AToW Errata v4.0 was also checked during the supplied Alpha Slice 6 rules audit. No erratum changes the implemented Stage 2 Back Woods or High School data; the nearby Military School/Military Academy correction remains outside this slice.
 
 The supplied Alpha Slice 7 audit likewise records no erratum affecting Technical College or its two implemented Technician Fields. The Military Academy Pilot/WarShip correction remains outside this slice.
+
+The supplied Alpha Slice 8 audit records no erratum affecting Agitator or the implemented Stage 4 Real Life rules. No fresh PDF transcription was performed for Slice 8; the handoff's audited values and no-page source identifiers were preserved without inventing page citations.
 
 AToW Errata v4.0 was checked for corrections to the Point Buy starting allotment, Attribute/Trait costs, Skill XP table, and negative-Trait limit; no applicable correction to those rules was identified. The Corrected Third Printing values therefore remain authoritative for Point Buy v0.1.
 

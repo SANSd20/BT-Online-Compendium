@@ -151,7 +151,24 @@ Slice 7 extends the same `npm run check` gate. Automated coverage verifies:
 - local storage and versioned JSON preserve Stage 3 school, Field, resolved, and unresolved state; and
 - all prior Archetype, Point Buy, and Life Module regression tests continue to pass.
 
-Manual UI verification should confirm the Stage 2 stop offers explicit Stage 3 continuation, Technical College shows its base/Field/total costs and age increase, the selected Fields are visible as durable records, pending awards resolve normally, and the Stage 3 stop does not imply Stage 4 or finalization support.
+Manual UI verification should confirm the Stage 2 stop offers explicit Stage 3 continuation, Technical College shows its base/Field/total costs and age increase, the selected Fields are visible as durable records, pending awards resolve normally, and the Stage 3 stop exposes only the audited Stage 4 continuation.
+
+## Alpha Slice 8 verification
+
+Slice 8 extends the same `npm run check` gate. Automated coverage verifies:
+
+- a resolved Stage 3 Alpha stop can explicitly continue into Stage 4;
+- Agitator is the only implemented Stage 4 module and costs 900 XP from the separate module pool;
+- all published fixed Attribute, Trait, Skill, and structured-subskill awards apply through the shared ledgers;
+- Driving/Any +65 XP, Prestidigitation/Any +100 XP, Streetwise/Affiliation +75 XP, and the 125-XP flexible pool remain durable and resolvable;
+- Agitator flexible XP rejects more than 50 XP allocated to one Attribute;
+- age is calculated as 16 plus selected Stage 3 and Stage 4 time, producing age 23 for the current branch;
+- durable history preserves the deferred same-module repeat policy, full repeat cost, repeatable Skill/Flexible awards, and first-occurrence-only Attribute/Trait awards;
+- repeated or multiple Stage 4 execution, unknown Stage 4 modules, malformed cost/time/age/history, and finalization are rejected or reported;
+- local storage and versioned JSON preserve Stage 4 history, chronology, repeat metadata, and resolved/unresolved awards; and
+- all prior Archetype, Point Buy, and Life Module regression tests continue to pass.
+
+Manual UI verification should confirm the Stage 3 stop offers explicit Stage 4 continuation, Agitator shows its 900-XP cost and four-year contribution, age displays as 23, pending awards use the existing controls, the Attribute cap is visible through validation behavior, and the Stage 4 stop does not imply repeat execution, Optimization, finalization, or PDF export support.
 
 ## Core + Companion audit requirements
 

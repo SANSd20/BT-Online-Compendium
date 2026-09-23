@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
-import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage3School, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, createLifeModuleCharacter, resolvePendingLifeModuleAward } from './lifeModuleEngine'
+import { applyAgitator, applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from './lifeModuleEngine'
 
 function completeStage0() {
   let character = createLifeModuleCharacter('Xiang', 5000)
@@ -41,6 +41,14 @@ function completeHighSchoolStage2() {
   character = resolveByAward(character, 'high-school.streetwise-affiliation', 'skill.streetwise', 'Streetwise/Capellan', 'Capellan')
   const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'high-school.flexible')!
   return resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'DEX', displayName: 'DEX' }, 185)
+}
+
+function completeTechnicalCollegeStage3() {
+  let character = applyTechnicalCollege(continueToStage3(completeHighSchoolStage2()))
+  character = resolveByAward(character, 'technical-college.interest', 'skill.interest', 'Interest/Engineering', 'Engineering')
+  const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'technical-college.flexible')!
+  character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 150)
+  return resolvePendingLifeModuleAward(character, flexible.id, { type: 'trait', targetId: 'trait.patient', displayName: 'Patient' }, 50)
 }
 
 describe('Life Module engine', () => {
@@ -202,15 +210,14 @@ describe('Life Module engine', () => {
     expect(ids).toContain('life-modules.choice-requirement.missing')
   })
 
-  it('reports unsupported later continuation and full finalization', () => {
+  it('reports malformed premature Stage 4 continuation and unsupported finalization', () => {
     const character = applyStage1Module(completeStage0(), BLUE_COLLAR_ID)
-    character.creation.lifeModules!.phase = 'stage-4-unsupported'
+    character.creation.lifeModules!.phase = 'stage-4-selection'
     character.creation.status = 'finalized'
     const validation = validateCharacter(character)
     expect(validation.valid).toBe(false)
     expect(validation.issues.map((entry) => entry.id)).toEqual(expect.arrayContaining([
       'life-modules.phase.malformed',
-      'life-modules.continuation.unsupported',
       'life-modules.finalization.unsupported',
     ]))
   })
@@ -357,18 +364,17 @@ describe('Life Module engine', () => {
     expect(validateCharacter(unknown).issues.map((entry) => entry.id)).toContain('life-modules.skill-field.unknown')
   })
 
-  it('validates malformed Stage 3 Field records, cost, age, and unsupported Stage 4', () => {
+  it('validates malformed Stage 3 Field records, cost, age, and premature Stage 4 selection', () => {
     const character = applyTechnicalCollege(continueToStage3(completeHighSchoolStage2()))
     character.creation.lifeModules!.selectedSkillFields[0].purchaseCostXp = 121
     character.chronology.at(-1)!.date = 'age:18'
-    character.creation.lifeModules!.phase = 'stage-4-unsupported'
+    character.creation.lifeModules!.phase = 'stage-4-selection'
     const ids = validateCharacter(character).issues.map((entry) => entry.id)
     expect(ids).toEqual(expect.arrayContaining([
       'life-modules.module.malformed',
       'life-modules.skill-field.malformed',
       'life-modules.stage-3.age.malformed',
       'life-modules.phase.malformed',
-      'life-modules.continuation.unsupported',
     ]))
   })
 
@@ -379,6 +385,104 @@ describe('Life Module engine', () => {
     expect(decoded).toEqual(character)
     expect(decoded.creation.lifeModules!.selectedSkillFields).toHaveLength(2)
     expect(decoded.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'technical-college.flexible')?.remainingXp).toBe(200)
+    expect(validateCharacter(decoded).valid).toBe(true)
+  })
+
+  it('continues from Stage 3 and applies Agitator cost, fixed awards, pending awards, and age', () => {
+    let character = continueToStage4(completeTechnicalCollegeStage3())
+    expect(character.creation.lifeModules!.phase).toBe('stage-4-selection')
+    character = applyAgitator(character)
+    const state = character.creation.lifeModules!
+    expect(state.moduleXp).toEqual({ starting: 5000, spent: 3326, remaining: 1674 })
+    expect(character.lifeModuleHistory.at(-1)).toMatchObject({ moduleId: AGITATOR_ID, stage: 4, costXp: 900, chronologyYears: 4 })
+    expect(character.attributes.find((entry) => entry.attributeId === 'WIL')?.accumulatedXp).toBe(215)
+    expect(Object.fromEntries(character.traits.filter((entry) => ['trait.bloodmark', 'trait.gregarious', 'trait.toughness', 'trait.reputation'].includes(entry.traitId)).map((entry) => [entry.traitId, entry.accumulatedXp]))).toMatchObject({
+      'trait.bloodmark': -50,
+      'trait.gregarious': 80,
+      'trait.toughness': 80,
+      'trait.reputation': -150,
+    })
+    expect(Object.fromEntries(character.skills.filter((entry) => ['Acting', 'Disguise', 'Leadership', 'Negotiation', 'Perception', 'Small Arms', 'Tactics/Infantry', 'Training'].includes(entry.displayName ?? '')).map((entry) => [entry.displayName!, entry.accumulatedXp]))).toMatchObject({
+      Acting: 50,
+      Disguise: 75,
+      Leadership: 60,
+      Negotiation: 80,
+      Perception: 80,
+      'Small Arms': 75,
+      'Tactics/Infantry': 40,
+      Training: 50,
+    })
+    expect(state.pendingAwards.map((entry) => entry.awardId)).toEqual(expect.arrayContaining([
+      'agitator.skill.driving',
+      'agitator.skill.prestidigitation',
+      'agitator.skill.streetwise-affiliation',
+      'agitator.flexible',
+    ]))
+    expect(state.pendingAwards.find((entry) => entry.awardId === 'agitator.flexible')).toMatchObject({ remainingXp: 125, maxXpPerTarget: { attribute: 50 } })
+    expect(character.chronology.at(-1)).toMatchObject({ date: 'age:23', eventId: `${AGITATOR_ID}.complete` })
+    expect(state.phase).toBe('stage-4-resolution')
+  })
+
+  it('resolves Agitator choices and enforces its flexible Attribute cap', () => {
+    let character = applyAgitator(continueToStage4(completeTechnicalCollegeStage3()))
+    character = resolveByAward(character, 'agitator.skill.driving', 'skill.driving', 'Driving/Ground Car', 'Ground Car')
+    character = resolveByAward(character, 'agitator.skill.prestidigitation', 'skill.prestidigitation', 'Prestidigitation/Sleight of Hand', 'Sleight of Hand')
+    character = resolveByAward(character, 'agitator.skill.streetwise-affiliation', 'skill.streetwise', 'Streetwise/Capellan', 'Capellan')
+    const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'agitator.flexible')!
+    expect(() => resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 51)).toThrow('no more than 50 XP')
+    character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 50)
+    character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'skill', targetId: 'skill.acting', displayName: 'Acting' }, 75)
+    expect(character.skills.find((entry) => entry.displayName === 'Driving/Ground Car')?.accumulatedXp).toBe(65)
+    expect(character.skills.find((entry) => entry.displayName === 'Prestidigitation/Sleight of Hand')?.accumulatedXp).toBe(100)
+    expect(character.skills.find((entry) => entry.displayName === 'Streetwise/Capellan')?.accumulatedXp).toBe(95)
+    expect(character.creation.lifeModules!.pendingAwards).toEqual([])
+    expect(character.creation.lifeModules!.phase).toBe('alpha-stage-4-stop')
+    expect(character.creation.lifeModules!.stopState).toBe('alpha-stage-4-stop')
+    expect(validateCharacter(character).valid).toBe(true)
+  })
+
+  it('preserves Agitator repeat policy and rejects unsupported Stage 4 paths', () => {
+    const selecting = continueToStage4(completeTechnicalCollegeStage3())
+    expect(() => applyStage4Module(selecting, 'stage4.unknown')).toThrow('Unknown Alpha Stage 4 module')
+    const character = applyStage4Module(selecting, AGITATOR_ID)
+    expect(character.lifeModuleHistory.at(-1)?.repeatPolicy).toEqual({
+      sameModuleRepeat: 'deferred',
+      repeatCost: 'full-module-cost',
+      repeatAwards: { skills: 'repeat', flexibleXp: 'repeat', attributes: 'first-occurrence-only', traits: 'first-occurrence-only' },
+    })
+    expect(() => applyAgitator(character)).toThrow('not the current legal action')
+
+    const repeated = structuredClone(character)
+    repeated.lifeModuleHistory.push({ ...structuredClone(repeated.lifeModuleHistory.at(-1)!), selectedAt: 'later' })
+    repeated.creation.lifeModules!.selectedModuleIds.push(AGITATOR_ID)
+    repeated.creation.lifeModules!.moduleXp.spent += 900
+    repeated.creation.lifeModules!.moduleXp.remaining -= 900
+    repeated.xp.creation.remaining -= 900
+    const ids = validateCharacter(repeated).issues.map((entry) => entry.id)
+    expect(ids).toEqual(expect.arrayContaining(['life-modules.module.duplicate', 'life-modules.stage-4.multiple', 'life-modules.stage-4.repeat.unsupported']))
+  })
+
+  it('validates malformed Agitator age, repeat metadata, and unsupported finalization', () => {
+    const character = applyAgitator(continueToStage4(completeTechnicalCollegeStage3()))
+    character.chronology.at(-1)!.date = 'age:22'
+    delete character.lifeModuleHistory.at(-1)!.repeatPolicy
+    character.creation.status = 'finalized'
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).toEqual(expect.arrayContaining([
+      'life-modules.module.malformed',
+      'life-modules.stage-4.age.malformed',
+      'life-modules.stage-4.repeat-policy.malformed',
+      'life-modules.finalization.unsupported',
+    ]))
+  })
+
+  it('round-trips durable Stage 4 module, repeat policy, resolved, and unresolved state', () => {
+    let character = applyAgitator(continueToStage4(completeTechnicalCollegeStage3()))
+    character = resolveByAward(character, 'agitator.skill.driving', 'skill.driving', 'Driving/Ground Car', 'Ground Car')
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-09-23T00:00:00.000Z'))
+    expect(decoded).toEqual(character)
+    expect(decoded.lifeModuleHistory.at(-1)?.repeatPolicy?.sameModuleRepeat).toBe('deferred')
+    expect(decoded.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'agitator.flexible')?.remainingXp).toBe(125)
+    expect(decoded.chronology.at(-1)?.date).toBe('age:23')
     expect(validateCharacter(decoded).valid).toBe(true)
   })
 })

@@ -38,6 +38,16 @@ export interface LifeModuleDefinition {
   source: SourceCitation
   costXp: number
   chronologyYears?: number
+  repeatPolicy?: {
+    sameModuleRepeat: 'deferred'
+    repeatCost: 'full-module-cost'
+    repeatAwards: {
+      skills: 'repeat'
+      flexibleXp: 'repeat'
+      attributes: 'first-occurrence-only'
+      traits: 'first-occurrence-only'
+    }
+  }
   primaryLanguage?: string
   secondaryLanguages?: string[]
   skillFieldSelection?: {

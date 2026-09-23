@@ -11,7 +11,7 @@ interface HomeScreenProps {
 const methods: Array<{ method: CreationMethod; label: string; description: string }> = [
   { method: 'archetype', label: 'Archetype', description: 'Choose one of eight published Core packages and create a sourced local character.' },
   { method: 'point-buy', label: 'Point Buy', description: 'Build a Normal Human draft with Core Attribute, Skill/subskill, and focused Trait purchasing.' },
-  { method: 'life-modules', label: 'Life Modules', description: 'Build and resolve Stage 0 and Stage 1 with the audited minimal Core module set.' },
+  { method: 'life-modules', label: 'Life Modules', description: 'Build through the audited minimal Core path from Stage 0 to Agitator at Stage 4.' },
 ]
 
 export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) {
@@ -34,9 +34,9 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
   return (
     <main>
       <section className="hero">
-        <p className="eyebrow">Alpha · Slice 7</p>
+        <p className="eyebrow">Alpha · Slice 8</p>
         <h1>Character Creator</h1>
-        <p>Create a sourced Core character through Archetype, Point Buy, or the narrow Life Modules v0.4 Technical College branch on one shared Character/Rules engine.</p>
+        <p>Create a sourced Core character through Archetype, Point Buy, or the narrow Life Modules v0.5 Agitator branch on one shared Character/Rules engine.</p>
       </section>
 
       <section aria-labelledby="methods-heading">

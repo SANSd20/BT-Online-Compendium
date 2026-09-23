@@ -131,7 +131,10 @@ export type LifeModulePhase =
   | 'stage-3-resolution'
   | 'stage-3-prerequisite-review'
   | 'alpha-stage-3-stop'
-  | 'stage-4-unsupported'
+  | 'stage-4-selection'
+  | 'stage-4-resolution'
+  | 'stage-4-prerequisite-review'
+  | 'alpha-stage-4-stop'
 
 export interface ResolvedLifeModuleDestination {
   type: 'attribute' | 'trait' | 'skill'
@@ -209,7 +212,7 @@ export interface LifeModuleCreationState {
   source: SourceCitation
   startingAllotment: 'standard' | 'gm-adjusted'
   phase: LifeModulePhase
-  currentStage: 0 | 1 | 2 | 3
+  currentStage: 0 | 1 | 2 | 3 | 4
   moduleXp: LifeModuleXpPool
   selectedModuleIds: string[]
   selectedSkillFields: SkillFieldGrantRecord[]
@@ -218,7 +221,7 @@ export interface LifeModuleCreationState {
   resolvedAwards: ResolvedLifeModuleAward[]
   choiceGrantRequirements: LifeModuleChoiceGrantRequirement[]
   prerequisiteIssues: LifeModulePrerequisiteIssue[]
-  stopState: 'not-eligible' | 'alpha-partial-stop' | 'alpha-stage-2-stop' | 'alpha-stage-3-stop'
+  stopState: 'not-eligible' | 'alpha-partial-stop' | 'alpha-stage-2-stop' | 'alpha-stage-3-stop' | 'alpha-stage-4-stop'
   limitations: string[]
 }
 
@@ -257,6 +260,17 @@ export interface LifeModuleHistoryEntry {
   costXp: number
   baseCostXp?: number
   fieldCostXp?: number
+  chronologyYears?: number
+  repeatPolicy?: {
+    sameModuleRepeat: 'deferred'
+    repeatCost: 'full-module-cost'
+    repeatAwards: {
+      skills: 'repeat'
+      flexibleXp: 'repeat'
+      attributes: 'first-occurrence-only'
+      traits: 'first-occurrence-only'
+    }
+  }
   selectedAt: string
   provenanceIds: string[]
   source: SourceCitation

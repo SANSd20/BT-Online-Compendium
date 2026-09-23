@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import type { CharacterDefinition, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
-import { BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
-import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
+import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 
@@ -70,9 +70,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     <main className="creation-page life-modules-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Alpha · Slice 7</p>
+        <p className="eyebrow">Alpha · Slice 8</p>
         <h1>Life Modules</h1>
-        <p>Build a sourced draft through Stage 0, Stage 1, Stage 2, and the audited Technical College branch. Module-purchasing XP remains separate from XP awarded to character statistics.</p>
+        <p>Build a sourced draft through Stage 0, Stage 1, Stage 2, Technical College, and the audited Agitator Stage 4 branch. Module-purchasing XP remains separate from XP awarded to character statistics.</p>
       </section>
 
       {!character ? (
@@ -153,13 +153,27 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             )}
             {state.phase === 'stage-3-resolution' && <p className="notice">Technical College is selected. Resolve Interest/Any and all flexible XP below.</p>}
             {state.phase === 'stage-3-prerequisite-review' && <p className="notice">All Stage 3 awards are resolved, but one or more Skill Field prerequisites remain outstanding for eventual final validation.</p>}
-            {state.phase === 'alpha-stage-3-stop' && <p className="notice">The minimal Technical College Stage 3 branch is complete. Stage 4 and full finalization remain unsupported.</p>}
+            {state.phase === 'alpha-stage-3-stop' && <div className="life-action"><p className="notice">The minimal Technical College Stage 3 branch is complete. This is an Alpha partial stop—not a finalized character.</p><button className="button" type="button" onClick={() => operate(() => continueToStage4(character), 'Stage 4 continuation opened.')}>Continue to Stage 4</button></div>}
+            {state.phase === 'stage-4-selection' && (
+              <div className="stage-options">
+                <article>
+                  <h3>Agitator</h3>
+                  <p>900 XP · Real Life module · +4 years.</p>
+                  <p>Includes fixed Attribute, Trait, and Skill awards; three concrete subskill choices; and 125 flexible XP with a 50-XP cap per Attribute.</p>
+                  <p><strong>Expected age: 23</strong></p>
+                  <button className="button" type="button" onClick={() => operate(() => applyStage4Module(character, AGITATOR_ID), 'Agitator selected; pending awards retained.')}>Select Agitator</button>
+                </article>
+              </div>
+            )}
+            {state.phase === 'stage-4-resolution' && <p className="notice">Agitator is selected. Resolve Driving/Any, Prestidigitation/Any, Streetwise/Affiliation, and all flexible XP below.</p>}
+            {state.phase === 'stage-4-prerequisite-review' && <p className="notice">All Stage 4 awards are resolved, but one or more earlier prerequisites remain outstanding for eventual final validation.</p>}
+            {state.phase === 'alpha-stage-4-stop' && <p className="notice">The minimal Agitator Stage 4 branch is complete at age {currentAge(character) ?? 'unknown'}. Repeated Stage 4 execution, optimization, and finalization remain unsupported.</p>}
           </section>
 
           <section className="life-stage-panel">
             <h2>Selected modules</h2>
             {character.lifeModuleHistory.length === 0 ? <p className="empty">No modules selected.</p> : (
-              <ul className="module-history">{character.lifeModuleHistory.map((entry) => <li key={entry.moduleId}><div><strong>{entry.displayName}</strong><span>Stage {entry.stage} · {entry.costXp} XP{entry.baseCostXp !== undefined ? ` (${entry.baseCostXp} base + ${entry.fieldCostXp} Fields)` : ''}{entry.source.page ? ` · Core p. ${entry.source.page}` : ''}</span></div></li>)}</ul>
+              <ul className="module-history">{character.lifeModuleHistory.map((entry) => <li key={entry.moduleId}><div><strong>{entry.displayName}</strong><span>Stage {entry.stage} · {entry.costXp} XP{entry.baseCostXp !== undefined ? ` (${entry.baseCostXp} base + ${entry.fieldCostXp} Fields)` : ''}{entry.chronologyYears ? ` · +${entry.chronologyYears} years` : ''}{entry.source.page ? ` · Core p. ${entry.source.page}` : ''}</span></div></li>)}</ul>
             )}
           </section>
 
@@ -256,7 +270,8 @@ function defaultResolutionDraft(pending: PendingLifeModuleAward): ResolutionDraf
     return { targetType: 'skill', targetId: pending.requiredSkillId, parameter: '', displayName: skillName(pending.requiredSkillId), xpAmount: Math.min(pending.remainingXp ?? pending.xpPerGrant, 35) }
   }
   const targetType = pending.allowedTargetTypes[0]
-  return { targetType, targetId: targetType === 'attribute' ? 'STR' : '', parameter: '', displayName: targetType === 'attribute' ? 'STR' : '', xpAmount: Math.min(pending.remainingXp ?? pending.xpPerGrant, targetType === 'skill' ? 35 : 200) }
+  const targetCap = pending.maxXpPerTarget?.[targetType] ?? (targetType === 'skill' ? 35 : 200)
+  return { targetType, targetId: targetType === 'attribute' ? 'STR' : '', parameter: '', displayName: targetType === 'attribute' ? 'STR' : '', xpAmount: Math.min(pending.remainingXp ?? pending.xpPerGrant, targetCap) }
 }
 
 function destinationDisplayName(draft: ResolutionDraft): string {

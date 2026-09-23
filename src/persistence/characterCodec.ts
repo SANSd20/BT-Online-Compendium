@@ -7,7 +7,7 @@ import {
   type SavedCharacterEnvelope,
 } from './schema'
 
-const APPLICATION_VERSION = '0.1.0-alpha.7'
+const APPLICATION_VERSION = '0.1.0-alpha.8'
 const CREATION_METHODS: CreationMethod[] = ['archetype', 'point-buy', 'life-modules']
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -103,5 +103,11 @@ function migrateAlphaLifeModuleState(character: CharacterDefinition): void {
       pending.requiredSkillId ??= 'skill.language'
     }
     if (award.kind === 'affiliation-skill-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') pending.requiredSkillId ??= award.skillId
+  })
+  character.lifeModuleHistory.forEach((entry) => {
+    let definition
+    try { definition = getLifeModule(entry.moduleId) } catch { return }
+    entry.chronologyYears ??= definition.chronologyYears
+    entry.repeatPolicy ??= definition.repeatPolicy ? structuredClone(definition.repeatPolicy) : undefined
   })
 }

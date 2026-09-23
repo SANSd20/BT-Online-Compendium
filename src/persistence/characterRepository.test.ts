@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createPointBuyCharacter } from '../engine/pointBuyEngine'
 import { BLUE_COLLAR_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
-import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../engine/lifeModuleEngine'
+import { applyAgitator, applyCapellanCommonality, applyStage1Module, applyStage2Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../engine/lifeModuleEngine'
 import { LocalStorageCharacterRepository, type StorageLike } from './characterRepository'
 
 class MemoryStorage implements StorageLike {
@@ -77,6 +77,39 @@ describe('LocalStorageCharacterRepository', () => {
     expect(restored).toEqual(character)
     expect(restored?.creation.lifeModules?.selectedSkillFields).toHaveLength(2)
     expect(restored?.chronology.at(-1)?.date).toBe('age:19')
+  })
+
+  it('preserves Stage 4 module, repeat policy, chronology, and pending awards in local storage', () => {
+    let character = createLifeModuleCharacter('Local Agitator')
+    character = applyUniversalStage0(character, 'Mandarin Chinese')
+    character = applyCapellanCommonality(character, 'Russian')
+    character = applyStage1Module(character, BLUE_COLLAR_ID)
+    character = resolveAward(character, 'commonality.language.fedsuns', 'skill.language', 'Language/French', 'French')
+    character = resolveAward(character, 'blue-collar.career', 'skill.career', 'Career/Technician', 'Technician')
+    character = resolveAward(character, 'blue-collar.interests', 'skill.interest', 'Interest/History', 'History')
+    character = resolveAward(character, 'blue-collar.interests', 'skill.interest', 'Interest/Science', 'Science')
+    for (const attribute of ['STR', 'BOD', 'DEX', 'RFL']) character = resolveAward(character, 'blue-collar.flexible', attribute, attribute)
+    character = applyStage2Module(continueToStage2(character), STAGE_2_HIGH_SCHOOL_ID)
+    character = resolveAward(character, 'high-school.interest-40', 'skill.interest', 'Interest/Physics', 'Physics')
+    character = resolveAward(character, 'high-school.interest-35', 'skill.interest', 'Interest/Art', 'Art')
+    character = resolveAward(character, 'high-school.language-affiliation', 'skill.language', 'Language/English', 'English')
+    character = resolveAward(character, 'high-school.streetwise-affiliation', 'skill.streetwise', 'Streetwise/Capellan', 'Capellan')
+    let flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'high-school.flexible')!
+    character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'DEX', displayName: 'DEX' }, 185)
+    character = applyTechnicalCollege(continueToStage3(character))
+    character = resolveAward(character, 'technical-college.interest', 'skill.interest', 'Interest/Engineering', 'Engineering')
+    flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'technical-college.flexible')!
+    character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 150)
+    character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'trait', targetId: 'trait.patient', displayName: 'Patient' }, 50)
+    character = applyAgitator(continueToStage4(character))
+
+    const repository = new LocalStorageCharacterRepository(new MemoryStorage())
+    repository.save(character)
+    const restored = repository.get(character.id)
+    expect(restored).toEqual(character)
+    expect(restored?.lifeModuleHistory.at(-1)?.repeatPolicy?.sameModuleRepeat).toBe('deferred')
+    expect(restored?.chronology.at(-1)?.date).toBe('age:23')
+    expect(restored?.creation.lifeModules?.pendingAwards.find((entry) => entry.awardId === 'agitator.flexible')?.remainingXp).toBe(125)
   })
 })
 

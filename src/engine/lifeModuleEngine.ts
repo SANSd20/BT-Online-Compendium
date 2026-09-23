@@ -9,6 +9,7 @@ import type {
   XpAward,
 } from '../domain/character/model'
 import {
+  AGITATOR_ID,
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
   CAPELLAN_COMMONALITY_ID,
@@ -51,9 +52,9 @@ export function createLifeModuleCharacter(
     prerequisiteIssues: [],
     stopState: 'not-eligible',
     limitations: [
-      'Alpha Slice 7 includes the Stage 0/1/2 minimal catalog plus Technical College and two Technician Skill Fields.',
+      'Alpha Slice 8 includes the Stage 0/1/2 minimal catalog, Technical College with two Technician Skill Fields, and Agitator at Stage 4.',
       'The current minimal catalog can resolve language, /Affiliation, /Any, multi-choice, and flexible awards.',
-      'Stage 4, the broad Stage 3 and Skill Field catalogs, repeated schooling, Changing Affiliations, Life Events, Optimization, and exhaustive final validation are deferred.',
+      'Broad Stage 3/4 and Skill Field catalogs, repeated schooling and Stage 4 execution, Changing Affiliations, Life Events, Optimization, and exhaustive final validation are deferred.',
     ],
   }
   character.provenance.push({ id: provenanceId, kind: 'published', description: 'Life Module character creation rules', source: { ...LIFE_MODULE_RULES_SOURCE } })
@@ -167,7 +168,7 @@ export function applyTechnicalCollege(
 ): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-3-selection') throw new Error('A Stage 3 school is not the current legal action.')
-  if (character.lifeModuleHistory.some((entry) => entry.stage === 3)) throw new Error('Repeated Stage 3 schooling is not supported in Alpha Slice 7.')
+  if (character.lifeModuleHistory.some((entry) => entry.stage === 3)) throw new Error('Repeated Stage 3 schooling is not supported in Alpha Slice 8.')
   const school = getLifeModule(TECHNICAL_COLLEGE_ID)
   validateSchoolFieldSelection(school, fieldIds)
   const selections = fieldIds.map((fieldId) => ({ field: getSkillField(fieldId), offer: school.skillFieldSelection!.offers.find((entry) => entry.fieldId === fieldId)! }))
@@ -202,6 +203,41 @@ export function applyTechnicalCollege(
 export function applyStage3School(character: CharacterDefinition, moduleId: string, fieldIds: string[]): CharacterDefinition {
   if (moduleId !== TECHNICAL_COLLEGE_ID) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
   return applyTechnicalCollege(character, fieldIds)
+}
+
+export function continueToStage4(character: CharacterDefinition): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  if (state.phase !== 'alpha-stage-3-stop' || state.stopState !== 'alpha-stage-3-stop') {
+    throw new Error('Stage 4 continuation requires a resolved, prerequisite-satisfied Stage 3 Alpha stop.')
+  }
+  state.phase = 'stage-4-selection'
+  state.currentStage = 4
+  state.stopState = 'not-eligible'
+  next.updatedAt = new Date().toISOString()
+  return next
+}
+
+export function applyAgitator(character: CharacterDefinition): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-4-selection') throw new Error('A Stage 4 module is not the current legal action.')
+  if (character.lifeModuleHistory.some((entry) => entry.stage === 4)) {
+    throw new Error('Repeated or multiple Stage 4 modules are not supported in Alpha Slice 8.')
+  }
+  const module = getLifeModule(AGITATOR_ID)
+  const next = applyModule(character, module, {})
+  const stage3Years = requireLifeModules(next).selectedSkillFields.reduce((total, grant) => total + grant.chronologyYears, 0)
+  const stage4Years = next.lifeModuleHistory
+    .filter((entry) => entry.stage === 4)
+    .reduce((total, entry) => total + (entry.chronologyYears ?? 0), 0)
+  const age = 16 + stage3Years + stage4Years
+  next.chronology.push({ date: `age:${age}`, eventId: `${module.id}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })
+  return updateLifeModuleProgress(next)
+}
+
+export function applyStage4Module(character: CharacterDefinition, moduleId: string): CharacterDefinition {
+  if (moduleId !== AGITATOR_ID) throw new Error(`Unknown Alpha Stage 4 module: ${moduleId}`)
+  return applyAgitator(character)
 }
 
 export function resolvePendingLifeModuleAward(
@@ -296,6 +332,8 @@ function applyModule(
     stage: module.stage,
     costXp: totalCostXp,
     ...(options.totalCostXp !== undefined ? { baseCostXp: module.costXp, fieldCostXp: options.fieldCostXp ?? 0 } : {}),
+    ...(module.chronologyYears !== undefined ? { chronologyYears: module.chronologyYears } : {}),
+    ...(module.repeatPolicy ? { repeatPolicy: structuredClone(module.repeatPolicy) } : {}),
     selectedAt,
     provenanceIds: [provenanceId],
     source: { ...module.source },
@@ -372,7 +410,7 @@ function applyDestinationAward(character: CharacterDefinition, destination: Life
 
 function addPendingAward(pending: PendingLifeModuleAward[], module: LifeModuleDefinition, award: Exclude<LifeModuleAward, { kind: 'fixed' }>): void {
   if (award.kind === 'choice-package' || award.kind === 'conditional' || award.kind === 'field-grant') {
-    throw new Error(`Award type ${award.kind} is modeled but not supported by the Alpha Slice 7 engine.`)
+    throw new Error(`Award type ${award.kind} is modeled but not supported by the Alpha Slice 8 engine.`)
   }
   pending.push(pendingAwardFrom(module, award))
 }
@@ -406,12 +444,16 @@ function updateLifeModuleProgress(character: CharacterDefinition): CharacterDefi
   if (!hasStage1) return character
   const hasStage2 = character.lifeModuleHistory.some((entry) => entry.stage === 2)
   const hasStage3 = character.lifeModuleHistory.some((entry) => entry.stage === 3)
-  state.currentStage = hasStage3 ? 3 : hasStage2 ? 2 : 1
+  const hasStage4 = character.lifeModuleHistory.some((entry) => entry.stage === 4)
+  state.currentStage = hasStage4 ? 4 : hasStage3 ? 3 : hasStage2 ? 2 : 1
   state.stopState = 'not-eligible'
   if (state.pendingAwards.length > 0) {
-    state.phase = hasStage3 ? 'stage-3-resolution' : hasStage2 ? 'stage-2-resolution' : 'stage-1-resolution'
+    state.phase = hasStage4 ? 'stage-4-resolution' : hasStage3 ? 'stage-3-resolution' : hasStage2 ? 'stage-2-resolution' : 'stage-1-resolution'
   } else if (state.prerequisiteIssues.some((entry) => entry.status === 'outstanding')) {
-    state.phase = hasStage3 ? 'stage-3-prerequisite-review' : hasStage2 ? 'stage-2-prerequisite-review' : 'stage-1-prerequisite-review'
+    state.phase = hasStage4 ? 'stage-4-prerequisite-review' : hasStage3 ? 'stage-3-prerequisite-review' : hasStage2 ? 'stage-2-prerequisite-review' : 'stage-1-prerequisite-review'
+  } else if (hasStage4) {
+    state.phase = 'alpha-stage-4-stop'
+    state.stopState = 'alpha-stage-4-stop'
   } else if (hasStage3) {
     state.phase = 'alpha-stage-3-stop'
     state.stopState = 'alpha-stage-3-stop'

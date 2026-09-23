@@ -29,11 +29,12 @@ Saved characters must retain enough underlying information to reproduce and audi
 | Alpha Slice 5 Life Modules v0.2 | Implemented and verified | Pending language, `/Any`, multi-choice, and flexible awards resolve into shared ledgers with durable audit history and prerequisite re-evaluation |
 | Alpha Slice 6 Life Modules v0.3 | Implemented and verified | Legal Stage 2 continuation plus audited Back Woods and High School modules, pooled flexible-XP caps, affiliation choices, prerequisites, persistence, validation, and UI |
 | Alpha Slice 7 Life Modules v0.4 | Implemented and verified | Legal Stage 3 continuation, Technical College, Technician/Civilian and Technician/Vehicle Fields, calculated cost/time, Field provenance, persistence, validation, and UI |
+| Alpha Slice 8 Life Modules v0.5 | Implemented and verified | Legal Stage 4 continuation, Agitator, calculated age 23, pending awards, Attribute flexible cap, repeat metadata, persistence, validation, and UI |
 | Shared Character/Rules engine | Foundation implemented and exercised | Archetype, Point Buy, and Life Modules use the common representation, ledgers, validation, persistence, and provenance |
 | Archetype v0.1 | Implemented | Published packages are source-faithful, non-customizable starting configurations |
 | Point Buy v0.1 | Implemented | Core 5,000-XP default, GM-adjusted allotment recording, Attribute/Skill/Trait costs, negative-Trait ceiling, drafts, persistence, and focused catalogs |
-| Life Modules v0.4 | Implemented, deliberately narrow | Existing Stage 0–2 path plus Technical College and two Technician Fields; Stage 4, repeated schooling, finalization, and broad catalogs remain deferred |
-| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 7 |
+| Life Modules v0.5 | Implemented, deliberately narrow | Existing Stage 0–3 path plus Agitator at Stage 4; repeats, finalization, Optimization, and broad catalogs remain deferred |
+| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 8 |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
 | Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |
@@ -123,8 +124,8 @@ The application currently provides:
 - a shared-engine Point Buy workflow with a standard 5,000-XP default, recorded GM-adjusted allotments, eight minimum Normal Human Attributes, remaining/allocated XP reconciliation, overspend prevention, and the Core 10-percent negative-Trait XP ceiling;
 - cumulative standard Skill costs for Levels +0 through +10 and an explicit `null` untrained versus Level +0 trained state;
 - a focused Point Buy catalog containing Perception, Language subskills, Martial Arts, Small Arms, Technician subskills, Ambidextrous, Patient, Unattractive, and variable Reputation;
-- a focused Life Module catalog containing the universal Stage 0 package, Capellan Confederation/Capellan Commonality, Blue Collar and Back Woods at Stage 1, Back Woods and High School at Stage 2, and Technical College at Stage 3;
-- a Life Module state machine covering universal Stage 0, affiliation selection, Stage 1, explicit Alpha partial stops, legal continuation through Stage 2 and the minimal Stage 3 branch, and distinct unsupported-later-stage boundaries;
+- a focused Life Module catalog containing the universal Stage 0 package, Capellan Confederation/Capellan Commonality, Blue Collar and Back Woods at Stage 1, Back Woods and High School at Stage 2, Technical College at Stage 3, and Agitator at Stage 4;
+- a Life Module state machine covering universal Stage 0, affiliation selection, Stages 1–4 on the audited minimal branch, explicit Alpha partial stops, and a distinct unsupported-finalization boundary;
 - a Life Module purchasing pool separate from statistic ledgers, with module costs unable to be financed by positive or negative awards;
 - fixed Attribute, Trait, Skill, structured subskill, and parameterized-Trait awards on the shared ledgers, including partial XP and source provenance;
 - durable pending records for unresolved language, `/Affiliation`, `/Any`, multi-choice, fixed-grant flexible, and pooled flexible awards, plus final-validation prerequisite records;
@@ -133,7 +134,9 @@ The application currently provides:
 - automatic prerequisite re-evaluation after every resolved grant;
 - separate Skill Field definitions and durable Field grants for Technician/Civilian and Technician/Vehicle, including category, prerequisites, component Skills, per-Skill cost and award, chronology, and provenance;
 - Technical College cost calculation of 600 base XP plus 120 and 96 XP Field costs, with overlapping Field Skill awards stacking normally and age advancing from 16 to 19;
-- explicit Stage 1, Stage 2, and minimal Stage 3 selection, resolution, prerequisite-review, and valid Alpha partial-stop states without claiming Stage 4, finalization, or Beta 1 completion;
+- Agitator's 900-XP cost, four-year chronology, fixed awards, pending `/Any` and `/Affiliation` awards, 125-XP flexible pool, and 50-XP cap per Attribute;
+- durable Stage 4 repeat-policy metadata recording full repeat cost, repeatable Skill/Flexible awards, and first-occurrence-only Attribute/Trait awards without enabling repeat execution;
+- explicit Stage 1, Stage 2, and minimal Stage 3/4 selection, resolution, prerequisite-review, and valid Alpha partial-stop states without claiming finalization or Beta 1 completion;
 - creation-time rules snapshots, optional-rule settings, and narrow GM-exception records;
 - a versioned portable character envelope;
 - browser-local save/list/load/delete behavior;
@@ -143,7 +146,7 @@ The application currently provides:
 
 All three creation screens use the common catalog → creation → validation → local save → export/import path. The Life Module route additionally exposes current phase, module-pool accounting, selected history, applied awards, unresolved awards, and prerequisite status.
 
-Life Modules v0.4 retains the existing award-resolution behavior and adds explicit continuation from `alpha-stage-2-stop` into Technical College. The selected school and its two Fields cost 816 XP total. Field awards use their own provenance records, award +30 XP to every component Skill, remain durable independently of the playable Skill ledger, and add three years to the character chronology. Technical College adds pending Interest/Any +30 XP and a durable 200-XP flexible pool. Field prerequisites are tracked and re-evaluated after those allocations; resolved, prerequisite-satisfied drafts reach `alpha-stage-3-stop`. This remains an Alpha partial stop. Stage 4, other Stage 3 schools and Fields, repeated schooling, Changing Affiliations, Life Events, Optimization, negative-Trait XP purchasing, and exhaustive final validation remain deferred.
+Life Modules v0.5 retains the existing award-resolution behavior and adds explicit continuation from `alpha-stage-3-stop` into Agitator. The module costs 900 XP and adds four years; age is calculated from the Stage 2 age-16 boundary plus all selected Stage 3 and Stage 4 time, producing age 23 on the current minimal branch. Its fixed awards use the shared ledgers, while Driving/Any +65, Prestidigitation/Any +100, Streetwise/Affiliation +75, and the 125-XP flexible pool remain durable until resolved. The flexible pool limits each Attribute destination to 50 XP. Resolved, prerequisite-satisfied drafts reach `alpha-stage-4-stop`. The published repeat behavior is stored as metadata, but repeated or multiple Stage 4 execution, finalization, other Stage 3/4 content, Changing Affiliations, Life Events, Optimization, negative-Trait XP purchasing, and exhaustive final validation remain deferred.
 
 The Core introduction describes the archetypes as 4,500-XP packages, but independently summing the printed Attribute, Trait, and Skill XP produces different totals for several sheets. Corrected Third Printing values are preserved without speculative repair, the declared package total and calculated line-item total remain separate, and each mismatch is recorded as a catalog note. Errata v4.0 does not provide a correction for these sheets.
 
@@ -172,6 +175,6 @@ The next rules-audit target is **Campaign / Rules Configuration reconciliation**
 
 Audit resume point: **Campaign / Rules Configuration reconciliation.**
 
-Implementation resume point: **Alpha Slice 8 — Life Modules v0.5 minimal Stage 4 foundation**, only when separately authorized. Add an audited minimal Stage 4 branch and only its required supporting mechanics, without implying complete finalization support.
+Implementation resume point: **Alpha Slice 9 — Life Modules v0.6 final-validation and Optimization foundation**, only when separately authorized and supplied with audited rules data. Establish a truthful post-Stage-4 completion boundary without broad catalog expansion or implying Beta 1 completion.
 
 Planetary Rollout 1 remains a separate future authorization. Do not automatically proceed from a queued or documented rollout.

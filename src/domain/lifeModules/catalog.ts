@@ -38,6 +38,7 @@ export const BACK_WOODS_ID = 'stage1.back-woods'
 export const STAGE_2_BACK_WOODS_ID = 'stage2.back-woods'
 export const STAGE_2_HIGH_SCHOOL_ID = 'stage2.high-school'
 export const TECHNICAL_COLLEGE_ID = 'stage3.technical-college'
+export const AGITATOR_ID = 'stage4.agitator'
 
 export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
   {
@@ -229,7 +230,48 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'technical-college.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 200, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
     notes: ['Civilian Stage 3 school. Base cost is 600 XP plus selected Skill Field costs.'],
-    deferredRules: ['Repeated Stage 3 schooling is not supported in Alpha Slice 7.'],
+    deferredRules: ['Repeated Stage 3 schooling is not supported in Alpha Slice 8.'],
+  },
+  {
+    id: AGITATOR_ID,
+    displayName: 'Agitator',
+    stage: 4,
+    kind: 'real-life',
+    source: sourceWithoutPage('stage-4-agitator'),
+    costXp: 900,
+    chronologyYears: 4,
+    repeatPolicy: {
+      sameModuleRepeat: 'deferred',
+      repeatCost: 'full-module-cost',
+      repeatAwards: {
+        skills: 'repeat',
+        flexibleXp: 'repeat',
+        attributes: 'first-occurrence-only',
+        traits: 'first-occurrence-only',
+      },
+    },
+    prerequisites: [],
+    awards: [
+      fixed('agitator.attribute.wil', 75, attribute('WIL')),
+      fixed('agitator.trait.bloodmark', -50, trait('trait.bloodmark', 'Bloodmark')),
+      fixed('agitator.trait.gregarious', 80, trait('trait.gregarious', 'Gregarious')),
+      fixed('agitator.trait.toughness', 80, trait('trait.toughness', 'Toughness')),
+      fixed('agitator.trait.reputation', -150, trait('trait.reputation', 'Reputation')),
+      fixed('agitator.skill.acting', 50, skill('skill.acting', 'Acting')),
+      fixed('agitator.skill.disguise', 75, skill('skill.disguise', 'Disguise')),
+      { id: 'agitator.skill.driving', kind: 'any-skill-choice', xp: 65, skillId: 'skill.driving', displayName: 'Driving/Any', count: 1 },
+      fixed('agitator.skill.leadership', 60, skill('skill.leadership', 'Leadership')),
+      fixed('agitator.skill.negotiation', 80, skill('skill.negotiation', 'Negotiation')),
+      fixed('agitator.skill.perception', 70, skill('skill.perception', 'Perception')),
+      { id: 'agitator.skill.prestidigitation', kind: 'any-skill-choice', xp: 100, skillId: 'skill.prestidigitation', displayName: 'Prestidigitation/Any', count: 1 },
+      fixed('agitator.skill.small-arms', 75, skill('skill.small-arms', 'Small Arms')),
+      { id: 'agitator.skill.streetwise-affiliation', kind: 'affiliation-skill-choice', xp: 75, skillId: 'skill.streetwise', displayName: 'Streetwise/Affiliation', description: 'Apply to the concrete affiliation Streetwise subskill.' },
+      fixed('agitator.skill.tactics-infantry', 40, skill('skill.tactics', 'Tactics/Infantry', 'Infantry')),
+      fixed('agitator.skill.training', 50, skill('skill.training', 'Training')),
+      { id: 'agitator.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 125, allowedTargetTypes: ['attribute', 'trait', 'skill'], maxXpPerTarget: { attribute: 50 } },
+    ],
+    notes: ['Stage 4 Real Life module. Adds four years to character chronology.'],
+    deferredRules: ['Repeated Stage 4 execution and multiple Stage 4 modules are not supported in Alpha Slice 8.'],
   },
 ]
 
@@ -263,6 +305,14 @@ export function validateLifeModuleCatalog(catalog: readonly LifeModuleDefinition
         issues.push({ moduleId: module.id, message: 'Skill Field selection constraints are malformed.' })
       }
     }
+    if (module.repeatPolicy && (
+      module.repeatPolicy.sameModuleRepeat !== 'deferred' ||
+      module.repeatPolicy.repeatCost !== 'full-module-cost' ||
+      module.repeatPolicy.repeatAwards.skills !== 'repeat' ||
+      module.repeatPolicy.repeatAwards.flexibleXp !== 'repeat' ||
+      module.repeatPolicy.repeatAwards.attributes !== 'first-occurrence-only' ||
+      module.repeatPolicy.repeatAwards.traits !== 'first-occurrence-only'
+    )) issues.push({ moduleId: module.id, message: 'Repeat policy metadata is malformed.' })
     const awardIds = new Set<string>()
     for (const award of module.awards) {
       const xp = award.kind === 'flexible-xp' ? (award.allocationMode === 'pool' ? award.totalXp : award.xpPerGrant) : 'xp' in award ? award.xp : 0

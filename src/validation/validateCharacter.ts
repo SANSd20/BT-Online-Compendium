@@ -160,7 +160,14 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
       const selectedFieldCost = state.selectedSkillFields.filter((grant) => grant.schoolModuleId === entry.moduleId).reduce((total, grant) => total + grant.purchaseCostXp, 0)
       const expectedCost = definition.skillFieldSelection ? definition.costXp + selectedFieldCost : definition.costXp
       calculatedCost += expectedCost
-      if (entry.costXp !== expectedCost || entry.stage !== definition.stage || !entry.source.sourceId || (definition.skillFieldSelection && (entry.baseCostXp !== definition.costXp || entry.fieldCostXp !== selectedFieldCost))) {
+      if (
+        entry.costXp !== expectedCost ||
+        entry.stage !== definition.stage ||
+        !entry.source.sourceId ||
+        (definition.chronologyYears !== undefined && entry.chronologyYears !== definition.chronologyYears) ||
+        JSON.stringify(entry.repeatPolicy ?? null) !== JSON.stringify(definition.repeatPolicy ?? null) ||
+        (definition.skillFieldSelection && (entry.baseCostXp !== definition.costXp || entry.fieldCostXp !== selectedFieldCost))
+      ) {
         issues.push(issue('life-modules.module.malformed', `lifeModuleHistory.${index}`, 'Life Module history does not match its catalog definition.'))
       }
     } catch (error) {
@@ -179,6 +186,8 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const stage1Count = character.lifeModuleHistory.filter((entry) => entry.stage === 1).length
   const stage2Count = character.lifeModuleHistory.filter((entry) => entry.stage === 2).length
   const stage3Count = character.lifeModuleHistory.filter((entry) => entry.stage === 3).length
+  const stage4Entries = character.lifeModuleHistory.filter((entry) => entry.stage === 4)
+  const stage4Count = stage4Entries.length
   if (!hasUniversal) issues.push(issue('life-modules.universal.outstanding', 'lifeModuleHistory', 'The universal Stage 0 package is still required.', { severity: 'warning' }))
   if (!hasAffiliation) issues.push(issue('life-modules.affiliation.outstanding', 'lifeModuleHistory', 'A Stage 0 affiliation is still required.', { severity: 'warning' }))
   if (stage1Count !== 1) issues.push(issue('life-modules.stage-1.outstanding', 'lifeModuleHistory', 'Exactly one Stage 1 module is required.', { severity: stage1Count === 0 ? 'warning' : 'error' }))
@@ -187,6 +196,10 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   if (stage3Count > 1) issues.push(issue('life-modules.stage-3.multiple', 'lifeModuleHistory', 'Repeated Stage 3 schooling is not supported.'))
   if (state.currentStage === 3 && stage3Count === 0) issues.push(issue('life-modules.stage-3.outstanding', 'lifeModuleHistory', 'A Stage 3 school has not yet been selected for this continuation.', { severity: 'warning' }))
   validateSkillFieldGrants(character, issues, provenanceIds, stage3Count)
+  if (stage4Count > 1) issues.push(issue('life-modules.stage-4.multiple', 'lifeModuleHistory', 'Multiple Stage 4 modules are not supported in Alpha Slice 8.'))
+  if (new Set(stage4Entries.map((entry) => entry.moduleId)).size !== stage4Count) issues.push(issue('life-modules.stage-4.repeat.unsupported', 'lifeModuleHistory', 'Repeated Stage 4 execution is not supported in Alpha Slice 8.'))
+  if (state.currentStage === 4 && stage4Count === 0 && state.phase !== 'stage-4-selection') issues.push(issue('life-modules.stage-4.outstanding', 'lifeModuleHistory', 'A Stage 4 module has not yet been selected for this continuation.', { severity: 'warning' }))
+  validateStage4(character, issues, provenanceIds, stage4Entries)
   if (!Array.isArray(state.pendingAwards) || !Array.isArray(state.resolvedAwards) || !Array.isArray(state.choiceGrantRequirements)) {
     issues.push(issue('life-modules.award-state.malformed', 'creation.lifeModules', 'Pending and resolved Life Module award collections are required.'))
     return
@@ -226,7 +239,15 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     issues.push(issue('life-modules.prerequisites.outstanding', 'creation.lifeModules.prerequisiteIssues', 'One or more Life Module prerequisites remain outstanding for final validation.', { severity: 'warning', kind: 'prerequisite', gmOverrideAllowed: true }))
   }
   if (stage1Count === 1) {
-    const expectedPhase = state.phase === 'stage-3-selection' && stage3Count === 0
+    const expectedPhase = state.phase === 'stage-4-selection' && stage4Count === 0 && stage3Count === 1 && state.pendingAwards.length === 0 && !hasOutstandingPrerequisite
+      ? 'stage-4-selection'
+      : stage4Count === 1
+        ? state.pendingAwards.length > 0
+          ? 'stage-4-resolution'
+          : hasOutstandingPrerequisite
+            ? 'stage-4-prerequisite-review'
+            : 'alpha-stage-4-stop'
+      : state.phase === 'stage-3-selection' && stage3Count === 0 && stage2Count === 1 && state.pendingAwards.length === 0 && !hasOutstandingPrerequisite
       ? 'stage-3-selection'
       : stage3Count === 1
         ? state.pendingAwards.length > 0
@@ -234,7 +255,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
           : hasOutstandingPrerequisite
             ? 'stage-3-prerequisite-review'
             : 'alpha-stage-3-stop'
-        : state.phase === 'stage-2-selection' && stage2Count === 0
+        : state.phase === 'stage-2-selection' && stage2Count === 0 && state.pendingAwards.length === 0 && !hasOutstandingPrerequisite
           ? 'stage-2-selection'
           : stage2Count === 1
             ? state.pendingAwards.length > 0
@@ -248,10 +269,12 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
                 ? 'stage-1-prerequisite-review'
                 : 'alpha-partial-stop'
     if (state.phase !== expectedPhase) issues.push(issue('life-modules.phase.malformed', 'creation.lifeModules.phase', `Life Module phase should be ${expectedPhase}.`))
-    if (expectedPhase === 'alpha-partial-stop' || expectedPhase === 'alpha-stage-2-stop' || expectedPhase === 'alpha-stage-3-stop') {
+    if (expectedPhase === 'alpha-partial-stop' || expectedPhase === 'alpha-stage-2-stop' || expectedPhase === 'alpha-stage-3-stop' || expectedPhase === 'alpha-stage-4-stop') {
       if (state.stopState !== expectedPhase) issues.push(issue('life-modules.stop-state.malformed', 'creation.lifeModules.stopState', 'Completed Life Module award resolution requires the matching Alpha partial-stop state.'))
-      const message = expectedPhase === 'alpha-stage-3-stop'
-        ? 'Stage 0 through the minimal Stage 3 branch are complete; Stage 4 and finalization remain unsupported.'
+      const message = expectedPhase === 'alpha-stage-4-stop'
+        ? 'Stage 0 through the minimal Stage 4 branch are complete; repeated Stage 4 execution and finalization remain unsupported.'
+        : expectedPhase === 'alpha-stage-3-stop'
+        ? 'Stage 0 through the minimal Stage 3 branch are complete; the draft may explicitly continue to the minimal Stage 4 branch.'
         : expectedPhase === 'alpha-stage-2-stop'
           ? 'Stage 0 through Stage 2 are complete; the draft may stop here or explicitly continue to the minimal Stage 3 branch.'
           : 'Stage 0 and Stage 1 are complete; the draft may stop here or explicitly continue to Stage 2.'
@@ -260,11 +283,29 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
       issues.push(issue('life-modules.stop-state.malformed', 'creation.lifeModules.stopState', 'This draft is not eligible for an Alpha partial stop.'))
     }
   }
-  if (state.phase === 'stage-4-unsupported' || state.currentStage > 3) {
-    issues.push(issue('life-modules.continuation.unsupported', 'creation.lifeModules.phase', 'Continuation into Stage 4 is not supported in Alpha Slice 7.', { severity: 'warning', kind: 'availability' }))
-  }
   if (character.creation.status === 'finalized') {
-    issues.push(issue('life-modules.finalization.unsupported', 'creation.status', 'Full Life Module finalization is not implemented in Alpha Slice 7.'))
+    issues.push(issue('life-modules.finalization.unsupported', 'creation.status', 'Full Life Module finalization is not implemented in Alpha Slice 8.'))
+  }
+}
+
+function validateStage4(
+  character: CharacterDefinition,
+  issues: ValidationIssue[],
+  provenanceIds: Set<string>,
+  stage4Entries: CharacterDefinition['lifeModuleHistory'],
+): void {
+  if (stage4Entries.length !== 1) return
+  const entry = stage4Entries[0]
+  let definition: LifeModuleDefinition
+  try { definition = getLifeModule(entry.moduleId) } catch { return }
+  if (definition.stage !== 4) return
+  const expectedAge = 16 + (character.creation.lifeModules?.selectedSkillFields.reduce((total, grant) => total + grant.chronologyYears, 0) ?? 0) + (definition.chronologyYears ?? 0)
+  const chronology = character.chronology.find((item) => item.eventId === `${entry.moduleId}.complete`)
+  if (!chronology || chronology.date !== `age:${expectedAge}` || !provenanceIds.has(chronology.provenanceId)) {
+    issues.push(issue('life-modules.stage-4.age.malformed', 'chronology', 'Stage 4 chronology must equal age 16 plus Stage 3 and Stage 4 time and retain valid provenance.'))
+  }
+  if (!definition.repeatPolicy || JSON.stringify(entry.repeatPolicy) !== JSON.stringify(definition.repeatPolicy)) {
+    issues.push(issue('life-modules.stage-4.repeat-policy.malformed', 'lifeModuleHistory', 'Stage 4 history must preserve the published repeat-policy metadata for future implementation.'))
   }
 }
 
@@ -332,7 +373,7 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
       issues.push(issue('life-modules.skill-field.unknown', `creation.lifeModules.selectedSkillFields.${index}.fieldId`, error instanceof Error ? error.message : 'Unknown Skill Field.'))
       continue
     }
-    if (seen.has(grant.fieldId)) issues.push(issue('life-modules.skill-field.duplicate', `creation.lifeModules.selectedSkillFields.${index}.fieldId`, 'A Skill Field may not be selected more than once in Alpha Slice 7.'))
+    if (seen.has(grant.fieldId)) issues.push(issue('life-modules.skill-field.duplicate', `creation.lifeModules.selectedSkillFields.${index}.fieldId`, 'A Skill Field may not be selected more than once in Alpha Slice 8.'))
     seen.add(grant.fieldId)
     const school = character.lifeModuleHistory.find((entry) => entry.moduleId === grant.schoolModuleId && entry.stage === 3)
     let schoolDefinition: LifeModuleDefinition | undefined

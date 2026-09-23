@@ -4,11 +4,11 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 7 is implemented.** The React + TypeScript + Vite application includes Archetype v0.1, Point Buy v0.1, and Life Modules v0.4 on the shared Character/Rules model, with versioned JSON character files, browser-local persistence, and import/export.
+**Alpha Slice 8 is implemented.** The React + TypeScript + Vite application includes Archetype v0.1, Point Buy v0.1, and Life Modules v0.5 on the shared Character/Rules model, with versioned JSON character files, browser-local persistence, and import/export.
 
-All eight published Core archetypes can create, display, save, export, and import characters with source provenance. Point Buy v0.1 creates a Normal Human draft, tracks the creation budget, and purchases Attributes plus a deliberately limited set of Skills/subskills and positive/negative Traits. Life Modules v0.4 covers the existing Stage 0–2 catalog plus the Technical College Stage 3 branch with Technician/Civilian and Technician/Vehicle Skill Fields. It calculates the 600 XP school base plus 216 XP in Field costs, applies overlapping Field Skill awards, records the Fields as training packages, advances age from 16 to 19, and preserves pending Interest and flexible awards.
+All eight published Core archetypes can create, display, save, export, and import characters with source provenance. Point Buy v0.1 creates a Normal Human draft, tracks the creation budget, and purchases Attributes plus a deliberately limited set of Skills/subskills and positive/negative Traits. Life Modules v0.5 covers the existing Stage 0–3 path plus Agitator at Stage 4. Agitator costs 900 XP, applies its fixed awards, preserves Driving/Any, Prestidigitation/Any, Streetwise/Affiliation, and flexible awards for resolution, enforces the 50-XP flexible cap per Attribute, and advances the current minimal branch from age 19 to age 23.
 
-The project remains in **Alpha**. Beta 1 is a future milestone requiring completed Core + Companion character creation and PDF export. Most Life Module content, Stage 4, full finalization, complete catalogs and legality checks, PDF export, Planetary work, and playable-sheet runtime behavior remain outside the current implementation.
+The project remains in **Alpha**. Beta 1 is a future milestone requiring completed Core + Companion character creation and PDF export. Most Life Module content, repeated Stage 4 execution, full finalization, complete catalogs and legality checks, PDF export, Planetary work, and playable-sheet runtime behavior remain outside the current implementation.
 
 The primary product direction is an offline/PWA-capable, local-first web application whose Character Generator can later evolve into a playable character sheet. Initial character persistence is local browser storage plus import/export through a versioned portable format; server accounts and cloud character storage are not initial requirements.
 
@@ -29,7 +29,7 @@ Planetary functionality is supporting infrastructure. It does not replace or sup
 - [`src/engine/`](src/engine/) — shared character factory plus Archetype, Point Buy, and Life Module engines
 - [`src/validation/`](src/validation/) — typed validation results and minimal structural validation
 - [`src/persistence/`](src/persistence/) — versioned JSON codec, local repository, and browser import/export
-- [`src/ui/`](src/ui/) — app shell and functional Archetype v0.1, Point Buy v0.1, and Life Modules v0.4 routes
+- [`src/ui/`](src/ui/) — app shell and functional Archetype v0.1, Point Buy v0.1, and Life Modules v0.5 routes
 - [`docs/PROJECT-STATE.md`](docs/PROJECT-STATE.md) — purpose, approved direction, statuses, sequence, and resume point
 - [`docs/SOURCE-AUTHORITY.md`](docs/SOURCE-AUTHORITY.md) — rules scope, errata policy, provenance, and planetary upstream authority
 - [`docs/CHARACTER-AND-RULES-ARCHITECTURE.md`](docs/CHARACTER-AND-RULES-ARCHITECTURE.md) — established Character Generator domain and engine requirements
@@ -50,11 +50,11 @@ Use `npm run check` to run lint, unit tests, TypeScript compilation, and the pro
 
 ## Current resume points
 
-Repository bootstrap and Alpha Slices 1–7 are complete. The implemented app is local-first and requires no server, database, or account.
+Repository bootstrap and Alpha Slices 1–8 are complete. The implemented app is local-first and requires no server, database, or account.
 
 The Core + Companion rules audit is in progress. Its next audit target is **Campaign / Rules Configuration reconciliation**, specifically the boundaries among durable character state, current campaign rules, creation-rules provenance, and per-character GM exceptions.
 
-The next recommended implementation slice, only when separately authorized, is **Alpha Slice 8 — Life Modules v0.5 minimal Stage 4 foundation**: add an audited minimal Stage 4 branch and its legal continuation boundary without implying complete finalization support. Planetary Data Foundation Rollout 1 remains designed but unimplemented and also requires separate authorization.
+The next recommended implementation slice, only when separately authorized and supplied with an audited rules specification, is **Alpha Slice 9 — Life Modules v0.6 final-validation and Optimization foundation**. It should establish the post-Stage-4 completion boundary without broad catalog expansion or implying Beta 1 completion. Planetary Data Foundation Rollout 1 remains designed but unimplemented and also requires separate authorization.
 
 ## Status vocabulary
 
