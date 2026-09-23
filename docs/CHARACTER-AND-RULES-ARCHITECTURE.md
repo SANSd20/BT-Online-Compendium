@@ -1,14 +1,27 @@
 # Character and Rules Architecture
 
-## Beta 1 Slice 2 implementation boundary
+## Beta 1 Slice 3 implementation boundary
 
-The implemented foundation provides typed Character and rules models, one shared character factory, minimal structural validation, a versioned save envelope, browser-local persistence, JSON import/export, Archetype v0.1, and placeholder UI routes for Point Buy and Life Modules.
+The implemented foundation provides typed Character and rules models, one shared character factory, minimal structural validation, a versioned save envelope, browser-local persistence, JSON import/export, Archetype v0.1, Point Buy v0.1, and a placeholder UI route for Life Modules.
 
-The rules catalog contains source/version descriptors plus the eight published Core archetype packages. It does not claim that Point Buy, Life Module, or the full Core + Companion catalog has been entered.
+The rules catalog contains source/version descriptors, the eight published Core archetype packages, and focused Point Buy catalogs. It does not claim that Life Module or the full Core + Companion catalog has been entered.
 
 Archetype definitions retain their stable ID, display name, source, Attributes, Traits, structured Skills/subskills, specialties, equipment, C-bills, phenotype, and source notes. Creation maps them into the same saved Character Definition intended for the later methods. The published package is not customized in Archetype v0.1.
 
 Core page 51 calls these 4,500-XP packages, while several printed sheets' listed XP do not sum to 4,500. The model therefore stores the declared package total separately from the calculated ledger allocation and preserves an explicit source note for each mismatch. It does not infer corrected scores or XP. Tanker's printed Attribute scores and XP also conflict and are both retained as printed. Elemental's displayed Skill levels and listed XP are likewise retained separately where Field Aptitude affects the displayed level.
+
+Point Buy v0.1 implements the Corrected Third Printing pages 49, 51, 60, 95, 107, and 121-122 foundation for a Normal Human:
+
+- standard starting allotment of 5,000 XP, with alternate user-entered amounts recorded as GM-adjusted;
+- all eight Attributes initially purchased at Level 1 for 100 XP each;
+- Normal Human maxima of 8 for STR/BOD/DEX/RFL/INT/WIL and 9 for CHA/EDG;
+- cumulative standard Skill costs from Level +0 through +10;
+- Traits purchased at 100 XP per TP;
+- negative Traits returning XP up to 10 percent of the starting allotment;
+- signed ledger allocation, reconciled remaining XP, and overspend rejection; and
+- explicit untrained `level = null` versus trained Level +0.
+
+The Point Buy UI saves drafts with unspent XP, but structural validation warns that they cannot enter play. A character marked `finalized` is invalid unless remaining creation XP is zero. Slice 3 does not expose finalization because required affiliation, full catalogs, prerequisites, and exhaustive legality validation are not yet implemented.
 
 The `playState` property is only a versioned extension point. No playable-sheet runtime system or UI is implemented.
 

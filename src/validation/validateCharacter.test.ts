@@ -4,7 +4,7 @@ import { validateCharacter } from './validateCharacter'
 
 function character() {
   let id = 0
-  return createCharacterDraft('point-buy', 'Validator', {
+  return createCharacterDraft('life-modules', 'Validator', {
     now: () => '3025-01-01T00:00:00.000Z',
     id: () => `id-${++id}`,
   })

@@ -4,7 +4,7 @@ import { decodeCharacter, encodeCharacter } from './characterCodec'
 
 function character() {
   let id = 0
-  return createCharacterDraft('point-buy', 'Test Pilot', {
+  return createCharacterDraft('life-modules', 'Test Pilot', {
     now: () => '3025-01-01T00:00:00.000Z',
     id: () => `id-${++id}`,
   })
@@ -29,5 +29,11 @@ describe('character codec', () => {
 
   it('rejects an unrelated JSON document', () => {
     expect(() => decodeCharacter('{"hello":"world"}')).toThrow('Unsupported character file format')
+  })
+
+  it('rejects a missing creation method', () => {
+    const envelope = JSON.parse(encodeCharacter(character()))
+    delete envelope.character.creation.method
+    expect(() => decodeCharacter(JSON.stringify(envelope))).toThrow('Character creation method is invalid')
   })
 })

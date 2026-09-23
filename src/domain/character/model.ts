@@ -127,6 +127,14 @@ export interface CreationState {
     source: SourceCitation
     notes: Array<{ code: string; message: string }>
   }
+  pointBuy?: {
+    source: SourceCitation
+    costTableSource: SourceCitation
+    rulesProvenanceId: string
+    costProvenanceId: string
+    startingAllotment: 'standard' | 'gm-adjusted'
+    limitations: string[]
+  }
 }
 
 export interface LifeModuleHistoryEntry {

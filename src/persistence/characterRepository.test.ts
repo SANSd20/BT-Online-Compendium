@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createCharacterDraft } from '../engine/characterFactory'
+import { createPointBuyCharacter } from '../engine/pointBuyEngine'
 import { LocalStorageCharacterRepository, type StorageLike } from './characterRepository'
 
 class MemoryStorage implements StorageLike {
@@ -14,7 +14,7 @@ class MemoryStorage implements StorageLike {
 describe('LocalStorageCharacterRepository', () => {
   it('saves, lists, loads, and deletes a character', () => {
     let id = 0
-    const source = createCharacterDraft('point-buy', 'Local Pilot', {
+    const source = createPointBuyCharacter('Local Pilot', 5000, {
       now: () => '3025-01-01T00:00:00.000Z',
       id: () => `id-${++id}`,
     })

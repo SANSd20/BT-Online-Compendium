@@ -38,7 +38,25 @@ Slice 2 extends the same `npm run check` gate. Automated coverage verifies:
 - all eight created characters round-trip through the versioned JSON export/import path; and
 - an unknown archetype ID is rejected.
 
-The Archetype screen supports selection, naming, creation, validation, local save, summary display, and JSON export. Existing application import handles the resulting file through the common codec. Point Buy and Life Modules remain placeholders.
+The Archetype screen supports selection, naming, creation, validation, local save, summary display, and JSON export. Existing application import handles the resulting file through the common codec. This was the Slice 2 boundary; Slice 3 implements Point Buy while Life Modules remain a placeholder.
+
+## Beta 1 Slice 3 verification
+
+Slice 3 extends the same `npm run check` gate. Automated coverage verifies:
+
+- creation of a sourced 5,000-XP Point Buy draft with all eight minimum Attributes;
+- Attribute purchases update allocated and remaining XP correctly;
+- standard cumulative Skill costs and structured subskills;
+- explicit `level = null` untrained state remains distinct from trained Level +0 at 20 XP;
+- positive and negative Trait XP remains separate from attained TP and identity scope;
+- the negative-Trait credit cannot exceed 10 percent of starting XP;
+- a purchase that would overspend the pool is rejected;
+- malformed Attribute and XP ledgers fail validation;
+- Point Buy source and cost-table provenance survives serialization;
+- Point Buy characters round-trip through JSON and local persistence; and
+- all prior Archetype golden/regression tests continue to pass.
+
+The Point Buy screen supports naming, standard or GM-adjusted starting XP, Attribute controls, focused Skill/subskill and Trait controls, automatic local saving, validation status, and JSON export. Unspent XP is a draft warning; the engine prevents negative remaining XP, and validation prevents a character with remaining XP from being marked finalized.
 
 ## Character Generator
 

@@ -10,7 +10,7 @@ interface HomeScreenProps {
 
 const methods: Array<{ method: CreationMethod; label: string; description: string }> = [
   { method: 'archetype', label: 'Archetype', description: 'Choose one of eight published Core packages and create a sourced local character.' },
-  { method: 'point-buy', label: 'Point Buy', description: 'Foundation route only; purchasing rules remain deferred.' },
+  { method: 'point-buy', label: 'Point Buy', description: 'Build a Normal Human draft with Core Attribute, Skill/subskill, and focused Trait purchasing.' },
   { method: 'life-modules', label: 'Life Modules', description: 'Foundation route only; no fixed wizard or module data is added.' },
 ]
 
@@ -34,9 +34,9 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
   return (
     <main>
       <section className="hero">
-        <p className="eyebrow">Beta 1 · Slice 2</p>
+        <p className="eyebrow">Beta 1 · Slice 3</p>
         <h1>Character Creator</h1>
-        <p>Create a sourced Core Archetype character through the shared Character/Rules engine. Point Buy and Life Modules remain intentionally deferred.</p>
+        <p>Create a sourced Core Archetype or Point Buy character through the shared Character/Rules engine. Life Modules remain intentionally deferred.</p>
       </section>
 
       <section aria-labelledby="methods-heading">
@@ -52,7 +52,7 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
               <span className="step">0{index + 1}</span>
               <h3>{label}</h3>
               <p>{description}</p>
-              <a className="button" href={`#/${method}`}>{method === 'archetype' ? 'Choose archetype' : 'Open placeholder'}</a>
+              <a className="button" href={`#/${method}`}>{method === 'archetype' ? 'Choose archetype' : method === 'point-buy' ? 'Start Point Buy' : 'Open placeholder'}</a>
             </article>
           ))}
         </div>

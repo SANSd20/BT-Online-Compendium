@@ -5,12 +5,11 @@ import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 
 interface CreationMethodScreenProps {
-  method: Exclude<CreationMethod, 'archetype'>
+  method: Extract<CreationMethod, 'life-modules'>
   onSave: (character: CharacterDefinition) => void
 }
 
-const labels: Record<Exclude<CreationMethod, 'archetype'>, string> = {
-  'point-buy': 'Point Buy',
+const labels: Record<Extract<CreationMethod, 'life-modules'>, string> = {
   'life-modules': 'Life Modules',
 }
 

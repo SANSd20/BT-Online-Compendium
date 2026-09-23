@@ -4,6 +4,7 @@ import { LocalStorageCharacterRepository } from '../persistence/characterReposit
 import { ArchetypeScreen } from './screens/ArchetypeScreen'
 import { CreationMethodScreen } from './screens/CreationMethodScreen'
 import { HomeScreen } from './screens/HomeScreen'
+import { PointBuyScreen } from './screens/PointBuyScreen'
 import { useHashRoute } from './useHashRoute'
 
 export function App() {
@@ -38,6 +39,8 @@ export function App() {
       </header>
       {method === 'archetype' ? (
         <ArchetypeScreen onSave={save} />
+      ) : method === 'point-buy' ? (
+        <PointBuyScreen onSave={save} />
       ) : method ? (
         <CreationMethodScreen method={method} onSave={save} />
       ) : (
