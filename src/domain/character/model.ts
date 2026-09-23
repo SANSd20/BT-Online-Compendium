@@ -123,7 +123,11 @@ export type LifeModulePhase =
   | 'stage-1-resolution'
   | 'stage-1-prerequisite-review'
   | 'alpha-partial-stop'
-  | 'stage-2-or-finalization'
+  | 'stage-2-selection'
+  | 'stage-2-resolution'
+  | 'stage-2-prerequisite-review'
+  | 'alpha-stage-2-stop'
+  | 'stage-3-unsupported'
 
 export interface ResolvedLifeModuleDestination {
   type: 'attribute' | 'trait' | 'skill'
@@ -140,10 +144,13 @@ export interface PendingLifeModuleAward {
   id: string
   moduleId: string
   awardId: string
-  kind: 'language-choice' | 'any-skill-choice' | 'multi-skill-choice' | 'flexible-xp'
+  kind: 'language-choice' | 'affiliation-skill-choice' | 'any-skill-choice' | 'multi-skill-choice' | 'flexible-xp'
   description: string
   xpPerGrant: number
   remainingGrants: number
+  allocationMode?: 'fixed-grants' | 'pool'
+  remainingXp?: number
+  maxXpPerTarget?: Partial<Record<'attribute' | 'trait' | 'skill', number>>
   allowedTargetTypes: Array<'attribute' | 'trait' | 'skill'>
   choiceSource?: 'affiliation-languages' | 'capellan-secondary' | 'federated-suns-languages'
   requiredSkillId?: string
@@ -166,6 +173,8 @@ export interface LifeModuleChoiceGrantRequirement {
   moduleId: string
   awardId: string
   requiredGrants: number
+  requiredXp?: number
+  allocationMode?: 'fixed-grants' | 'pool'
 }
 
 export interface LifeModulePrerequisiteIssue {
@@ -190,7 +199,7 @@ export interface LifeModuleCreationState {
   resolvedAwards: ResolvedLifeModuleAward[]
   choiceGrantRequirements: LifeModuleChoiceGrantRequirement[]
   prerequisiteIssues: LifeModulePrerequisiteIssue[]
-  stopState: 'not-eligible' | 'alpha-partial-stop'
+  stopState: 'not-eligible' | 'alpha-partial-stop' | 'alpha-stage-2-stop'
   limitations: string[]
 }
 

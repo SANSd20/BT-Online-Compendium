@@ -14,6 +14,8 @@ import {
   CAPELLAN_COMMONALITY_ID,
   getLifeModule,
   LIFE_MODULE_RULES_SOURCE,
+  STAGE_2_BACK_WOODS_ID,
+  STAGE_2_HIGH_SCHOOL_ID,
   UNIVERSAL_STAGE_0_ID,
 } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
@@ -46,9 +48,9 @@ export function createLifeModuleCharacter(
     prerequisiteIssues: [],
     stopState: 'not-eligible',
     limitations: [
-      'Alpha Slice 5 includes only the universal Stage 0 package, Capellan Confederation/Capellan Commonality, Blue Collar, and Back Woods.',
+      'Alpha Slice 6 includes the Stage 0/1 minimal catalog plus the Stage 2 Back Woods and High School modules.',
       'The current minimal catalog can resolve language, /Any, multi-choice, and flexible awards.',
-      'Stage 2 through Stage 4, Changing Affiliations, Skill Fields, Life Events, Optimization, and exhaustive final validation are deferred.',
+      'Stage 3, Stage 4, Changing Affiliations, Skill Fields, Life Events, Optimization, and exhaustive final validation are deferred.',
     ],
   }
   character.provenance.push({ id: provenanceId, kind: 'published', description: 'Life Module character creation rules', source: { ...LIFE_MODULE_RULES_SOURCE } })
@@ -117,10 +119,37 @@ export function applyStage1Module(character: CharacterDefinition, moduleId: type
   return updateLifeModuleProgress(next)
 }
 
+export function continueToStage2(character: CharacterDefinition): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  if (state.phase !== 'alpha-partial-stop' || state.stopState !== 'alpha-partial-stop') {
+    throw new Error('Stage 2 continuation requires a resolved, prerequisite-satisfied Stage 1 Alpha stop.')
+  }
+  state.phase = 'stage-2-selection'
+  state.currentStage = 2
+  state.stopState = 'not-eligible'
+  next.updatedAt = new Date().toISOString()
+  return next
+}
+
+export function applyStage2Module(
+  character: CharacterDefinition,
+  moduleId: typeof STAGE_2_BACK_WOODS_ID | typeof STAGE_2_HIGH_SCHOOL_ID,
+): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-2-selection') throw new Error('A Stage 2 module is not the current legal action.')
+  if (moduleId !== STAGE_2_BACK_WOODS_ID && moduleId !== STAGE_2_HIGH_SCHOOL_ID) throw new Error(`Unknown Alpha Stage 2 module: ${moduleId}`)
+  if (character.lifeModuleHistory.some((entry) => entry.stage === 2)) throw new Error('Exactly one Stage 2 module may be selected.')
+  const next = applyModule(character, getLifeModule(moduleId), {})
+  next.chronology.push({ date: 'age:16', eventId: `${moduleId}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })
+  return updateLifeModuleProgress(next)
+}
+
 export function resolvePendingLifeModuleAward(
   character: CharacterDefinition,
   pendingAwardId: string,
   destination: ResolvedLifeModuleDestination,
+  xpAmount?: number,
 ): CharacterDefinition {
   const next = structuredClone(character)
   const state = requireLifeModules(next)
@@ -130,17 +159,34 @@ export function resolvePendingLifeModuleAward(
   const normalized = normalizeResolvedDestination(destination)
   validateResolutionDestination(pending, normalized)
   const destinationKey = resolvedDestinationKey(normalized)
+  const isPool = pending.allocationMode === 'pool'
   const duplicate = state.resolvedAwards.some((entry) => entry.moduleId === pending.moduleId && entry.awardId === pending.awardId && resolvedDestinationKey(entry.destination) === destinationKey)
-  if (duplicate) throw new Error('This destination has already been selected for the pending award.')
+  if (duplicate && !isPool) throw new Error('This destination has already been selected for the pending award.')
+  const appliedXp = isPool ? xpAmount : pending.xpPerGrant
+  if (!Number.isInteger(appliedXp) || appliedXp! <= 0) throw new Error('Flexible pool allocations require a positive whole XP amount.')
+  if (!isPool && xpAmount !== undefined && xpAmount !== pending.xpPerGrant) throw new Error('Fixed grants must use their published XP amount.')
+  if (isPool) {
+    if (appliedXp! > (pending.remainingXp ?? 0)) throw new Error('Flexible allocation exceeds the remaining award XP.')
+    const cap = pending.maxXpPerTarget?.[normalized.type]
+    const alreadyAllocated = state.resolvedAwards
+      .filter((entry) => entry.moduleId === pending.moduleId && entry.awardId === pending.awardId && resolvedDestinationKey(entry.destination) === destinationKey)
+      .reduce((total, entry) => total + entry.xp, 0)
+    if (cap !== undefined && alreadyAllocated + appliedXp! > cap) throw new Error(`Stage 2 flexible XP may allocate no more than ${cap} XP to one ${normalized.type}.`)
+  }
   const moduleHistory = next.lifeModuleHistory.find((entry) => entry.moduleId === pending.moduleId)
   const provenanceId = moduleHistory?.provenanceIds[0]
   if (!provenanceId) throw new Error('Pending award module provenance is missing.')
   const ledgerDestination = toLifeModuleDestination(normalized)
-  applyDestinationAward(next, ledgerDestination, pending.xpPerGrant, provenanceId)
-  recordResolvedAward(state.resolvedAwards, pending, normalized, provenanceId)
-  next.creation.resolvedChoiceIds.push(`${pending.moduleId}/${pending.awardId}/${destinationKey}`)
-  pending.remainingGrants -= 1
-  if (pending.remainingGrants === 0) state.pendingAwards.splice(pendingIndex, 1)
+  applyDestinationAward(next, ledgerDestination, appliedXp!, provenanceId)
+  recordResolvedAward(state.resolvedAwards, pending, normalized, provenanceId, appliedXp!)
+  next.creation.resolvedChoiceIds.push(`${pending.moduleId}/${pending.awardId}/${destinationKey}/${appliedXp}`)
+  if (isPool) {
+    pending.remainingXp = (pending.remainingXp ?? 0) - appliedXp!
+    if (pending.remainingXp === 0) state.pendingAwards.splice(pendingIndex, 1)
+  } else {
+    pending.remainingGrants -= 1
+    if (pending.remainingGrants === 0) state.pendingAwards.splice(pendingIndex, 1)
+  }
   next.xp.creation.allocated = calculateLedgerXp(next)
   next.updatedAt = new Date().toISOString()
   return updateLifeModuleProgress(next)
@@ -162,7 +208,12 @@ function applyModule(
 
   for (const award of module.awards) {
     const requiredGrants = awardGrantCount(award)
-    if (requiredGrants !== null) state.choiceGrantRequirements.push({ moduleId: module.id, awardId: award.id, requiredGrants })
+    if (requiredGrants !== null) state.choiceGrantRequirements.push({
+      moduleId: module.id,
+      awardId: award.id,
+      requiredGrants,
+      ...(award.kind === 'flexible-xp' && award.allocationMode === 'pool' ? { requiredXp: award.totalXp, allocationMode: 'pool' as const } : {}),
+    })
     if (award.kind === 'fixed') applyDestinationAward(next, award.destination, award.xp, provenanceId)
     else if (award.kind === 'language-choice' && resolutions[award.id]) {
       applyDestinationAward(next, resolutions[award.id], award.xp, provenanceId)
@@ -194,8 +245,9 @@ function applyModule(
 }
 
 function awardGrantCount(award: LifeModuleAward): number | null {
-  if (award.kind === 'language-choice') return 1
-  if (award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' || award.kind === 'flexible-xp') return award.count
+  if (award.kind === 'language-choice' || award.kind === 'affiliation-skill-choice') return 1
+  if (award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') return award.count
+  if (award.kind === 'flexible-xp') return award.allocationMode === 'pool' ? 0 : award.count
   return null
 }
 
@@ -239,24 +291,26 @@ function applyDestinationAward(character: CharacterDefinition, destination: Life
 
 function addPendingAward(pending: PendingLifeModuleAward[], module: LifeModuleDefinition, award: Exclude<LifeModuleAward, { kind: 'fixed' }>): void {
   if (award.kind === 'choice-package' || award.kind === 'conditional' || award.kind === 'field-grant') {
-    throw new Error(`Award type ${award.kind} is modeled but not supported by the Alpha Slice 5 engine.`)
+    throw new Error(`Award type ${award.kind} is modeled but not supported by the Alpha Slice 6 engine.`)
   }
   pending.push(pendingAwardFrom(module, award))
 }
 
 function pendingAwardFrom(module: LifeModuleDefinition, award: Exclude<LifeModuleAward, { kind: 'fixed' | 'choice-package' | 'conditional' | 'field-grant' }>): PendingLifeModuleAward {
   const kind = award.kind
-  const xpPerGrant = kind === 'flexible-xp' ? award.xpPerGrant : award.xp
-  const remainingGrants = kind === 'flexible-xp' ? award.count : kind === 'language-choice' ? 1 : award.count
+  const isPool = kind === 'flexible-xp' && award.allocationMode === 'pool'
+  const xpPerGrant = kind === 'flexible-xp' ? (isPool ? 0 : award.xpPerGrant) : award.xp
+  const remainingGrants = kind === 'flexible-xp' ? (isPool ? 0 : award.count) : kind === 'language-choice' || kind === 'affiliation-skill-choice' ? 1 : award.count
   const allowedTargetTypes = kind === 'flexible-xp' ? award.allowedTargetTypes : ['skill' as const]
   return {
     id: makeId(undefined, 'pending-award'), moduleId: module.id, awardId: award.id, kind,
-    description: kind === 'language-choice' ? award.description : kind === 'flexible-xp' ? `Allocate ${remainingGrants} grants of ${xpPerGrant} XP.` : `${award.displayName}: choose ${remainingGrants} concrete subskill${remainingGrants === 1 ? '' : 's'}.`,
+    description: kind === 'language-choice' || kind === 'affiliation-skill-choice' ? award.description : kind === 'flexible-xp' ? (isPool ? `Allocate ${award.totalXp} flexible XP within the Stage 2 caps.` : `Allocate ${remainingGrants} grants of ${xpPerGrant} XP.`) : `${award.displayName}: choose ${remainingGrants} concrete subskill${remainingGrants === 1 ? '' : 's'}.`,
     xpPerGrant,
     remainingGrants,
+    ...(isPool ? { allocationMode: 'pool' as const, remainingXp: award.totalXp, maxXpPerTarget: { ...award.maxXpPerTarget } } : { allocationMode: 'fixed-grants' as const }),
     allowedTargetTypes: [...allowedTargetTypes],
     ...(kind === 'language-choice' ? { choiceSource: award.choicesFrom, requiredSkillId: 'skill.language' } : {}),
-    ...(kind === 'any-skill-choice' || kind === 'multi-skill-choice' ? { requiredSkillId: award.skillId } : {}),
+    ...(kind === 'affiliation-skill-choice' || kind === 'any-skill-choice' || kind === 'multi-skill-choice' ? { requiredSkillId: award.skillId } : {}),
     source: { ...module.source },
   }
 }
@@ -269,12 +323,16 @@ function updateLifeModuleProgress(character: CharacterDefinition): CharacterDefi
   })
   const hasStage1 = character.lifeModuleHistory.some((entry) => entry.stage === 1)
   if (!hasStage1) return character
-  state.currentStage = 1
+  const hasStage2 = character.lifeModuleHistory.some((entry) => entry.stage === 2)
+  state.currentStage = hasStage2 ? 2 : 1
   state.stopState = 'not-eligible'
   if (state.pendingAwards.length > 0) {
-    state.phase = 'stage-1-resolution'
+    state.phase = hasStage2 ? 'stage-2-resolution' : 'stage-1-resolution'
   } else if (state.prerequisiteIssues.some((entry) => entry.status === 'outstanding')) {
-    state.phase = 'stage-1-prerequisite-review'
+    state.phase = hasStage2 ? 'stage-2-prerequisite-review' : 'stage-1-prerequisite-review'
+  } else if (hasStage2) {
+    state.phase = 'alpha-stage-2-stop'
+    state.stopState = 'alpha-stage-2-stop'
   } else {
     state.phase = 'alpha-partial-stop'
     state.stopState = 'alpha-partial-stop'
@@ -293,12 +351,16 @@ function evaluatePrerequisite(
     return { id: `${moduleId}/${prerequisite.id}`, moduleId, prerequisiteId: prerequisite.id, description: prerequisite.description, status: 'gm-override' as const, finalValidationRequired: true }
   }
   let satisfied = false
-  if (prerequisite.kind === 'affiliation') satisfied = character.affiliations.length > 0
+  if (prerequisite.kind === 'affiliation') {
+    satisfied = character.affiliations.length > 0
+    if (satisfied && prerequisite.classification === 'non-clan') satisfied = character.affiliations.every((entry) => !entry.affiliationId.startsWith('affiliation.clan'))
+  }
   if (prerequisite.kind === 'attribute-minimum') {
     const entry = character.attributes.find((item) => item.attributeId === prerequisite.attributeId)
     satisfied = (entry?.purchasedLevel ?? 0) >= prerequisite.minimum
   }
   if (prerequisite.kind === 'trait') satisfied = character.traits.some((item) => item.traitId === prerequisite.traitId && item.active)
+  if (prerequisite.kind === 'trait-absent') satisfied = !character.traits.some((item) => item.traitId === prerequisite.traitId && item.active)
   return {
     id: `${moduleId}/${prerequisite.id}`,
     moduleId,
@@ -317,7 +379,7 @@ function validateResolutionDestination(pending: PendingLifeModuleAward, destinat
   }
   if (!destination.targetId.startsWith(destination.type === 'trait' ? 'trait.' : 'skill.')) throw new Error(`A stable ${destination.type} rule ID is required.`)
   if (destination.type === 'skill' && pending.requiredSkillId && destination.targetId !== pending.requiredSkillId) throw new Error(`This award must resolve to ${pending.requiredSkillId}.`)
-  if ((pending.kind === 'language-choice' || pending.kind === 'any-skill-choice' || pending.kind === 'multi-skill-choice') && !destination.parameter?.value) {
+  if ((pending.kind === 'language-choice' || pending.kind === 'affiliation-skill-choice' || pending.kind === 'any-skill-choice' || pending.kind === 'multi-skill-choice') && !destination.parameter?.value) {
     throw new Error('A concrete language or subskill choice is required.')
   }
   if (pending.kind === 'language-choice' && destination.targetId !== 'skill.language') throw new Error('Language awards must resolve to a Language subskill.')
@@ -360,13 +422,14 @@ function recordResolvedAward(
   pending: Pick<PendingLifeModuleAward, 'moduleId' | 'awardId' | 'kind' | 'xpPerGrant' | 'source'>,
   destination: ResolvedLifeModuleDestination,
   provenanceId: string,
+  xp = pending.xpPerGrant,
 ): void {
   resolvedAwards.push({
     id: makeId(undefined, 'resolved-award'),
     moduleId: pending.moduleId,
     awardId: pending.awardId,
     kind: pending.kind,
-    xp: pending.xpPerGrant,
+    xp,
     destination: structuredClone(destination),
     provenanceId,
     resolvedAt: new Date().toISOString(),

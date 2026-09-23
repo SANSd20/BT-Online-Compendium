@@ -170,9 +170,12 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const hasUniversal = selectedIds.has('stage0.universal-fixed-xp')
   const hasAffiliation = selectedIds.has('stage0.capellan-confederation.capellan-commonality')
   const stage1Count = character.lifeModuleHistory.filter((entry) => entry.stage === 1).length
+  const stage2Count = character.lifeModuleHistory.filter((entry) => entry.stage === 2).length
   if (!hasUniversal) issues.push(issue('life-modules.universal.outstanding', 'lifeModuleHistory', 'The universal Stage 0 package is still required.', { severity: 'warning' }))
   if (!hasAffiliation) issues.push(issue('life-modules.affiliation.outstanding', 'lifeModuleHistory', 'A Stage 0 affiliation is still required.', { severity: 'warning' }))
   if (stage1Count !== 1) issues.push(issue('life-modules.stage-1.outstanding', 'lifeModuleHistory', 'Exactly one Stage 1 module is required.', { severity: stage1Count === 0 ? 'warning' : 'error' }))
+  if (stage2Count > 1) issues.push(issue('life-modules.stage-2.multiple', 'lifeModuleHistory', 'No more than one Stage 2 module may be selected.'))
+  if (state.currentStage === 2 && stage2Count === 0 && state.phase !== 'stage-2-selection') issues.push(issue('life-modules.stage-2.outstanding', 'lifeModuleHistory', 'Stage 2 has not been selected for this continuation.', { severity: 'warning' }))
   if (!Array.isArray(state.pendingAwards) || !Array.isArray(state.resolvedAwards) || !Array.isArray(state.choiceGrantRequirements)) {
     issues.push(issue('life-modules.award-state.malformed', 'creation.lifeModules', 'Pending and resolved Life Module award collections are required.'))
     return
@@ -180,15 +183,17 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   state.pendingAwards.forEach((award, index) => {
     let catalogAward: LifeModuleAward | undefined
     try { catalogAward = getLifeModule(award.moduleId).awards.find((entry) => entry.id === award.awardId) } catch { /* malformed below */ }
-    const expectedXp = catalogAward?.kind === 'flexible-xp' ? catalogAward.xpPerGrant : catalogAward && 'xp' in catalogAward ? catalogAward.xp : undefined
-    const expectedTypes = catalogAward?.kind === 'flexible-xp' ? catalogAward.allowedTargetTypes : catalogAward && ['language-choice', 'any-skill-choice', 'multi-skill-choice'].includes(catalogAward.kind) ? ['skill'] : []
-    const expectedSkill = catalogAward?.kind === 'language-choice' ? 'skill.language' : catalogAward?.kind === 'any-skill-choice' || catalogAward?.kind === 'multi-skill-choice' ? catalogAward.skillId : undefined
+    const poolAward = catalogAward?.kind === 'flexible-xp' && catalogAward.allocationMode === 'pool' ? catalogAward : undefined
+    const isPool = poolAward !== undefined
+    const expectedXp = catalogAward?.kind === 'flexible-xp' ? (catalogAward.allocationMode === 'pool' ? 0 : catalogAward.xpPerGrant) : catalogAward && 'xp' in catalogAward ? catalogAward.xp : undefined
+    const expectedTypes = catalogAward?.kind === 'flexible-xp' ? catalogAward.allowedTargetTypes : catalogAward && ['language-choice', 'affiliation-skill-choice', 'any-skill-choice', 'multi-skill-choice'].includes(catalogAward.kind) ? ['skill'] : []
+    const expectedSkill = catalogAward?.kind === 'language-choice' ? 'skill.language' : catalogAward?.kind === 'affiliation-skill-choice' || catalogAward?.kind === 'any-skill-choice' || catalogAward?.kind === 'multi-skill-choice' ? catalogAward.skillId : undefined
     if (
       !selectedIds.has(award.moduleId) ||
       !award.awardId ||
       !Number.isFinite(award.xpPerGrant) ||
       !Number.isInteger(award.remainingGrants) ||
-      award.remainingGrants <= 0 ||
+      (isPool ? award.remainingGrants !== 0 || !Number.isInteger(award.remainingXp) || award.remainingXp! <= 0 || award.remainingXp! > poolAward.totalXp : award.remainingGrants <= 0) ||
       award.allowedTargetTypes.length === 0 ||
       !award.source.sourceId ||
       !catalogAward ||
@@ -196,7 +201,8 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
       expectedXp !== award.xpPerGrant ||
       expectedTypes.length !== award.allowedTargetTypes.length ||
       expectedTypes.some((type) => !award.allowedTargetTypes.includes(type as 'attribute' | 'trait' | 'skill')) ||
-      expectedSkill !== award.requiredSkillId
+      expectedSkill !== award.requiredSkillId ||
+      (isPool && (award.allocationMode !== 'pool' || JSON.stringify(award.maxXpPerTarget) !== JSON.stringify(poolAward.maxXpPerTarget)))
     ) {
       issues.push(issue('life-modules.pending-award.malformed', `creation.lifeModules.pendingAwards.${index}`, 'Pending Life Module award state is malformed.'))
     }
@@ -209,24 +215,32 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     issues.push(issue('life-modules.prerequisites.outstanding', 'creation.lifeModules.prerequisiteIssues', 'One or more Life Module prerequisites remain outstanding for final validation.', { severity: 'warning', kind: 'prerequisite', gmOverrideAllowed: true }))
   }
   if (stage1Count === 1) {
-    const expectedPhase = state.pendingAwards.length > 0
-      ? 'stage-1-resolution'
-      : hasOutstandingPrerequisite
-        ? 'stage-1-prerequisite-review'
-        : 'alpha-partial-stop'
+    const expectedPhase = state.phase === 'stage-2-selection' && stage2Count === 0
+      ? 'stage-2-selection'
+      : stage2Count === 1
+        ? state.pendingAwards.length > 0
+          ? 'stage-2-resolution'
+          : hasOutstandingPrerequisite
+            ? 'stage-2-prerequisite-review'
+            : 'alpha-stage-2-stop'
+        : state.pendingAwards.length > 0
+          ? 'stage-1-resolution'
+          : hasOutstandingPrerequisite
+            ? 'stage-1-prerequisite-review'
+            : 'alpha-partial-stop'
     if (state.phase !== expectedPhase) issues.push(issue('life-modules.phase.malformed', 'creation.lifeModules.phase', `Life Module phase should be ${expectedPhase}.`))
-    if (expectedPhase === 'alpha-partial-stop') {
-      if (state.stopState !== 'alpha-partial-stop') issues.push(issue('life-modules.stop-state.malformed', 'creation.lifeModules.stopState', 'Completed Stage 0/1 award resolution requires the Alpha partial-stop state.'))
-      issues.push(issue('life-modules.alpha-stop.valid', 'creation.lifeModules.stopState', 'Stage 0 and Stage 1 are complete for the implemented Alpha catalog; later progression and full finalization remain unsupported.', { severity: 'information', kind: 'availability' }))
+    if (expectedPhase === 'alpha-partial-stop' || expectedPhase === 'alpha-stage-2-stop') {
+      if (state.stopState !== expectedPhase) issues.push(issue('life-modules.stop-state.malformed', 'creation.lifeModules.stopState', 'Completed Life Module award resolution requires the matching Alpha partial-stop state.'))
+      issues.push(issue('life-modules.alpha-stop.valid', 'creation.lifeModules.stopState', expectedPhase === 'alpha-stage-2-stop' ? 'Stage 0 through Stage 2 are complete for the implemented Alpha catalog; Stage 3/4 and finalization remain unsupported.' : 'Stage 0 and Stage 1 are complete; the draft may stop here or explicitly continue to Stage 2.', { severity: 'information', kind: 'availability' }))
     } else if (state.stopState !== 'not-eligible') {
       issues.push(issue('life-modules.stop-state.malformed', 'creation.lifeModules.stopState', 'This draft is not eligible for an Alpha partial stop.'))
     }
   }
-  if (state.phase === 'stage-2-or-finalization' || state.currentStage > 1) {
-    issues.push(issue('life-modules.continuation.unsupported', 'creation.lifeModules.phase', 'Continuation into Stage 2 or later is not supported in Alpha Slice 5.', { severity: 'warning', kind: 'availability' }))
+  if (state.phase === 'stage-3-unsupported' || state.currentStage > 2) {
+    issues.push(issue('life-modules.continuation.unsupported', 'creation.lifeModules.phase', 'Continuation into Stage 3 or later is not supported in Alpha Slice 6.', { severity: 'warning', kind: 'availability' }))
   }
   if (character.creation.status === 'finalized') {
-    issues.push(issue('life-modules.finalization.unsupported', 'creation.status', 'Full Life Module finalization is not implemented in Alpha Slice 5.'))
+    issues.push(issue('life-modules.finalization.unsupported', 'creation.status', 'Full Life Module finalization is not implemented in Alpha Slice 6.'))
   }
 }
 
@@ -239,15 +253,15 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
     try { module = getLifeModule(resolved.moduleId) } catch { /* reported below */ }
     const award = module?.awards.find((entry) => entry.id === resolved.awardId)
     const key = `${resolved.moduleId}/${resolved.awardId}/${lifeModuleDestinationKey(resolved.destination)}`
-    if (seen.has(key)) issues.push(issue('life-modules.resolution.duplicate', `creation.lifeModules.resolvedAwards.${index}`, 'A required choice cannot use the same destination more than once.'))
+    if (seen.has(key) && !(award?.kind === 'flexible-xp' && award.allocationMode === 'pool')) issues.push(issue('life-modules.resolution.duplicate', `creation.lifeModules.resolvedAwards.${index}`, 'A required choice cannot use the same destination more than once.'))
     seen.add(key)
     if (!selectedIds.has(resolved.moduleId) || !award || award.kind === 'fixed' || award.kind === 'choice-package' || award.kind === 'conditional' || award.kind === 'field-grant') {
       issues.push(issue('life-modules.resolution.unknown', `creation.lifeModules.resolvedAwards.${index}`, 'Resolved award does not identify a selectable award on a selected module.'))
       return
     }
-    const expectedXp = award.kind === 'flexible-xp' ? award.xpPerGrant : award.xp
+    const expectedXp = award.kind === 'flexible-xp' ? (award.allocationMode === 'pool' ? null : award.xpPerGrant) : award.xp
     const allowedTypes = award.kind === 'flexible-xp' ? award.allowedTargetTypes : ['skill']
-    const requiredSkillId = award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' ? award.skillId : award.kind === 'language-choice' ? 'skill.language' : undefined
+    const requiredSkillId = award.kind === 'affiliation-skill-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' ? award.skillId : award.kind === 'language-choice' ? 'skill.language' : undefined
     const targetIdValid = resolved.destination.type === 'attribute'
       ? LIFE_MODULE_ATTRIBUTE_IDS.includes(resolved.destination.targetId)
       : resolved.destination.targetId.startsWith(resolved.destination.type === 'trait' ? 'trait.' : 'skill.')
@@ -258,10 +272,10 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
     )
     if (
       resolved.kind !== award.kind ||
-      resolved.xp !== expectedXp ||
+      (expectedXp === null ? !Number.isInteger(resolved.xp) || resolved.xp <= 0 : resolved.xp !== expectedXp) ||
       !allowedTypes.includes(resolved.destination.type) ||
       (requiredSkillId && resolved.destination.targetId !== requiredSkillId) ||
-      ((award.kind === 'language-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') && !resolved.destination.parameter?.value) ||
+      ((award.kind === 'language-choice' || award.kind === 'affiliation-skill-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') && !resolved.destination.parameter?.value) ||
       !targetIdValid ||
       !languageValid ||
       !resolved.source.sourceId ||
@@ -270,6 +284,19 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
       issues.push(issue('life-modules.resolution.malformed', `creation.lifeModules.resolvedAwards.${index}`, 'Resolved Life Module award violates its source award structure or provenance.'))
     }
   })
+  for (const moduleId of selectedIds) {
+    let module: LifeModuleDefinition | undefined
+    try { module = getLifeModule(moduleId) } catch { continue }
+    for (const award of module.awards) {
+      if (award.kind !== 'flexible-xp' || award.allocationMode !== 'pool') continue
+      const resolved = state.resolvedAwards.filter((entry) => entry.moduleId === moduleId && entry.awardId === award.id)
+      for (const target of resolved) {
+        const total = resolved.filter((entry) => lifeModuleDestinationKey(entry.destination) === lifeModuleDestinationKey(target.destination)).reduce((sum, entry) => sum + entry.xp, 0)
+        const cap = award.maxXpPerTarget[target.destination.type]
+        if (cap !== undefined && total > cap) issues.push(issue('life-modules.flexible-cap.exceeded', 'creation.lifeModules.resolvedAwards', `${module.displayName} flexible XP exceeds the ${cap} XP cap for one ${target.destination.type}.`))
+      }
+    }
+  }
 }
 
 const LIFE_MODULE_ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG']
@@ -290,10 +317,14 @@ function validateChoiceGrantBalance(character: CharacterDefinition, issues: Vali
       continue
     }
     seen.add(key)
-    const resolved = state.resolvedAwards.filter((entry) => entry.moduleId === requirement.moduleId && entry.awardId === requirement.awardId).length
+    const matchingResolved = state.resolvedAwards.filter((entry) => entry.moduleId === requirement.moduleId && entry.awardId === requirement.awardId)
+    const resolved = matchingResolved.length
     const matchingPending = state.pendingAwards.filter((entry) => entry.moduleId === requirement.moduleId && entry.awardId === requirement.awardId)
     const pending = matchingPending.reduce((total, entry) => total + entry.remainingGrants, 0)
-    if (resolved + pending !== requirement.requiredGrants || matchingPending.length > 1) {
+    const poolBalanced = requirement.allocationMode === 'pool'
+      ? matchingResolved.reduce((total, entry) => total + entry.xp, 0) + matchingPending.reduce((total, entry) => total + (entry.remainingXp ?? 0), 0) === requirement.requiredXp
+      : resolved + pending === requirement.requiredGrants
+    if (!poolBalanced || matchingPending.length > 1) {
       issues.push(issue('life-modules.choice-count.malformed', 'creation.lifeModules', `${module?.displayName ?? requirement.moduleId}: ${requirement.awardId} does not preserve its required choice count.`))
     }
   }
@@ -313,8 +344,9 @@ function validateChoiceGrantBalance(character: CharacterDefinition, issues: Vali
 }
 
 function lifeModuleAwardGrantCount(award: LifeModuleAward): number | null {
-  if (award.kind === 'language-choice') return 1
-  if (award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' || award.kind === 'flexible-xp') return award.count
+  if (award.kind === 'language-choice' || award.kind === 'affiliation-skill-choice') return 1
+  if (award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') return award.count
+  if (award.kind === 'flexible-xp') return award.allocationMode === 'pool' ? 0 : award.count
   return null
 }
 

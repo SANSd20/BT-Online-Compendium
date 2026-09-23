@@ -117,6 +117,23 @@ Slice 5 extends the same `npm run check` gate. Automated coverage verifies:
 
 Manual UI verification should confirm every pending award exposes an appropriate resolver, each applied grant disappears or decrements its source pending record, summaries update immediately, resolved choices remain visible, and the Alpha partial-stop message cannot be mistaken for Beta 1 completion.
 
+## Alpha Slice 6 verification
+
+Slice 6 extends the same `npm run check` gate. Automated coverage verifies:
+
+- a resolved Stage 1 Alpha stop can explicitly continue into Stage 2 without implying finalization;
+- Stage 2 Back Woods and High School are present in the catalog and only one Stage 2 module may be selected;
+- each Stage 2 module deducts its published cost from the separate module-purchasing pool and applies its fixed Attribute, Trait, Skill, and structured-subskill awards;
+- Stage 2 `/Any`, `/Affiliation`, language, and flexible awards persist as source-bound pending state and resolve through the shared award engine;
+- the 125-XP and 185-XP flexible awards retain a durable remaining pool rather than artificial fixed chunks;
+- Stage 2 flexible allocation enforces no more than 35 XP to one Skill and no more than 200 XP to one Attribute or Trait;
+- High School tracks a non-Clan affiliation and absence of an active Illiterate Trait, with prerequisites re-evaluated after award changes;
+- Stage 2 chronology records age 16, provenance survives, and resolved plus unresolved Stage 2 state round-trips through the versioned JSON format;
+- malformed flexible allocations, cap violations, invalid targets, overspending, unknown modules, and inconsistent stage state are rejected or reported; and
+- all prior Archetype, Point Buy, and Life Module regression tests continue to pass.
+
+Manual UI verification should confirm Stage 1's Alpha partial stop offers explicit Stage 2 continuation, Back Woods and High School are selectable, pooled flexible XP accepts an allocation amount and reports the remaining pool, prerequisite status updates, and the Stage 2 stop clearly states that Stage 3, Stage 4, and finalization remain unsupported.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

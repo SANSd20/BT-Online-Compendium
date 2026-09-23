@@ -7,7 +7,7 @@ import {
   type SavedCharacterEnvelope,
 } from './schema'
 
-const APPLICATION_VERSION = '0.1.0-alpha.5'
+const APPLICATION_VERSION = '0.1.0-alpha.6'
 const CREATION_METHODS: CreationMethod[] = ['archetype', 'point-buy', 'life-modules']
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -96,10 +96,11 @@ function migrateAlphaLifeModuleState(character: CharacterDefinition): void {
     let award
     try { award = getLifeModule(pending.moduleId).awards.find((entry) => entry.id === pending.awardId) } catch { return }
     if (!award) return
+    pending.allocationMode ??= award.kind === 'flexible-xp' && award.allocationMode === 'pool' ? 'pool' : 'fixed-grants'
     if (award.kind === 'language-choice') {
       pending.choiceSource ??= award.choicesFrom
       pending.requiredSkillId ??= 'skill.language'
     }
-    if (award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') pending.requiredSkillId ??= award.skillId
+    if (award.kind === 'affiliation-skill-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') pending.requiredSkillId ??= award.skillId
   })
 }

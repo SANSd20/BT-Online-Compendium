@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { CharacterDefinition, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
-import { BACK_WOODS_ID, BLUE_COLLAR_ID } from '../../domain/lifeModules/catalog'
-import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
+import { BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
+import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyUniversalStage0, continueToStage2, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 
@@ -18,6 +18,7 @@ interface ResolutionDraft {
   targetId: string
   parameter: string
   displayName: string
+  xpAmount: number
 }
 
 export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
@@ -58,7 +59,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       displayName: draft.displayName || destinationDisplayName(draft),
       ...(draft.parameter.trim() ? { parameter: { kind: 'subskill', value: draft.parameter } } : {}),
     }
-    operate(() => resolvePendingLifeModuleAward(character, pending.id, destination), 'Award grant resolved and applied.')
+    operate(() => resolvePendingLifeModuleAward(character, pending.id, destination, pending.allocationMode === 'pool' ? draft.xpAmount : undefined), 'Award grant resolved and applied.')
   }
 
   const state = character?.creation.lifeModules
@@ -68,9 +69,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     <main className="creation-page life-modules-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Alpha · Slice 5</p>
+        <p className="eyebrow">Alpha · Slice 6</p>
         <h1>Life Modules</h1>
-        <p>Build a sourced draft through the first two Life Module stages. Module-purchasing XP remains separate from XP awarded to character statistics.</p>
+        <p>Build a sourced draft through Stage 0, Stage 1, and the audited Stage 2 foundation. Module-purchasing XP remains separate from XP awarded to character statistics.</p>
       </section>
 
       {!character ? (
@@ -127,7 +128,16 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             )}
             {state.phase === 'stage-1-resolution' && <p className="notice">Stage 1 is selected. Resolve every source-bound choice and flexible grant below before reaching an Alpha partial stop.</p>}
             {state.phase === 'stage-1-prerequisite-review' && <p className="notice">All awards are resolved, but one or more module prerequisites remain outstanding for eventual final validation.</p>}
-            {state.phase === 'alpha-partial-stop' && <p className="notice">Stage 0 and Stage 1 are complete for the implemented catalog. This is a valid Alpha partial stop—not a finalized Beta 1 character. Later-stage continuation and full finalization remain unsupported.</p>}
+            {state.phase === 'alpha-partial-stop' && <div className="life-action"><p className="notice">Stage 0 and Stage 1 are complete. This is a valid Alpha partial stop—not a finalized Beta 1 character.</p><button className="button" type="button" onClick={() => operate(() => continueToStage2(character), 'Stage 2 continuation opened.')}>Continue to Stage 2</button></div>}
+            {state.phase === 'stage-2-selection' && (
+              <div className="stage-options">
+                <article><h3>Back Woods</h3><p>500 XP · fixed awards, Protocol/Affiliation, and a 125 XP flexible pool.</p><button className="button" type="button" onClick={() => operate(() => applyStage2Module(character, STAGE_2_BACK_WOODS_ID), 'Stage 2 Back Woods selected.')}>Select Back Woods</button></article>
+                <article><h3>High School</h3><p>400 XP · requires a non-Clan affiliation and no active Illiterate Trait; includes Interest, affiliation, and 185 flexible XP awards.</p><button className="button" type="button" onClick={() => operate(() => applyStage2Module(character, STAGE_2_HIGH_SCHOOL_ID), 'Stage 2 High School selected.')}>Select High School</button></article>
+              </div>
+            )}
+            {state.phase === 'stage-2-resolution' && <p className="notice">Stage 2 is selected. Resolve all Stage 2 source-bound choices and flexible XP below.</p>}
+            {state.phase === 'stage-2-prerequisite-review' && <p className="notice">All Stage 2 awards are resolved, but one or more prerequisites remain outstanding for eventual final validation.</p>}
+            {state.phase === 'alpha-stage-2-stop' && <p className="notice">Stage 0 through Stage 2 are complete for this Alpha catalog. Stage 3, Stage 4, and full finalization remain unsupported.</p>}
           </section>
 
           <section className="life-stage-panel">
@@ -153,13 +163,13 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 const draft = { ...defaultResolutionDraft(entry), ...resolutionDrafts[entry.id] }
                 return (
                   <article key={entry.id}>
-                    <div><strong>{entry.description}</strong><p>{entry.remainingGrants} grant{entry.remainingGrants === 1 ? '' : 's'} remaining · {signed(entry.xpPerGrant)} XP each</p></div>
+                    <div><strong>{entry.description}</strong><p>{entry.allocationMode === 'pool' ? `${entry.remainingXp} XP remaining` : `${entry.remainingGrants} grant${entry.remainingGrants === 1 ? '' : 's'} remaining · ${signed(entry.xpPerGrant)} XP each`}</p></div>
                     {entry.kind === 'flexible-xp' && (
-                      <label>Target type
+                      <><label>Target type
                         <select value={draft.targetType} onChange={(event) => updateResolutionDraft(entry, { targetType: event.target.value as ResolutionDraft['targetType'], targetId: '', parameter: '', displayName: '' })}>
                           {entry.allowedTargetTypes.map((type) => <option key={type}>{type}</option>)}
                         </select>
-                      </label>
+                      </label>{entry.allocationMode === 'pool' && <label>XP to allocate<input type="number" min="1" max={entry.remainingXp} step="1" value={draft.xpAmount} onChange={(event) => updateResolutionDraft(entry, { xpAmount: Number(event.target.value) })} /></label>}</>
                     )}
                     {draft.targetType === 'attribute' ? (
                       <label>Attribute
@@ -182,7 +192,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                         </label>
                       </>
                     )}
-                    <button className="button" type="button" onClick={() => resolve(entry)}>Apply one grant</button>
+                    <button className="button" type="button" onClick={() => resolve(entry)}>{entry.allocationMode === 'pool' ? 'Allocate XP' : 'Apply one grant'}</button>
                   </article>
                 )
               })}</div>
@@ -221,10 +231,10 @@ function signed(value: number): string {
 
 function defaultResolutionDraft(pending: PendingLifeModuleAward): ResolutionDraft {
   if (pending.requiredSkillId) {
-    return { targetType: 'skill', targetId: pending.requiredSkillId, parameter: '', displayName: skillName(pending.requiredSkillId) }
+    return { targetType: 'skill', targetId: pending.requiredSkillId, parameter: '', displayName: skillName(pending.requiredSkillId), xpAmount: Math.min(pending.remainingXp ?? pending.xpPerGrant, 35) }
   }
   const targetType = pending.allowedTargetTypes[0]
-  return { targetType, targetId: targetType === 'attribute' ? 'STR' : '', parameter: '', displayName: targetType === 'attribute' ? 'STR' : '' }
+  return { targetType, targetId: targetType === 'attribute' ? 'STR' : '', parameter: '', displayName: targetType === 'attribute' ? 'STR' : '', xpAmount: Math.min(pending.remainingXp ?? pending.xpPerGrant, targetType === 'skill' ? 35 : 200) }
 }
 
 function destinationDisplayName(draft: ResolutionDraft): string {

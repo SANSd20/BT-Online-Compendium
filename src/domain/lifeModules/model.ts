@@ -13,17 +13,20 @@ export type LifeModuleDestination =
 export type LifeModuleAward =
   | { id: string; kind: 'fixed'; xp: number; destination: LifeModuleDestination }
   | { id: string; kind: 'language-choice'; xp: number; choicesFrom: 'affiliation-languages' | 'capellan-secondary' | 'federated-suns-languages'; description: string }
+  | { id: string; kind: 'affiliation-skill-choice'; xp: number; skillId: string; displayName: string; description: string }
   | { id: string; kind: 'any-skill-choice'; xp: number; skillId: string; displayName: string; count: number }
   | { id: string; kind: 'multi-skill-choice'; xp: number; skillId: string; displayName: string; count: number }
-  | { id: string; kind: 'flexible-xp'; xpPerGrant: number; count: number; allowedTargetTypes: AwardTargetType[] }
+  | { id: string; kind: 'flexible-xp'; xpPerGrant: number; count: number; allowedTargetTypes: AwardTargetType[]; allocationMode?: 'fixed-grants' }
+  | { id: string; kind: 'flexible-xp'; totalXp: number; allowedTargetTypes: AwardTargetType[]; allocationMode: 'pool'; maxXpPerTarget: Partial<Record<AwardTargetType, number>> }
   | { id: string; kind: 'choice-package'; description: string; options: LifeModuleDestination[][] }
   | { id: string; kind: 'conditional'; description: string; awards: LifeModuleAward[] }
   | { id: string; kind: 'field-grant'; description: string; fieldId: string; xpPerSkill: number; purchaseCostXp: number }
 
 export type LifeModulePrerequisite =
-  | { id: string; kind: 'affiliation'; affiliationId?: string; description: string }
+  | { id: string; kind: 'affiliation'; affiliationId?: string; classification?: 'any' | 'non-clan'; description: string }
   | { id: string; kind: 'attribute-minimum'; attributeId: string; minimum: number; description: string }
   | { id: string; kind: 'trait'; traitId: string; description: string }
+  | { id: string; kind: 'trait-absent'; traitId: string; description: string }
   | { id: string; kind: 'path'; description: string }
 
 export interface LifeModuleDefinition {
@@ -46,4 +49,3 @@ export interface LifeModuleCatalogValidationIssue {
   moduleId: string
   message: string
 }
-

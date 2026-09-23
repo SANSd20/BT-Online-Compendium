@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { BACK_WOODS_ID, BLUE_COLLAR_ID } from '../domain/lifeModules/catalog'
+import { BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
-import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter, resolvePendingLifeModuleAward } from './lifeModuleEngine'
+import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyUniversalStage0, continueToStage2, createLifeModuleCharacter, resolvePendingLifeModuleAward } from './lifeModuleEngine'
 
 function completeStage0() {
   let character = createLifeModuleCharacter('Xiang', 5000)
@@ -20,6 +20,16 @@ function resolveByAward(character: ReturnType<typeof completeStage0>, awardId: s
     displayName,
     ...(parameter ? { parameter: { kind: 'subskill', value: parameter } } : {}),
   })
+}
+
+function completeBlueCollarStage1() {
+  let character = applyStage1Module(completeStage0(), BLUE_COLLAR_ID)
+  character = resolveByAward(character, 'commonality.language.fedsuns', 'skill.language', 'Language/French', 'French')
+  character = resolveByAward(character, 'blue-collar.career', 'skill.career', 'Career/Soldier', 'Soldier')
+  character = resolveByAward(character, 'blue-collar.interests', 'skill.interest', 'Interest/History', 'History')
+  character = resolveByAward(character, 'blue-collar.interests', 'skill.interest', 'Interest/Engineering', 'Engineering')
+  for (const attributeId of ['STR', 'BOD', 'DEX', 'RFL']) character = resolveByAward(character, 'blue-collar.flexible', attributeId, attributeId)
+  return character
 }
 
 describe('Life Module engine', () => {
@@ -183,8 +193,7 @@ describe('Life Module engine', () => {
 
   it('reports unsupported later continuation and full finalization', () => {
     const character = applyStage1Module(completeStage0(), BLUE_COLLAR_ID)
-    character.creation.lifeModules!.phase = 'stage-2-or-finalization'
-    character.creation.lifeModules!.currentStage = 2
+    character.creation.lifeModules!.phase = 'stage-3-unsupported'
     character.creation.status = 'finalized'
     const validation = validateCharacter(character)
     expect(validation.valid).toBe(false)
@@ -193,5 +202,72 @@ describe('Life Module engine', () => {
       'life-modules.continuation.unsupported',
       'life-modules.finalization.unsupported',
     ]))
+  })
+
+  it('continues a resolved Stage 1 stop into Stage 2 Back Woods and applies fixed awards', () => {
+    let character = continueToStage2(completeBlueCollarStage1())
+    expect(character.creation.lifeModules!.phase).toBe('stage-2-selection')
+    character = applyStage2Module(character, STAGE_2_BACK_WOODS_ID)
+    const state = character.creation.lifeModules!
+    expect(state.moduleXp).toEqual({ starting: 5000, spent: 1710, remaining: 3290 })
+    expect(state.phase).toBe('stage-2-resolution')
+    expect(character.attributes.find((entry) => entry.attributeId === 'BOD')?.accumulatedXp).toBe(220)
+    expect(character.attributes.find((entry) => entry.attributeId === 'INT')?.accumulatedXp).toBe(105)
+    expect(character.traits.find((entry) => entry.traitId === 'trait.animal-empathy')?.accumulatedXp).toBe(50)
+    expect(character.skills.find((entry) => entry.displayName === 'Survival/Forest')?.accumulatedXp).toBe(25)
+    expect(state.pendingAwards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ awardId: 'stage2.back-woods.skill.protocol-affiliation', xpPerGrant: -15 }),
+      expect.objectContaining({ awardId: 'stage2.back-woods.flexible', allocationMode: 'pool', remainingXp: 125 }),
+    ]))
+    expect(character.chronology.at(-1)?.date).toBe('age:16')
+  })
+
+  it('selects High School, tracks its prerequisites, choices, cost, and only-one Stage 2 rule', () => {
+    const selecting = continueToStage2(completeBlueCollarStage1())
+    const character = applyStage2Module(selecting, STAGE_2_HIGH_SCHOOL_ID)
+    const state = character.creation.lifeModules!
+    expect(state.moduleXp).toEqual({ starting: 5000, spent: 1610, remaining: 3390 })
+    expect(state.prerequisiteIssues.every((entry) => entry.status === 'satisfied')).toBe(true)
+    expect(state.pendingAwards.map((entry) => entry.awardId)).toEqual(expect.arrayContaining([
+      'high-school.interest-40', 'high-school.interest-35', 'high-school.language-affiliation', 'high-school.streetwise-affiliation', 'high-school.flexible',
+    ]))
+    expect(() => applyStage2Module(character, STAGE_2_BACK_WOODS_ID)).toThrow('not the current legal action')
+  })
+
+  it('re-evaluates the High School no-Illiterate prerequisite', () => {
+    let character = completeBlueCollarStage1()
+    const provenanceId = character.provenance[0].id
+    character.traits.push({ traitId: 'trait.illiterate', displayName: 'Illiterate', accumulatedXp: 100, attainedTp: 1, active: true, parameters: {}, sourceAwards: [{ id: 'test-illiterate', xp: 100, provenanceId }] })
+    character = applyStage2Module(continueToStage2(character), STAGE_2_HIGH_SCHOOL_ID)
+    expect(character.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'high-school.not-illiterate')?.status).toBe('outstanding')
+  })
+
+  it('resolves Stage 2 affiliation, /Any, and flexible-pool awards with source caps', () => {
+    let character = applyStage2Module(continueToStage2(completeBlueCollarStage1()), STAGE_2_HIGH_SCHOOL_ID)
+    character = resolveByAward(character, 'high-school.interest-40', 'skill.interest', 'Interest/Science', 'Science')
+    character = resolveByAward(character, 'high-school.interest-35', 'skill.interest', 'Interest/Art', 'Art')
+    character = resolveByAward(character, 'high-school.language-affiliation', 'skill.language', 'Language/English', 'English')
+    character = resolveByAward(character, 'high-school.streetwise-affiliation', 'skill.streetwise', 'Streetwise/Capellan', 'Capellan')
+    const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'high-school.flexible')!
+    expect(() => resolvePendingLifeModuleAward(character, flexible.id, { type: 'skill', targetId: 'skill.perception', displayName: 'Perception' }, 36)).toThrow('no more than 35 XP')
+    expect(() => resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 201)).toThrow('remaining award XP')
+    character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'skill', targetId: 'skill.perception', displayName: 'Perception' }, 35)
+    character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 150)
+    expect(character.creation.lifeModules!.pendingAwards).toEqual([])
+    expect(character.creation.lifeModules!.phase).toBe('alpha-stage-2-stop')
+    expect(character.creation.lifeModules!.stopState).toBe('alpha-stage-2-stop')
+    expect(character.skills.find((entry) => entry.displayName === 'Perception')?.accumulatedXp).toBe(45)
+    expect(validateCharacter(character).valid).toBe(true)
+  })
+
+  it('round-trips Stage 2 resolved and unresolved state and validates flexible cap tampering', () => {
+    let character = applyStage2Module(continueToStage2(completeBlueCollarStage1()), STAGE_2_BACK_WOODS_ID)
+    const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'stage2.back-woods.flexible')!
+    character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'skill', targetId: 'skill.perception', displayName: 'Perception' }, 35)
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-09-23T00:00:00.000Z'))
+    expect(decoded).toEqual(character)
+    expect(decoded.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'stage2.back-woods.flexible')?.remainingXp).toBe(90)
+    decoded.creation.lifeModules!.resolvedAwards.find((entry) => entry.awardId === 'stage2.back-woods.flexible')!.xp = 36
+    expect(validateCharacter(decoded).issues.map((entry) => entry.id)).toContain('life-modules.flexible-cap.exceeded')
   })
 })

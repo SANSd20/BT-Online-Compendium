@@ -30,6 +30,8 @@ export const UNIVERSAL_STAGE_0_ID = 'stage0.universal-fixed-xp'
 export const CAPELLAN_COMMONALITY_ID = 'stage0.capellan-confederation.capellan-commonality'
 export const BLUE_COLLAR_ID = 'stage1.blue-collar'
 export const BACK_WOODS_ID = 'stage1.back-woods'
+export const STAGE_2_BACK_WOODS_ID = 'stage2.back-woods'
+export const STAGE_2_HIGH_SCHOOL_ID = 'stage2.high-school'
 
 export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
   {
@@ -137,6 +139,64 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     notes: [],
     deferredRules: [],
   },
+  {
+    id: STAGE_2_BACK_WOODS_ID,
+    displayName: 'Back Woods',
+    stage: 2,
+    kind: 'late-childhood',
+    source: source(77, 'stage-2-back-woods'),
+    costXp: 500,
+    chronologyYears: 16,
+    prerequisites: [],
+    awards: [
+      fixed('stage2.back-woods.attribute.bod', 60, attribute('BOD')),
+      fixed('stage2.back-woods.attribute.wil', 70, attribute('WIL')),
+      fixed('stage2.back-woods.attribute.int', -20, attribute('INT')),
+      fixed('stage2.back-woods.trait.animal-empathy', 50, trait('trait.animal-empathy', 'Animal Empathy')),
+      fixed('stage2.back-woods.trait.good-hearing', 40, trait('trait.good-hearing', 'Good Hearing')),
+      fixed('stage2.back-woods.trait.introvert', -20, trait('trait.introvert', 'Introvert')),
+      fixed('stage2.back-woods.trait.wealth', -20, trait('trait.wealth', 'Wealth')),
+      fixed('stage2.back-woods.skill.climbing', 30, skill('skill.climbing', 'Climbing')),
+      fixed('stage2.back-woods.skill.medtech-general', 20, skill('skill.medtech', 'MedTech/General', 'General')),
+      fixed('stage2.back-woods.skill.melee-weapons', 20, skill('skill.melee-weapons', 'Melee Weapons')),
+      fixed('stage2.back-woods.skill.perception', 45, skill('skill.perception', 'Perception')),
+      { id: 'stage2.back-woods.skill.protocol-affiliation', kind: 'affiliation-skill-choice', xp: -15, skillId: 'skill.protocol', displayName: 'Protocol/Affiliation', description: 'Apply to the concrete affiliation Protocol subskill.' },
+      fixed('stage2.back-woods.skill.small-arms', 20, skill('skill.small-arms', 'Small Arms')),
+      fixed('stage2.back-woods.skill.stealth', 40, skill('skill.stealth', 'Stealth')),
+      fixed('stage2.back-woods.skill.survival-forest', 25, skill('skill.survival', 'Survival/Forest', 'Forest')),
+      fixed('stage2.back-woods.skill.tracking-wilds', 30, skill('skill.tracking', 'Tracking/Wilds', 'Wilds')),
+      { id: 'stage2.back-woods.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 125, allowedTargetTypes: ['attribute', 'trait', 'skill'], maxXpPerTarget: { attribute: 200, trait: 200, skill: 35 } },
+    ],
+    notes: ['Stage 2 represents Late Childhood; completing it advances chronology to age 16.'],
+    deferredRules: [],
+  },
+  {
+    id: STAGE_2_HIGH_SCHOOL_ID,
+    displayName: 'High School',
+    stage: 2,
+    kind: 'late-childhood',
+    source: source(77, 'stage-2-high-school'),
+    costXp: 400,
+    chronologyYears: 16,
+    prerequisites: [
+      { id: 'high-school.non-clan', kind: 'affiliation', classification: 'non-clan', description: 'Any non-Clan affiliation' },
+      { id: 'high-school.not-illiterate', kind: 'trait-absent', traitId: 'trait.illiterate', description: 'May not have the Illiterate Trait' },
+    ],
+    awards: [
+      fixed('high-school.attribute.cha', 25, attribute('CHA')),
+      fixed('high-school.attribute.int', 25, attribute('INT')),
+      fixed('high-school.trait.connections', 20, trait('trait.connections', 'Connections')),
+      fixed('high-school.skill.computers', 20, skill('skill.computers', 'Computers')),
+      { id: 'high-school.interest-40', kind: 'any-skill-choice', xp: 40, skillId: 'skill.interest', displayName: 'Interest/Any', count: 1 },
+      { id: 'high-school.interest-35', kind: 'any-skill-choice', xp: 35, skillId: 'skill.interest', displayName: 'Interest/Any', count: 1 },
+      { id: 'high-school.language-affiliation', kind: 'language-choice', xp: 10, choicesFrom: 'affiliation-languages', description: 'Apply to a concrete Language/Affiliation selection.' },
+      { id: 'high-school.streetwise-affiliation', kind: 'affiliation-skill-choice', xp: 20, skillId: 'skill.streetwise', displayName: 'Streetwise/Affiliation', description: 'Apply to the concrete affiliation Streetwise subskill.' },
+      fixed('high-school.skill.swimming', 20, skill('skill.swimming', 'Swimming')),
+      { id: 'high-school.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 185, allowedTargetTypes: ['attribute', 'trait', 'skill'], maxXpPerTarget: { attribute: 200, trait: 200, skill: 35 } },
+    ],
+    notes: ['Stage 2 represents Late Childhood; completing it advances chronology to age 16.'],
+    deferredRules: [],
+  },
 ]
 
 export function getLifeModule(moduleId: string): LifeModuleDefinition {
@@ -158,7 +218,7 @@ export function validateLifeModuleCatalog(catalog: readonly LifeModuleDefinition
     if (module.awards.length === 0) issues.push({ moduleId: module.id, message: 'At least one structured award is required.' })
     const awardIds = new Set<string>()
     for (const award of module.awards) {
-      const xp = award.kind === 'flexible-xp' ? award.xpPerGrant : 'xp' in award ? award.xp : 0
+      const xp = award.kind === 'flexible-xp' ? (award.allocationMode === 'pool' ? award.totalXp : award.xpPerGrant) : 'xp' in award ? award.xp : 0
       if (!award.id || awardIds.has(award.id) || !Number.isFinite(xp)) issues.push({ moduleId: module.id, message: `Malformed or duplicate award: ${award.id || '(missing)'}` })
       awardIds.add(award.id)
       if (award.kind === 'fixed') {
@@ -169,10 +229,13 @@ export function validateLifeModuleCatalog(catalog: readonly LifeModuleDefinition
             : award.destination.address.skillId
         if (!destinationId) issues.push({ moduleId: module.id, message: `Fixed award ${award.id} has no destination ID.` })
       }
-      if ((award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' || award.kind === 'flexible-xp') && (!Number.isInteger(award.count) || award.count <= 0)) {
+      if ((award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' || (award.kind === 'flexible-xp' && award.allocationMode !== 'pool')) && (!Number.isInteger(award.count) || award.count <= 0)) {
         issues.push({ moduleId: module.id, message: `Choice award ${award.id} requires a positive whole grant count.` })
       }
       if (award.kind === 'flexible-xp' && award.allowedTargetTypes.length === 0) issues.push({ moduleId: module.id, message: `Flexible award ${award.id} requires allowed target types.` })
+      if (award.kind === 'flexible-xp' && award.allocationMode === 'pool' && (!Number.isInteger(award.totalXp) || award.totalXp <= 0 || Object.values(award.maxXpPerTarget).some((cap) => !Number.isInteger(cap) || cap! <= 0))) {
+        issues.push({ moduleId: module.id, message: `Flexible pool ${award.id} requires a positive total and valid per-target caps.` })
+      }
     }
   }
   return issues
