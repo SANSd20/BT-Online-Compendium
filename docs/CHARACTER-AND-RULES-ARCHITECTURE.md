@@ -1,5 +1,13 @@
 # Character and Rules Architecture
 
+## Beta 1 Slice 1 implementation boundary
+
+The implemented foundation provides typed Character and rules models, one shared character factory, minimal structural validation, a versioned save envelope, browser-local persistence, JSON import/export, and placeholder UI routes for all three creation methods.
+
+The rules catalog currently contains source/version descriptors and an empty rule collection. This is intentional: Slice 1 establishes the engine boundary without claiming that Archetype, Point Buy, Life Module, or full Core + Companion catalog content has been entered.
+
+The `playState` property is only a versioned extension point. No playable-sheet runtime system or UI is implemented.
+
 ## Shared engine
 
 Archetype, Point Buy, and Life Modules must use one Character/Rules engine. Rules/data must be separated from application and UI logic. Stable internal IDs—not mutable display names—identify rules objects.

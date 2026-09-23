@@ -15,6 +15,8 @@ Applicable errata—including *A Time of War Companion Errata v1.1*—must be ac
 
 Rules and derived results must preserve source/provenance information.
 
+Beta 1 Slice 1 records these three current sources as versioned catalog metadata and captures them in each new character's creation-rules snapshot. The catalog intentionally contains no bulk rules data yet. The historical First Printing is not included in the active runtime catalog.
+
 Tactical Operations, Interstellar Operations, and other available BattleTech books are not authorized to expand or alter current Character Generator rules scope. Their availability as project material does not make them governing Character Generator sources.
 
 When a published ambiguity or conflict is unresolved, preserve it as unresolved instead of inventing application behavior.
@@ -65,4 +67,3 @@ Do not silently substitute Sarna or another secondary source for upstream data, 
 MegaMek Data identifies itself as CC BY-NC-SA 4.0 and includes BattleTech/Microsoft notices. Every imported snapshot must preserve upstream attribution and license metadata.
 
 Public redistribution and deployment licensing remain a later review item; the present research does not claim to resolve every legal question.
-

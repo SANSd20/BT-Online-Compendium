@@ -1,6 +1,29 @@
-# Future Verification Requirements
+# Verification Requirements
 
-This file records verification expectations; the bootstrap does not execute implementation tests.
+This file records both verified implementation checkpoints and requirements for later slices.
+
+## Beta 1 Slice 1 verification
+
+The Slice 1 foundation is verified by the repository's `npm run check` command, which runs:
+
+- ESLint across the project;
+- Vitest unit tests;
+- TypeScript project compilation; and
+- the Vite production build.
+
+Automated coverage currently verifies:
+
+- all three creation-method placeholders use the shared character factory and model;
+- creation, allocated, and earned gameplay XP remain distinct;
+- the rules/source snapshot is present;
+- a versioned character file round-trips without data loss;
+- `skill.level = null` survives distinctly from `skill.level = 0`;
+- unrelated JSON is rejected;
+- browser-local save/list/load/delete works;
+- a damaged stored entry does not block the rest of the local library; and
+- invalid identity references produce a blocking structural validation issue rather than a blanket override.
+
+Manual UI verification should continue as creation screens gain real rules content. Slice 1 does not claim the future requirements below are fully implemented.
 
 ## Character Generator
 
@@ -81,4 +104,3 @@ Known useful systems include New Avalon, Terra, and Skye. Eventual fixtures must
 ## Documentation/state review
 
 At every material checkpoint, ensure status labels remain accurate. Designed or documented work must not be reported as implemented, and implemented work must not be reported as verified until its required checks have passed.
-

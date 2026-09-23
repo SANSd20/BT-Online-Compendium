@@ -2,7 +2,7 @@
 
 ## Purpose
 
-BT Online Compendium is intended to provide a web-based BattleTech *A Time of War* rules compendium and Character Generator. The long-term Character Generator direction includes a persistable playable-character sheet, but playable-sheet functionality is not part of the current bootstrap.
+BT Online Compendium is intended to provide a web-based BattleTech *A Time of War* rules compendium and Character Generator. The long-term Character Generator direction includes a persistable playable-character sheet, but playable-sheet functionality is not part of Beta 1 Slice 1.
 
 ## Product direction
 
@@ -20,15 +20,16 @@ Saved characters must retain enough underlying information to reproduce and audi
 
 | Workstream | Status | Notes |
 |---|---|---|
-| Repository bootstrap / durable state | Complete | Documentation authority established; no application implementation |
+| Repository bootstrap / durable state | Complete | Documentation authority established |
 | Core + Companion rules audit | In progress | Reconciled through GM arbitration/override architecture; next target is Campaign / Rules Configuration |
-| Shared Character/Rules engine | Approved design; not implemented | Common foundation for all creation methods |
-| Archetype v0.1 | Next implementation target; not authorized by bootstrap | Eight published archetypes are intended golden/regression fixtures |
-| Point Buy | Sequenced after Archetype; not implemented | Exercises direct XP purchasing |
-| Life Modules | Designed substantially; not implemented | State machine, not fixed wizard |
+| Beta 1 Slice 1 application foundation | Implemented and verified | React/TypeScript/Vite shell, shared models, validation, local saves, JSON import/export, placeholder routes |
+| Shared Character/Rules engine | Foundation implemented | Common typed representation and factory are used by all creation-method placeholders; published rules content remains deferred |
+| Archetype v0.1 | Next recommended implementation slice; not yet implemented | Placeholder route only; eight published archetypes are intended golden/regression fixtures |
+| Point Buy | Sequenced after Archetype; not implemented | Placeholder route only; purchasing rules remain deferred |
+| Life Modules | Designed substantially; not implemented | Placeholder route only; state machine and module content remain deferred |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
-| Planetary Rollout 1 | Not started / not authorized by bootstrap | Lossless import through lookup/distance foundation |
+| Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |
 | Political Geography | Conceptually designed; not implemented | Rollout 2 |
 | AToW nearest-state integration | Unresolved and not authorized | Rollout 3 only after semantics are established |
 
@@ -99,6 +100,26 @@ Life Modules must not be a blind fixed wizard. The UI and rules engine need to d
 - GM override;
 - unresolved rules question.
 
+## Implemented Beta 1 Slice 1 foundation
+
+The application currently provides:
+
+- a React + TypeScript + Vite browser application and responsive shell;
+- hash-based entry routes for Archetype, Point Buy, and Life Modules;
+- one shared character factory and Character Definition for all three routes;
+- distinct creation-pool, allocated, and earned/unspent gameplay XP fields;
+- typed foundations for Attributes, Traits, structured Skills, identities, affiliations, phenotype, equipment, vehicles, chronology, provenance, and future Play State;
+- distinct personal-equipment ownership (`Owned`/`Issued`) and vehicle ownership (`Assigned`/`Owned`);
+- a rules catalog boundary with stable IDs and Core + Companion source descriptors, but no bulk rules data;
+- creation-time rules snapshots, optional-rule settings, and narrow GM-exception records;
+- a versioned portable character envelope;
+- browser-local save/list/load/delete behavior;
+- JSON import/export and malformed-file rejection;
+- a minimal typed validation-result framework; and
+- automated tests for the shared factory, schema round-trip, `null` versus Level 0 Skills, local persistence, and structural validation.
+
+The placeholder screens prove the common creation → validation → local save → export path. They do not implement method-specific creation rules.
+
 ## Current audit checkpoint
 
 The Core + Companion character-system reconciliation has established durable findings for:
@@ -124,7 +145,6 @@ The next rules-audit target is **Campaign / Rules Configuration reconciliation**
 
 Audit resume point: **Campaign / Rules Configuration reconciliation.**
 
-Implementation resume point: **Archetype v0.1 with the shared Character/Rules engine**, only when separately authorized.
+Implementation resume point: **Beta 1 Slice 2 — Archetype v0.1 on the implemented shared Character/Rules foundation**, only when separately authorized.
 
 Planetary Rollout 1 remains a separate future authorization. Do not automatically proceed from a queued or documented rollout.
-

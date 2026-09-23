@@ -50,8 +50,10 @@ The data layer must not make those semantic decisions.
 
 ## Deferred implementation
 
-- Point Buy until Archetype/shared-engine foundation is established.
-- Life Modules until the shared engine is established.
+- Published Archetype rules and all eight golden fixtures; foundation route only exists in Slice 1.
+- Point Buy purchasing rules until Archetype v0.1 exercises the shared foundation; foundation route only exists in Slice 1.
+- Life Module state machine and module data until the shared engine is exercised; foundation route only exists in Slice 1.
+- Full Core + Companion rules-catalog data entry.
 - Persistable playable-sheet functionality.
 - Server/database/accounts and cloud character storage.
 - Planetary Rollout 1 until separately authorized.
@@ -60,7 +62,6 @@ The data layer must not make those semantic decisions.
 - Planetary distribution/deployment licensing review.
 - Rich normalization/UI for unused planetary properties.
 
-## Bootstrap prohibitions
+## Current scope boundary
 
-The repository bootstrap does not authorize implementation, framework selection, resolution of open rules questions, or progression through any rollout.
-
+Beta 1 Slice 1 superseded the bootstrap's implementation prohibition only for the explicitly authorized application foundation. It did not authorize full creation-method rules, resolution of open rules questions, playable-sheet runtime behavior, post-Beta publications, or progression through any planetary rollout.
