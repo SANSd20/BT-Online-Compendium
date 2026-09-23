@@ -108,3 +108,152 @@ A Skill Field definition has a stable ID, name, component Skills, and prerequisi
 
 Do not hard-code the standard Stage 3 cost/award formula into the field definition; other sources may grant fields differently. Independently possessing every component Skill does not necessarily confer the formal Skill Field.
 
+
+## Construction, prerequisites, and final validation
+
+Life Module prerequisites need not be satisfied at the moment a module or Skill Field is selected, but normally must be satisfied by final character validation. Temporary prerequisite failure during construction is therefore distinct from final validation failure.
+
+When multiple requirements affect the same statistic, apply the rules-defined more restrictive requirement. Conflicting Life Module or Skill Field prerequisites normally prevent the later conflicting selection. Explicit GM arbitration may override a Life Module prerequisite, and an approved exception must be preserved so the character does not become invalid again when reopened.
+
+Partial XP invested in Attributes, Traits, and Skills is legitimate durable state. Accumulated XP and attained value remain separate concepts.
+
+Optimization is an explicit optional creation operation; never perform it silently. Buying additional creation XP through negative Traits is a separate optional operation subject to the Core limit of 10 percent of starting XP. The same applicable ceiling governs Point Buy.
+
+The starting creation XP pool must be exhausted before normal play. Allocated XP that does not yet attain the next Attribute, Trait, or Skill level remains on that statistic. Keep separate:
+
+- the creation XP pool;
+- XP allocated to character statistics;
+- earned and unspent gameplay XP.
+
+## Final Touches, equipment, and currency
+
+Descriptive Final Touches, including appearance and background, are not mechanical legality requirements unless a specific rule makes them so.
+
+Starting-equipment purchasing is the final pre-play equipment step, but a player need not spend all C-bills. Unspent C-bills carry into play.
+
+Equipped is an access-limit Trait, not a consumable equipment-point pool. Wealth and C-bills are different:
+
+- **Wealth** is the official Trait representing financial standing, resources, and access—conceptually closer to creditworthiness than cash.
+- **C-bills** are tracked spendable liquid funds.
+
+Spending or receiving C-bills does not automatically modify Wealth. Do not rename Wealth to “Credit Score” or create a derived numerical Wealth account without a rule requiring one. Salary, bonuses, Property/Extra Income, and expenses may change currency without changing Wealth.
+
+Wealth is identity-bound. Ordinary C-bills are character-wide unless later authoritative rules establish otherwise; do not invent separate bank balances for aliases.
+
+### Optional Issued Gear
+
+Support the Core optional Issued Gear rule, off by default. Enabling it later enables issued-gear functionality prospectively and does not rebuild or retroactively change original purchases. Disabling it later must not silently delete existing issued items.
+
+Personal-equipment ownership needs only:
+
+- **Owned**;
+- **Issued**.
+
+Do not add issuer identities, issue dates, sessions, units, employers, or similar fields unless a later requirement establishes a need.
+
+### Inventory and loadout
+
+Inventory is character-wide. Preserve equipment location because the Core record sheet records where equipment is kept. Ownership and location are independent.
+
+Items not currently carried do not automatically count toward current carried weight or encumbrance. Combat loadout is a subset/reference into inventory, not a duplicate authoritative inventory. Worn armor, currently relevant weapons, and ammunition belong to current combat/loadout state.
+
+### Vehicles
+
+Vehicle Level establishes the major vehicle entitlement/class and normally represents an assigned vehicle. Paying the Core ownership enhancement makes it owned. Use:
+
+- **Assigned**;
+- **Owned**.
+
+Do not use personal-equipment “Issued” terminology for Vehicle Level. Clan characters who remain in the Clans cannot select vehicle ownership under the Core rule.
+
+Vehicle Level does not select an exact model; Custom Vehicle controls model-selection choice. Preserve the relationship between each Custom Vehicle instance and its applicable Vehicle Trait/vehicle. Vehicle Traits are identity-bound. Companion vehicle expansions remain optional/deferred unless separately authorized.
+
+## Creation and current rule profiles
+
+Identity remains a rules object, not merely a name string. Active identity determines which identity-bound Traits apply. Alternate identities are not duplicate characters; ordinary inventory and C-bills remain character-wide unless an authoritative rule says otherwise. Vehicle Traits remain identity-associated because Core explicitly defines them that way.
+
+Do not permanently bind all optional rules to the state used at creation. Preserve historical creation-rule provenance/snapshot where needed and separately support current campaign/play rules. A later current-rule change that would materially alter creation must flag the difference rather than silently rebuilding the character. Recalculation or rebuilding is explicit.
+
+## Advancement and post-creation modification
+
+Post-creation advancement is not unrestricted Point Buy reuse:
+
+- Attributes require XP plus the rules-defined practice, training, and GM concurrence.
+- New Traits normally require justification and GM approval.
+- Creation-only Traits cannot normally be acquired through later XP purchases.
+- Rank changes through campaign/GM promotion or demotion, not an ordinary XP purchase.
+- Skills have training/use requirements; Advanced Skills have stricter training rules.
+- Aging can directly alter Attribute XP and Traits.
+
+Support distinct post-creation mechanisms conceptually:
+
+- XP advancement;
+- aging;
+- gameplay/event effects;
+- GM/campaign changes.
+
+A minimal provenance/origin marker may distinguish these mechanisms, but no large audit-log requirement is established.
+
+## Edge state
+
+Distinguish the developed EDG Attribute from currently available Edge. Burning Edge reduces available Edge, not accumulated EDG Attribute XP.
+
+Recovering burned Edge and improving EDG are different:
+
+- burned Edge recovery costs 20 XP per recovered point;
+- improving EDG follows normal Attribute advancement at 100 XP per Attribute point;
+- natural/GM recovery cannot exceed the underlying EDG score;
+- if available Edge reaches 0, the first point must be restored through the rules-defined XP method before ordinary recovery resumes.
+
+Unlucky has its own anti-Edge pool and is not part of the character’s EDG pool.
+
+## Damage, healing, and permanent effects
+
+Keep separate:
+
+1. base/durable character state;
+2. current condition/runtime state;
+3. permanent effects.
+
+Runtime state includes Standard Damage, Fatigue, Stunned/Unconscious state, bleeding, temporary injury modifiers, temporary movement effects, and unresolved specific wounds where applicable. Runtime injury modifies effective values without destructively rewriting base Attributes.
+
+Optional Hit Locations add location-specific wound state prospectively when enabled. Do not invent hit locations for prior abstract damage.
+
+Healing and surgery can convert injuries into durable effects such as Lost Limb, Poor Vision, Poor Hearing, Handicap, Compulsion/Medical Addiction, or permanent Attribute modifiers. Permanent Fatigue must be representable separately from recoverable Fatigue.
+
+### Prosthetics and implants
+
+Prosthetics and implants are not solely ordinary inventory. Preserve an underlying injury/condition separately from an installed replacement where the rules do so.
+
+Types 1–5 generally offset an underlying condition rather than deleting it. Type 6 cloned replacements can eliminate the corresponding condition where Core specifies that result.
+
+Installed augmentations may modify Attributes, Traits, Skills, Initiative, BAR, Fatigue, and other effective values. Do not overwrite base Attribute XP; derive effective statistics from base state plus applicable modifiers. Companion advanced cybernetics require a generic effect/modifier mechanism rather than one-off fields for each implant.
+
+## Specialties and Skill Field history
+
+A root Skill plus a required subskill is a distinct trained Skill instance. Different subskills have separate XP, levels, and target numbers. **/Any** awards must resolve to a specific legal subskill while retaining provenance from the unresolved award to that choice.
+
+Specialties are optional and distinct from subskills. Under Core, one Skill/subskill may have at most one specialty, which may develop after creation.
+
+Skill Fields award XP to underlying Skills, not playable Skill statistics. Preserve selected Fields in creation provenance/history because later rules can reference Field membership. Do not create false statistics such as “MechWarrior Field Level 4.”
+
+## Special Pilot Abilities
+
+Special Pilot Abilities (SPAs) are their own capability type, not Traits or Skills. Preserve the official term.
+
+Core classes are Gunnery, Piloting, and Miscellaneous; Companion adds Infantry. Class definitions must be data-driven/extensible rather than hard-coded to the Core classes.
+
+SPA data may include prerequisites, fixed or conditional XP cost, class limits, acquisition thresholds, repeatability, GM approval, and effect/application conditions. Acquisition prerequisites and conditions for use in play are distinct.
+
+SPAs are ordinarily unavailable during character creation, but the rules explicitly support GM exceptions for appropriate experienced starting characters or NPCs. Encode the ordinary restriction and supported exception—not an absolute prohibition.
+
+## GM arbitration and overrides
+
+GM discretion has distinct forms:
+
+- campaign configuration;
+- a specific rule exception or override.
+
+Do not implement a universal unrestricted “ignore rules” switch. Validation should distinguish hard requirements, GM-arbitrable requirements, campaign-configurable restrictions, and informational conditions.
+
+A durable exception needs only the affected rule/requirement identifier, approved state, and an optional note. No GM account identity, approval date, session number, signature, or similar bureaucracy is required without a future established need.

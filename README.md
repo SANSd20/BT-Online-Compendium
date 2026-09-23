@@ -27,11 +27,13 @@ Planetary functionality is supporting infrastructure. It does not replace or sup
 - [`docs/UNRESOLVED-AND-DEFERRED.md`](docs/UNRESOLVED-AND-DEFERRED.md) — unresolved rules questions, deferred work, and prohibited assumptions
 - [`docs/VERIFICATION.md`](docs/VERIFICATION.md) — future implementation verification expectations
 
-## Current resume point
+## Current resume points
 
-The repository bootstrap and durable-state persistence are complete once these documents are committed and verified. No application framework has been selected and no application code has been implemented.
+Repository bootstrap is complete. No application framework has been selected and no application code has been implemented.
 
-The next implementation work, when explicitly authorized, is **Archetype v0.1 using the shared Character/Rules engine**. Planetary Data Foundation Rollout 1 remains designed but unimplemented and must be separately authorized.
+The Core + Companion rules audit is in progress. Its next audit target is **Campaign / Rules Configuration reconciliation**, specifically the boundaries among durable character state, current campaign rules, creation-rules provenance, and per-character GM exceptions.
+
+The next implementation work, only when separately authorized, remains **Archetype v0.1 using the shared Character/Rules engine**. Planetary Data Foundation Rollout 1 remains designed but unimplemented and also requires separate authorization.
 
 ## Status vocabulary
 

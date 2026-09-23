@@ -9,8 +9,11 @@ Current scope is **Core + Companion only**:
 | Primary | *A Time of War — Corrected Third Printing* |
 | Errata | *A Time of War Errata v4.0* |
 | Supplemental | *A Time of War Companion — First Printing Corrected with Errata v1.1* |
+| Historical comparison only | *A Time of War — First Printing*, when required to identify changed or removed rules |
 
-Applicable errata must be accounted for automatically. Rules and derived results must preserve source/provenance information.
+Applicable errata—including *A Time of War Companion Errata v1.1*—must be accounted for automatically. The Corrected Third Printing remains the normal Core authority unless an established audit finding explicitly records otherwise. Historical comparison material does not displace current authority.
+
+Rules and derived results must preserve source/provenance information.
 
 Tactical Operations, Interstellar Operations, and other available BattleTech books are not authorized to expand or alter current Character Generator rules scope. Their availability as project material does not make them governing Character Generator sources.
 
@@ -19,6 +22,8 @@ When a published ambiguity or conflict is unresolved, preserve it as unresolved 
 ## Rules provenance
 
 Rules objects, awards, resolutions, and derived results should retain stable source identities and sufficient detail to trace a result to the governing source. Resolved `/Any` and `/Affiliation` selections must retain both their concrete resolution and source provenance.
+
+Historical creation rules and current campaign/play rules are different provenance concerns. A saved character may need the rules/source snapshot that produced its creation result while also operating under a later current campaign profile. Changing current rules must not silently recalculate or rewrite historical creation results; a rebuild or recalculation is explicit.
 
 Manual GM decisions are not source facts. Future architecture must distinguish:
 

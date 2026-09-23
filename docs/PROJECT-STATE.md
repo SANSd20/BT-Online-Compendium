@@ -20,7 +20,8 @@ Saved characters must retain enough underlying information to reproduce and audi
 
 | Workstream | Status | Notes |
 |---|---|---|
-| Repository bootstrap / durable state | In progress at initial commit | Documentation only |
+| Repository bootstrap / durable state | Complete | Documentation authority established; no application implementation |
+| Core + Companion rules audit | In progress | Reconciled through GM arbitration/override architecture; next target is Campaign / Rules Configuration |
 | Shared Character/Rules engine | Approved design; not implemented | Common foundation for all creation methods |
 | Archetype v0.1 | Next implementation target; not authorized by bootstrap | Eight published archetypes are intended golden/regression fixtures |
 | Point Buy | Sequenced after Archetype; not implemented | Exercises direct XP purchasing |
@@ -98,7 +99,32 @@ Life Modules must not be a blind fixed wizard. The UI and rules engine need to d
 - GM override;
 - unresolved rules question.
 
-## Resume point
+## Current audit checkpoint
 
-After bootstrap verification, the next authorized task must be explicitly selected. The expected Character Generator next step is Archetype v0.1 and the shared engine foundation. Planetary Rollout 1 is a separate future authorization. Do not automatically proceed from a queued or documented rollout.
+The Core + Companion character-system reconciliation has established durable findings for:
+
+- construction and final validation;
+- Final Touches;
+- starting equipment and optional Issued Gear;
+- inventory and combat loadout;
+- Vehicle and Custom Vehicle;
+- alternate identities and identity-bound Traits;
+- Wealth versus C-bills;
+- advancement and post-creation modification;
+- Edge;
+- damage, healing, and permanent injury;
+- implants and prosthetics;
+- Skills, subskills, specialties, and Skill Fields;
+- Special Pilot Abilities;
+- GM arbitration and override architecture.
+
+The next rules-audit target is **Campaign / Rules Configuration reconciliation**. That audit will distinguish durable character state, current campaign rules, creation-rules snapshot/provenance, and per-character GM exceptions. This documentation update does not perform that reconciliation.
+
+## Resume points
+
+Audit resume point: **Campaign / Rules Configuration reconciliation.**
+
+Implementation resume point: **Archetype v0.1 with the shared Character/Rules engine**, only when separately authorized.
+
+Planetary Rollout 1 remains a separate future authorization. Do not automatically proceed from a queued or documented rollout.
 
