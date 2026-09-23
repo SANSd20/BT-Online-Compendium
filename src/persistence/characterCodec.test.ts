@@ -4,7 +4,7 @@ import { decodeCharacter, encodeCharacter } from './characterCodec'
 
 function character() {
   let id = 0
-  return createCharacterDraft('archetype', 'Test Pilot', {
+  return createCharacterDraft('point-buy', 'Test Pilot', {
     now: () => '3025-01-01T00:00:00.000Z',
     id: () => `id-${++id}`,
   })
@@ -31,4 +31,3 @@ describe('character codec', () => {
     expect(() => decodeCharacter('{"hello":"world"}')).toThrow('Unsupported character file format')
   })
 })
-

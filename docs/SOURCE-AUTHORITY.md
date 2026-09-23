@@ -15,7 +15,9 @@ Applicable errata—including *A Time of War Companion Errata v1.1*—must be ac
 
 Rules and derived results must preserve source/provenance information.
 
-Beta 1 Slice 1 records these three current sources as versioned catalog metadata and captures them in each new character's creation-rules snapshot. The catalog intentionally contains no bulk rules data yet. The historical First Printing is not included in the active runtime catalog.
+Beta 1 records these three current sources as versioned catalog metadata and captures them in each new character's creation-rules snapshot. Slice 2 adds the eight published Core archetype packages from Corrected Third Printing pages 52–59; it does not add Companion templates or broader rules data. The historical First Printing is not included in the active runtime catalog.
+
+The archetype catalog preserves printed values even when a sheet's line-item XP does not match the Core page 51 declaration that archetypes use 4,500 XP. Declared and calculated totals remain distinct, and unresolved discrepancies carry explicit source notes. Errata v4.0 contains no archetype-sheet correction that authorizes silently changing those values.
 
 Tactical Operations, Interstellar Operations, and other available BattleTech books are not authorized to expand or alter current Character Generator rules scope. Their availability as project material does not make them governing Character Generator sources.
 

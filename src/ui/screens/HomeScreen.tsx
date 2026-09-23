@@ -9,7 +9,7 @@ interface HomeScreenProps {
 }
 
 const methods: Array<{ method: CreationMethod; label: string; description: string }> = [
-  { method: 'archetype', label: 'Archetype', description: 'First implementation target; rules content is not in this slice.' },
+  { method: 'archetype', label: 'Archetype', description: 'Choose one of eight published Core packages and create a sourced local character.' },
   { method: 'point-buy', label: 'Point Buy', description: 'Foundation route only; purchasing rules remain deferred.' },
   { method: 'life-modules', label: 'Life Modules', description: 'Foundation route only; no fixed wizard or module data is added.' },
 ]
@@ -34,9 +34,9 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
   return (
     <main>
       <section className="hero">
-        <p className="eyebrow">Beta 1 · Slice 1</p>
-        <h1>Character Creator foundation</h1>
-        <p>Create a local draft through the shared Character/Rules engine. Published creation content remains intentionally deferred.</p>
+        <p className="eyebrow">Beta 1 · Slice 2</p>
+        <h1>Character Creator</h1>
+        <p>Create a sourced Core Archetype character through the shared Character/Rules engine. Point Buy and Life Modules remain intentionally deferred.</p>
       </section>
 
       <section aria-labelledby="methods-heading">
@@ -52,7 +52,7 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
               <span className="step">0{index + 1}</span>
               <h3>{label}</h3>
               <p>{description}</p>
-              <a className="button" href={`#/${method}`}>Open placeholder</a>
+              <a className="button" href={`#/${method}`}>{method === 'archetype' ? 'Choose archetype' : 'Open placeholder'}</a>
             </article>
           ))}
         </div>
@@ -76,7 +76,7 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
               <li key={character.id}>
                 <div>
                   <strong>{character.displayName}</strong>
-                  <span>{character.creation.method} · schema-backed local draft</span>
+                  <span>{character.creation.archetype?.displayName ?? character.creation.method} · schema-backed local character</span>
                 </div>
                 <div className="row-actions">
                   <button type="button" onClick={() => downloadCharacter(character)}>Export</button>
@@ -90,4 +90,3 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
     </main>
   )
 }
-

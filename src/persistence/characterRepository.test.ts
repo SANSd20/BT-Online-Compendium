@@ -14,7 +14,7 @@ class MemoryStorage implements StorageLike {
 describe('LocalStorageCharacterRepository', () => {
   it('saves, lists, loads, and deletes a character', () => {
     let id = 0
-    const source = createCharacterDraft('archetype', 'Local Pilot', {
+    const source = createCharacterDraft('point-buy', 'Local Pilot', {
       now: () => '3025-01-01T00:00:00.000Z',
       id: () => `id-${++id}`,
     })

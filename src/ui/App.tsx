@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { CharacterDefinition, CreationMethod } from '../domain/character/model'
 import { LocalStorageCharacterRepository } from '../persistence/characterRepository'
+import { ArchetypeScreen } from './screens/ArchetypeScreen'
 import { CreationMethodScreen } from './screens/CreationMethodScreen'
 import { HomeScreen } from './screens/HomeScreen'
 import { useHashRoute } from './useHashRoute'
@@ -35,7 +36,9 @@ export function App() {
         </a>
         <span className="local-badge">Local-first</span>
       </header>
-      {method ? (
+      {method === 'archetype' ? (
+        <ArchetypeScreen onSave={save} />
+      ) : method ? (
         <CreationMethodScreen method={method} onSave={save} />
       ) : (
         <HomeScreen characters={characters} onImport={save} onDelete={remove} />
@@ -44,4 +47,3 @@ export function App() {
     </div>
   )
 }
-

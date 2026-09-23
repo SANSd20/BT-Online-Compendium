@@ -50,9 +50,10 @@ The data layer must not make those semantic decisions.
 
 ## Deferred implementation
 
-- Published Archetype rules and all eight golden fixtures; foundation route only exists in Slice 1.
-- Point Buy purchasing rules until Archetype v0.1 exercises the shared foundation; foundation route only exists in Slice 1.
-- Life Module state machine and module data until the shared engine is exercised; foundation route only exists in Slice 1.
+- Archetype customization beyond selecting one of the eight published Core packages; customization belongs to later Point Buy work.
+- Resolution of printed Archetype XP/score discrepancies unless an authoritative correction or explicit project interpretation is established. Slice 2 preserves the printed data and records the mismatches.
+- Point Buy purchasing rules; the foundation route remains a placeholder after Slice 2.
+- Life Module state machine and module data; the foundation route remains a placeholder after Slice 2.
 - Full Core + Companion rules-catalog data entry.
 - Persistable playable-sheet functionality.
 - Server/database/accounts and cloud character storage.
@@ -64,4 +65,4 @@ The data layer must not make those semantic decisions.
 
 ## Current scope boundary
 
-Beta 1 Slice 1 superseded the bootstrap's implementation prohibition only for the explicitly authorized application foundation. It did not authorize full creation-method rules, resolution of open rules questions, playable-sheet runtime behavior, post-Beta publications, or progression through any planetary rollout.
+Beta 1 Slices 1–2 supersede the bootstrap's implementation prohibition only for the explicitly authorized application foundation and Core Archetype v0.1. They do not authorize Point Buy, Life Modules, resolution of open rules questions, playable-sheet runtime behavior, post-Beta publications, or progression through any planetary rollout.

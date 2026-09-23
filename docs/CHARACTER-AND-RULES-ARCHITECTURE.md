@@ -1,10 +1,14 @@
 # Character and Rules Architecture
 
-## Beta 1 Slice 1 implementation boundary
+## Beta 1 Slice 2 implementation boundary
 
-The implemented foundation provides typed Character and rules models, one shared character factory, minimal structural validation, a versioned save envelope, browser-local persistence, JSON import/export, and placeholder UI routes for all three creation methods.
+The implemented foundation provides typed Character and rules models, one shared character factory, minimal structural validation, a versioned save envelope, browser-local persistence, JSON import/export, Archetype v0.1, and placeholder UI routes for Point Buy and Life Modules.
 
-The rules catalog currently contains source/version descriptors and an empty rule collection. This is intentional: Slice 1 establishes the engine boundary without claiming that Archetype, Point Buy, Life Module, or full Core + Companion catalog content has been entered.
+The rules catalog contains source/version descriptors plus the eight published Core archetype packages. It does not claim that Point Buy, Life Module, or the full Core + Companion catalog has been entered.
+
+Archetype definitions retain their stable ID, display name, source, Attributes, Traits, structured Skills/subskills, specialties, equipment, C-bills, phenotype, and source notes. Creation maps them into the same saved Character Definition intended for the later methods. The published package is not customized in Archetype v0.1.
+
+Core page 51 calls these 4,500-XP packages, while several printed sheets' listed XP do not sum to 4,500. The model therefore stores the declared package total separately from the calculated ledger allocation and preserves an explicit source note for each mismatch. It does not infer corrected scores or XP. Tanker's printed Attribute scores and XP also conflict and are both retained as printed. Elemental's displayed Skill levels and listed XP are likewise retained separately where Field Aptitude affects the displayed level.
 
 The `playState` property is only a versioned extension point. No playable-sheet runtime system or UI is implemented.
 

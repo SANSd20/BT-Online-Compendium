@@ -4,9 +4,9 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Beta 1 Slice 1 is implemented.** The repository now contains a React + TypeScript + Vite application foundation, the shared Character/Rules domain model, a minimal validation layer, versioned JSON character files, browser-local persistence, import/export, and placeholder entry screens for all three creation methods.
+**Beta 1 Slice 2 is implemented.** The React + TypeScript + Vite application now includes Archetype v0.1 on the shared Character/Rules foundation, versioned JSON character files, browser-local persistence, import/export, and placeholder entry screens for the later Point Buy and Life Module methods.
 
-This is foundation code, not a completed Character Creator. No published Archetype, Point Buy, or Life Module content has been implemented. Planetary work and playable-sheet runtime behavior remain outside this slice.
+All eight published Core archetypes can create, display, save, export, and import characters with source provenance. This is not a completed Character Creator: Point Buy, Life Modules, Planetary work, full rules-catalog entry, and playable-sheet runtime behavior remain outside this slice.
 
 The primary product direction is an offline/PWA-capable, local-first web application whose Character Generator can later evolve into a playable character sheet. Initial character persistence is local browser storage plus import/export through a versioned portable format; server accounts and cloud character storage are not initial requirements.
 
@@ -22,11 +22,11 @@ Planetary functionality is supporting infrastructure. It does not replace or sup
 
 ## Repository map
 
-- [`src/domain/`](src/domain/) — shared Character and rules-catalog models
-- [`src/engine/`](src/engine/) — creation-method-independent character factory
+- [`src/domain/`](src/domain/) — shared Character/rules models and the Core archetype catalog
+- [`src/engine/`](src/engine/) — shared character factory and Archetype creation mapping
 - [`src/validation/`](src/validation/) — typed validation results and minimal structural validation
 - [`src/persistence/`](src/persistence/) — versioned JSON codec, local repository, and browser import/export
-- [`src/ui/`](src/ui/) — app shell and creation-method placeholder screens
+- [`src/ui/`](src/ui/) — app shell, Archetype v0.1, and later-method placeholders
 - [`docs/PROJECT-STATE.md`](docs/PROJECT-STATE.md) — purpose, approved direction, statuses, sequence, and resume point
 - [`docs/SOURCE-AUTHORITY.md`](docs/SOURCE-AUTHORITY.md) — rules scope, errata policy, provenance, and planetary upstream authority
 - [`docs/CHARACTER-AND-RULES-ARCHITECTURE.md`](docs/CHARACTER-AND-RULES-ARCHITECTURE.md) — established Character Generator domain and engine requirements
@@ -47,11 +47,11 @@ Use `npm run check` to run lint, unit tests, TypeScript compilation, and the pro
 
 ## Current resume points
 
-Repository bootstrap and Beta 1 Slice 1 are complete. The implemented app is local-first and requires no server, database, or account.
+Repository bootstrap and Beta 1 Slices 1–2 are complete. The implemented app is local-first and requires no server, database, or account.
 
 The Core + Companion rules audit is in progress. Its next audit target is **Campaign / Rules Configuration reconciliation**, specifically the boundaries among durable character state, current campaign rules, creation-rules provenance, and per-character GM exceptions.
 
-The next recommended implementation slice, only when separately authorized, is **Archetype v0.1 on the shared foundation**, beginning audited rules-catalog content and golden fixtures without importing Point Buy customization. Planetary Data Foundation Rollout 1 remains designed but unimplemented and also requires separate authorization.
+The next recommended implementation slice, only when separately authorized, is **Point Buy v0.1 on the shared foundation**. It should add direct XP purchasing without turning the published Archetype path into a customization workflow. Planetary Data Foundation Rollout 1 remains designed but unimplemented and also requires separate authorization.
 
 ## Status vocabulary
 

@@ -32,6 +32,7 @@ export interface AttributeLedgerEntry {
 
 export interface TraitLedgerEntry {
   traitId: string
+  displayName?: string
   accumulatedXp: number
   attainedTp: number | null
   active: boolean
@@ -50,9 +51,11 @@ export interface SkillAddress {
 
 export interface SkillLedgerEntry {
   address: SkillAddress
+  displayName?: string
   accumulatedXp: number
   level: number | null
   specialty?: string
+  notes?: string[]
   sourceAwards: XpAward[]
 }
 
@@ -74,9 +77,18 @@ export type EquipmentOwnership = 'Owned' | 'Issued'
 export interface EquipmentItem {
   id: string
   catalogItemId: string
+  displayName: string
+  quantity: number
   ownership: EquipmentOwnership
+  publishedOwnershipLabel?: string
+  publishedCostCBills?: number
+  publishedAdditionalCostCBills?: number
+  publishedWeightKg?: number
+  rulesPages?: number[]
+  source?: SourceCitation
+  notes?: string[]
   location?: string
-  carried: boolean
+  carried: boolean | null
   provenanceId: string
 }
 
@@ -109,6 +121,12 @@ export interface CreationState {
   rulesSnapshot: RulesSnapshot
   resolvedChoiceIds: string[]
   gmExceptions: GmException[]
+  archetype?: {
+    archetypeId: string
+    displayName: string
+    source: SourceCitation
+    notes: Array<{ code: string; message: string }>
+  }
 }
 
 export interface LifeModuleHistoryEntry {
@@ -147,4 +165,3 @@ export interface CharacterDefinition {
   provenance: ProvenanceRecord[]
   playState?: PlayStateFoundation
 }
-

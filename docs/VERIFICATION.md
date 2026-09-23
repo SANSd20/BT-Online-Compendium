@@ -25,6 +25,21 @@ Automated coverage currently verifies:
 
 Manual UI verification should continue as creation screens gain real rules content. Slice 1 does not claim the future requirements below are fully implemented.
 
+## Beta 1 Slice 2 verification
+
+Slice 2 extends the same `npm run check` gate. Automated coverage verifies:
+
+- the catalog contains exactly the eight published Core archetypes with stable IDs and Corrected Third Printing page references;
+- catalog validation rejects duplicate IDs, missing required package data, and unannotated XP-total mismatches;
+- every archetype creates a structurally valid shared-schema character with method `archetype`;
+- published Attribute scores and phenotype modifiers, Trait/Skill levels and XP, specialties, equipment ownership, C-bills, and source notes match golden expectations;
+- every derived ledger entry retains source provenance;
+- the declared 4,500-XP package value remains distinct from independently summed printed line-item XP;
+- all eight created characters round-trip through the versioned JSON export/import path; and
+- an unknown archetype ID is rejected.
+
+The Archetype screen supports selection, naming, creation, validation, local save, summary display, and JSON export. Existing application import handles the resulting file through the common codec. Point Buy and Life Modules remain placeholders.
+
 ## Character Generator
 
 - All creation methods use one shared Character/Rules engine.

@@ -2,7 +2,7 @@ import type { RulesCatalog, RulesSnapshot } from './model'
 
 export const BETA_1_RULES_CATALOG: RulesCatalog = {
   id: 'atow.core-companion',
-  version: 'beta-1-slice-1',
+  version: 'beta-1-slice-2',
   sources: [
     {
       id: 'atow-core-corrected-third',
@@ -24,7 +24,7 @@ export const BETA_1_RULES_CATALOG: RulesCatalog = {
       role: 'supplemental',
     },
   ],
-  // Slice 1 establishes the catalog boundary; rules data entry is deferred.
+  // Slice 2 adds archetype packages separately; general rules data entry remains deferred.
   rules: [],
 }
 
