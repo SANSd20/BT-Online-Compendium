@@ -1,0 +1,63 @@
+# Source Authority and Provenance
+
+## Character Generator rules scope
+
+Current scope is **Core + Companion only**:
+
+| Role | Source |
+|---|---|
+| Primary | *A Time of War — Corrected Third Printing* |
+| Errata | *A Time of War Errata v4.0* |
+| Supplemental | *A Time of War Companion — First Printing Corrected with Errata v1.1* |
+
+Applicable errata must be accounted for automatically. Rules and derived results must preserve source/provenance information.
+
+Tactical Operations, Interstellar Operations, and other available BattleTech books are not authorized to expand or alter current Character Generator rules scope. Their availability as project material does not make them governing Character Generator sources.
+
+When a published ambiguity or conflict is unresolved, preserve it as unresolved instead of inventing application behavior.
+
+## Rules provenance
+
+Rules objects, awards, resolutions, and derived results should retain stable source identities and sufficient detail to trace a result to the governing source. Resolved `/Any` and `/Affiliation` selections must retain both their concrete resolution and source provenance.
+
+Manual GM decisions are not source facts. Future architecture must distinguish:
+
+- imported/published fact;
+- compendium-derived result;
+- manual GM decision or override.
+
+## Planetary upstream source
+
+The established upstream planetary source is [MegaMek/mm-data](https://github.com/MegaMek/mm-data), principally:
+
+`data/universe/planetary_systems/`
+
+including `canon_systems/` and `connector_systems/`.
+
+The actual dataset now resides primarily in `mm-data`; MekHQ consumes it. Preserve the distinction between a **planetary system** and a **planet/world**. A system may contain multiple worlds, and a primary world is not necessarily the only possible character homeworld.
+
+Planetary Layer 1 snapshots must identify at least:
+
+- upstream repository;
+- exact Git commit SHA;
+- upstream path;
+- original YAML;
+- file identity/hash;
+- import metadata;
+- license/attribution metadata;
+- `canon_system` versus `connector_system` source-path classification.
+
+## Planetary value provenance
+
+Upstream values may be bare, sourced, or sourced-and-versioned. Preserve `value`, `source`, and `version` rather than flattening them.
+
+A source annotation does not automatically mean published BattleTech canon. Observed forms include publication citations, `canon`, SUCS plus version, and unsourced/generated/support values. Likewise, placement under `canon_systems/` means the system is a real BattleTech system; it does not prove every value in the file is a published canonical fact.
+
+Do not silently substitute Sarna or another secondary source for upstream data, and do not convert “present in MegaMek” into “published canon.”
+
+## Licensing status
+
+MegaMek Data identifies itself as CC BY-NC-SA 4.0 and includes BattleTech/Microsoft notices. Every imported snapshot must preserve upstream attribution and license metadata.
+
+Public redistribution and deployment licensing remain a later review item; the present research does not claim to resolve every legal question.
+
