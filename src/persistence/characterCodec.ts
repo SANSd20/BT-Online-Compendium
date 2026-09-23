@@ -7,7 +7,7 @@ import {
   type SavedCharacterEnvelope,
 } from './schema'
 
-const APPLICATION_VERSION = '0.1.0-alpha.6'
+const APPLICATION_VERSION = '0.1.0-alpha.7'
 const CREATION_METHODS: CreationMethod[] = ['archetype', 'point-buy', 'life-modules']
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -86,6 +86,7 @@ function migrateAlphaLifeModuleState(character: CharacterDefinition): void {
   if (!state) return
   state.awardResolutionVersion ??= 0
   state.resolvedAwards ??= []
+  state.selectedSkillFields ??= []
   state.stopState ??= 'not-eligible'
   state.choiceGrantRequirements ??= state.pendingAwards.map((pending) => ({
     moduleId: pending.moduleId,

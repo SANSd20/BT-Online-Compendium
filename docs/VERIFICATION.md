@@ -134,6 +134,25 @@ Slice 6 extends the same `npm run check` gate. Automated coverage verifies:
 
 Manual UI verification should confirm Stage 1's Alpha partial stop offers explicit Stage 2 continuation, Back Woods and High School are selectable, pooled flexible XP accepts an allocation amount and reports the remaining pool, prerequisite status updates, and the Stage 2 stop clearly states that Stage 3, Stage 4, and finalization remain unsupported.
 
+## Alpha Slice 7 verification
+
+Slice 7 extends the same `npm run check` gate. Automated coverage verifies:
+
+- a resolved Stage 2 Alpha stop can explicitly continue into the minimal Stage 3 branch;
+- Technical College is the only implemented Stage 3 school and repeated Stage 3 schooling remains unavailable;
+- exactly one Basic Field, at least one Advanced Field, no more than three Fields total, and school-offered Field membership are enforced or validated;
+- Technician/Civilian costs 120 XP, Technician/Vehicle costs 96 XP, and Technical College records 600 base plus 216 Field XP for an 816-XP total;
+- Skill Fields are durable training grants with category, cost, XP-per-Skill, time, source, and provenance rather than playable Skills;
+- Technical College fixed awards and both Fields' component-Skill awards apply to the shared ledgers, including stacking Technician Skills and Computers;
+- Interest/Any +30 XP and the 200-XP flexible award remain durable and resolve through the common pending-award engine;
+- Technician/Civilian and Technician/Vehicle prerequisites are tracked and re-evaluated after allocations;
+- selected Fields add three years, producing age 19 from the Stage 2 age-16 boundary;
+- malformed or missing Field records, unknown or duplicate Fields, bad cost/age calculations, missing Field prerequisites, and unsupported Stage 4 continuation are reported;
+- local storage and versioned JSON preserve Stage 3 school, Field, resolved, and unresolved state; and
+- all prior Archetype, Point Buy, and Life Module regression tests continue to pass.
+
+Manual UI verification should confirm the Stage 2 stop offers explicit Stage 3 continuation, Technical College shows its base/Field/total costs and age increase, the selected Fields are visible as durable records, pending awards resolve normally, and the Stage 3 stop does not imply Stage 4 or finalization support.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

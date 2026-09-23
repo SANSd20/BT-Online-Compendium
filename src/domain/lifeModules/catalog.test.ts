@@ -6,12 +6,13 @@ import {
   LIFE_MODULE_CATALOG,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
+  TECHNICAL_COLLEGE_ID,
   UNIVERSAL_STAGE_0_ID,
   validateLifeModuleCatalog,
 } from './catalog'
 
 describe('Life Module Alpha catalog', () => {
-  it('contains the six audited Core entries through Stage 2', () => {
+  it('contains the seven audited Core entries through the minimal Stage 3 branch', () => {
     expect(LIFE_MODULE_CATALOG.map((entry) => entry.id)).toEqual([
       UNIVERSAL_STAGE_0_ID,
       CAPELLAN_COMMONALITY_ID,
@@ -19,6 +20,7 @@ describe('Life Module Alpha catalog', () => {
       BACK_WOODS_ID,
       STAGE_2_BACK_WOODS_ID,
       STAGE_2_HIGH_SCHOOL_ID,
+      TECHNICAL_COLLEGE_ID,
     ])
     expect(validateLifeModuleCatalog()).toEqual([])
   })

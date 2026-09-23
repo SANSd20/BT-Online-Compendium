@@ -49,6 +49,7 @@ describe('character codec', () => {
     delete envelope.character.creation.lifeModules.choiceGrantRequirements
     delete envelope.character.creation.lifeModules.stopState
     delete envelope.character.creation.lifeModules.awardResolutionVersion
+    delete envelope.character.creation.lifeModules.selectedSkillFields
     envelope.character.creation.lifeModules.pendingAwards.forEach((entry: Record<string, unknown>) => {
       delete entry.choiceSource
       delete entry.requiredSkillId
@@ -59,5 +60,6 @@ describe('character codec', () => {
     expect(restored.creation.lifeModules?.stopState).toBe('not-eligible')
     expect(restored.creation.lifeModules?.pendingAwards.find((entry) => entry.awardId === 'blue-collar.career')?.requiredSkillId).toBe('skill.career')
     expect(restored.creation.lifeModules?.choiceGrantRequirements).toHaveLength(4)
+    expect(restored.creation.lifeModules?.selectedSkillFields).toEqual([])
   })
 })

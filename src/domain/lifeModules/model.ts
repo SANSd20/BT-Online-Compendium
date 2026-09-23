@@ -17,7 +17,7 @@ export type LifeModuleAward =
   | { id: string; kind: 'any-skill-choice'; xp: number; skillId: string; displayName: string; count: number }
   | { id: string; kind: 'multi-skill-choice'; xp: number; skillId: string; displayName: string; count: number }
   | { id: string; kind: 'flexible-xp'; xpPerGrant: number; count: number; allowedTargetTypes: AwardTargetType[]; allocationMode?: 'fixed-grants' }
-  | { id: string; kind: 'flexible-xp'; totalXp: number; allowedTargetTypes: AwardTargetType[]; allocationMode: 'pool'; maxXpPerTarget: Partial<Record<AwardTargetType, number>> }
+  | { id: string; kind: 'flexible-xp'; totalXp: number; allowedTargetTypes: AwardTargetType[]; allocationMode: 'pool'; maxXpPerTarget?: Partial<Record<AwardTargetType, number>> }
   | { id: string; kind: 'choice-package'; description: string; options: LifeModuleDestination[][] }
   | { id: string; kind: 'conditional'; description: string; awards: LifeModuleAward[] }
   | { id: string; kind: 'field-grant'; description: string; fieldId: string; xpPerSkill: number; purchaseCostXp: number }
@@ -27,6 +27,7 @@ export type LifeModulePrerequisite =
   | { id: string; kind: 'attribute-minimum'; attributeId: string; minimum: number; description: string }
   | { id: string; kind: 'trait'; traitId: string; description: string }
   | { id: string; kind: 'trait-absent'; traitId: string; description: string }
+  | { id: string; kind: 'skill-field'; fieldIds: string[]; description: string }
   | { id: string; kind: 'path'; description: string }
 
 export interface LifeModuleDefinition {
@@ -39,6 +40,18 @@ export interface LifeModuleDefinition {
   chronologyYears?: number
   primaryLanguage?: string
   secondaryLanguages?: string[]
+  skillFieldSelection?: {
+    offers: Array<{
+      fieldId: string
+      category: 'basic' | 'advanced' | 'special'
+      costXpPerSkill: number
+      awardedXpPerSkill: number
+      chronologyYears: number
+    }>
+    exactlyBasic: number
+    minimumAdvanced: number
+    maximumTotal: number
+  }
   prerequisites: LifeModulePrerequisite[]
   awards: LifeModuleAward[]
   notes: string[]

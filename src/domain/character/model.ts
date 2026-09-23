@@ -127,7 +127,11 @@ export type LifeModulePhase =
   | 'stage-2-resolution'
   | 'stage-2-prerequisite-review'
   | 'alpha-stage-2-stop'
-  | 'stage-3-unsupported'
+  | 'stage-3-selection'
+  | 'stage-3-resolution'
+  | 'stage-3-prerequisite-review'
+  | 'alpha-stage-3-stop'
+  | 'stage-4-unsupported'
 
 export interface ResolvedLifeModuleDestination {
   type: 'attribute' | 'trait' | 'skill'
@@ -186,20 +190,35 @@ export interface LifeModulePrerequisiteIssue {
   finalValidationRequired: boolean
 }
 
+export interface SkillFieldGrantRecord {
+  id: string
+  schoolModuleId: string
+  fieldId: string
+  displayName: string
+  category: 'basic' | 'advanced' | 'special'
+  purchaseCostXp: number
+  xpPerSkill: number
+  chronologyYears: number
+  selectedAt: string
+  provenanceId: string
+  source: SourceCitation
+}
+
 export interface LifeModuleCreationState {
   awardResolutionVersion: 0 | 1
   source: SourceCitation
   startingAllotment: 'standard' | 'gm-adjusted'
   phase: LifeModulePhase
-  currentStage: 0 | 1 | 2
+  currentStage: 0 | 1 | 2 | 3
   moduleXp: LifeModuleXpPool
   selectedModuleIds: string[]
+  selectedSkillFields: SkillFieldGrantRecord[]
   affiliationLanguage?: string
   pendingAwards: PendingLifeModuleAward[]
   resolvedAwards: ResolvedLifeModuleAward[]
   choiceGrantRequirements: LifeModuleChoiceGrantRequirement[]
   prerequisiteIssues: LifeModulePrerequisiteIssue[]
-  stopState: 'not-eligible' | 'alpha-partial-stop' | 'alpha-stage-2-stop'
+  stopState: 'not-eligible' | 'alpha-partial-stop' | 'alpha-stage-2-stop' | 'alpha-stage-3-stop'
   limitations: string[]
 }
 
@@ -236,6 +255,8 @@ export interface LifeModuleHistoryEntry {
   displayName: string
   stage: 0 | 1 | 2 | 3 | 4
   costXp: number
+  baseCostXp?: number
+  fieldCostXp?: number
   selectedAt: string
   provenanceIds: string[]
   source: SourceCitation

@@ -54,8 +54,9 @@ The data layer must not make those semantic decisions.
 - Resolution of printed Archetype XP/score discrepancies unless an authoritative correction or explicit project interpretation is established. Slice 2 preserves the printed data and records the mismatches.
 - Point Buy catalog expansion beyond the Slice 3 focused Skill and Trait subset.
 - Point Buy phenotype selection, Exceptional Attribute interaction, Fast/Slow Learner cost columns, partial XP allocation controls, multiple instances of one Trait, specialties, affiliation selection, full prerequisites/oppositions, complete required-Skill finalization, and equipment purchasing.
-- Life Module catalog expansion beyond the six audited entries implemented through Alpha Slice 6: universal Stage 0, Capellan Confederation/Capellan Commonality, Stage 1 Blue Collar and Back Woods, and Stage 2 Back Woods and High School.
-- Exhaustive affiliation-language catalog validation, full prerequisite finalization, Stages 3–4, Changing Affiliations, Skill Fields, Life Events, and Optimization. Alpha Slice 6 resolves the pending awards in the current minimal catalog but does not implement these broader systems.
+- Life Module catalog expansion beyond the seven audited entries implemented through Alpha Slice 7: universal Stage 0, Capellan Confederation/Capellan Commonality, Stage 1 Blue Collar and Back Woods, Stage 2 Back Woods and High School, and Stage 3 Technical College.
+- Stage 3 schools beyond Technical College, Skill Fields beyond Technician/Civilian and Technician/Vehicle, repeated Stage 3 schooling, and all Stage 4 content.
+- Exhaustive affiliation-language catalog validation, full prerequisite finalization, Changing Affiliations, Life Events, and Optimization. Alpha Slice 7 resolves the pending awards in the current minimal branch but does not implement these broader systems.
 - Full Core + Companion rules-catalog data entry.
 - Persistable playable-sheet functionality.
 - Server/database/accounts and cloud character storage.
@@ -67,4 +68,4 @@ The data layer must not make those semantic decisions.
 
 ## Current scope boundary
 
-Alpha Slices 1–6 supersede the bootstrap's implementation prohibition only for the explicitly authorized application foundation, Core Archetype v0.1, Point Buy v0.1, and the narrow Life Modules v0.3 scope recorded above. They do not authorize broader Life Module content, resolution of open rules questions, PDF export, playable-sheet runtime behavior, post-Beta publications, or progression through any planetary rollout. Beta 1 remains a future milestone requiring completed character creation and PDF export.
+Alpha Slices 1–7 supersede the bootstrap's implementation prohibition only for the explicitly authorized application foundation, Core Archetype v0.1, Point Buy v0.1, and the narrow Life Modules v0.4 scope recorded above. They do not authorize broader Life Module content, resolution of open rules questions, PDF export, playable-sheet runtime behavior, post-Beta publications, or progression through any planetary rollout. Beta 1 remains a future milestone requiring completed Core + Companion character creation and PDF export.

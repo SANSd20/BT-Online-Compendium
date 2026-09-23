@@ -14,6 +14,11 @@ const source = (page: number, ruleId: string): SourceCitation => ({
   page,
   ruleId,
 })
+const sourceWithoutPage = (ruleId: string): SourceCitation => ({
+  sourceId: 'atow-core-corrected-third',
+  edition: 'Corrected Third Printing',
+  ruleId,
+})
 
 const attribute = (attributeId: string): LifeModuleDestination => ({ type: 'attribute', attributeId })
 const trait = (traitId: string, displayName: string, parameters?: Record<string, string | number | boolean>): LifeModuleDestination => ({
@@ -32,6 +37,7 @@ export const BLUE_COLLAR_ID = 'stage1.blue-collar'
 export const BACK_WOODS_ID = 'stage1.back-woods'
 export const STAGE_2_BACK_WOODS_ID = 'stage2.back-woods'
 export const STAGE_2_HIGH_SCHOOL_ID = 'stage2.high-school'
+export const TECHNICAL_COLLEGE_ID = 'stage3.technical-college'
 
 export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
   {
@@ -197,6 +203,34 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     notes: ['Stage 2 represents Late Childhood; completing it advances chronology to age 16.'],
     deferredRules: [],
   },
+  {
+    id: TECHNICAL_COLLEGE_ID,
+    displayName: 'Technical College',
+    stage: 3,
+    kind: 'higher-education',
+    source: sourceWithoutPage('stage-3-technical-college'),
+    costXp: 600,
+    prerequisites: [],
+    skillFieldSelection: {
+      offers: [
+        { fieldId: 'field.technician-civilian', category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: 'field.technician-vehicle', category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+      ],
+      exactlyBasic: 1,
+      minimumAdvanced: 1,
+      maximumTotal: 3,
+    },
+    awards: [
+      fixed('technical-college.attribute.dex', 100, attribute('DEX')),
+      fixed('technical-college.attribute.int', 100, attribute('INT')),
+      fixed('technical-college.trait.equipped', 150, trait('trait.equipped', 'Equipped')),
+      fixed('technical-college.skill.computers', 20, skill('skill.computers', 'Computers')),
+      { id: 'technical-college.interest', kind: 'any-skill-choice', xp: 30, skillId: 'skill.interest', displayName: 'Interest/Any', count: 1 },
+      { id: 'technical-college.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 200, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: ['Civilian Stage 3 school. Base cost is 600 XP plus selected Skill Field costs.'],
+    deferredRules: ['Repeated Stage 3 schooling is not supported in Alpha Slice 7.'],
+  },
 ]
 
 export function getLifeModule(moduleId: string): LifeModuleDefinition {
@@ -211,11 +245,24 @@ export function validateLifeModuleCatalog(catalog: readonly LifeModuleDefinition
   for (const module of catalog) {
     if (!module.id || ids.has(module.id)) issues.push({ moduleId: module.id, message: `Duplicate or missing module ID: ${module.id || '(missing)'}` })
     ids.add(module.id)
-    if (!module.displayName || !Number.isInteger(module.costXp) || module.costXp < 0 || !module.source.sourceId || !module.source.page) {
+    if (!module.displayName || !Number.isInteger(module.costXp) || module.costXp < 0 || !module.source.sourceId) {
       issues.push({ moduleId: module.id, message: 'Module name, non-negative whole cost, and source are required.' })
     }
     if (![0, 1, 2, 3, 4].includes(module.stage)) issues.push({ moduleId: module.id, message: 'Module stage is invalid.' })
     if (module.awards.length === 0) issues.push({ moduleId: module.id, message: 'At least one structured award is required.' })
+    if (module.skillFieldSelection) {
+      const fieldIds = new Set<string>()
+      for (const offer of module.skillFieldSelection.offers) {
+        if (!offer.fieldId || fieldIds.has(offer.fieldId) || !Number.isInteger(offer.costXpPerSkill) || offer.costXpPerSkill <= 0 || !Number.isInteger(offer.awardedXpPerSkill) || offer.awardedXpPerSkill <= 0 || !Number.isInteger(offer.chronologyYears) || offer.chronologyYears <= 0) {
+          issues.push({ moduleId: module.id, message: `Malformed or duplicate Skill Field offer: ${offer.fieldId || '(missing)'}` })
+        }
+        fieldIds.add(offer.fieldId)
+      }
+      const policy = module.skillFieldSelection
+      if (policy.exactlyBasic !== 1 || policy.minimumAdvanced < 1 || policy.maximumTotal < policy.exactlyBasic + policy.minimumAdvanced) {
+        issues.push({ moduleId: module.id, message: 'Skill Field selection constraints are malformed.' })
+      }
+    }
     const awardIds = new Set<string>()
     for (const award of module.awards) {
       const xp = award.kind === 'flexible-xp' ? (award.allocationMode === 'pool' ? award.totalXp : award.xpPerGrant) : 'xp' in award ? award.xp : 0
@@ -233,7 +280,7 @@ export function validateLifeModuleCatalog(catalog: readonly LifeModuleDefinition
         issues.push({ moduleId: module.id, message: `Choice award ${award.id} requires a positive whole grant count.` })
       }
       if (award.kind === 'flexible-xp' && award.allowedTargetTypes.length === 0) issues.push({ moduleId: module.id, message: `Flexible award ${award.id} requires allowed target types.` })
-      if (award.kind === 'flexible-xp' && award.allocationMode === 'pool' && (!Number.isInteger(award.totalXp) || award.totalXp <= 0 || Object.values(award.maxXpPerTarget).some((cap) => !Number.isInteger(cap) || cap! <= 0))) {
+      if (award.kind === 'flexible-xp' && award.allocationMode === 'pool' && (!Number.isInteger(award.totalXp) || award.totalXp <= 0 || Object.values(award.maxXpPerTarget ?? {}).some((cap) => !Number.isInteger(cap) || cap! <= 0))) {
         issues.push({ moduleId: module.id, message: `Flexible pool ${award.id} requires a positive total and valid per-target caps.` })
       }
     }

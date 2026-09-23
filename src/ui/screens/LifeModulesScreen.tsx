@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import type { CharacterDefinition, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
-import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyUniversalStage0, continueToStage2, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
+import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
+import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 
@@ -69,9 +70,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     <main className="creation-page life-modules-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Alpha · Slice 6</p>
+        <p className="eyebrow">Alpha · Slice 7</p>
         <h1>Life Modules</h1>
-        <p>Build a sourced draft through Stage 0, Stage 1, and the audited Stage 2 foundation. Module-purchasing XP remains separate from XP awarded to character statistics.</p>
+        <p>Build a sourced draft through Stage 0, Stage 1, Stage 2, and the audited Technical College branch. Module-purchasing XP remains separate from XP awarded to character statistics.</p>
       </section>
 
       {!character ? (
@@ -137,15 +138,36 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             )}
             {state.phase === 'stage-2-resolution' && <p className="notice">Stage 2 is selected. Resolve all Stage 2 source-bound choices and flexible XP below.</p>}
             {state.phase === 'stage-2-prerequisite-review' && <p className="notice">All Stage 2 awards are resolved, but one or more prerequisites remain outstanding for eventual final validation.</p>}
-            {state.phase === 'alpha-stage-2-stop' && <p className="notice">Stage 0 through Stage 2 are complete for this Alpha catalog. Stage 3, Stage 4, and full finalization remain unsupported.</p>}
+            {state.phase === 'alpha-stage-2-stop' && <div className="life-action"><p className="notice">Stage 0 through Stage 2 are complete. This is a valid Alpha partial stop—not a finalized Beta 1 character.</p><button className="button" type="button" onClick={() => operate(() => continueToStage3(character), 'Stage 3 continuation opened.')}>Continue to Stage 3</button></div>}
+            {state.phase === 'stage-3-selection' && (
+              <div className="stage-options">
+                <article>
+                  <h3>Technical College</h3>
+                  <p>600 XP base cost · civilian Higher Education school.</p>
+                  <label><input type="checkbox" checked readOnly /> Technician/Civilian — Basic, 120 XP, +1 year</label>
+                  <label><input type="checkbox" checked readOnly /> Technician/Vehicle — Advanced, 96 XP, +2 years</label>
+                  <p><strong>Total: 816 XP · +3 years · expected age 19</strong></p>
+                  <button className="button" type="button" onClick={() => operate(() => applyTechnicalCollege(character, [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID]), 'Technical College and selected Skill Fields applied.')}>Select Technical College path</button>
+                </article>
+              </div>
+            )}
+            {state.phase === 'stage-3-resolution' && <p className="notice">Technical College is selected. Resolve Interest/Any and all flexible XP below.</p>}
+            {state.phase === 'stage-3-prerequisite-review' && <p className="notice">All Stage 3 awards are resolved, but one or more Skill Field prerequisites remain outstanding for eventual final validation.</p>}
+            {state.phase === 'alpha-stage-3-stop' && <p className="notice">The minimal Technical College Stage 3 branch is complete. Stage 4 and full finalization remain unsupported.</p>}
           </section>
 
           <section className="life-stage-panel">
             <h2>Selected modules</h2>
             {character.lifeModuleHistory.length === 0 ? <p className="empty">No modules selected.</p> : (
-              <ul className="module-history">{character.lifeModuleHistory.map((entry) => <li key={entry.moduleId}><div><strong>{entry.displayName}</strong><span>Stage {entry.stage} · {entry.costXp} XP · Core p. {entry.source.page}</span></div></li>)}</ul>
+              <ul className="module-history">{character.lifeModuleHistory.map((entry) => <li key={entry.moduleId}><div><strong>{entry.displayName}</strong><span>Stage {entry.stage} · {entry.costXp} XP{entry.baseCostXp !== undefined ? ` (${entry.baseCostXp} base + ${entry.fieldCostXp} Fields)` : ''}{entry.source.page ? ` · Core p. ${entry.source.page}` : ''}</span></div></li>)}</ul>
             )}
           </section>
+
+          {state.selectedSkillFields.length > 0 && <section className="life-stage-panel">
+            <h2>Selected Skill Fields</h2>
+            <ul className="module-history">{state.selectedSkillFields.map((entry) => <li key={entry.id}><div><strong>{entry.displayName}</strong><span>{entry.category} · {entry.purchaseCostXp} XP · +{entry.xpPerSkill} XP per Skill · +{entry.chronologyYears} year{entry.chronologyYears === 1 ? '' : 's'}</span></div></li>)}</ul>
+            <p>Current recorded age: {currentAge(character) ?? 'not established'}</p>
+          </section>}
 
           <section className="life-stage-panel">
             <h2>Applied awards</h2>
@@ -201,7 +223,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
 
           <section className="life-stage-panel">
             <h2>Resolved choices</h2>
-            {state.resolvedAwards.length === 0 ? <p>No choice awards resolved.</p> : <ul className="module-history">{state.resolvedAwards.map((entry) => <li key={entry.id}><div><strong>{entry.destination.displayName}</strong><span>{entry.awardId} · {signed(entry.xp)} XP · Core p. {entry.source.page}</span></div></li>)}</ul>}
+            {state.resolvedAwards.length === 0 ? <p>No choice awards resolved.</p> : <ul className="module-history">{state.resolvedAwards.map((entry) => <li key={entry.id}><div><strong>{entry.destination.displayName}</strong><span>{entry.awardId} · {signed(entry.xp)} XP{entry.source.page ? ` · Core p. ${entry.source.page}` : ''}</span></div></li>)}</ul>}
           </section>
 
           <section className="life-stage-panel">
@@ -244,4 +266,9 @@ function destinationDisplayName(draft: ResolutionDraft): string {
 
 function skillName(skillId: string): string {
   return skillId.replace('skill.', '').split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
+}
+
+function currentAge(character: CharacterDefinition): number | null {
+  const ages = character.chronology.map((entry) => Number(entry.date.match(/^age:(\d+)$/)?.[1])).filter(Number.isFinite)
+  return ages.length > 0 ? Math.max(...ages) : null
 }

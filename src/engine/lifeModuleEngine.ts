@@ -16,10 +16,12 @@ import {
   LIFE_MODULE_RULES_SOURCE,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
+  TECHNICAL_COLLEGE_ID,
   UNIVERSAL_STAGE_0_ID,
 } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
+import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
 
 const CAPELLAN_LANGUAGES = ['Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English'] as const
@@ -42,15 +44,16 @@ export function createLifeModuleCharacter(
     currentStage: 0,
     moduleXp: { starting: startingXp, spent: 0, remaining: startingXp },
     selectedModuleIds: [],
+    selectedSkillFields: [],
     pendingAwards: [],
     resolvedAwards: [],
     choiceGrantRequirements: [],
     prerequisiteIssues: [],
     stopState: 'not-eligible',
     limitations: [
-      'Alpha Slice 6 includes the Stage 0/1 minimal catalog plus the Stage 2 Back Woods and High School modules.',
-      'The current minimal catalog can resolve language, /Any, multi-choice, and flexible awards.',
-      'Stage 3, Stage 4, Changing Affiliations, Skill Fields, Life Events, Optimization, and exhaustive final validation are deferred.',
+      'Alpha Slice 7 includes the Stage 0/1/2 minimal catalog plus Technical College and two Technician Skill Fields.',
+      'The current minimal catalog can resolve language, /Affiliation, /Any, multi-choice, and flexible awards.',
+      'Stage 4, the broad Stage 3 and Skill Field catalogs, repeated schooling, Changing Affiliations, Life Events, Optimization, and exhaustive final validation are deferred.',
     ],
   }
   character.provenance.push({ id: provenanceId, kind: 'published', description: 'Life Module character creation rules', source: { ...LIFE_MODULE_RULES_SOURCE } })
@@ -145,6 +148,62 @@ export function applyStage2Module(
   return updateLifeModuleProgress(next)
 }
 
+export function continueToStage3(character: CharacterDefinition): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  if (state.phase !== 'alpha-stage-2-stop' || state.stopState !== 'alpha-stage-2-stop') {
+    throw new Error('Stage 3 continuation requires a resolved, prerequisite-satisfied Stage 2 Alpha stop.')
+  }
+  state.phase = 'stage-3-selection'
+  state.currentStage = 3
+  state.stopState = 'not-eligible'
+  next.updatedAt = new Date().toISOString()
+  return next
+}
+
+export function applyTechnicalCollege(
+  character: CharacterDefinition,
+  fieldIds: string[] = [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID],
+): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-3-selection') throw new Error('A Stage 3 school is not the current legal action.')
+  if (character.lifeModuleHistory.some((entry) => entry.stage === 3)) throw new Error('Repeated Stage 3 schooling is not supported in Alpha Slice 7.')
+  const school = getLifeModule(TECHNICAL_COLLEGE_ID)
+  validateSchoolFieldSelection(school, fieldIds)
+  const selections = fieldIds.map((fieldId) => ({ field: getSkillField(fieldId), offer: school.skillFieldSelection!.offers.find((entry) => entry.fieldId === fieldId)! }))
+  const fieldCostXp = selections.reduce((total, selection) => total + skillFieldCost(selection.field, selection.offer.costXpPerSkill), 0)
+  const totalCostXp = school.costXp + fieldCostXp
+  const next = applyModule(character, school, {}, { totalCostXp, fieldCostXp })
+  const selectedAt = next.lifeModuleHistory.at(-1)?.selectedAt ?? new Date().toISOString()
+  for (const { field, offer } of selections) {
+    const provenanceId = makeId(undefined, `field-${field.id}`)
+    next.provenance.push({ id: provenanceId, kind: 'published', description: `${field.displayName} Skill Field grant`, source: { ...field.source } })
+    for (const component of field.componentSkills) applyDestinationAward(next, component, offer.awardedXpPerSkill, provenanceId)
+    requireLifeModules(next).selectedSkillFields.push({
+      id: makeId(undefined, 'field-grant'),
+      schoolModuleId: school.id,
+      fieldId: field.id,
+      displayName: field.displayName,
+      category: offer.category,
+      purchaseCostXp: skillFieldCost(field, offer.costXpPerSkill),
+      xpPerSkill: offer.awardedXpPerSkill,
+      chronologyYears: offer.chronologyYears,
+      selectedAt,
+      provenanceId,
+      source: { ...field.source },
+    })
+  }
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  const age = 16 + selections.reduce((total, selection) => total + selection.offer.chronologyYears, 0)
+  next.chronology.push({ date: `age:${age}`, eventId: `${school.id}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })
+  return updateLifeModuleProgress(next)
+}
+
+export function applyStage3School(character: CharacterDefinition, moduleId: string, fieldIds: string[]): CharacterDefinition {
+  if (moduleId !== TECHNICAL_COLLEGE_ID) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
+  return applyTechnicalCollege(character, fieldIds)
+}
+
 export function resolvePendingLifeModuleAward(
   character: CharacterDefinition,
   pendingAwardId: string,
@@ -171,7 +230,7 @@ export function resolvePendingLifeModuleAward(
     const alreadyAllocated = state.resolvedAwards
       .filter((entry) => entry.moduleId === pending.moduleId && entry.awardId === pending.awardId && resolvedDestinationKey(entry.destination) === destinationKey)
       .reduce((total, entry) => total + entry.xp, 0)
-    if (cap !== undefined && alreadyAllocated + appliedXp! > cap) throw new Error(`Stage 2 flexible XP may allocate no more than ${cap} XP to one ${normalized.type}.`)
+    if (cap !== undefined && alreadyAllocated + appliedXp! > cap) throw new Error(`This flexible award may allocate no more than ${cap} XP to one ${normalized.type}.`)
   }
   const moduleHistory = next.lifeModuleHistory.find((entry) => entry.moduleId === pending.moduleId)
   const provenanceId = moduleHistory?.provenanceIds[0]
@@ -196,11 +255,13 @@ function applyModule(
   character: CharacterDefinition,
   module: LifeModuleDefinition,
   resolutions: Record<string, LifeModuleDestination>,
+  options: { totalCostXp?: number; fieldCostXp?: number } = {},
 ): CharacterDefinition {
   const next = structuredClone(character)
   const state = requireLifeModules(next)
   if (state.selectedModuleIds.includes(module.id)) throw new Error(`Life Module already selected: ${module.id}`)
-  if (state.moduleXp.remaining < module.costXp) throw new RangeError(`Selecting ${module.displayName} would overspend the Life Module XP pool.`)
+  const totalCostXp = options.totalCostXp ?? module.costXp
+  if (state.moduleXp.remaining < totalCostXp) throw new RangeError(`Selecting ${module.displayName} would overspend the Life Module XP pool.`)
   const selectedAt = new Date().toISOString()
   const provenanceId = makeId(undefined, `module-${module.id}`)
   const provenance: ProvenanceRecord = { id: provenanceId, kind: 'published', description: `${module.displayName} module awards`, source: { ...module.source } }
@@ -224,8 +285,8 @@ function applyModule(
     }
     else addPendingAward(state.pendingAwards, module, award)
   }
-  state.moduleXp.spent += module.costXp
-  state.moduleXp.remaining -= module.costXp
+  state.moduleXp.spent += totalCostXp
+  state.moduleXp.remaining -= totalCostXp
   state.selectedModuleIds.push(module.id)
   next.xp.creation.remaining = state.moduleXp.remaining
   next.xp.creation.allocated = calculateLedgerXp(next)
@@ -233,7 +294,8 @@ function applyModule(
     moduleId: module.id,
     displayName: module.displayName,
     stage: module.stage,
-    costXp: module.costXp,
+    costXp: totalCostXp,
+    ...(options.totalCostXp !== undefined ? { baseCostXp: module.costXp, fieldCostXp: options.fieldCostXp ?? 0 } : {}),
     selectedAt,
     provenanceIds: [provenanceId],
     source: { ...module.source },
@@ -242,6 +304,25 @@ function applyModule(
   state.prerequisiteIssues.push(...module.prerequisites.map((entry) => evaluatePrerequisite(next, module.id, entry)))
   next.updatedAt = selectedAt
   return next
+}
+
+function validateSchoolFieldSelection(school: LifeModuleDefinition, fieldIds: string[]): void {
+  const policy = school.skillFieldSelection
+  if (!policy) throw new Error(`${school.displayName} has no Skill Field selection policy.`)
+  if (new Set(fieldIds).size !== fieldIds.length) throw new Error('Skill Fields may not be selected more than once.')
+  const offered = new Map(policy.offers.map((entry) => [entry.fieldId, entry]))
+  const selections = fieldIds.map((fieldId) => {
+    const offer = offered.get(fieldId)
+    if (!offer) throw new Error(`Skill Field ${fieldId} is not offered by ${school.displayName}.`)
+    return { field: getSkillField(fieldId), offer }
+  })
+  const basicCount = selections.filter((entry) => entry.offer.category === 'basic').length
+  const advancedCount = selections.filter((entry) => entry.offer.category === 'advanced').length
+  const specialCount = selections.filter((entry) => entry.offer.category === 'special').length
+  if (basicCount !== policy.exactlyBasic) throw new Error(`${school.displayName} requires exactly one Basic Skill Field.`)
+  if (advancedCount < policy.minimumAdvanced) throw new Error(`${school.displayName} requires at least one Advanced Skill Field.`)
+  if (selections.length > policy.maximumTotal) throw new Error(`${school.displayName} permits no more than ${policy.maximumTotal} Skill Fields.`)
+  if (specialCount > 0 && advancedCount === 0) throw new Error('Special Skill Fields require at least one Advanced Skill Field.')
 }
 
 function awardGrantCount(award: LifeModuleAward): number | null {
@@ -291,7 +372,7 @@ function applyDestinationAward(character: CharacterDefinition, destination: Life
 
 function addPendingAward(pending: PendingLifeModuleAward[], module: LifeModuleDefinition, award: Exclude<LifeModuleAward, { kind: 'fixed' }>): void {
   if (award.kind === 'choice-package' || award.kind === 'conditional' || award.kind === 'field-grant') {
-    throw new Error(`Award type ${award.kind} is modeled but not supported by the Alpha Slice 6 engine.`)
+    throw new Error(`Award type ${award.kind} is modeled but not supported by the Alpha Slice 7 engine.`)
   }
   pending.push(pendingAwardFrom(module, award))
 }
@@ -304,10 +385,10 @@ function pendingAwardFrom(module: LifeModuleDefinition, award: Exclude<LifeModul
   const allowedTargetTypes = kind === 'flexible-xp' ? award.allowedTargetTypes : ['skill' as const]
   return {
     id: makeId(undefined, 'pending-award'), moduleId: module.id, awardId: award.id, kind,
-    description: kind === 'language-choice' || kind === 'affiliation-skill-choice' ? award.description : kind === 'flexible-xp' ? (isPool ? `Allocate ${award.totalXp} flexible XP within the Stage 2 caps.` : `Allocate ${remainingGrants} grants of ${xpPerGrant} XP.`) : `${award.displayName}: choose ${remainingGrants} concrete subskill${remainingGrants === 1 ? '' : 's'}.`,
+    description: kind === 'language-choice' || kind === 'affiliation-skill-choice' ? award.description : kind === 'flexible-xp' ? (isPool ? `Allocate ${award.totalXp} flexible XP under its source restrictions.` : `Allocate ${remainingGrants} grants of ${xpPerGrant} XP.`) : `${award.displayName}: choose ${remainingGrants} concrete subskill${remainingGrants === 1 ? '' : 's'}.`,
     xpPerGrant,
     remainingGrants,
-    ...(isPool ? { allocationMode: 'pool' as const, remainingXp: award.totalXp, maxXpPerTarget: { ...award.maxXpPerTarget } } : { allocationMode: 'fixed-grants' as const }),
+    ...(isPool ? { allocationMode: 'pool' as const, remainingXp: award.totalXp, ...(award.maxXpPerTarget ? { maxXpPerTarget: { ...award.maxXpPerTarget } } : {}) } : { allocationMode: 'fixed-grants' as const }),
     allowedTargetTypes: [...allowedTargetTypes],
     ...(kind === 'language-choice' ? { choiceSource: award.choicesFrom, requiredSkillId: 'skill.language' } : {}),
     ...(kind === 'affiliation-skill-choice' || kind === 'any-skill-choice' || kind === 'multi-skill-choice' ? { requiredSkillId: award.skillId } : {}),
@@ -320,16 +401,20 @@ function updateLifeModuleProgress(character: CharacterDefinition): CharacterDefi
   state.prerequisiteIssues = state.selectedModuleIds.flatMap((moduleId) => {
     const module = getLifeModule(moduleId)
     return module.prerequisites.map((entry) => evaluatePrerequisite(character, moduleId, entry, state.prerequisiteIssues))
-  })
+  }).concat(state.selectedSkillFields.flatMap((grant) => getSkillField(grant.fieldId).prerequisites.map((entry) => evaluatePrerequisite(character, grant.fieldId, entry, state.prerequisiteIssues))))
   const hasStage1 = character.lifeModuleHistory.some((entry) => entry.stage === 1)
   if (!hasStage1) return character
   const hasStage2 = character.lifeModuleHistory.some((entry) => entry.stage === 2)
-  state.currentStage = hasStage2 ? 2 : 1
+  const hasStage3 = character.lifeModuleHistory.some((entry) => entry.stage === 3)
+  state.currentStage = hasStage3 ? 3 : hasStage2 ? 2 : 1
   state.stopState = 'not-eligible'
   if (state.pendingAwards.length > 0) {
-    state.phase = hasStage2 ? 'stage-2-resolution' : 'stage-1-resolution'
+    state.phase = hasStage3 ? 'stage-3-resolution' : hasStage2 ? 'stage-2-resolution' : 'stage-1-resolution'
   } else if (state.prerequisiteIssues.some((entry) => entry.status === 'outstanding')) {
-    state.phase = hasStage2 ? 'stage-2-prerequisite-review' : 'stage-1-prerequisite-review'
+    state.phase = hasStage3 ? 'stage-3-prerequisite-review' : hasStage2 ? 'stage-2-prerequisite-review' : 'stage-1-prerequisite-review'
+  } else if (hasStage3) {
+    state.phase = 'alpha-stage-3-stop'
+    state.stopState = 'alpha-stage-3-stop'
   } else if (hasStage2) {
     state.phase = 'alpha-stage-2-stop'
     state.stopState = 'alpha-stage-2-stop'
@@ -361,6 +446,7 @@ function evaluatePrerequisite(
   }
   if (prerequisite.kind === 'trait') satisfied = character.traits.some((item) => item.traitId === prerequisite.traitId && item.active)
   if (prerequisite.kind === 'trait-absent') satisfied = !character.traits.some((item) => item.traitId === prerequisite.traitId && item.active)
+  if (prerequisite.kind === 'skill-field') satisfied = prerequisite.fieldIds.some((fieldId) => character.creation.lifeModules?.selectedSkillFields.some((grant) => grant.fieldId === fieldId))
   return {
     id: `${moduleId}/${prerequisite.id}`,
     moduleId,

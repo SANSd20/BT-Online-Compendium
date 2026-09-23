@@ -8,7 +8,8 @@ import {
 import { calculateNegativeTraitXp, calculatePointBuyAllocatedXp } from '../domain/pointBuy/calculations'
 import type { ValidationIssue, ValidationResult } from './model'
 import { getLifeModule } from '../domain/lifeModules/catalog'
-import type { LifeModuleAward, LifeModuleDefinition } from '../domain/lifeModules/model'
+import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
+import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
 
 function issue(
   id: string,
@@ -138,6 +139,10 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     return
   }
   const { starting, spent, remaining } = state.moduleXp
+  if (!Array.isArray(state.selectedSkillFields)) {
+    issues.push(issue('life-modules.skill-fields.state.malformed', 'creation.lifeModules.selectedSkillFields', 'Durable Skill Field records are required.'))
+    return
+  }
   if (!Number.isInteger(starting) || starting <= 0 || !Number.isInteger(spent) || spent < 0 || !Number.isInteger(remaining) || remaining < 0) {
     issues.push(issue('life-modules.xp.valid', 'creation.lifeModules.moduleXp', 'Life Module XP values must be non-negative whole numbers with a positive starting pool.'))
   }
@@ -152,8 +157,10 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     selectedIds.add(entry.moduleId)
     try {
       const definition = getLifeModule(entry.moduleId)
-      calculatedCost += definition.costXp
-      if (entry.costXp !== definition.costXp || entry.stage !== definition.stage || !entry.source.sourceId) {
+      const selectedFieldCost = state.selectedSkillFields.filter((grant) => grant.schoolModuleId === entry.moduleId).reduce((total, grant) => total + grant.purchaseCostXp, 0)
+      const expectedCost = definition.skillFieldSelection ? definition.costXp + selectedFieldCost : definition.costXp
+      calculatedCost += expectedCost
+      if (entry.costXp !== expectedCost || entry.stage !== definition.stage || !entry.source.sourceId || (definition.skillFieldSelection && (entry.baseCostXp !== definition.costXp || entry.fieldCostXp !== selectedFieldCost))) {
         issues.push(issue('life-modules.module.malformed', `lifeModuleHistory.${index}`, 'Life Module history does not match its catalog definition.'))
       }
     } catch (error) {
@@ -171,11 +178,15 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const hasAffiliation = selectedIds.has('stage0.capellan-confederation.capellan-commonality')
   const stage1Count = character.lifeModuleHistory.filter((entry) => entry.stage === 1).length
   const stage2Count = character.lifeModuleHistory.filter((entry) => entry.stage === 2).length
+  const stage3Count = character.lifeModuleHistory.filter((entry) => entry.stage === 3).length
   if (!hasUniversal) issues.push(issue('life-modules.universal.outstanding', 'lifeModuleHistory', 'The universal Stage 0 package is still required.', { severity: 'warning' }))
   if (!hasAffiliation) issues.push(issue('life-modules.affiliation.outstanding', 'lifeModuleHistory', 'A Stage 0 affiliation is still required.', { severity: 'warning' }))
   if (stage1Count !== 1) issues.push(issue('life-modules.stage-1.outstanding', 'lifeModuleHistory', 'Exactly one Stage 1 module is required.', { severity: stage1Count === 0 ? 'warning' : 'error' }))
   if (stage2Count > 1) issues.push(issue('life-modules.stage-2.multiple', 'lifeModuleHistory', 'No more than one Stage 2 module may be selected.'))
   if (state.currentStage === 2 && stage2Count === 0 && state.phase !== 'stage-2-selection') issues.push(issue('life-modules.stage-2.outstanding', 'lifeModuleHistory', 'Stage 2 has not been selected for this continuation.', { severity: 'warning' }))
+  if (stage3Count > 1) issues.push(issue('life-modules.stage-3.multiple', 'lifeModuleHistory', 'Repeated Stage 3 schooling is not supported.'))
+  if (state.currentStage === 3 && stage3Count === 0) issues.push(issue('life-modules.stage-3.outstanding', 'lifeModuleHistory', 'A Stage 3 school has not yet been selected for this continuation.', { severity: 'warning' }))
+  validateSkillFieldGrants(character, issues, provenanceIds, stage3Count)
   if (!Array.isArray(state.pendingAwards) || !Array.isArray(state.resolvedAwards) || !Array.isArray(state.choiceGrantRequirements)) {
     issues.push(issue('life-modules.award-state.malformed', 'creation.lifeModules', 'Pending and resolved Life Module award collections are required.'))
     return
@@ -202,7 +213,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
       expectedTypes.length !== award.allowedTargetTypes.length ||
       expectedTypes.some((type) => !award.allowedTargetTypes.includes(type as 'attribute' | 'trait' | 'skill')) ||
       expectedSkill !== award.requiredSkillId ||
-      (isPool && (award.allocationMode !== 'pool' || JSON.stringify(award.maxXpPerTarget) !== JSON.stringify(poolAward.maxXpPerTarget)))
+      (isPool && (award.allocationMode !== 'pool' || JSON.stringify(award.maxXpPerTarget ?? {}) !== JSON.stringify(poolAward.maxXpPerTarget ?? {})))
     ) {
       issues.push(issue('life-modules.pending-award.malformed', `creation.lifeModules.pendingAwards.${index}`, 'Pending Life Module award state is malformed.'))
     }
@@ -215,32 +226,45 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     issues.push(issue('life-modules.prerequisites.outstanding', 'creation.lifeModules.prerequisiteIssues', 'One or more Life Module prerequisites remain outstanding for final validation.', { severity: 'warning', kind: 'prerequisite', gmOverrideAllowed: true }))
   }
   if (stage1Count === 1) {
-    const expectedPhase = state.phase === 'stage-2-selection' && stage2Count === 0
-      ? 'stage-2-selection'
-      : stage2Count === 1
+    const expectedPhase = state.phase === 'stage-3-selection' && stage3Count === 0
+      ? 'stage-3-selection'
+      : stage3Count === 1
         ? state.pendingAwards.length > 0
-          ? 'stage-2-resolution'
+          ? 'stage-3-resolution'
           : hasOutstandingPrerequisite
-            ? 'stage-2-prerequisite-review'
-            : 'alpha-stage-2-stop'
-        : state.pendingAwards.length > 0
-          ? 'stage-1-resolution'
-          : hasOutstandingPrerequisite
-            ? 'stage-1-prerequisite-review'
-            : 'alpha-partial-stop'
+            ? 'stage-3-prerequisite-review'
+            : 'alpha-stage-3-stop'
+        : state.phase === 'stage-2-selection' && stage2Count === 0
+          ? 'stage-2-selection'
+          : stage2Count === 1
+            ? state.pendingAwards.length > 0
+              ? 'stage-2-resolution'
+              : hasOutstandingPrerequisite
+                ? 'stage-2-prerequisite-review'
+                : 'alpha-stage-2-stop'
+            : state.pendingAwards.length > 0
+              ? 'stage-1-resolution'
+              : hasOutstandingPrerequisite
+                ? 'stage-1-prerequisite-review'
+                : 'alpha-partial-stop'
     if (state.phase !== expectedPhase) issues.push(issue('life-modules.phase.malformed', 'creation.lifeModules.phase', `Life Module phase should be ${expectedPhase}.`))
-    if (expectedPhase === 'alpha-partial-stop' || expectedPhase === 'alpha-stage-2-stop') {
+    if (expectedPhase === 'alpha-partial-stop' || expectedPhase === 'alpha-stage-2-stop' || expectedPhase === 'alpha-stage-3-stop') {
       if (state.stopState !== expectedPhase) issues.push(issue('life-modules.stop-state.malformed', 'creation.lifeModules.stopState', 'Completed Life Module award resolution requires the matching Alpha partial-stop state.'))
-      issues.push(issue('life-modules.alpha-stop.valid', 'creation.lifeModules.stopState', expectedPhase === 'alpha-stage-2-stop' ? 'Stage 0 through Stage 2 are complete for the implemented Alpha catalog; Stage 3/4 and finalization remain unsupported.' : 'Stage 0 and Stage 1 are complete; the draft may stop here or explicitly continue to Stage 2.', { severity: 'information', kind: 'availability' }))
+      const message = expectedPhase === 'alpha-stage-3-stop'
+        ? 'Stage 0 through the minimal Stage 3 branch are complete; Stage 4 and finalization remain unsupported.'
+        : expectedPhase === 'alpha-stage-2-stop'
+          ? 'Stage 0 through Stage 2 are complete; the draft may stop here or explicitly continue to the minimal Stage 3 branch.'
+          : 'Stage 0 and Stage 1 are complete; the draft may stop here or explicitly continue to Stage 2.'
+      issues.push(issue('life-modules.alpha-stop.valid', 'creation.lifeModules.stopState', message, { severity: 'information', kind: 'availability' }))
     } else if (state.stopState !== 'not-eligible') {
       issues.push(issue('life-modules.stop-state.malformed', 'creation.lifeModules.stopState', 'This draft is not eligible for an Alpha partial stop.'))
     }
   }
-  if (state.phase === 'stage-3-unsupported' || state.currentStage > 2) {
-    issues.push(issue('life-modules.continuation.unsupported', 'creation.lifeModules.phase', 'Continuation into Stage 3 or later is not supported in Alpha Slice 6.', { severity: 'warning', kind: 'availability' }))
+  if (state.phase === 'stage-4-unsupported' || state.currentStage > 3) {
+    issues.push(issue('life-modules.continuation.unsupported', 'creation.lifeModules.phase', 'Continuation into Stage 4 is not supported in Alpha Slice 7.', { severity: 'warning', kind: 'availability' }))
   }
   if (character.creation.status === 'finalized') {
-    issues.push(issue('life-modules.finalization.unsupported', 'creation.status', 'Full Life Module finalization is not implemented in Alpha Slice 6.'))
+    issues.push(issue('life-modules.finalization.unsupported', 'creation.status', 'Full Life Module finalization is not implemented in Alpha Slice 7.'))
   }
 }
 
@@ -292,11 +316,87 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
       const resolved = state.resolvedAwards.filter((entry) => entry.moduleId === moduleId && entry.awardId === award.id)
       for (const target of resolved) {
         const total = resolved.filter((entry) => lifeModuleDestinationKey(entry.destination) === lifeModuleDestinationKey(target.destination)).reduce((sum, entry) => sum + entry.xp, 0)
-        const cap = award.maxXpPerTarget[target.destination.type]
+        const cap = award.maxXpPerTarget?.[target.destination.type]
         if (cap !== undefined && total > cap) issues.push(issue('life-modules.flexible-cap.exceeded', 'creation.lifeModules.resolvedAwards', `${module.displayName} flexible XP exceeds the ${cap} XP cap for one ${target.destination.type}.`))
       }
     }
   }
+}
+
+function validateSkillFieldGrants(character: CharacterDefinition, issues: ValidationIssue[], provenanceIds: Set<string>, stage3Count: number): void {
+  const state = character.creation.lifeModules!
+  const seen = new Set<string>()
+  for (const [index, grant] of state.selectedSkillFields.entries()) {
+    let field
+    try { field = getSkillField(grant.fieldId) } catch (error) {
+      issues.push(issue('life-modules.skill-field.unknown', `creation.lifeModules.selectedSkillFields.${index}.fieldId`, error instanceof Error ? error.message : 'Unknown Skill Field.'))
+      continue
+    }
+    if (seen.has(grant.fieldId)) issues.push(issue('life-modules.skill-field.duplicate', `creation.lifeModules.selectedSkillFields.${index}.fieldId`, 'A Skill Field may not be selected more than once in Alpha Slice 7.'))
+    seen.add(grant.fieldId)
+    const school = character.lifeModuleHistory.find((entry) => entry.moduleId === grant.schoolModuleId && entry.stage === 3)
+    let schoolDefinition: LifeModuleDefinition | undefined
+    try { schoolDefinition = school ? getLifeModule(school.moduleId) : undefined } catch { /* school validation reports this */ }
+    const offer = schoolDefinition?.skillFieldSelection?.offers.find((entry) => entry.fieldId === grant.fieldId)
+    if (
+      !grant.id ||
+      !school ||
+      !offer ||
+      grant.displayName !== field.displayName ||
+      grant.category !== offer?.category ||
+      grant.purchaseCostXp !== skillFieldCost(field, offer?.costXpPerSkill ?? 0) ||
+      grant.xpPerSkill !== offer?.awardedXpPerSkill ||
+      grant.chronologyYears !== offer?.chronologyYears ||
+      !grant.selectedAt ||
+      !grant.source.sourceId ||
+      !provenanceIds.has(grant.provenanceId)
+    ) {
+      issues.push(issue('life-modules.skill-field.malformed', `creation.lifeModules.selectedSkillFields.${index}`, 'Durable Skill Field record does not match its catalog definition, school, cost, chronology, or provenance.'))
+    }
+    for (const prerequisite of field.prerequisites) {
+      const tracked = state.prerequisiteIssues.find((entry) => entry.moduleId === field.id && entry.prerequisiteId === prerequisite.id)
+      if (!tracked || tracked.description !== prerequisite.description) {
+        issues.push(issue('life-modules.skill-field.prerequisite.missing', 'creation.lifeModules.prerequisiteIssues', `${field.displayName} prerequisite ${prerequisite.description} is not tracked durably.`))
+      } else if (tracked.status !== 'gm-override' && tracked.status !== (skillFieldPrerequisiteSatisfied(character, prerequisite) ? 'satisfied' : 'outstanding')) {
+        issues.push(issue('life-modules.skill-field.prerequisite.malformed', 'creation.lifeModules.prerequisiteIssues', `${field.displayName} prerequisite ${prerequisite.description} has an incorrect status.`))
+      }
+    }
+  }
+
+  const stage3 = character.lifeModuleHistory.find((entry) => entry.stage === 3)
+  if (!stage3) {
+    if (state.selectedSkillFields.length > 0) issues.push(issue('life-modules.skill-field.without-school', 'creation.lifeModules.selectedSkillFields', 'Skill Fields require a selected Stage 3 school.'))
+    return
+  }
+  let school: LifeModuleDefinition | undefined
+  try { school = getLifeModule(stage3.moduleId) } catch { return }
+  const policy = school.skillFieldSelection
+  if (!policy) {
+    issues.push(issue('life-modules.skill-field.policy.missing', 'lifeModuleHistory', 'Selected Stage 3 school has no Skill Field policy.'))
+    return
+  }
+  const grants = state.selectedSkillFields.filter((grant) => grant.schoolModuleId === stage3.moduleId)
+  const basicCount = grants.filter((grant) => grant.category === 'basic').length
+  const advancedCount = grants.filter((grant) => grant.category === 'advanced').length
+  if (basicCount !== policy.exactlyBasic) issues.push(issue('life-modules.skill-field.basic.required', 'creation.lifeModules.selectedSkillFields', 'Technical College requires exactly one Basic Skill Field.'))
+  if (advancedCount < policy.minimumAdvanced) issues.push(issue('life-modules.skill-field.advanced.required', 'creation.lifeModules.selectedSkillFields', 'Technical College requires at least one Advanced Skill Field.'))
+  if (grants.length > policy.maximumTotal) issues.push(issue('life-modules.skill-field.maximum', 'creation.lifeModules.selectedSkillFields', `Technical College permits no more than ${policy.maximumTotal} Skill Fields.`))
+  if (stage3Count === 1) {
+    const expectedAge = 16 + grants.reduce((total, grant) => total + grant.chronologyYears, 0)
+    const chronology = character.chronology.find((entry) => entry.eventId === `${stage3.moduleId}.complete`)
+    if (!chronology || chronology.date !== `age:${expectedAge}` || !provenanceIds.has(chronology.provenanceId)) {
+      issues.push(issue('life-modules.stage-3.age.malformed', 'chronology', 'Stage 3 chronology must equal age 16 plus the selected Skill Field time and retain valid provenance.'))
+    }
+  }
+}
+
+function skillFieldPrerequisiteSatisfied(character: CharacterDefinition, prerequisite: LifeModulePrerequisite): boolean {
+  if (prerequisite.kind === 'attribute-minimum') return (character.attributes.find((entry) => entry.attributeId === prerequisite.attributeId)?.purchasedLevel ?? 0) >= prerequisite.minimum
+  if (prerequisite.kind === 'skill-field') return prerequisite.fieldIds.some((fieldId) => character.creation.lifeModules?.selectedSkillFields.some((grant) => grant.fieldId === fieldId))
+  if (prerequisite.kind === 'trait') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
+  if (prerequisite.kind === 'trait-absent') return !character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
+  if (prerequisite.kind === 'affiliation') return character.affiliations.length > 0 && (prerequisite.classification !== 'non-clan' || character.affiliations.every((entry) => !entry.affiliationId.startsWith('affiliation.clan')))
+  return false
 }
 
 const LIFE_MODULE_ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG']
