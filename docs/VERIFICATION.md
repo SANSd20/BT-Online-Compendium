@@ -2,7 +2,7 @@
 
 This file records both verified implementation checkpoints and requirements for later slices.
 
-## Beta 1 Slice 1 verification
+## Alpha Slice 1 verification
 
 The Slice 1 foundation is verified by the repository's `npm run check` command, which runs:
 
@@ -25,7 +25,7 @@ Automated coverage currently verifies:
 
 Manual UI verification should continue as creation screens gain real rules content. Slice 1 does not claim the future requirements below are fully implemented.
 
-## Beta 1 Slice 2 verification
+## Alpha Slice 2 verification
 
 Slice 2 extends the same `npm run check` gate. Automated coverage verifies:
 
@@ -40,7 +40,7 @@ Slice 2 extends the same `npm run check` gate. Automated coverage verifies:
 
 The Archetype screen supports selection, naming, creation, validation, local save, summary display, and JSON export. Existing application import handles the resulting file through the common codec. This was the Slice 2 boundary; Slice 3 implements Point Buy while Life Modules remain a placeholder.
 
-## Beta 1 Slice 3 verification
+## Alpha Slice 3 verification
 
 Slice 3 extends the same `npm run check` gate. Automated coverage verifies:
 
@@ -77,7 +77,7 @@ The Point Buy screen supports naming, standard or GM-adjusted starting XP, Attri
 - Versioned import/export retains enough data to reproduce and audit results.
 - Unresolved rules yield an explicit unresolved state rather than invented behavior.
 
-## Beta 1 Slice 4 verification
+## Alpha Slice 4 verification
 
 Slice 4 extends the same `npm run check` gate. Automated coverage verifies:
 
@@ -95,6 +95,27 @@ Slice 4 extends the same `npm run check` gate. Automated coverage verifies:
 - all prior Archetype and Point Buy regression tests continue to pass.
 
 Manual UI verification should confirm the route exposes phase, module-pool status, selected modules, applied awards, unresolved awards, prerequisite status, local save, and export. A Stage 1 selection with unresolved awards must remain in Stage 1 resolution and must not be presented as finalized or advanced to Stage 2.
+
+## Alpha Slice 5 verification
+
+Slice 5 extends the same `npm run check` gate. Automated coverage verifies:
+
+- concrete language-choice grants apply to structured Language subskills;
+- `/Any` awards require and retain concrete subskills;
+- multi-choice awards resolve one grant at a time and preserve the remaining count;
+- flexible awards apply only to source-permitted Attribute, Trait, or Skill target types;
+- duplicate destinations within the same source award, missing subskills, and invalid flexible targets are rejected;
+- resolved grants update Attribute, Trait, and Skill ledgers without changing the module-purchasing pool;
+- partial Trait XP remains inactive until its threshold and Skill XP retains `null` versus Level +0 behavior;
+- every resolved grant retains source, destination, XP, provenance, and resolution history;
+- pending and resolved grant counts reconcile with durable catalog-derived requirements;
+- malformed resolved destinations, missing grants, invalid provenance, and inconsistent phase/stop state fail validation;
+- prerequisites are re-evaluated after every allocation;
+- fully resolved, prerequisite-satisfied Stage 0/1 drafts reach `alpha-partial-stop` while later continuation and full finalization remain unsupported;
+- partially resolved state survives both local storage and versioned JSON round trips; and
+- all prior Archetype, Point Buy, and Life Module v0.1 regression tests continue to pass.
+
+Manual UI verification should confirm every pending award exposes an appropriate resolver, each applied grant disappears or decrements its source pending record, summaries update immediately, resolved choices remain visible, and the Alpha partial-stop message cannot be mistaken for Beta 1 completion.
 
 ## Core + Companion audit requirements
 

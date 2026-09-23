@@ -132,6 +132,11 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .module-history span { color: var(--muted); font-size: .82rem; }
 .award-columns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .award-columns ul, .life-stage-panel ul { color: var(--muted); line-height: 1.6; }
+.pending-awards { display: grid; gap: 14px; }
+.pending-awards article { display: grid; grid-template-columns: minmax(220px, 1.3fr) repeat(3, minmax(140px, 1fr)) auto; gap: 12px; align-items: end; padding: 18px; border: 1px solid var(--line); background: #0d151d; }
+.pending-awards article > div p { margin: 4px 0 0; font-size: .82rem; }
+.pending-awards label { display: grid; gap: 6px; color: var(--muted); font-size: .78rem; }
+.pending-awards input, .pending-awards select { width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); color: #fff; background: #091017; }
 footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
 
 @media (max-width: 760px) {
@@ -146,6 +151,7 @@ footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--mute
   .sheet-heading { flex-direction: column; }
   .life-action { grid-template-columns: 1fr; }
   .stage-options, .award-columns { grid-template-columns: 1fr; }
+  .pending-awards article { grid-template-columns: 1fr; }
   .source-card { min-width: 0; width: 100%; }
 }
 

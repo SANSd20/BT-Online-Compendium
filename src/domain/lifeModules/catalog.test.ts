@@ -8,7 +8,7 @@ import {
   validateLifeModuleCatalog,
 } from './catalog'
 
-describe('Life Module Slice 4 catalog', () => {
+describe('Life Module Alpha catalog', () => {
   it('contains the four audited Core entries', () => {
     expect(LIFE_MODULE_CATALOG.map((entry) => entry.id)).toEqual([
       UNIVERSAL_STAGE_0_ID,
@@ -26,4 +26,3 @@ describe('Life Module Slice 4 catalog', () => {
     ]))
   })
 })
-

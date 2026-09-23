@@ -1,4 +1,5 @@
 import type { CharacterDefinition, CreationMethod } from '../domain/character/model'
+import { getLifeModule } from '../domain/lifeModules/catalog'
 import { validateCharacter } from '../validation/validateCharacter'
 import {
   CHARACTER_FILE_FORMAT,
@@ -6,7 +7,7 @@ import {
   type SavedCharacterEnvelope,
 } from './schema'
 
-const APPLICATION_VERSION = '0.1.0-beta.4'
+const APPLICATION_VERSION = '0.1.0-alpha.5'
 const CREATION_METHODS: CreationMethod[] = ['archetype', 'point-buy', 'life-modules']
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -72,9 +73,33 @@ export function decodeCharacter(json: string): CharacterDefinition {
   }
 
   assertEnvelope(parsed)
+  migrateAlphaLifeModuleState(parsed.character)
   const validation = validateCharacter(parsed.character)
   if (!validation.valid) {
     throw new Error(`Character file failed validation: ${validation.issues.map((item) => item.message).join(' ')}`)
   }
   return parsed.character
+}
+
+function migrateAlphaLifeModuleState(character: CharacterDefinition): void {
+  const state = character.creation.lifeModules
+  if (!state) return
+  state.awardResolutionVersion ??= 0
+  state.resolvedAwards ??= []
+  state.stopState ??= 'not-eligible'
+  state.choiceGrantRequirements ??= state.pendingAwards.map((pending) => ({
+    moduleId: pending.moduleId,
+    awardId: pending.awardId,
+    requiredGrants: pending.remainingGrants,
+  }))
+  state.pendingAwards.forEach((pending) => {
+    let award
+    try { award = getLifeModule(pending.moduleId).awards.find((entry) => entry.id === pending.awardId) } catch { return }
+    if (!award) return
+    if (award.kind === 'language-choice') {
+      pending.choiceSource ??= award.choicesFrom
+      pending.requiredSkillId ??= 'skill.language'
+    }
+    if (award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') pending.requiredSkillId ??= award.skillId
+  })
 }

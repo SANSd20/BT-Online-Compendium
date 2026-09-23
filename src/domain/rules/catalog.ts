@@ -1,8 +1,8 @@
 import type { RulesCatalog, RulesSnapshot } from './model'
 
-export const BETA_1_RULES_CATALOG: RulesCatalog = {
+export const ALPHA_RULES_CATALOG: RulesCatalog = {
   id: 'atow.core-companion',
-  version: 'beta-1-slice-4',
+  version: 'alpha-slice-5',
   sources: [
     {
       id: 'atow-core-corrected-third',
@@ -30,10 +30,10 @@ export const BETA_1_RULES_CATALOG: RulesCatalog = {
 
 export function createRulesSnapshot(capturedAt: string): RulesSnapshot {
   return {
-    catalogId: BETA_1_RULES_CATALOG.id,
-    catalogVersion: BETA_1_RULES_CATALOG.version,
+    catalogId: ALPHA_RULES_CATALOG.id,
+    catalogVersion: ALPHA_RULES_CATALOG.version,
     capturedAt,
-    sources: BETA_1_RULES_CATALOG.sources.map((source) => ({ ...source })),
+    sources: ALPHA_RULES_CATALOG.sources.map((source) => ({ ...source })),
     optionalRules: [],
   }
 }

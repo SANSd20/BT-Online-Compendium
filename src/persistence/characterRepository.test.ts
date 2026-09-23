@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createPointBuyCharacter } from '../engine/pointBuyEngine'
+import { BLUE_COLLAR_ID } from '../domain/lifeModules/catalog'
+import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../engine/lifeModuleEngine'
 import { LocalStorageCharacterRepository, type StorageLike } from './characterRepository'
 
 class MemoryStorage implements StorageLike {
@@ -33,5 +35,20 @@ describe('LocalStorageCharacterRepository', () => {
     storage.setItem('bt-online-compendium:character:broken', '{not json')
     const repository = new LocalStorageCharacterRepository(storage)
     expect(repository.list()).toEqual([])
+  })
+
+  it('preserves resolved and unresolved Life Module awards in local storage', () => {
+    let character = createLifeModuleCharacter('Local Module Character')
+    character = applyUniversalStage0(character, 'Mandarin Chinese')
+    character = applyCapellanCommonality(character, 'Russian')
+    character = applyStage1Module(character, BLUE_COLLAR_ID)
+    const pending = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'blue-collar.interests')!
+    character = resolvePendingLifeModuleAward(character, pending.id, {
+      type: 'skill', targetId: 'skill.interest', displayName: 'Interest/History', parameter: { kind: 'subskill', value: 'History' },
+    })
+    const repository = new LocalStorageCharacterRepository(new MemoryStorage())
+    repository.save(character)
+    expect(repository.get(character.id)).toEqual(character)
+    expect(repository.get(character.id)?.creation.lifeModules?.pendingAwards.find((entry) => entry.awardId === 'blue-collar.interests')?.remainingGrants).toBe(1)
   })
 })

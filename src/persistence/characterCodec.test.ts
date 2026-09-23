@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createCharacterDraft } from '../engine/characterFactory'
+import { BLUE_COLLAR_ID } from '../domain/lifeModules/catalog'
+import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../engine/lifeModuleEngine'
 import { decodeCharacter, encodeCharacter } from './characterCodec'
 
 function character() {
@@ -35,5 +37,27 @@ describe('character codec', () => {
     const envelope = JSON.parse(encodeCharacter(character()))
     delete envelope.character.creation.method
     expect(() => decodeCharacter(JSON.stringify(envelope))).toThrow('Character creation method is invalid')
+  })
+
+  it('migrates Alpha Slice 4 pending-award saves without losing unresolved grants', () => {
+    let source = createLifeModuleCharacter('Older Alpha Draft')
+    source = applyUniversalStage0(source, 'Mandarin Chinese')
+    source = applyCapellanCommonality(source, 'Russian')
+    source = applyStage1Module(source, BLUE_COLLAR_ID)
+    const envelope = JSON.parse(encodeCharacter(source))
+    delete envelope.character.creation.lifeModules.resolvedAwards
+    delete envelope.character.creation.lifeModules.choiceGrantRequirements
+    delete envelope.character.creation.lifeModules.stopState
+    delete envelope.character.creation.lifeModules.awardResolutionVersion
+    envelope.character.creation.lifeModules.pendingAwards.forEach((entry: Record<string, unknown>) => {
+      delete entry.choiceSource
+      delete entry.requiredSkillId
+    })
+    const restored = decodeCharacter(JSON.stringify(envelope))
+    expect(restored.creation.lifeModules?.resolvedAwards).toEqual([])
+    expect(restored.creation.lifeModules?.awardResolutionVersion).toBe(0)
+    expect(restored.creation.lifeModules?.stopState).toBe('not-eligible')
+    expect(restored.creation.lifeModules?.pendingAwards.find((entry) => entry.awardId === 'blue-collar.career')?.requiredSkillId).toBe('skill.career')
+    expect(restored.creation.lifeModules?.choiceGrantRequirements).toHaveLength(4)
   })
 })

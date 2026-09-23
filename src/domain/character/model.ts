@@ -121,7 +121,20 @@ export type LifeModulePhase =
   | 'stage-0-affiliation'
   | 'stage-1-selection'
   | 'stage-1-resolution'
+  | 'stage-1-prerequisite-review'
+  | 'alpha-partial-stop'
   | 'stage-2-or-finalization'
+
+export interface ResolvedLifeModuleDestination {
+  type: 'attribute' | 'trait' | 'skill'
+  targetId: string
+  displayName: string
+  parameter?: {
+    kind: string
+    value: string
+  }
+  parameters?: Record<string, string | number | boolean>
+}
 
 export interface PendingLifeModuleAward {
   id: string
@@ -132,7 +145,27 @@ export interface PendingLifeModuleAward {
   xpPerGrant: number
   remainingGrants: number
   allowedTargetTypes: Array<'attribute' | 'trait' | 'skill'>
+  choiceSource?: 'affiliation-languages' | 'capellan-secondary' | 'federated-suns-languages'
+  requiredSkillId?: string
   source: SourceCitation
+}
+
+export interface ResolvedLifeModuleAward {
+  id: string
+  moduleId: string
+  awardId: string
+  kind: PendingLifeModuleAward['kind']
+  xp: number
+  destination: ResolvedLifeModuleDestination
+  provenanceId: string
+  resolvedAt: string
+  source: SourceCitation
+}
+
+export interface LifeModuleChoiceGrantRequirement {
+  moduleId: string
+  awardId: string
+  requiredGrants: number
 }
 
 export interface LifeModulePrerequisiteIssue {
@@ -145,6 +178,7 @@ export interface LifeModulePrerequisiteIssue {
 }
 
 export interface LifeModuleCreationState {
+  awardResolutionVersion: 0 | 1
   source: SourceCitation
   startingAllotment: 'standard' | 'gm-adjusted'
   phase: LifeModulePhase
@@ -153,7 +187,10 @@ export interface LifeModuleCreationState {
   selectedModuleIds: string[]
   affiliationLanguage?: string
   pendingAwards: PendingLifeModuleAward[]
+  resolvedAwards: ResolvedLifeModuleAward[]
+  choiceGrantRequirements: LifeModuleChoiceGrantRequirement[]
   prerequisiteIssues: LifeModulePrerequisiteIssue[]
+  stopState: 'not-eligible' | 'alpha-partial-stop'
   limitations: string[]
 }
 

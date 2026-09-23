@@ -71,7 +71,7 @@ export function PointBuyScreen({ onSave }: PointBuyScreenProps) {
     <main className="creation-page point-buy-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Beta 1 · Slice 3</p>
+        <p className="eyebrow">Alpha · Slice 3</p>
         <h1>Point Buy</h1>
         <p>Spend a creation XP pool on Normal Human Attributes and a focused Core Skill and Trait catalog. Every purchase uses the shared character schema and retains its Core source.</p>
       </section>

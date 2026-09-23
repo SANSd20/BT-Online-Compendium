@@ -2,7 +2,7 @@
 
 ## Purpose
 
-BT Online Compendium is intended to provide a web-based BattleTech *A Time of War* rules compendium and Character Generator. The long-term Character Generator direction includes a persistable playable-character sheet, but playable-sheet functionality is not part of Beta 1 Slices 1–4.
+BT Online Compendium is intended to provide a web-based BattleTech *A Time of War* rules compendium and Character Generator. The current phase is Alpha. Beta 1 is a future milestone requiring completed character creation and PDF export. The long-term direction also includes a persistable playable-character sheet, which is not part of the current Alpha slices.
 
 ## Product direction
 
@@ -22,14 +22,16 @@ Saved characters must retain enough underlying information to reproduce and audi
 |---|---|---|
 | Repository bootstrap / durable state | Complete | Documentation authority established |
 | Core + Companion rules audit | In progress | Reconciled through GM arbitration/override architecture; next target is Campaign / Rules Configuration |
-| Beta 1 Slice 1 application foundation | Implemented and verified | React/TypeScript/Vite shell, shared models, validation, local saves, JSON import/export, placeholder routes |
-| Beta 1 Slice 2 Archetype v0.1 | Implemented and verified | All eight Core archetypes create shared-schema characters with provenance, local save, JSON import/export, display, and golden tests |
-| Beta 1 Slice 3 Point Buy v0.1 | Implemented and verified | Normal Human Attribute purchasing plus focused Skill/subskill and Trait purchasing with budget enforcement and provenance |
-| Beta 1 Slice 4 Life Modules v0.1 | Implemented and verified | Stage 0/1 state machine, separate module pool, audited four-entry catalog, concrete awards, pending choices, prerequisite tracking, persistence, and UI |
+| Alpha Slice 1 application foundation | Implemented and verified | React/TypeScript/Vite shell, shared models, validation, local saves, JSON import/export, placeholder routes |
+| Alpha Slice 2 Archetype v0.1 | Implemented and verified | All eight Core archetypes create shared-schema characters with provenance, local save, JSON import/export, display, and golden tests |
+| Alpha Slice 3 Point Buy v0.1 | Implemented and verified | Normal Human Attribute purchasing plus focused Skill/subskill and Trait purchasing with budget enforcement and provenance |
+| Alpha Slice 4 Life Modules v0.1 | Implemented and verified | Stage 0/1 state machine, separate module pool, audited four-entry catalog, concrete awards, pending choices, prerequisite tracking, persistence, and UI |
+| Alpha Slice 5 Life Modules v0.2 | Implemented and verified | Pending language, `/Any`, multi-choice, and flexible awards resolve into shared ledgers with durable audit history and prerequisite re-evaluation |
 | Shared Character/Rules engine | Foundation implemented and exercised | Archetype, Point Buy, and Life Modules use the common representation, ledgers, validation, persistence, and provenance |
 | Archetype v0.1 | Implemented | Published packages are source-faithful, non-customizable starting configurations |
 | Point Buy v0.1 | Implemented | Core 5,000-XP default, GM-adjusted allotment recording, Attribute/Skill/Trait costs, negative-Trait ceiling, drafts, persistence, and focused catalogs |
-| Life Modules v0.1 | Implemented, deliberately narrow | Universal Stage 0, Capellan/Commonality, Blue Collar, and Back Woods only; choice allocation, later stages, and full catalog remain deferred |
+| Life Modules v0.2 | Implemented, deliberately narrow | Universal Stage 0, Capellan/Commonality, Blue Collar, and Back Woods only; current pending awards resolve, while later stages and the full catalog remain deferred |
+| Beta 1 milestone | Future | Requires completed character creation and PDF export; not reached by Alpha Slice 5 |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
 | Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |
@@ -103,7 +105,7 @@ Life Modules must not be a blind fixed wizard. The UI and rules engine need to d
 - GM override;
 - unresolved rules question.
 
-## Implemented Beta 1 foundation
+## Implemented Alpha foundation
 
 The application currently provides:
 
@@ -124,6 +126,10 @@ The application currently provides:
 - a Life Module purchasing pool separate from statistic ledgers, with module costs unable to be financed by positive or negative awards;
 - fixed Attribute, Trait, Skill, structured subskill, and parameterized-Trait awards on the shared ledgers, including partial XP and source provenance;
 - durable pending records for unresolved language, `/Any`, multi-choice, and flexible awards, plus final-validation prerequisite records for Back Woods;
+- source-bound resolution records for each applied choice/flexible grant, including concrete destination, XP, source, provenance, and resolution time;
+- incremental resolution of language, `/Any`, multi-choice, and flexible awards with target restrictions and duplicate-choice prevention;
+- automatic prerequisite re-evaluation after every resolved grant;
+- explicit Stage 1 resolution, prerequisite-review, and valid Alpha partial-stop states without claiming later-stage or Beta 1 completion;
 - creation-time rules snapshots, optional-rule settings, and narrow GM-exception records;
 - a versioned portable character envelope;
 - browser-local save/list/load/delete behavior;
@@ -133,7 +139,7 @@ The application currently provides:
 
 All three creation screens use the common catalog → creation → validation → local save → export/import path. The Life Module route additionally exposes current phase, module-pool accounting, selected history, applied awards, unresolved awards, and prerequisite status.
 
-Life Modules v0.1 intentionally does not allocate its retained FedSuns-language, `/Any`, multi-choice, or flexible awards. Because Core requires all module awards to be resolved before advancement, selecting Blue Collar or Back Woods leaves the draft in `stage-1-resolution`; it does not silently advance or finalize. Stage 2–4 content, Changing Affiliations, full affiliation-language resolution, Skill Fields, Life Events, Optimization, negative-Trait XP purchasing, and exhaustive final validation remain deferred.
+Life Modules v0.2 allocates the currently modeled FedSuns-language, `/Any`, multi-choice, and flexible awards. Partially resolved awards remain durable, and all grants must resolve before the state can leave `stage-1-resolution`. Outstanding prerequisites lead to `stage-1-prerequisite-review`; otherwise the draft reaches `alpha-partial-stop`. That stop means Stage 0 and Stage 1 are complete for the implemented Alpha catalog, not that full Life Module creation or Beta 1 finalization is complete. Stage 2–4 content, Changing Affiliations, exhaustive affiliation-language catalogs, Skill Fields, Life Events, Optimization, negative-Trait XP purchasing, and exhaustive final validation remain deferred.
 
 The Core introduction describes the archetypes as 4,500-XP packages, but independently summing the printed Attribute, Trait, and Skill XP produces different totals for several sheets. Corrected Third Printing values are preserved without speculative repair, the declared package total and calculated line-item total remain separate, and each mismatch is recorded as a catalog note. Errata v4.0 does not provide a correction for these sheets.
 
@@ -162,6 +168,6 @@ The next rules-audit target is **Campaign / Rules Configuration reconciliation**
 
 Audit resume point: **Campaign / Rules Configuration reconciliation.**
 
-Implementation resume point: **Life Modules v0.2 — pending-award resolution and finalization foundation**, only when separately authorized. Resolve the v0.1 pending award types and re-evaluate prerequisites before broad catalog expansion.
+Implementation resume point: **Alpha Slice 6 — Life Modules v0.3 Stage 2 foundation**, only when separately authorized. Add a small audited Stage 2 module set and legal continuation from the Alpha partial stop without implying full catalog or finalization support.
 
 Planetary Rollout 1 remains a separate future authorization. Do not automatically proceed from a queued or documented rollout.
