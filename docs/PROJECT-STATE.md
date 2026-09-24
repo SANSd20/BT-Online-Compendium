@@ -41,11 +41,12 @@ Saved characters must retain enough underlying information to reproduce and audi
 | Alpha Slice 17 Life Modules v0.14 | Implemented and verified | Added six audited page-299 non-combat attire/leatherwear records with inert BAR, coverage, facing, and penalty metadata; catalog total 81 |
 | Alpha Slice 18 Life Modules v0.15 | Implemented and verified | Canonicalized the existing Clan Power Pack stable ID and added three net-new audited page-306 Clan pack records with inert PP/quick-charge metadata; catalog total 84 |
 | Alpha Slice 19 Public Alpha deployment foundation | Implemented and verified | Static production readiness, visible Public Alpha/version/local-storage/limitations notices, platform-neutral deployment guidance; no rules, catalog, backend, login, cloud save, or live deployment |
+| Alpha Slice 20 Public static host foundation | Implemented and verified | GitHub Pages selected, Actions checks/builds/deploys static `dist/`, and Vite production assets use the project-page base path; no rules, catalog, backend, login, or cloud save changes |
 | Shared Character/Rules engine | Foundation implemented and exercised | Archetype, Point Buy, and Life Modules use the common representation, ledgers, validation, persistence, and provenance |
 | Archetype v0.1 | Implemented | Published packages are source-faithful, non-customizable starting configurations |
 | Point Buy v0.1 | Implemented | Core 5,000-XP default, GM-adjusted allotment recording, Attribute/Skill/Trait costs, negative-Trait ceiling, drafts, persistence, and focused catalogs |
 | Life Modules v0.15 | Implemented, deliberately narrow | Existing Stage 0–4 path, final review/Optimization, Final Touches, and 84-item equipment catalog; true finalization and broad catalogs remain deferred |
-| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 19 |
+| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 20 |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
 | Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |
@@ -181,6 +182,10 @@ Life Modules v0.15 retains the existing minimal Stage 0–4, final-review, and F
 
 Alpha Slice 19 changes deployment presentation, not character rules. Version `0.1.0-alpha.19` builds to static files in `dist/` and displays a persistent Public Alpha notice covering browser-local storage, JSON backup/import portability, incomplete rules/equipment/final validation, Core-first scope with Companion later, unavailable PDF export, and the lack of a play-ready guarantee. Public access targets a normal browser URL without ChatGPT or application login. No backend, authentication, analytics, external API, server persistence, account, cloud save, rules data, equipment data, or live hosting deployment was added. Account/login/cloud save remains a pre-v1.0 roadmap item.
 
+Alpha Slice 20 selects GitHub Pages for that unchanged Public Alpha. Version `0.1.0-alpha.20` configures production assets for `/BT-Online-Compendium/` while preserving root-based local development. The Pages workflow checks the app, produces static `dist/`, uploads it, and deploys through the `github-pages` environment on `main` pushes or manual dispatch. The target URL is `https://sansd20.github.io/BT-Online-Compendium/`; repository Pages settings must use GitHub Actions. No rules, catalog entries, stable IDs, backend, authentication, application login, analytics, cloud save, or server persistence changed.
+
+Slice 20's local workflow structure, checks, production build, base path, and generated artifact contents are verified. Live Pages status remains pending the first successful remote workflow run and repository Pages setting confirmation.
+
 The Core introduction describes the archetypes as 4,500-XP packages, but independently summing the printed Attribute, Trait, and Skill XP produces different totals for several sheets. Corrected Third Printing values are preserved without speculative repair, the declared package total and calculated line-item total remain separate, and each mismatch is recorded as a catalog note. Errata v4.0 does not provide a correction for these sheets.
 
 ## Current audit checkpoint
@@ -208,6 +213,6 @@ The next rules-audit target is **Campaign / Rules Configuration reconciliation**
 
 Audit resume point: **Campaign / Rules Configuration reconciliation.**
 
-Implementation resume point: **Alpha Slice 20 — public-preview hosting configuration and deployment**, only when a hosting target and live-deployment authorization are supplied. Publish the unchanged static build at a normal public URL; do not add authentication, backend/cloud persistence, analytics, rules content, or equipment data without separate authorization.
+Implementation resume point: **Alpha Slice 21 — Public Alpha deployment verification and operational hardening.** Verify the GitHub Pages workflow/environment/public URL and document safe recovery or rollback without adding authentication, backend/cloud persistence, analytics, rules content, or equipment data.
 
 Planetary Rollout 1 remains a separate future authorization. Do not automatically proceed from a queued or documented rollout.

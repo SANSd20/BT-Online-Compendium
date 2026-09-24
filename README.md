@@ -4,9 +4,9 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 19 is implemented.** Version `0.1.0-alpha.19` prepares the React + TypeScript + Vite application for a public Alpha preview while preserving Archetype v0.1, Point Buy v0.1, Life Modules v0.15, and the 84-item equipment catalog unchanged.
+**Alpha Slice 20 is implemented.** Version `0.1.0-alpha.20` configures the React + TypeScript + Vite application for a GitHub Pages Public Alpha while preserving Archetype v0.1, Point Buy v0.1, Life Modules v0.15, and the 84-item equipment catalog unchanged.
 
-All eight published Core archetypes can create, display, save, export, and import characters with source provenance. Point Buy v0.1 creates a Normal Human draft with a focused catalog. Life Modules v0.15 covers the narrow Stage 0–4 branch, final review, Final Touches, and a searchable 84-item audited Core equipment catalog with manual fallback. Slice 19 adds public status/version information, persistent local-storage and limitations notices, static-deployment guidance, and production metadata; it adds no rules or catalog data.
+All eight published Core archetypes can create, display, save, export, and import characters with source provenance. Point Buy v0.1 creates a Normal Human draft with a focused catalog. Life Modules v0.15 covers the narrow Stage 0–4 branch, final review, Final Touches, and a searchable 84-item audited Core equipment catalog with manual fallback. Slice 20 selects GitHub Pages, adds an Actions deployment workflow, and configures Vite's production base path; it adds no rules or catalog data.
 
 The project remains in **Alpha**. Final Touches and “ready for equipment review” are draft states, not a finalized or ready-for-play character. Beta 1 is a future milestone requiring completed Core + Companion character creation and PDF export. The full equipment catalog, affiliation-adjusted access, heavy/combat-vehicle workflow, ammo and condition tracking, true character locking, negative-Trait purchase UI, PDF export, Planetary work, and playable-sheet runtime behavior remain outside the current implementation.
 
@@ -50,9 +50,13 @@ npm run dev
 
 Use `npm run check` to run lint, unit tests, TypeScript compilation, and the production build.
 
-## Static public-preview readiness
+## Public Alpha hosting
 
-The application builds as static files and has no server, authentication, analytics, external API, secret, or environment-variable requirement:
+GitHub Pages is the selected static host. The target public URL is:
+
+<https://sansd20.github.io/BT-Online-Compendium/>
+
+The application has no server, authentication, analytics, external runtime API, secret, or environment-variable requirement. Build and preview it locally with:
 
 ```bash
 npm install
@@ -60,17 +64,21 @@ npm run build
 npm run preview
 ```
 
-`npm run build` writes the deployable site to `dist/`. The hash-based routes work on a conventional static host without provider-specific rewrite rules. A future host should publish `dist/` at a normal public HTTPS URL that requires neither ChatGPT access nor an application login. No hosting provider is hardwired, and Slice 19 does not perform a live deployment.
+`npm run build` writes the deployable site to `dist/` with Vite's production base set to `/BT-Online-Compendium/`; `npm run dev` remains rooted at `/`. Hash-based routes require no rewrite rules. The workflow at `.github/workflows/deploy-pages.yml` runs on every push to `main` or by manual dispatch, installs with `npm ci`, runs `npm run check`, rebuilds, uploads `dist/`, and deploys it through the GitHub Pages environment with no repository secrets.
 
-The public notice in the application identifies version `0.1.0-alpha.19`, browser-local storage, JSON backup/import portability, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
+The repository's Pages **Source** setting must be **GitHub Actions**. After a successful deployment, the public site opens through a normal browser URL and requires neither ChatGPT access nor an application login. Character data still lives only in that browser; JSON export/import is the portability and backup mechanism.
+
+Local workflow/build configuration is verified for Slice 20. Live Pages verification remains pending until this commit reaches `main`, the repository setting permits GitHub Actions deployment, and the first deployment run completes.
+
+The public notice in the application identifies version `0.1.0-alpha.20`, browser-local storage, JSON backup/import portability, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
 
 ## Current resume points
 
-Repository bootstrap and Alpha Slices 1–19 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, account, or ChatGPT login.
+Repository bootstrap and Alpha Slices 1–20 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, account, or ChatGPT login.
 
 The Core + Companion rules audit is in progress. Its next audit target is **Campaign / Rules Configuration reconciliation**, specifically the boundaries among durable character state, current campaign rules, creation-rules provenance, and per-character GM exceptions.
 
-The next recommended implementation slice is **Alpha Slice 20 — public-preview hosting configuration and deployment**, only when a hosting target and live-deployment authorization are supplied. It should publish the existing static `dist/` output at a normal public URL without adding authentication, backend storage, analytics, rules content, or catalog data. Rules/catalog expansion and Planetary Data Foundation Rollout 1 remain separate future authorizations.
+The next recommended slice is **Alpha Slice 21 — Public Alpha deployment verification and operational hardening**, limited to verifying the GitHub Pages environment, deployed URL, workflow behavior, and rollback/recovery documentation. It should not add authentication, backend storage, analytics, rules content, or catalog data. Rules/catalog expansion and Planetary Data Foundation Rollout 1 remain separate future authorizations.
 
 ## Status vocabulary
 

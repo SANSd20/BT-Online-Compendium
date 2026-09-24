@@ -357,6 +357,19 @@ Slice 19 prepares the unchanged Character Creator for a static Public Alpha prev
 
 Manual preview verification should confirm the status/version notice is legible on desktop and mobile layouts, remains visible on every route, and does not imply live deployment, complete rules coverage, PDF output, or ready-for-play status. A live public deployment requires a separately authorized hosting target.
 
+## Alpha Slice 20 verification
+
+Slice 20 selects GitHub Pages as the static Public Alpha host without changing character rules or the equipment catalog. Automated and build coverage verifies:
+
+- application and exported-character metadata use version `0.1.0-alpha.20`;
+- the production Vite base is `/BT-Online-Compendium/` while the local development base remains `/`;
+- the Pages workflow runs on `main` pushes and manual dispatch, uses minimal `contents`, `pages`, and OIDC permissions, installs reproducibly, runs the full check, builds, uploads `dist/`, and deploys through the `github-pages` environment;
+- the public notice retains browser-local storage, JSON portability, incomplete-scope warnings, no ChatGPT/application login, no backend/cloud save, and unavailable PDF export;
+- the equipment catalog remains exactly 84 unique entries and existing rules/catalog tests remain unchanged; and
+- the production bundle contains only generated application assets and does not include source PDFs.
+
+Deployment verification should confirm the workflow succeeds, the Pages environment is configured with GitHub Actions as its source, and `https://sansd20.github.io/BT-Online-Compendium/` opens with the Public Alpha notice and version `0.1.0-alpha.20`. A blocked deployment should record the exact Pages setting or repository-policy blocker rather than switching hosts.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:
