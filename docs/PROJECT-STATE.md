@@ -39,11 +39,12 @@ Saved characters must retain enough underlying information to reproduce and audi
 | Alpha Slice 15 Life Modules v0.12 | Implemented and verified | No new items; hardened stable IDs, categories, sources, ratings, affiliation codes, purchase snapshots, manual fallback, and inert-metadata boundaries across all 75 entries |
 | Alpha Slice 16 Life Modules v0.13 | Implemented and verified | No new items; backfilled raw ratings/triplets for 14 legacy Slice 11 records while preserving stable IDs and historical snapshot compatibility |
 | Alpha Slice 17 Life Modules v0.14 | Implemented and verified | Added six audited page-299 non-combat attire/leatherwear records with inert BAR, coverage, facing, and penalty metadata; catalog total 81 |
+| Alpha Slice 18 Life Modules v0.15 | Implemented and verified | Canonicalized the existing Clan Power Pack stable ID and added three net-new audited page-306 Clan pack records with inert PP/quick-charge metadata; catalog total 84 |
 | Shared Character/Rules engine | Foundation implemented and exercised | Archetype, Point Buy, and Life Modules use the common representation, ledgers, validation, persistence, and provenance |
 | Archetype v0.1 | Implemented | Published packages are source-faithful, non-customizable starting configurations |
 | Point Buy v0.1 | Implemented | Core 5,000-XP default, GM-adjusted allotment recording, Attribute/Skill/Trait costs, negative-Trait ceiling, drafts, persistence, and focused catalogs |
-| Life Modules v0.14 | Implemented, deliberately narrow | Existing Stage 0–4 path, final review/Optimization, Final Touches, and 81-item equipment catalog; true finalization and broad catalogs remain deferred |
-| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 17 |
+| Life Modules v0.15 | Implemented, deliberately narrow | Existing Stage 0–4 path, final review/Optimization, Final Touches, and 84-item equipment catalog; true finalization and broad catalogs remain deferred |
+| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 18 |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
 | Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |
@@ -175,7 +176,7 @@ The application currently provides:
 
 All three creation screens use the common catalog → creation → validation → local save → export/import path. The Life Module route additionally exposes current phase, module-pool accounting, selected history, applied awards, unresolved awards, and prerequisite status.
 
-Life Modules v0.14 retains the existing minimal Stage 0–4, final-review, and Final Touches flow and expands the catalog from 75 to 81 items with six audited page-299 non-combat attire/leatherwear records. No existing stable ID changes. Catalog items and manual entries share Owned/Issued accounting, and version-2 snapshots preserve purchase-time name, cost, category, affiliation, source, ratings, metadata, and notes. Every current item preserves its supplied raw rating and Availability triplet beside hand-audited normalized ratings. BAR, coverage, front-facing limits, and the Leather Gloves DEX-related penalty remain inert metadata and do not create protection or clothing runtime state.
+Life Modules v0.15 retains the existing minimal Stage 0–4, final-review, and Final Touches flow and expands the catalog from 81 to 84 items. Slice 18 canonicalizes the existing Power Pack, Clan ID from `core.power.powerPack.clan` to `core.power.clan.powerPack.standard`, preserves its display name and normalized `F/B/A` rating, and adds three net-new audited page-306 Clan pack records. Catalog items and manual entries share Owned/Issued accounting, and version-2 snapshots preserve purchase-time name, cost, category, affiliation, source, ratings, metadata, and notes. PP capacity and quick-charge remain inert metadata and do not create power runtime state.
 
 The Core introduction describes the archetypes as 4,500-XP packages, but independently summing the printed Attribute, Trait, and Skill XP produces different totals for several sheets. Corrected Third Printing values are preserved without speculative repair, the declared package total and calculated line-item total remain separate, and each mismatch is recorded as a catalog note. Errata v4.0 does not provide a correction for these sheets.
 
@@ -204,6 +205,6 @@ The next rules-audit target is **Campaign / Rules Configuration reconciliation**
 
 Audit resume point: **Campaign / Rules Configuration reconciliation.**
 
-Implementation resume point: **Alpha Slice 18 — the next bounded audited Core equipment-catalog batch or an equally narrow Character Creator foundation increment**, only when separately authorized and supplied with audited data. Preserve stable IDs, hand-audited non-positional normalized ratings, purchase-time snapshots, inert metadata, manual fallback, and the Vehicle Trait boundary.
+Implementation resume point: **Alpha Slice 19 — the next bounded audited Core equipment-catalog batch or an equally narrow Character Creator foundation increment**, only when separately authorized and supplied with audited data. Preserve canonical stable IDs, hand-audited non-positional normalized ratings, purchase-time snapshots, inert metadata, manual fallback, and the Vehicle Trait boundary.
 
 Planetary Rollout 1 remains a separate future authorization. Do not automatically proceed from a queued or documented rollout.

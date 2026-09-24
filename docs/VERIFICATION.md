@@ -325,6 +325,22 @@ Slice 17 adds six audited Core non-combat attire/leatherwear records from printe
 
 Manual UI verification should confirm all 81 entries remain searchable/filterable, the new clothing records display their source-backed ratings and metadata, manual entry remains available, and no active protection, coverage, facing, or clothing-penalty behavior is implied.
 
+## Alpha Slice 18 verification
+
+Slice 18 canonicalizes the existing page-306 Power Pack, Clan stable ID and adds three net-new audited Clan pack records, increasing the current catalog from 81 to 84 items. Automated coverage verifies:
+
+- `core.power.powerPack.clan` is absent and `core.power.clan.powerPack.standard` is the sole catalog entry for the existing source row;
+- Power Pack, Clan retains its display name, raw rating, normalized `F/B/A` rating, cost, `CLAN` affiliation, source, capacity, and quick-charge metadata;
+- Micro Power Pack, Clan, Military Power Pack, Clan, and Satchel Battery, Clan preserve their supplied stable IDs, categories, costs, raw ratings/triplets, normalized ratings, page-306 source, and `CLAN` affiliation;
+- normalized Tech and Legality match raw endpoints and normalized Availability occurs in each raw triplet without imposing a positional rule;
+- native versus foreign Clan access and Owned versus Issued behavior continue to use the existing access calculator;
+- version-2 purchase snapshots and JSON round trips preserve source, ratings, cost, category, affiliation, notes, PP capacity, and quick-charge metadata;
+- PP capacity and quick-charge do not create runtime power, consumption, recharge, or tracking state;
+- catalog count is exactly 84 with unique IDs and all entries pass catalog validation; and
+- all earlier Archetype, Point Buy, Life Module, Final Touches, access-calculator, persistence, and catalog tests continue to pass.
+
+Manual UI verification should confirm all 84 entries remain searchable/filterable, the four Clan packs display their source-backed ratings and inert metadata, manual entry remains available, and no active power or recharge behavior is implied.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

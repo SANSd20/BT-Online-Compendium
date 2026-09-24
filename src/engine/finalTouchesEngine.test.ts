@@ -190,6 +190,43 @@ describe('Final Touches and equipment foundation', () => {
     expect(decoded.inventory).toEqual(character.inventory)
   })
 
+  it('preserves Slice 18 Clan pack snapshots and existing Clan access behavior without runtime power state', () => {
+    const ready = readyForFinalTouches()
+    const equipped = ready.traits.find((entry) => entry.traitId === 'trait.equipped')!
+    equipped.accumulatedXp = 700
+    equipped.attainedTp = 7
+    equipped.active = true
+    let character = enterFinalTouches(ready)
+    character = setEquipmentAccessProfile(character, { enabled: true, affiliationCategory: 'clan', nativeAffiliationCode: 'CLAN' })
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.power.clan.microPowerPack.standard', quantity: 2, ownership: 'Owned' })
+    expect(character.inventory[0]).toMatchObject({
+      catalogItemId: 'core.power.clan.microPowerPack.standard', displayName: 'Micro Power Pack, Clan',
+      affiliationCode: 'CLAN', totalCostCBills: 100, personalProperty: true,
+      catalogSnapshot: {
+        sourceKey: 'AToW-CTP-p306', sourceStatus: 'audited-core', categoryPath: ['Power', 'Micro Power Pack', 'Clan'],
+        rawEquipmentRating: 'F/X-E-C/A', rawAvailabilityCodes: ['X', 'E', 'C'],
+        normalizedEquipmentRating: { tech: 'F', availability: 'E', legality: 'A' },
+        metadata: { massKg: 0.015, capacityPp: 20, quickCharge: true },
+      },
+    })
+    expect(getEquipmentFoundationIssues(character)).toEqual([])
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-09-24T00:00:00.000Z'))
+    expect(decoded.inventory[0]).toEqual(character.inventory[0])
+    character = setEquipmentAccessProfile(character, { enabled: true, affiliationCategory: 'clan', nativeAffiliationCode: 'CC' })
+    expect(getEquipmentFoundationIssues(character).map((entry) => entry.id)).toContain('inventory.owned.rating.exceeded')
+    expect(character.inventory[0]).not.toHaveProperty('currentPower')
+    expect(character.inventory[0]).not.toHaveProperty('powerCapacity')
+    expect(character.inventory[0]).not.toHaveProperty('rechargeState')
+    expect(character.inventory[0]).not.toHaveProperty('quickChargeState')
+
+    let issued = setIssuedGearEnabled(enterFinalTouches(readyForFinalTouches()), true)
+    issued = setEquipmentAccessProfile(issued, { enabled: true, affiliationCategory: 'clan', nativeAffiliationCode: 'CLAN' })
+    issued = addCatalogInventoryItem(issued, { catalogItemId: 'core.power.clan.powerPack.standard', quantity: 1, ownership: 'Issued' })
+    expect(issued.cBills).toBe(1000)
+    expect(issued.inventory[0]).toMatchObject({ displayName: 'Power Pack, Clan', ownership: 'Issued', personalProperty: false })
+    expect(getEquipmentFoundationIssues(issued)).toEqual([])
+  })
+
   it('rejects clothing-rule metadata promoted into inventory runtime state', () => {
     let character = enterFinalTouches(readyForFinalTouches())
     character = addCatalogInventoryItem(character, { catalogItemId: 'core.clothing.leather.vestApron', quantity: 1, ownership: 'Owned' })

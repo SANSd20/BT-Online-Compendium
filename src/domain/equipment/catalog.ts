@@ -272,8 +272,8 @@ export const SLICE_14_EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [
     { massKg: 0.25, range: '10 km', powerUsePph: 0.1, detectionMode: 'Motion only', affectedBy: 'Camo stealth gear' }, ['Sensor detection behavior is metadata only.']),
   equipment('core.remoteSensor.tripLine.laser', 'Trip-Line Sensor, Laser', ['Electronics', 'Remote Sensors'], 50, 'C/B-C-B/B', { tech: 'C', availability: 'B', legality: 'B' }, 305,
     { massKg: 1, range: '10 m', powerUsePph: 0.1, perceptionModifierToSpot: -4, maximumTripwireMeters: 10 }, ['Detection and tripwire behavior are metadata only.']),
-  equipment('core.power.powerPack.clan', 'Power Pack, Clan', ['Power'], 25, 'F/X-D-B/A', { tech: 'F', availability: 'B', legality: 'A' }, 306,
-    { massKg: 0.275, capacityPp: 30, quickCharge: true }, ['Power depletion and recharge mechanics are not implemented.'], 'CLAN'),
+  equipment('core.power.clan.powerPack.standard', 'Power Pack, Clan', ['Power', 'Power Pack', 'Clan'], 25, 'F/X-D-B/A', { tech: 'F', availability: 'B', legality: 'A' }, 306,
+    { massKg: 0.275, capacityPp: 30, quickCharge: true }, ['Quick-charge, power capacity, recharge speed, consumption, and runtime power tracking are metadata only and are not implemented.'], 'CLAN'),
   equipment('core.power.microPowerPack.standard', 'Micro Power Pack', ['Power'], 10, 'C/A-B-A/A', { tech: 'C', availability: 'A', legality: 'A' }, 306,
     { massKg: 0.015, capacityPp: 15 }, ['Power depletion and recharge mechanics are not implemented.']),
   equipment('core.power.microPowerPack.highCapacity', 'Micro Power Pack, High-Capacity', ['Power'], 30, 'E/B-C-C/A', { tech: 'E', availability: 'C', legality: 'A' }, 306,
@@ -311,12 +311,22 @@ export const SLICE_17_EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [
     { massKg: 1.2, coverage: 'Torso', bar: '1/1/0/1', apronFrontOnly: true }, ['The apron covers only the front. BAR, coverage, facing, and runtime clothing effects are metadata only and are not implemented.']),
 ] as const
 
+export const SLICE_18_EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [
+  equipment('core.power.clan.microPowerPack.standard', 'Micro Power Pack, Clan', ['Power', 'Micro Power Pack', 'Clan'], 50, 'F/X-E-C/A', { tech: 'F', availability: 'E', legality: 'A' }, 306,
+    { massKg: 0.015, capacityPp: 20, quickCharge: true }, ['Quick-charge, power capacity, recharge speed, consumption, and runtime power tracking are metadata only and are not implemented.'], 'CLAN'),
+  equipment('core.power.clan.militaryPowerPack.standard', 'Military Power Pack, Clan', ['Power', 'Military Power Pack', 'Clan'], 200, 'F/X-E-C/B', { tech: 'F', availability: 'E', legality: 'B' }, 306,
+    { massKg: 5, capacityPp: 300, quickCharge: true }, ['Quick-charge, power capacity, recharge speed, consumption, and runtime power tracking are metadata only and are not implemented.'], 'CLAN'),
+  equipment('core.power.clan.satchelBattery.standard', 'Satchel Battery, Clan', ['Power', 'Satchel Battery', 'Clan'], 100, 'F/X-E-C/A', { tech: 'F', availability: 'E', legality: 'A' }, 306,
+    { massKg: 2.5, capacityPp: 150, quickCharge: true }, ['Quick-charge, power capacity, recharge speed, consumption, and runtime power tracking are metadata only and are not implemented.'], 'CLAN'),
+] as const
+
 export const EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = mergeEquipmentCatalogBatches(
   STARTER_EQUIPMENT_CATALOG,
   SLICE_12_EQUIPMENT_CATALOG,
   SLICE_13_EQUIPMENT_CATALOG,
   SLICE_14_EQUIPMENT_CATALOG,
   SLICE_17_EQUIPMENT_CATALOG,
+  SLICE_18_EQUIPMENT_CATALOG,
 )
 
 export const EQUIPMENT_CATALOG_CATEGORIES = [...new Set(EQUIPMENT_CATALOG.map((entry) => entry.categoryPath[0]))].sort()

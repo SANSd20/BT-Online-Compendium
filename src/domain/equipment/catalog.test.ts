@@ -9,6 +9,7 @@ import {
   SLICE_13_EQUIPMENT_CATALOG,
   SLICE_14_EQUIPMENT_CATALOG,
   SLICE_17_EQUIPMENT_CATALOG,
+  SLICE_18_EQUIPMENT_CATALOG,
   parseRawEquipmentRating,
   validateEquipmentCatalog,
 } from './catalog'
@@ -22,8 +23,8 @@ describe('Alpha equipment catalog', () => {
 
   it('adds exactly 17 Slice 12 entries with raw and hand-audited normalized ratings', () => {
     expect(SLICE_12_EQUIPMENT_CATALOG).toHaveLength(17)
-    expect(EQUIPMENT_CATALOG).toHaveLength(81)
-    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(81)
+    expect(EQUIPMENT_CATALOG).toHaveLength(84)
+    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(84)
     for (const item of SLICE_12_EQUIPMENT_CATALOG) {
       expect(item.sourceStatus).toBe('audited-core')
       expect(item.sourceKey).toMatch(/^AToW-CTP-p(267|268|269|286|288)$/)
@@ -40,7 +41,7 @@ describe('Alpha equipment catalog', () => {
   it('adds 24 Slice 13 records as 21 new items and three stable-ID upgrades', () => {
     expect(SLICE_13_EQUIPMENT_CATALOG).toHaveLength(24)
     expect(new Set(SLICE_13_EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(24)
-    expect(EQUIPMENT_CATALOG).toHaveLength(81)
+    expect(EQUIPMENT_CATALOG).toHaveLength(84)
     for (const item of SLICE_13_EQUIPMENT_CATALOG) {
       expect(item.sourceStatus).toBe('audited-core')
       expect(item.sourceKey).toMatch(/^AToW-CTP-p(302|303|304|308|310|313)$/)
@@ -57,8 +58,8 @@ describe('Alpha equipment catalog', () => {
   it('adds exactly 20 Slice 14 communications, sensors, power, and field-gear entries', () => {
     expect(SLICE_14_EQUIPMENT_CATALOG).toHaveLength(20)
     expect(new Set(SLICE_14_EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(20)
-    expect(EQUIPMENT_CATALOG).toHaveLength(81)
-    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(81)
+    expect(EQUIPMENT_CATALOG).toHaveLength(84)
+    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(84)
     for (const item of SLICE_14_EQUIPMENT_CATALOG) {
       expect(item.sourceStatus).toBe('audited-core')
       expect(item.sourceKey).toMatch(/^AToW-CTP-p(301|305|306|312)$/)
@@ -74,9 +75,12 @@ describe('Alpha equipment catalog', () => {
   })
 
   it('preserves Slice 14 affiliation and rule data as inert metadata', () => {
-    expect(getEquipmentCatalogItem('core.power.powerPack.clan')).toMatchObject({
+    expect(getEquipmentCatalogItem('core.power.clan.powerPack.standard')).toMatchObject({
+      displayName: 'Power Pack, Clan',
+      categoryPath: ['Power', 'Power Pack', 'Clan'],
       affiliationCode: 'CLAN',
       rawEquipmentRating: 'F/X-D-B/A',
+      ratings: { tech: 'F', availability: 'B', legality: 'A' },
       metadata: { capacityPp: 30, quickCharge: true },
     })
     expect(getEquipmentCatalogItem('core.remoteSensor.heatSensor')).toMatchObject({ affiliationCode: null, metadata: { detectionMode: 'Heat only' } })
@@ -116,6 +120,42 @@ describe('Alpha equipment catalog', () => {
       expect(item).not.toHaveProperty('bar')
       expect(item).not.toHaveProperty('coverage')
       expect(item).not.toHaveProperty('dexRelatedRollModifier')
+    }
+    expect(validateEquipmentCatalog()).toEqual([])
+  })
+
+  it('canonicalizes the existing Clan Power Pack ID and adds three Slice 18 Clan packs', () => {
+    const expected = [
+      { id: 'core.power.clan.powerPack.standard', displayName: 'Power Pack, Clan', categoryPath: ['Power', 'Power Pack', 'Clan'], costCBills: 25, rawEquipmentRating: 'F/X-D-B/A', rawAvailabilityCodes: ['X', 'D', 'B'], ratings: { tech: 'F', availability: 'B', legality: 'A' }, metadata: { massKg: 0.275, capacityPp: 30, quickCharge: true } },
+      { id: 'core.power.clan.microPowerPack.standard', displayName: 'Micro Power Pack, Clan', categoryPath: ['Power', 'Micro Power Pack', 'Clan'], costCBills: 50, rawEquipmentRating: 'F/X-E-C/A', rawAvailabilityCodes: ['X', 'E', 'C'], ratings: { tech: 'F', availability: 'E', legality: 'A' }, metadata: { massKg: 0.015, capacityPp: 20, quickCharge: true } },
+      { id: 'core.power.clan.militaryPowerPack.standard', displayName: 'Military Power Pack, Clan', categoryPath: ['Power', 'Military Power Pack', 'Clan'], costCBills: 200, rawEquipmentRating: 'F/X-E-C/B', rawAvailabilityCodes: ['X', 'E', 'C'], ratings: { tech: 'F', availability: 'E', legality: 'B' }, metadata: { massKg: 5, capacityPp: 300, quickCharge: true } },
+      { id: 'core.power.clan.satchelBattery.standard', displayName: 'Satchel Battery, Clan', categoryPath: ['Power', 'Satchel Battery', 'Clan'], costCBills: 100, rawEquipmentRating: 'F/X-E-C/A', rawAvailabilityCodes: ['X', 'E', 'C'], ratings: { tech: 'F', availability: 'E', legality: 'A' }, metadata: { massKg: 2.5, capacityPp: 150, quickCharge: true } },
+    ] as const
+
+    expect(SLICE_18_EQUIPMENT_CATALOG).toHaveLength(3)
+    expect(SLICE_18_EQUIPMENT_CATALOG.map((entry) => entry.id)).toEqual(expected.slice(1).map((entry) => entry.id))
+    expect(EQUIPMENT_CATALOG.filter((entry) => entry.sourceKey === 'AToW-CTP-p306' && entry.affiliationCode === 'CLAN')).toHaveLength(4)
+    expect(EQUIPMENT_CATALOG.filter((entry) => entry.id === 'core.power.clan.powerPack.standard')).toHaveLength(1)
+    expect(EQUIPMENT_CATALOG.some((entry) => entry.id === 'core.power.powerPack.clan')).toBe(false)
+    expect(() => getEquipmentCatalogItem('core.power.powerPack.clan')).toThrow('Unknown equipment catalog item')
+
+    for (const expectedItem of expected) {
+      const item = getEquipmentCatalogItem(expectedItem.id)
+      expect(item).toMatchObject({
+        ...expectedItem,
+        sourceKey: 'AToW-CTP-p306',
+        sourceStatus: 'audited-core',
+        rawRatingStatus: 'preserved',
+        affiliationCode: 'CLAN',
+      })
+      const parsed = parseRawEquipmentRating(item.rawEquipmentRating!)
+      expect(parsed).not.toBeNull()
+      expect(item.rawAvailabilityCodes).toEqual(parsed!.availabilityCodes)
+      expect(item.ratings.tech).toBe(parsed!.tech)
+      expect(item.ratings.legality).toBe(parsed!.legality)
+      expect(parsed!.availabilityCodes).toContain(item.ratings.availability)
+      expect(item).not.toHaveProperty('capacityPp')
+      expect(item).not.toHaveProperty('quickCharge')
     }
     expect(validateEquipmentCatalog()).toEqual([])
   })
@@ -202,7 +242,7 @@ describe('Alpha equipment catalog', () => {
   it('supports text, category, and source-status filtering', () => {
     expect(EQUIPMENT_CATALOG_CATEGORIES).toContain('Medical')
     expect(filterEquipmentCatalog({ search: 'magnum' }).map((entry) => entry.id)).toEqual(['core.personalWeapon.autoPistol.magnum'])
-    expect(filterEquipmentCatalog({ category: 'Power' })).toHaveLength(8)
+    expect(filterEquipmentCatalog({ category: 'Power' })).toHaveLength(11)
     expect(filterEquipmentCatalog({ search: 'ultrasonic' }).map((entry) => entry.id)).toEqual(['core.electronics.optics.ultrasonicDetector'])
     expect(filterEquipmentCatalog({ sourceStatus: 'example-backed' })).toHaveLength(0)
   })
@@ -213,9 +253,9 @@ describe('Alpha equipment catalog', () => {
     expect(validateEquipmentCatalog([{ ...item, ratings: { tech: null, availability: null, legality: null } }])).toContain(`Audited Core item requires complete ratings: ${item.id}`)
   })
 
-  it('hardens all 81 current entries without renaming existing catalog items', () => {
-    expect(EQUIPMENT_CATALOG).toHaveLength(81)
-    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(81)
+  it('hardens all 84 current entries with the authorized Clan Power Pack ID canonicalization', () => {
+    expect(EQUIPMENT_CATALOG).toHaveLength(84)
+    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(84)
     expect(validateEquipmentCatalog()).toEqual([])
     for (const item of EQUIPMENT_CATALOG) {
       expect(item.id).toMatch(/^core\.[a-z][A-Za-z0-9]*(?:\.[a-z][A-Za-z0-9]*)+$/)
@@ -260,7 +300,7 @@ describe('Alpha equipment catalog', () => {
       })
     }
     expect(EQUIPMENT_CATALOG.filter((item) => item.rawRatingStatus === 'not-supplied-in-audit')).toHaveLength(0)
-    expect(EQUIPMENT_CATALOG.filter((item) => item.rawRatingStatus === 'preserved')).toHaveLength(81)
+    expect(EQUIPMENT_CATALOG.filter((item) => item.rawRatingStatus === 'preserved')).toHaveLength(84)
   })
 
   it('rejects unsafe IDs, categories, affiliation codes, source data, and raw-rating omissions', () => {
