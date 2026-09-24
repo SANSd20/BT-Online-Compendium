@@ -27,6 +27,19 @@ export function CharacterSummary({ character }: CharacterSummaryProps) {
         <p className="notice" key={note.code}>{note.message}</p>
       ))}
 
+      {character.creation.archetype?.accounting && (
+        <section className="notice archetype-accounting" aria-labelledby="archetype-accounting-heading">
+          <h3 id="archetype-accounting-heading">Archetype foundation accounting</h3>
+          <p>You selected this Archetype as your foundation. The app tracks it using the same XP accounting model as Point Buy while preserving the original Archetype source.</p>
+          <dl className="source-card">
+            <div><dt>Foundation</dt><dd>Source-backed preset</dd></div>
+            <div><dt>Published total</dt><dd>{character.creation.archetype.accounting.publishedXpTotal.toLocaleString()} XP</dd></div>
+            <div><dt>Evaluated allocation</dt><dd>{character.creation.archetype.accounting.evaluatedAllocation.totalXp.toLocaleString()} XP</dd></div>
+            <div><dt>Adjustments</dt><dd>None · customization deferred</dd></div>
+          </dl>
+        </section>
+      )}
+
       <div className="sheet-grid">
         <section>
           <h3>Attributes</h3>

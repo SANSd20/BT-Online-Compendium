@@ -9,7 +9,7 @@ interface HomeScreenProps {
 }
 
 const methods: Array<{ method: CreationMethod; label: string; description: string }> = [
-  { method: 'archetype', label: 'Archetype', description: 'Choose one of eight published Core packages and create a sourced local character.' },
+  { method: 'archetype', label: 'Archetype', description: 'Start from one of eight source-backed Core foundations with shared XP accounting.' },
   { method: 'point-buy', label: 'Point Buy', description: 'Build a Normal Human draft with Core Attribute, Skill/subskill, and focused Trait purchasing.' },
   { method: 'life-modules', label: 'Life Modules', description: 'Build through the audited minimal Core path from Stage 0 to Agitator at Stage 4.' },
 ]
@@ -34,7 +34,7 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
   return (
     <main>
       <section className="hero">
-        <p className="eyebrow">Public Alpha · Slice 21</p>
+        <p className="eyebrow">Public Alpha · Slice 22</p>
         <h1>Character Creator</h1>
         <p>Create a sourced Core character through Archetype, Point Buy, or the narrow Life Modules v0.15 branch with final review, Final Touches, an 84-item audited equipment catalog, affiliation-adjusted access, durable purchase snapshots, and manual fallback on one shared Character/Rules engine.</p>
       </section>
@@ -52,7 +52,7 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
               <span className="step">0{index + 1}</span>
               <h3>{label}</h3>
               <p>{description}</p>
-              <a className="button" href={`#/${method}`}>{method === 'archetype' ? 'Choose archetype' : method === 'point-buy' ? 'Start Point Buy' : 'Start Life Modules'}</a>
+              <a className="button" href={`#/${method}`}>{method === 'archetype' ? 'Use Archetype foundation' : method === 'point-buy' ? 'Start Point Buy' : 'Start Life Modules'}</a>
             </article>
           ))}
         </div>

@@ -345,18 +345,48 @@ export interface CharacterXpState {
   earnedGameplayUnspent: number
 }
 
+export interface ArchetypeAllocationSnapshot {
+  attributeXp: number
+  traitXp: number
+  skillXp: number
+  totalXp: number
+}
+
+export interface ArchetypeAdjustmentRecord {
+  id: string
+  targetType: 'attribute' | 'trait' | 'skill'
+  targetId: string
+  xpDelta: number
+  offsetAdjustmentId: string
+  provenanceId: string
+}
+
+export interface ArchetypeFoundationState {
+  version: 1
+  kind: 'source-backed-preset'
+  archetypeId: string
+  displayName: string
+  source: SourceCitation
+  foundationProvenanceId: string
+  accounting: {
+    model: 'shared-point-buy'
+    costTableSource: SourceCitation
+    publishedXpTotal: number
+    evaluatedAllocation: ArchetypeAllocationSnapshot
+    differenceFromPublishedXp: number
+  }
+  adjustmentLedger: ArchetypeAdjustmentRecord[]
+  customizationStatus: 'original-package'
+  notes: Array<{ code: string; message: string }>
+}
+
 export interface CreationState {
   method: CreationMethod
   status: CharacterStatus
   rulesSnapshot: RulesSnapshot
   resolvedChoiceIds: string[]
   gmExceptions: GmException[]
-  archetype?: {
-    archetypeId: string
-    displayName: string
-    source: SourceCitation
-    notes: Array<{ code: string; message: string }>
-  }
+  archetype?: ArchetypeFoundationState
   pointBuy?: {
     source: SourceCitation
     costTableSource: SourceCitation

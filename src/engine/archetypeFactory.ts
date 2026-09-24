@@ -1,5 +1,7 @@
-import { calculateArchetypeXp, getCoreArchetype } from '../domain/archetypes/coreArchetypes'
+import { getCoreArchetype } from '../domain/archetypes/coreArchetypes'
 import type { CharacterDefinition, XpAward } from '../domain/character/model'
+import { XP_COST_TABLE_SOURCE } from '../domain/pointBuy/catalog'
+import { evaluateSharedXpAccounting } from '../domain/pointBuy/calculations'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
 
 export function createCharacterFromArchetype(
@@ -20,17 +22,6 @@ export function createCharacterFromArchetype(
 
   character.creation.status = 'ready-for-final-validation'
   character.creation.resolvedChoiceIds = [archetype.id]
-  character.creation.archetype = {
-    archetypeId: archetype.id,
-    displayName: archetype.displayName,
-    source: { ...archetype.source },
-    notes: archetype.notes.map((note) => ({ ...note })),
-  }
-  character.xp.creation = {
-    starting: archetype.publishedXpTotal,
-    remaining: 0,
-    allocated: calculateArchetypeXp(archetype),
-  }
   character.phenotypeId = archetype.phenotypeId
   character.cBills = archetype.cBills
   character.provenance.push({
@@ -68,6 +59,30 @@ export function createCharacterFromArchetype(
     ...(entry.notes ? { notes: [...entry.notes] } : {}),
     sourceAwards: [award(entry.xp)],
   }))
+  const evaluatedAllocation = evaluateSharedXpAccounting(character)
+  character.creation.archetype = {
+    version: 1,
+    kind: 'source-backed-preset',
+    archetypeId: archetype.id,
+    displayName: archetype.displayName,
+    source: { ...archetype.source },
+    foundationProvenanceId: publishedProvenanceId,
+    accounting: {
+      model: 'shared-point-buy',
+      costTableSource: { ...XP_COST_TABLE_SOURCE },
+      publishedXpTotal: archetype.publishedXpTotal,
+      evaluatedAllocation,
+      differenceFromPublishedXp: evaluatedAllocation.totalXp - archetype.publishedXpTotal,
+    },
+    adjustmentLedger: [],
+    customizationStatus: 'original-package',
+    notes: archetype.notes.map((note) => ({ ...note })),
+  }
+  character.xp.creation = {
+    starting: archetype.publishedXpTotal,
+    remaining: 0,
+    allocated: evaluatedAllocation.totalXp,
+  }
   character.inventory = archetype.equipment.map((entry) => ({
     id: dependencies?.id() ?? defaultId(),
     catalogItemId: entry.catalogItemId,

@@ -153,7 +153,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     <main className="creation-page life-modules-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Public Alpha · Slice 21</p>
+        <p className="eyebrow">Public Alpha · Slice 22</p>
         <h1>Life Modules</h1>
         <p>Build through the audited Agitator branch, complete final review, and use the 84-item audited Core equipment catalog with affiliation-adjusted access or the manual inventory fallback. Full catalog coverage and finalization remain deferred.</p>
       </section>

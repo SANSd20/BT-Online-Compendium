@@ -384,6 +384,23 @@ Slice 21 verifies the live GitHub Pages Public Alpha and cleans up its public-ac
 
 After the Slice 21 commit reaches `main`, deployment verification should confirm the Pages workflow succeeds and the live notice reports version `0.1.0-alpha.21` with the revised wording.
 
+## Alpha Slice 22 verification
+
+Slice 22 integrates Core Archetypes with the shared Point Buy XP accounting model without changing published packages or presenting Archetype creation as a switch to Point Buy. Automated coverage verifies:
+
+- every Core Archetype still produces its existing golden Attributes, Traits, Skills, equipment, C-bills, declared total, and listed allocation total;
+- the selected package is recorded as a versioned source-backed foundation with original ID, display name, source citation, and valid published-provenance reference;
+- shared accounting records separate Attribute, Trait, and Skill XP totals plus the declared-versus-listed difference, including existing documented source discrepancies;
+- a stale accounting snapshot fails structural validation rather than silently rewriting source-backed data;
+- save/load and JSON export/import preserve foundation and accounting metadata;
+- older Alpha Archetype JSON without Slice 22 fields migrates safely without changing its allocation ledgers;
+- the Archetype result UI explains the read-only foundation/accounting relationship and keeps customization deferred;
+- Point Buy-from-scratch and Life Modules regression suites remain unchanged and passing;
+- application/export metadata reports `0.1.0-alpha.22`; and
+- the equipment catalog remains exactly 84 entries with no ID, source, rating, or runtime behavior changes.
+
+After the Slice 22 commit reaches `main`, deployment verification should confirm the existing Pages workflow succeeds and the live Public Alpha reports version `0.1.0-alpha.22`.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

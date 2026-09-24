@@ -37,9 +37,9 @@ export function ArchetypeScreen({ onSave }: ArchetypeScreenProps) {
     <main className="creation-page archetype-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Alpha · Slice 2</p>
-        <h1>Choose an Archetype</h1>
-        <p>Select one of the eight published Core packages. Values are copied into the shared character schema with their Corrected Third Printing source and provenance.</p>
+        <p className="eyebrow">Public Alpha · Slice 22</p>
+        <h1>Start from an Archetype</h1>
+        <p>Select one of the eight published Core packages as a source-backed foundation. The app evaluates its allocations with the shared Point Buy XP accounting model while preserving the original package and provenance.</p>
       </section>
 
       <form className="archetype-form" onSubmit={handleSubmit}>

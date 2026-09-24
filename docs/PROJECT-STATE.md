@@ -43,11 +43,12 @@ Saved characters must retain enough underlying information to reproduce and audi
 | Alpha Slice 19 Public Alpha deployment foundation | Implemented and verified | Static production readiness, visible Public Alpha/version/local-storage/limitations notices, platform-neutral deployment guidance; no rules, catalog, backend, login, cloud save, or live deployment |
 | Alpha Slice 20 Public static host foundation | Implemented and verified | GitHub Pages selected, Actions checks/builds/deploys static `dist/`, and Vite production assets use the project-page base path; no rules, catalog, backend, login, or cloud save changes |
 | Alpha Slice 21 deployment verification and text cleanup | Implemented and verified | Live Pages URL verified; public-access wording is platform-neutral; version advanced without rules, catalog, backend, login, or cloud save changes |
+| Alpha Slice 22 Archetype foundation accounting | Implemented and verified | Records each selected Core Archetype as a source-backed preset, preserves original provenance, and evaluates its unchanged allocations through shared Point Buy XP accounting |
 | Shared Character/Rules engine | Foundation implemented and exercised | Archetype, Point Buy, and Life Modules use the common representation, ledgers, validation, persistence, and provenance |
-| Archetype v0.1 | Implemented | Published packages are source-faithful, non-customizable starting configurations |
+| Archetype foundation | Implemented, read-only accounting | Published packages are source-faithful foundations with durable provenance, shared XP accounting evaluation, and a reserved empty adjustment ledger; customization remains deferred |
 | Point Buy v0.1 | Implemented | Core 5,000-XP default, GM-adjusted allotment recording, Attribute/Skill/Trait costs, negative-Trait ceiling, drafts, persistence, and focused catalogs |
 | Life Modules v0.15 | Implemented, deliberately narrow | Existing Stage 0–4 path, final review/Optimization, Final Touches, and 84-item equipment catalog; true finalization and broad catalogs remain deferred |
-| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 21 |
+| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 22 |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
 | Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |
@@ -133,7 +134,7 @@ The application currently provides:
 - distinct personal-equipment ownership (`Owned`/`Issued`) and vehicle ownership (`Assigned`/`Owned`);
 - a rules catalog boundary with stable IDs and Core + Companion source descriptors;
 - all eight Core archetype packages with Attributes, Traits, structured Skills and specialties, personal equipment, C-bills, source references, and package notes;
-- a shared-engine Archetype mapper that preserves published values and provenance in the common Character Definition;
+- a shared-engine Archetype mapper that records a source-backed foundation, preserves published values/provenance, and snapshots read-only Attribute/Trait/Skill XP totals through the shared Point Buy accounting model;
 - a shared-engine Point Buy workflow with a standard 5,000-XP default, recorded GM-adjusted allotments, eight minimum Normal Human Attributes, remaining/allocated XP reconciliation, overspend prevention, and the Core 10-percent negative-Trait XP ceiling;
 - cumulative standard Skill costs for Levels +0 through +10 and an explicit `null` untrained versus Level +0 trained state;
 - a focused Point Buy catalog containing Perception, Language subskills, Martial Arts, Small Arms, Technician subskills, Ambidextrous, Patient, Unattractive, and variable Reputation;
@@ -188,6 +189,8 @@ Alpha Slice 20 selects GitHub Pages for that unchanged Public Alpha. Version `0.
 Slice 20's local workflow structure, checks, production build, base path, and generated artifact contents are verified.
 
 Alpha Slice 21 verifies the live Pages deployment at `https://sansd20.github.io/BT-Online-Compendium/`. The site loaded at the configured project path with the Public Alpha notice, local-storage warning, visible `0.1.0-alpha.20` version, and no login gate before the Slice 21 update. Version `0.1.0-alpha.21` replaces public-facing platform-specific access language with normal-browser, no-special-platform-login, and no-application-account wording. Rules, catalog data, stable IDs, source references, ratings, backend behavior, authentication, and cloud save remain unchanged; the catalog remains 84 items.
+
+Alpha Slice 22 records each selected Core Archetype as a versioned `source-backed-preset`. The foundation retains the original ID, name, source citation, published provenance reference, package notes, declared XP total, shared-accounting allocation breakdown, and any declared-versus-listed difference. An empty adjustment ledger reserves a durable boundary for later equal-XP customization, but the current UI is read-only and the original package remains unchanged. Older Alpha Archetype JSON imports are migrated into this metadata without rewriting their ledgers. Point Buy-from-scratch, Life Modules, and the 84-item equipment catalog are unchanged.
 
 The Core introduction describes the archetypes as 4,500-XP packages, but independently summing the printed Attribute, Trait, and Skill XP produces different totals for several sheets. Corrected Third Printing values are preserved without speculative repair, the declared package total and calculated line-item total remain separate, and each mismatch is recorded as a catalog note. Errata v4.0 does not provide a correction for these sheets.
 

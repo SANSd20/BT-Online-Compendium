@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { CORE_ARCHETYPES } from '../domain/archetypes/coreArchetypes'
+import { CORE_ARCHETYPES, calculateArchetypeXp } from '../domain/archetypes/coreArchetypes'
+import { XP_COST_TABLE_SOURCE } from '../domain/pointBuy/catalog'
+import { evaluateSharedXpAccounting } from '../domain/pointBuy/calculations'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { createCharacterFromArchetype } from './archetypeFactory'
@@ -37,6 +39,22 @@ describe('createCharacterFromArchetype', () => {
     expect(character.cBills).toBe(cBills)
     expect(character.creation.method).toBe('archetype')
     expect(character.creation.archetype?.archetypeId).toBe(archetypeId)
+    expect(character.creation.archetype).toMatchObject({
+      version: 1,
+      kind: 'source-backed-preset',
+      customizationStatus: 'original-package',
+      adjustmentLedger: [],
+      accounting: {
+        model: 'shared-point-buy',
+        costTableSource: XP_COST_TABLE_SOURCE,
+        publishedXpTotal: 4500,
+      },
+    })
+    expect(character.creation.archetype?.accounting.evaluatedAllocation).toEqual(evaluateSharedXpAccounting(character))
+    expect(character.provenance.find((entry) => entry.id === character.creation.archetype?.foundationProvenanceId)).toMatchObject({
+      kind: 'published',
+      source: character.creation.archetype?.source,
+    })
     expect(character.xp.creation).toEqual({
       starting: 4500,
       allocated: [
@@ -47,6 +65,15 @@ describe('createCharacterFromArchetype', () => {
       remaining: 0,
     })
     expect(validateCharacter(character).valid).toBe(true)
+  })
+
+  it.each(CORE_ARCHETYPES)('keeps the current $displayName package totals unchanged', (archetype) => {
+    const character = createCharacterFromArchetype(archetype.id, 'Accounting Audit', dependencies())
+    const evaluation = evaluateSharedXpAccounting(character)
+    expect(evaluation.totalXp).toBe(calculateArchetypeXp(archetype))
+    expect(character.creation.archetype?.accounting.differenceFromPublishedXp).toBe(
+      calculateArchetypeXp(archetype) - archetype.publishedXpTotal,
+    )
   })
 
   it.each(CORE_ARCHETYPES)('round-trips $displayName through the portable JSON format', (archetype) => {
@@ -72,5 +99,13 @@ describe('createCharacterFromArchetype', () => {
       publishedOwnershipLabel: 'Assigned',
       carried: null,
     })
+  })
+
+  it('rejects a stale Archetype foundation accounting snapshot', () => {
+    const character = createCharacterFromArchetype('archetype.core.mechwarrior', 'Stale', dependencies())
+    character.attributes[0].accumulatedXp += 100
+    const validation = validateCharacter(character)
+    expect(validation.valid).toBe(false)
+    expect(validation.issues.some((entry) => entry.id === 'archetype.foundation.accounting-mismatch')).toBe(true)
   })
 })

@@ -1,6 +1,9 @@
 import type { CharacterDefinition, CreationMethod } from '../domain/character/model'
 import { APP_VERSION } from '../appMetadata'
+import { getCoreArchetype } from '../domain/archetypes/coreArchetypes'
 import { getLifeModule } from '../domain/lifeModules/catalog'
+import { XP_COST_TABLE_SOURCE } from '../domain/pointBuy/catalog'
+import { evaluateSharedXpAccounting } from '../domain/pointBuy/calculations'
 import { validateCharacter } from '../validation/validateCharacter'
 import {
   CHARACTER_FILE_FORMAT,
@@ -73,12 +76,40 @@ export function decodeCharacter(json: string): CharacterDefinition {
   }
 
   assertEnvelope(parsed)
+  migrateAlphaArchetypeState(parsed.character)
   migrateAlphaLifeModuleState(parsed.character)
   const validation = validateCharacter(parsed.character)
   if (!validation.valid) {
     throw new Error(`Character file failed validation: ${validation.issues.map((item) => item.message).join(' ')}`)
   }
   return parsed.character
+}
+
+function migrateAlphaArchetypeState(character: CharacterDefinition): void {
+  const state = character.creation.archetype
+  if (!state || state.version !== undefined) return
+
+  let definition
+  try { definition = getCoreArchetype(state.archetypeId) } catch { return }
+  const evaluatedAllocation = evaluateSharedXpAccounting(character)
+  const foundationProvenanceId = character.provenance.find((entry) => (
+    entry.source?.sourceId === state.source.sourceId && entry.source?.page === state.source.page
+  ))?.id ?? ''
+
+  Object.assign(state, {
+    version: 1,
+    kind: 'source-backed-preset',
+    foundationProvenanceId,
+    accounting: {
+      model: 'shared-point-buy',
+      costTableSource: { ...XP_COST_TABLE_SOURCE },
+      publishedXpTotal: definition.publishedXpTotal,
+      evaluatedAllocation,
+      differenceFromPublishedXp: evaluatedAllocation.totalXp - definition.publishedXpTotal,
+    },
+    adjustmentLedger: [],
+    customizationStatus: 'original-package',
+  })
 }
 
 function migrateAlphaLifeModuleState(character: CharacterDefinition): void {

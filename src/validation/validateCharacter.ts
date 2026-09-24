@@ -1,11 +1,13 @@
 import type { CharacterDefinition, LifeModuleOptimizationRecord } from '../domain/character/model'
+import { getCoreArchetype } from '../domain/archetypes/coreArchetypes'
 import {
   POINT_BUY_ATTRIBUTE_MAXIMUMS,
+  XP_COST_TABLE_SOURCE,
   getPointBuySkill,
   getPointBuyTrait,
   standardSkillXpCost,
 } from '../domain/pointBuy/catalog'
-import { calculateNegativeTraitXp, calculatePointBuyAllocatedXp } from '../domain/pointBuy/calculations'
+import { calculateNegativeTraitXp, calculatePointBuyAllocatedXp, evaluateSharedXpAccounting } from '../domain/pointBuy/calculations'
 import type { ValidationIssue, ValidationResult } from './model'
 import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
@@ -120,6 +122,9 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
   })
 
   const provenanceIds = new Set(character.provenance.map((entry) => entry.id))
+  if (character.creation.method === 'archetype') {
+    validateArchetypeFoundation(character, issues, provenanceIds)
+  }
   if (character.creation.method === 'point-buy' && character.creation.pointBuy) {
     if (
       !provenanceIds.has(character.creation.pointBuy.rulesProvenanceId) ||
@@ -158,6 +163,95 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
     valid: !issues.some((item) => item.severity === 'error'),
     issues,
   }
+}
+
+function validateArchetypeFoundation(
+  character: CharacterDefinition,
+  issues: ValidationIssue[],
+  provenanceIds: Set<string>,
+): void {
+  const state = character.creation.archetype
+  if (!state) return
+
+  let definition
+  try {
+    definition = getCoreArchetype(state.archetypeId)
+  } catch {
+    issues.push(issue('archetype.foundation.unknown', 'creation.archetype.archetypeId', 'Archetype foundation ID is not in the Core catalog.'))
+    return
+  }
+
+  if (
+    state.version !== 1 ||
+    state.kind !== 'source-backed-preset' ||
+    state.customizationStatus !== 'original-package' ||
+    !Array.isArray(state.adjustmentLedger) ||
+    state.adjustmentLedger.length !== 0
+  ) {
+    issues.push(issue('archetype.foundation.malformed', 'creation.archetype', 'Archetype foundation metadata or deferred adjustment ledger is malformed.'))
+  }
+  if (
+    state.displayName !== definition.displayName ||
+    !sameCitation(state.source, definition.source)
+  ) {
+    issues.push(issue('archetype.foundation.source-mismatch', 'creation.archetype', 'Original Archetype name and source provenance must match the selected Core foundation.'))
+  }
+  const originalAllocationsMatch =
+    character.attributes.length === definition.attributes.length &&
+    character.attributes.every((entry, index) => {
+      const original = definition.attributes[index]
+      return entry.attributeId === original.attributeId && entry.accumulatedXp === original.xp
+    }) &&
+    character.traits.length === definition.traits.length &&
+    character.traits.every((entry, index) => {
+      const original = definition.traits[index]
+      return entry.traitId === original.traitId && entry.accumulatedXp === original.xp
+    }) &&
+    character.skills.length === definition.skills.length &&
+    character.skills.every((entry, index) => {
+      const original = definition.skills[index]
+      return entry.address.skillId === original.address.skillId &&
+        entry.address.parameter?.kind === original.address.parameter?.kind &&
+        entry.address.parameter?.value === original.address.parameter?.value &&
+        entry.accumulatedXp === original.xp
+    })
+  if (!originalAllocationsMatch) {
+    issues.push(issue('archetype.foundation.package-allocation-mismatch', 'creation.archetype', 'An unchanged Archetype foundation must retain the original source-backed Attribute, Trait, and Skill XP allocations.'))
+  }
+  const foundationProvenance = character.provenance.find((entry) => entry.id === state.foundationProvenanceId)
+  if (
+    !state.foundationProvenanceId ||
+    !provenanceIds.has(state.foundationProvenanceId) ||
+    foundationProvenance?.kind !== 'published' ||
+    !sameCitation(foundationProvenance.source, state.source)
+  ) {
+    issues.push(issue('archetype.foundation.provenance-reference', 'creation.archetype.foundationProvenanceId', 'Archetype foundation provenance reference is invalid.'))
+  }
+
+  const evaluation = evaluateSharedXpAccounting(character)
+  const accounting = state.accounting
+  if (
+    !accounting ||
+    accounting.model !== 'shared-point-buy' ||
+    !sameCitation(accounting.costTableSource, XP_COST_TABLE_SOURCE) ||
+    accounting.publishedXpTotal !== definition.publishedXpTotal ||
+    accounting.evaluatedAllocation.attributeXp !== evaluation.attributeXp ||
+    accounting.evaluatedAllocation.traitXp !== evaluation.traitXp ||
+    accounting.evaluatedAllocation.skillXp !== evaluation.skillXp ||
+    accounting.evaluatedAllocation.totalXp !== evaluation.totalXp ||
+    accounting.differenceFromPublishedXp !== evaluation.totalXp - definition.publishedXpTotal ||
+    character.xp.creation.starting !== definition.publishedXpTotal ||
+    character.xp.creation.allocated !== evaluation.totalXp
+  ) {
+    issues.push(issue('archetype.foundation.accounting-mismatch', 'creation.archetype.accounting', 'Archetype allocations must retain a current shared Point Buy accounting evaluation without changing the published package total.'))
+  }
+}
+
+function sameCitation(
+  left: { sourceId: string; edition: string; errataVersion?: string; page?: number; ruleId?: string } | undefined,
+  right: { sourceId: string; edition: string; errataVersion?: string; page?: number; ruleId?: string } | undefined,
+): boolean {
+  return Boolean(left && right && left.sourceId === right.sourceId && left.edition === right.edition && left.errataVersion === right.errataVersion && left.page === right.page && left.ruleId === right.ruleId)
 }
 
 function validateFinalTouches(character: CharacterDefinition, issues: ValidationIssue[], provenanceIds: Set<string>): void {

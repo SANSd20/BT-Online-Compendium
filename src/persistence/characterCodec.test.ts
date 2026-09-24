@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { APP_VERSION } from '../appMetadata'
 import { createCharacterDraft } from '../engine/characterFactory'
+import { createCharacterFromArchetype } from '../engine/archetypeFactory'
 import { BLUE_COLLAR_ID } from '../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../engine/lifeModuleEngine'
 import { decodeCharacter, encodeCharacter } from './characterCodec'
@@ -64,5 +65,37 @@ describe('character codec', () => {
     expect(restored.creation.lifeModules?.pendingAwards.find((entry) => entry.awardId === 'blue-collar.career')?.requiredSkillId).toBe('skill.career')
     expect(restored.creation.lifeModules?.choiceGrantRequirements).toHaveLength(4)
     expect(restored.creation.lifeModules?.selectedSkillFields).toEqual([])
+  })
+
+  it('migrates older Alpha Archetype saves into a source-backed foundation without changing allocations', () => {
+    const source = createCharacterFromArchetype('archetype.core.tanker', 'Legacy Tanker')
+    const originalAllocation = source.xp.creation.allocated
+    const envelope = JSON.parse(encodeCharacter(source))
+    const legacy = envelope.character.creation.archetype
+    delete legacy.version
+    delete legacy.kind
+    delete legacy.foundationProvenanceId
+    delete legacy.accounting
+    delete legacy.adjustmentLedger
+    delete legacy.customizationStatus
+
+    const restored = decodeCharacter(JSON.stringify(envelope))
+    expect(restored.creation.archetype).toMatchObject({
+      version: 1,
+      kind: 'source-backed-preset',
+      archetypeId: 'archetype.core.tanker',
+      displayName: 'Tanker',
+      customizationStatus: 'original-package',
+      adjustmentLedger: [],
+      accounting: {
+        model: 'shared-point-buy',
+        evaluatedAllocation: { totalXp: originalAllocation },
+      },
+    })
+    expect(restored.xp.creation.allocated).toBe(originalAllocation)
+    expect(restored.provenance.find((entry) => entry.id === restored.creation.archetype?.foundationProvenanceId)).toMatchObject({
+      kind: 'published',
+      source: restored.creation.archetype?.source,
+    })
   })
 })
