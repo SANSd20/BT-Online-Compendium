@@ -34,7 +34,7 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
   return (
     <main>
       <section className="hero">
-        <p className="eyebrow">Public Alpha · Slice 20</p>
+        <p className="eyebrow">Public Alpha · Slice 21</p>
         <h1>Character Creator</h1>
         <p>Create a sourced Core character through Archetype, Point Buy, or the narrow Life Modules v0.15 branch with final review, Final Touches, an 84-item audited equipment catalog, affiliation-adjusted access, durable purchase snapshots, and manual fallback on one shared Character/Rules engine.</p>
       </section>

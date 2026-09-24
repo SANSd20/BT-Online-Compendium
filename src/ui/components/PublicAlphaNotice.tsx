@@ -15,9 +15,9 @@ export function PublicAlphaNotice() {
         Rules coverage, equipment coverage, final validation, and PDF export are not complete.
       </p>
       <ul>
-        <li><strong>Public access:</strong> The hosted Alpha opens at a normal browser URL; it does not depend on ChatGPT workspace or session access.</li>
+        <li><strong>Public access:</strong> The hosted Alpha opens at a normal browser URL. No special platform login is required.</li>
         <li><strong>Local storage only:</strong> Character data is stored only in this browser. Clearing browser data may remove saved work, so export JSON backups for portability.</li>
-        <li><strong>No accounts yet:</strong> No ChatGPT or app login is required, and no backend or cloud save exists. Account, login, and cloud save are planned before v1.0.</li>
+        <li><strong>No accounts yet:</strong> No application account is required in this Alpha, and no backend or cloud save exists. Account, login, and cloud save are planned before v1.0.</li>
         <li><strong>Incomplete coverage:</strong> The current scope is Core <em>A Time of War</em> first, with Companion support later. This Alpha does not guarantee a finalized or play-ready character.</li>
         <li><strong>Current portability:</strong> JSON export/import is available. PDF export is not yet available.</li>
       </ul>

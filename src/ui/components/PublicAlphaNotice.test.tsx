@@ -8,15 +8,15 @@ describe('Public Alpha notice', () => {
   it('renders the version, local-only warning, portability path, and deferred capabilities', () => {
     const markup = renderToStaticMarkup(<PublicAlphaNotice />)
 
-    expect(APP_VERSION).toBe('0.1.0-alpha.20')
+    expect(APP_VERSION).toBe('0.1.0-alpha.21')
     expect(markup).toContain('Public Alpha Notice')
     expect(markup).toContain(`v${APP_VERSION}`)
     expect(markup).toContain('normal browser URL')
-    expect(markup).toContain('does not depend on ChatGPT workspace or session access')
+    expect(markup).toContain('No special platform login is required')
     expect(markup).toContain('stored only in this browser')
     expect(markup).toContain('Clearing browser data may remove saved work')
     expect(markup).toContain('export JSON backups')
-    expect(markup).toContain('No ChatGPT or app login is required')
+    expect(markup).toContain('No application account is required in this Alpha')
     expect(markup).toContain('no backend or cloud save exists')
     expect(markup).toContain('planned before v1.0')
     expect(markup).toContain('Core <em>A Time of War</em> first')

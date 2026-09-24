@@ -347,7 +347,7 @@ Slice 19 prepares the unchanged Character Creator for a static Public Alpha prev
 
 - application and exported-character metadata use version `0.1.0-alpha.19`;
 - the always-visible Public Alpha notice identifies browser-local storage, the risk of browser-data clearing, and JSON export/import as the portability path;
-- the notice states that no ChatGPT or application login is required and that no backend or cloud save exists;
+- the notice states that no special platform login or application account is required and that no backend or cloud save exists;
 - account/login/cloud save is described as planned before v1.0 rather than active;
 - Core *A Time of War* remains first in scope, Companion support remains later, and incomplete rules/equipment/final validation do not imply a finalized or play-ready character;
 - PDF export is explicitly unavailable;
@@ -364,11 +364,25 @@ Slice 20 selects GitHub Pages as the static Public Alpha host without changing c
 - application and exported-character metadata use version `0.1.0-alpha.20`;
 - the production Vite base is `/BT-Online-Compendium/` while the local development base remains `/`;
 - the Pages workflow runs on `main` pushes and manual dispatch, uses minimal `contents`, `pages`, and OIDC permissions, installs reproducibly, runs the full check, builds, uploads `dist/`, and deploys through the `github-pages` environment;
-- the public notice retains browser-local storage, JSON portability, incomplete-scope warnings, no ChatGPT/application login, no backend/cloud save, and unavailable PDF export;
+- the public notice retains browser-local storage, JSON portability, incomplete-scope warnings, no special platform login or application account, no backend/cloud save, and unavailable PDF export;
 - the equipment catalog remains exactly 84 unique entries and existing rules/catalog tests remain unchanged; and
 - the production bundle contains only generated application assets and does not include source PDFs.
 
 Deployment verification should confirm the workflow succeeds, the Pages environment is configured with GitHub Actions as its source, and `https://sansd20.github.io/BT-Online-Compendium/` opens with the Public Alpha notice and version `0.1.0-alpha.20`. A blocked deployment should record the exact Pages setting or repository-policy blocker rather than switching hosts.
+
+## Alpha Slice 21 verification
+
+Slice 21 verifies the live GitHub Pages Public Alpha and cleans up its public-access wording without changing character rules or equipment data. Verification covers:
+
+- the live target `https://sansd20.github.io/BT-Online-Compendium/` loads at the configured project path;
+- the deployed Slice 20 page showed the Public Alpha notice, browser-local storage warning, visible version `0.1.0-alpha.20`, JSON portability, and no login gate before the Slice 21 update;
+- application and exported-character metadata advance to `0.1.0-alpha.21`;
+- the notice uses normal-browser, no-special-platform-login, and no-application-account wording while retaining the browser-data clearing warning, deferred account/login/cloud-save roadmap, incomplete-scope warning, and unavailable PDF export;
+- public application and documentation text contain no platform-specific access wording;
+- the equipment catalog remains exactly 84 unique entries and all existing rules/catalog tests continue to pass; and
+- the production build retains `/BT-Online-Compendium/` as its asset base and remains a static site without backend, authentication, analytics, cloud save, or external runtime APIs.
+
+After the Slice 21 commit reaches `main`, deployment verification should confirm the Pages workflow succeeds and the live notice reports version `0.1.0-alpha.21` with the revised wording.
 
 ## Core + Companion audit requirements
 
