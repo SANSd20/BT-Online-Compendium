@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react'
-import type { CharacterDefinition, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
+import type { CharacterDefinition, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
+import { addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 
@@ -24,6 +25,27 @@ interface ResolutionDraft {
   xpAmount: number
 }
 
+interface EquipmentDraft {
+  name: string
+  quantity: number
+  costPerItemCBills: number
+  ownership: EquipmentOwnership
+  tech: EquipmentRatingCode
+  availability: EquipmentRatingCode
+  legality: EquipmentRatingCode
+  affiliationCode: string
+  notes: string
+  location: string
+  carriedNote: string
+  issuerOrEmployer: string
+}
+
+const EMPTY_EQUIPMENT_DRAFT: EquipmentDraft = {
+  name: '', quantity: 1, costPerItemCBills: 0, ownership: 'Owned', tech: 'A', availability: 'A', legality: 'A',
+  affiliationCode: '', notes: '', location: '', carriedNote: '', issuerOrEmployer: '',
+}
+const EQUIPMENT_RATINGS: EquipmentRatingCode[] = ['A', 'B', 'C', 'D', 'E', 'F']
+
 export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const [name, setName] = useState('')
   const [startingXp, setStartingXp] = useState(5000)
@@ -33,6 +55,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const [resolutionDrafts, setResolutionDrafts] = useState<Record<string, ResolutionDraft>>({})
   const [finalAllocationTarget, setFinalAllocationTarget] = useState('attribute:STR')
   const [finalAllocationXp, setFinalAllocationXp] = useState(1)
+  const [equipmentDraft, setEquipmentDraft] = useState<EquipmentDraft>(EMPTY_EQUIPMENT_DRAFT)
   const [message, setMessage] = useState('')
 
   function start(event: FormEvent<HTMLFormElement>) {
@@ -46,8 +69,10 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       setCharacter(next)
       onSave(next)
       setMessage(success)
+      return true
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Life Module operation failed.')
+      return false
     }
   }
 
@@ -77,13 +102,36 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     operate(() => allocateFinalReviewXp(character, finalReviewDestination(character, finalAllocationTarget), finalAllocationXp), 'Final-allocation XP applied.')
   }
 
+  function updateDescription(patch: Parameters<typeof updatePersonalDescription>[1]) {
+    if (!character) return
+    operate(() => updatePersonalDescription(character, patch), 'Final Touches description saved.')
+  }
+
+  function addEquipment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!character) return
+    const added = operate(() => addManualInventoryItem(character, {
+      name: equipmentDraft.name,
+      quantity: equipmentDraft.quantity,
+      costPerItemCBills: equipmentDraft.costPerItemCBills,
+      ownership: equipmentDraft.ownership,
+      rating: { tech: equipmentDraft.tech, availability: equipmentDraft.availability, legality: equipmentDraft.legality },
+      affiliationCode: equipmentDraft.affiliationCode,
+      notes: equipmentDraft.notes,
+      location: equipmentDraft.location,
+      carriedNote: equipmentDraft.carriedNote,
+      issuerOrEmployer: equipmentDraft.issuerOrEmployer,
+    }), 'Manual inventory item added.')
+    if (added) setEquipmentDraft(EMPTY_EQUIPMENT_DRAFT)
+  }
+
   return (
     <main className="creation-page life-modules-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Alpha · Slice 9</p>
+        <p className="eyebrow">Alpha · Slice 10</p>
         <h1>Life Modules</h1>
-        <p>Build a sourced draft through the audited Agitator branch, then explicitly review final XP, derived levels, prerequisites, and Optimization. Equipment and full finalization remain deferred.</p>
+        <p>Build through the audited Agitator branch, complete final review, and record descriptive Final Touches plus a manual starting-equipment draft. Full catalog shopping and finalization remain deferred.</p>
       </section>
 
       {!character ? (
@@ -180,8 +228,56 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.phase === 'stage-4-prerequisite-review' && <div className="life-action"><p className="notice">All Stage 4 awards are resolved, but one or more prerequisites remain outstanding. Enter final review to allocate XP and re-evaluate them.</p><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened with outstanding prerequisites.')}>Enter final review</button></div>}
             {state.phase === 'alpha-stage-4-stop' && <div className="life-action"><p className="notice">The minimal Agitator Stage 4 branch is complete at age {currentAge(character) ?? 'unknown'}. Enter final review to allocate remaining XP and explicitly apply Optimization.</p><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened.')}>Enter final review</button></div>}
             {state.phase === 'alpha-final-review' && <p className="notice">Final review is in progress. Resolve every blocker below before the character can be marked ready for Final Touches.</p>}
-            {state.phase === 'ready-for-final-touches' && <p className="notice">This draft is ready for Final Touches. Equipment purchasing, PDF export, true character locking, and ready-for-play status remain unsupported.</p>}
+            {state.phase === 'ready-for-final-touches' && !character.creation.finalTouches && <div className="life-action"><p className="notice">This draft passed final review and may enter the Alpha Final Touches/equipment foundation.</p><button className="button" type="button" onClick={() => operate(() => enterFinalTouches(character), 'Final Touches opened with Wealth-derived funds and Equipped-derived limits.')}>Enter Final Touches</button></div>}
+            {state.phase === 'ready-for-final-touches' && character.creation.finalTouches && <p className="notice">Final Touches equipment state: {formatPhase(character.creation.finalTouches.equipmentReviewState)}. This is not a finalized or ready-for-play character.</p>}
           </section>
+
+          {character.creation.finalTouches && <section className="life-stage-panel">
+            <p className="eyebrow">Final Touches</p>
+            <h2>Personal description and equipment draft</h2>
+            <div className="xp-dashboard" aria-label="Starting equipment currency">
+              <div><span>Wealth used</span><strong>{signed(character.creation.finalTouches.wealthTpUsed)} TP</strong></div>
+              <div><span>Starting C-bills</span><strong>{character.creation.finalTouches.startingCBillTotal.toLocaleString()}</strong></div>
+              <div><span>Owned spending</span><strong>{character.creation.finalTouches.spentCBillTotal.toLocaleString()}</strong></div>
+              <div><span>Remaining C-bills</span><strong>{character.creation.finalTouches.remainingCBillTotal.toLocaleString()}</strong></div>
+            </div>
+            <p><strong>Equipped {signed(character.creation.finalTouches.equippedTpUsed)} TP:</strong> maximum Tech {character.creation.finalTouches.maxTechRating} / Availability {character.creation.finalTouches.maxAvailabilityRating} / Legality {character.creation.finalTouches.maxLegalityRating}.</p>
+
+            <h3>Personal details</h3>
+            <div className="form-grid">
+              <label>Hair color<input value={character.personalDescription?.hairColor ?? ''} onChange={(event) => updateDescription({ hairColor: event.target.value })} /></label>
+              <label>Eye color<input value={character.personalDescription?.eyeColor ?? ''} onChange={(event) => updateDescription({ eyeColor: event.target.value })} /></label>
+              <label>Height (cm)<input type="number" min="1" value={character.personalDescription?.heightCm ?? ''} onChange={(event) => updateDescription({ heightCm: event.target.value ? Number(event.target.value) : undefined })} /></label>
+              <label>Weight (kg)<input type="number" min="1" value={character.personalDescription?.weightKg ?? ''} onChange={(event) => updateDescription({ weightKg: event.target.value ? Number(event.target.value) : undefined })} /></label>
+              <label>Homeworld<input value={character.personalDescription?.homeworld ?? ''} onChange={(event) => updateDescription({ homeworld: event.target.value })} /></label>
+              <label>Physical description<textarea value={character.personalDescription?.physicalDescription ?? ''} onChange={(event) => updateDescription({ physicalDescription: event.target.value })} /></label>
+              <label>Background notes<textarea value={character.personalDescription?.backgroundNotes ?? ''} onChange={(event) => updateDescription({ backgroundNotes: event.target.value })} /></label>
+            </div>
+
+            <h3>Issued Gear option</h3>
+            <label><input type="checkbox" checked={character.creation.finalTouches.issuedGearEnabled} onChange={(event) => operate(() => setIssuedGearEnabled(character, event.target.checked), `Issued Gear ${event.target.checked ? 'enabled' : 'disabled'}.`)} /> Enable optional Issued Gear prospectively</label>
+            <p className="scope-note">Issued items are employer property, cost no personal C-bills, and remain recorded if this option is later disabled.</p>
+
+            <h3>Add manual inventory item</h3>
+            <form onSubmit={addEquipment} className="form-grid">
+              <label>Item name<input required value={equipmentDraft.name} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, name: event.target.value })} /></label>
+              <label>Quantity<input type="number" min="1" step="1" required value={equipmentDraft.quantity} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, quantity: Number(event.target.value) })} /></label>
+              <label>Cost per item (C-bills)<input type="number" min="0" step="1" required value={equipmentDraft.costPerItemCBills} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, costPerItemCBills: Number(event.target.value) })} /></label>
+              <label>Ownership<select value={equipmentDraft.ownership} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, ownership: event.target.value as EquipmentOwnership })}><option>Owned</option><option>Issued</option></select></label>
+              {(['tech', 'availability', 'legality'] as const).map((rating) => <label key={rating}>{rating.charAt(0).toUpperCase() + rating.slice(1)} rating<select value={equipmentDraft[rating]} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, [rating]: event.target.value as EquipmentRatingCode })}>{EQUIPMENT_RATINGS.map((value) => <option key={value}>{value}</option>)}</select></label>)}
+              <label>Affiliation code (optional)<input value={equipmentDraft.affiliationCode} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, affiliationCode: event.target.value })} /></label>
+              <label>Location (optional)<input value={equipmentDraft.location} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, location: event.target.value })} /></label>
+              <label>Carried note (optional)<input value={equipmentDraft.carriedNote} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, carriedNote: event.target.value })} /></label>
+              {equipmentDraft.ownership === 'Issued' && <label>Issuer/employer (optional)<input value={equipmentDraft.issuerOrEmployer} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, issuerOrEmployer: event.target.value })} /></label>}
+              <label>Notes<textarea value={equipmentDraft.notes} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, notes: event.target.value })} /></label>
+              <button className="button" type="submit">Add inventory item</button>
+            </form>
+
+            <h3>Manual inventory</h3>
+            {character.inventory.length === 0 ? <p>No personal equipment recorded.</p> : <ul className="module-history">{character.inventory.map((item) => <li key={item.id}><div><strong>{item.displayName} × {item.quantity}</strong><span>{item.ownership} · {item.totalCostCBills?.toLocaleString()} C-bills · {item.equipmentRating?.tech}/{item.equipmentRating?.availability}/{item.equipmentRating?.legality}{item.ownership === 'Issued' ? ' · employer property' : ' · personal property'}</span></div><button className="button secondary" type="button" onClick={() => operate(() => removeInventoryItem(character, item.id), 'Inventory item removed.')}>Remove</button></li>)}</ul>}
+            <div className="row-actions"><button className="button" type="button" onClick={() => operate(() => markReadyForEquipmentReview(character), 'Equipment draft marked ready for equipment review.')}>Mark ready for equipment review</button></div>
+            <p className="scope-note">Manual inventory only. Combat/heavy Vehicle Trait entitlements, ammo, armor condition, health, PDF export, final lock, and ready-for-play status are not implemented.</p>
+          </section>}
 
           {state.finalReview && <section className="life-stage-panel">
             <p className="eyebrow">Final review</p>

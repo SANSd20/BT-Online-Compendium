@@ -1,8 +1,8 @@
 # Character and Rules Architecture
 
-## Alpha Slice 9 implementation boundary
+## Alpha Slice 10 implementation boundary
 
-The implemented foundation provides typed Character and rules models, one shared character factory, structural validation, a versioned save envelope, browser-local persistence, JSON import/export, Archetype v0.1, Point Buy v0.1, and Life Modules v0.6. The project remains Alpha; Beta 1 requires completed Core + Companion character creation and PDF export.
+The implemented foundation provides typed Character and rules models, one shared character factory, structural validation, a versioned save envelope, browser-local persistence, JSON import/export, Archetype v0.1, Point Buy v0.1, and Life Modules v0.7 with a manual Final Touches/equipment draft. The project remains Alpha; Beta 1 requires completed Core + Companion character creation and PDF export.
 
 The rules catalog contains source/version descriptors, the eight published Core archetype packages, focused Point Buy catalogs, eight audited Core Life Module entries through Agitator, and two audited Skill Fields: Technician/Civilian and Technician/Vehicle. It does not claim that the full Life Module, Skill Field, or Core + Companion catalog has been entered.
 
@@ -23,11 +23,11 @@ Point Buy v0.1 implements the Corrected Third Printing pages 49, 51, 60, 95, 107
 
 The Point Buy UI saves drafts with unspent XP, but structural validation warns that they cannot enter play. A character marked `finalized` is invalid unless remaining creation XP is zero. Slice 3 does not expose finalization because required affiliation, full catalogs, prerequisites, and exhaustive legality validation are not yet implemented.
 
-Life Modules v0.6 implements the Stage 0 universal → Stage 0 affiliation → Stage 1 → Stage 2 → Technical College Stage 3 → Agitator Stage 4 path, with an explicit Alpha stop before each optional continuation and a final-review state after Stage 4. It keeps the module-purchasing pool separate from awarded statistic XP, records selected-module and Field history, applies fixed awards to shared ledgers, and resolves pending language, affiliation, `/Any`, multi-choice, and flexible allocations incrementally. Every resolved allocation retains its source award, concrete destination, XP, provenance, and resolution time.
+Life Modules v0.7 implements the Stage 0 universal → Stage 0 affiliation → Stage 1 → Stage 2 → Technical College Stage 3 → Agitator Stage 4 path, with an explicit Alpha stop before each optional continuation, a final-review state after Stage 4, and a gated Final Touches/equipment draft. It keeps the module-purchasing pool separate from awarded statistic XP, records selected-module and Field history, applies fixed awards to shared ledgers, and resolves pending language, affiliation, `/Any`, multi-choice, and flexible allocations incrementally. Every resolved allocation retains its source award, concrete destination, XP, provenance, and resolution time.
 
 Prerequisites are re-evaluated after each allocation. Stage 2 retains its source caps; Stage 3 records Skill Fields as grants rather than playable Skills; and Agitator reaches age 23 with repeat-policy metadata while repeat execution remains blocked. Resolved Stage 4 drafts may explicitly enter `alpha-final-review`. The immutable module-pool remainder seeds a separate final-allocation pool. Final allocation targets existing Attribute, Trait, and Skill instances and records player-choice provenance. Attained values derive from fully purchased thresholds, so partial XP remains durable without increasing the active value.
 
-Optimization is Life-Modules-only and explicit. A preview identifies supported excess or out-of-range XP; applying one opportunity records before/after XP, returned XP, reason, time, rules source, and provenance, then credits only the final-allocation pool. It never finances modules. Current opposed-Trait checks cover modeled Gregarious/Introvert and Illiterate versus a Language at Level +4 or higher. The negative-Trait XP purchase cap is calculated as 10 percent of starting allotment, but purchase execution remains deferred. `ready-for-final-touches` means only that current final-review blockers are clear; equipment, PDF export, true final lock, and ready-for-play status remain unsupported.
+Optimization is Life-Modules-only and explicit. A preview identifies supported excess or out-of-range XP; applying one opportunity records before/after XP, returned XP, reason, time, rules source, and provenance, then credits only the final-allocation pool. It never finances modules. Current opposed-Trait checks cover modeled Gregarious/Introvert and Illiterate versus a Language at Level +4 or higher. The negative-Trait XP purchase cap is calculated as 10 percent of starting allotment, but purchase execution remains deferred. `ready-for-final-touches` means only that current final-review blockers are clear. Slice 10 permits a durable Final Touches/equipment draft after that gate; PDF export, true final lock, and ready-for-play status remain unsupported.
 
 The `playState` property is only a versioned extension point. No playable-sheet runtime system or UI is implemented.
 
@@ -158,6 +158,8 @@ The starting creation XP pool must be exhausted before normal play. Allocated XP
 
 ## Final Touches, equipment, and currency
 
+Alpha Slice 10 implements this section as a manual draft boundary. It stores physical description, background, homeworld text, metric height/weight, optional hair/eye color, Wealth-derived starting cash, Equipped-derived access limits, Issued Gear configuration, and inventory. Entering the draft requires the Life Modules `ready-for-final-touches` state. Reaching `ready-for-equipment-review` is not character finalization.
+
 Descriptive Final Touches, including appearance and background, are not mechanical legality requirements unless a specific rule makes them so.
 
 Starting-equipment purchasing is the final pre-play equipment step, but a player need not spend all C-bills. Unspent C-bills carry into play.
@@ -171,6 +173,10 @@ Spending or receiving C-bills does not automatically modify Wealth. Do not renam
 
 Wealth is identity-bound. Ordinary C-bills are character-wide unless later authoritative rules establish otherwise; do not invent separate bank balances for aliases.
 
+The implemented Wealth table maps attained TP -1 through +10 to starting C-bills; absent Wealth defaults to 0 TP and 1,000 C-bills. The starting total is captured when Final Touches begins, while spent and remaining totals derive from Owned items. Unspent C-bills remain durable.
+
+The implemented Equipped table maps attained TP -1 through +8 to maximum Tech/Availability/Legality letters; absent Equipped defaults to 0 TP and D/B/B. Slice 10 validates manual items against these base limits. Periphery/Clan Tech adjustments and non-native-affiliation Availability/Legality adjustments remain deferred because the current narrow branch does not model all required affiliation classifications.
+
 ### Optional Issued Gear
 
 Support the Core optional Issued Gear rule, off by default. Enabling it later enables issued-gear functionality prospectively and does not rebuild or retroactively change original purchases. Disabling it later must not silently delete existing issued items.
@@ -180,11 +186,15 @@ Personal-equipment ownership needs only:
 - **Owned**;
 - **Issued**.
 
-Do not add issuer identities, issue dates, sessions, units, employers, or similar fields unless a later requirement establishes a need.
+Slice 10 establishes an optional issuer/employer note and GM-review state. It does not add issuer identities, issue dates, sessions, units, or adjudication machinery.
+
+Issued Gear is an explicit creation-rules option and defaults off. Owned items reduce C-bills and are personal property. Issued items require the option, reduce no C-bills, and are not personal property. Disabling the option later does not delete recorded Issued items; it creates a validation issue. Slice 10 does not adjudicate occupation eligibility or automatically choose the cheapest item.
 
 ### Inventory and loadout
 
 Inventory is character-wide. Preserve equipment location because the Core record sheet records where equipment is kept. Ownership and location are independent.
+
+Slice 10 inventory is manual only. Each entry records a stable ID, name, quantity, unit and total cost, three rating letters, optional affiliation code, ownership, source/provenance, notes, and optional carried/location text. No published item lookup, ammunition counter, armor degradation, condition state, or combat use is inferred.
 
 Items not currently carried do not automatically count toward current carried weight or encumbrance. Combat loadout is a subset/reference into inventory, not a duplicate authoritative inventory. Worn armor, currently relevant weapons, and ammunition belong to current combat/loadout state.
 

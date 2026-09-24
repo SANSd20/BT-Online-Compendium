@@ -76,10 +76,22 @@ export type EquipmentOwnership = 'Owned' | 'Issued'
 
 export interface EquipmentItem {
   id: string
-  catalogItemId: string
+  catalogItemId?: string
   displayName: string
   quantity: number
   ownership: EquipmentOwnership
+  entryKind?: 'published-package' | 'manual'
+  costPerItemCBills?: number
+  totalCostCBills?: number
+  equipmentRating?: {
+    tech: EquipmentRatingCode
+    availability: EquipmentRatingCode
+    legality: EquipmentRatingCode
+  }
+  affiliationCode?: string
+  personalProperty?: boolean
+  issuerOrEmployer?: string
+  reviewState?: 'recorded' | 'gm-review'
   publishedOwnershipLabel?: string
   publishedCostCBills?: number
   publishedAdditionalCostCBills?: number
@@ -88,7 +100,37 @@ export interface EquipmentItem {
   source?: SourceCitation
   notes?: string[]
   location?: string
+  carriedNote?: string
   carried: boolean | null
+  provenanceId: string
+}
+
+export type EquipmentRatingCode = 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
+
+export interface PersonalDescription {
+  physicalDescription: string
+  backgroundNotes: string
+  homeworld: string
+  heightCm?: number
+  weightKg?: number
+  hairColor?: string
+  eyeColor?: string
+}
+
+export interface FinalTouchesState {
+  version: 1
+  enteredAt: string
+  startingCBillSource: 'wealth-trait'
+  startingCBillTotal: number
+  spentCBillTotal: number
+  remainingCBillTotal: number
+  wealthTpUsed: number
+  equippedTpUsed: number
+  maxTechRating: EquipmentRatingCode
+  maxAvailabilityRating: EquipmentRatingCode
+  maxLegalityRating: EquipmentRatingCode
+  issuedGearEnabled: boolean
+  equipmentReviewState: 'equipment-draft' | 'ready-for-equipment-review'
   provenanceId: string
 }
 
@@ -292,6 +334,7 @@ export interface CreationState {
     limitations: string[]
   }
   lifeModules?: LifeModuleCreationState
+  finalTouches?: FinalTouchesState
 }
 
 export interface LifeModuleHistoryEntry {
@@ -345,5 +388,6 @@ export interface CharacterDefinition {
   cBills: number
   vehicles: VehicleEntry[]
   provenance: ProvenanceRecord[]
+  personalDescription?: PersonalDescription
   playState?: PlayStateFoundation
 }

@@ -190,6 +190,22 @@ Slice 9 extends the same `npm run check` gate. Automated coverage verifies:
 
 Manual UI verification should confirm final review exposes the separate allocation pool, existing-stat targets, derived values, Optimization previews with explicit Apply controls, review blockers, the deferred negative-Trait cap, and accurate scope warnings.
 
+## Alpha Slice 10 verification
+
+Slice 10 extends the same `npm run check` gate. Automated coverage verifies:
+
+- Final Touches can be entered only after the Life Modules `ready-for-final-touches` gate;
+- absent Wealth/Equipped default to 0 TP, 1,000 C-bills, and D/B/B, while exact audited Wealth and Equipped table mappings remain stable;
+- descriptive fields and positive metric height/weight persist;
+- Owned items reduce C-bills, preserve unspent cash, and validate affordability plus Tech/Availability/Legality limits;
+- Issued Gear defaults off, Issued entries require explicit enablement, cost no C-bills, and remain non-personal property;
+- turning Issued Gear off does not delete existing items and instead exposes a validation issue;
+- equipment review readiness remains a draft state and full finalization stays unsupported;
+- browser-local save/load and versioned JSON preserve Final Touches, optional-rule state, and inventory; and
+- all earlier Archetype, Point Buy, Life Module, final-review, and Optimization regression tests continue to pass.
+
+Manual UI verification should confirm the Final Touches gate, description fields, Wealth/C-bill and Equipped-limit summaries, Owned/Issued entry behavior, validation messages, local save/export/import controls, and truthful warnings that catalog lookup, runtime tracking, PDF export, and finalization are unavailable.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

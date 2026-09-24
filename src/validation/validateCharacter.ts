@@ -22,6 +22,12 @@ import {
   negativeTraitXpPurchaseCap,
   traitModeledRange,
 } from '../domain/lifeModules/finalReview'
+import {
+  effectivePrimaryTraitTp,
+  equipmentLimitsForEquipped,
+  getEquipmentFoundationIssues,
+  startingCBillsForWealth,
+} from '../domain/finalTouches/rules'
 
 function issue(
   id: string,
@@ -137,10 +143,66 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
     }
   })
 
+  validateFinalTouches(character, issues, provenanceIds)
+
   return {
     valid: !issues.some((item) => item.severity === 'error'),
     issues,
   }
+}
+
+function validateFinalTouches(character: CharacterDefinition, issues: ValidationIssue[], provenanceIds: Set<string>): void {
+  const state = character.creation.finalTouches
+  const hasManualInventory = character.inventory.some((entry) => entry.entryKind === 'manual')
+  if (!state) {
+    if (character.personalDescription || hasManualInventory) issues.push(issue('final-touches.state.required', 'creation.finalTouches', 'Final Touches state is required for descriptive or manually entered equipment data.'))
+    return
+  }
+  const lifeModules = character.creation.lifeModules
+  if (character.creation.method !== 'life-modules' || lifeModules?.phase !== 'ready-for-final-touches' || lifeModules.finalReview?.readiness !== 'ready-for-final-touches') {
+    issues.push(issue('final-touches.sequence.invalid', 'creation.finalTouches', 'Final Touches cannot begin before the Life Modules character passes final review.'))
+  }
+  const wealthTp = effectivePrimaryTraitTp(character, 'trait.wealth')
+  const equippedTp = effectivePrimaryTraitTp(character, 'trait.equipped')
+  let startingCBills: number | null = null
+  let limits: ReturnType<typeof equipmentLimitsForEquipped> | null = null
+  try { startingCBills = startingCBillsForWealth(wealthTp) } catch { /* reported as malformed below */ }
+  try { limits = equipmentLimitsForEquipped(equippedTp) } catch { /* reported as malformed below */ }
+  if (
+    state.version !== 1 || !state.enteredAt || state.startingCBillSource !== 'wealth-trait' ||
+    !Number.isInteger(state.startingCBillTotal) || state.startingCBillTotal < 0 ||
+    !Number.isInteger(state.spentCBillTotal) || state.spentCBillTotal < 0 ||
+    !Number.isInteger(state.remainingCBillTotal) ||
+    state.wealthTpUsed !== wealthTp || state.equippedTpUsed !== equippedTp ||
+    state.startingCBillTotal !== startingCBills ||
+    !limits || state.maxTechRating !== limits.tech || state.maxAvailabilityRating !== limits.availability || state.maxLegalityRating !== limits.legality ||
+    !['equipment-draft', 'ready-for-equipment-review'].includes(state.equipmentReviewState) ||
+    !provenanceIds.has(state.provenanceId)
+  ) issues.push(issue('final-touches.state.malformed', 'creation.finalTouches', 'Final Touches funds, Trait-derived limits, review state, or provenance are malformed.'))
+
+  const optionalRule = character.creation.rulesSnapshot.optionalRules.find((entry) => entry.ruleId === 'core.optional-issued-gear')
+  if (!optionalRule || optionalRule.enabled !== state.issuedGearEnabled) issues.push(issue('final-touches.issued-gear.snapshot', 'creation.rulesSnapshot.optionalRules', 'Issued Gear state must be preserved in the character rules snapshot.'))
+
+  const description = character.personalDescription
+  if (!description || typeof description.physicalDescription !== 'string' || typeof description.backgroundNotes !== 'string' || typeof description.homeworld !== 'string') {
+    issues.push(issue('final-touches.description.malformed', 'personalDescription', 'Final Touches requires a durable personal-description record.'))
+  } else {
+    if (description.heightCm !== undefined && (!Number.isFinite(description.heightCm) || description.heightCm <= 0)) issues.push(issue('final-touches.height.invalid', 'personalDescription.heightCm', 'Height must be a positive metric value.'))
+    if (description.weightKg !== undefined && (!Number.isFinite(description.weightKg) || description.weightKg <= 0)) issues.push(issue('final-touches.weight.invalid', 'personalDescription.weightKg', 'Weight must be a positive metric value.'))
+  }
+
+  for (const equipmentIssue of getEquipmentFoundationIssues(character)) {
+    issues.push(issue(equipmentIssue.id, equipmentIssue.itemId ? `inventory.${equipmentIssue.itemId}` : 'creation.finalTouches', equipmentIssue.message))
+  }
+  character.inventory.forEach((entry, index) => {
+    if (entry.entryKind !== 'manual' || !entry.source?.sourceId || !entry.id || !provenanceIds.has(entry.provenanceId)) {
+      issues.push(issue('final-touches.inventory.provenance', `inventory.${index}`, 'Final Touches inventory requires a manual-entry marker, source, stable ID, and valid provenance.'))
+    }
+  })
+  if (state.equipmentReviewState === 'ready-for-equipment-review' && getEquipmentFoundationIssues(character).length > 0) {
+    issues.push(issue('final-touches.review-state.invalid', 'creation.finalTouches.equipmentReviewState', 'An equipment draft with validation errors cannot be ready for equipment review.'))
+  }
+  issues.push(issue('final-touches.scope.alpha', 'creation.finalTouches', 'Equipment remains a manual Alpha draft; full catalog lookup, PDF export, true finalization, and ready-for-play status are unsupported.', { severity: 'information', kind: 'availability' }))
 }
 
 function validateLifeModules(character: CharacterDefinition, issues: ValidationIssue[]): void {

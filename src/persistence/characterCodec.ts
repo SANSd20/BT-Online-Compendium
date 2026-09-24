@@ -7,7 +7,7 @@ import {
   type SavedCharacterEnvelope,
 } from './schema'
 
-const APPLICATION_VERSION = '0.1.0-alpha.9'
+const APPLICATION_VERSION = '0.1.0-alpha.10'
 const CREATION_METHODS: CreationMethod[] = ['archetype', 'point-buy', 'life-modules']
 
 function isRecord(value: unknown): value is Record<string, unknown> {
