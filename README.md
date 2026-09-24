@@ -4,13 +4,13 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 18 is implemented.** The React + TypeScript + Vite application includes Archetype v0.1, Point Buy v0.1, and Life Modules v0.15 on the shared Character/Rules model, with versioned JSON character files, browser-local persistence, and import/export.
+**Alpha Slice 19 is implemented.** Version `0.1.0-alpha.19` prepares the React + TypeScript + Vite application for a public Alpha preview while preserving Archetype v0.1, Point Buy v0.1, Life Modules v0.15, and the 84-item equipment catalog unchanged.
 
-All eight published Core archetypes can create, display, save, export, and import characters with source provenance. Point Buy v0.1 creates a Normal Human draft with a focused catalog. Life Modules v0.15 covers the narrow Stage 0–4 branch, final review, Final Touches, and a searchable 84-item audited Core equipment catalog with manual fallback. Slice 18 canonicalizes the existing Power Pack, Clan ID and adds three net-new page-306 Clan packs. PP capacity and quick-charge remain inert metadata.
+All eight published Core archetypes can create, display, save, export, and import characters with source provenance. Point Buy v0.1 creates a Normal Human draft with a focused catalog. Life Modules v0.15 covers the narrow Stage 0–4 branch, final review, Final Touches, and a searchable 84-item audited Core equipment catalog with manual fallback. Slice 19 adds public status/version information, persistent local-storage and limitations notices, static-deployment guidance, and production metadata; it adds no rules or catalog data.
 
 The project remains in **Alpha**. Final Touches and “ready for equipment review” are draft states, not a finalized or ready-for-play character. Beta 1 is a future milestone requiring completed Core + Companion character creation and PDF export. The full equipment catalog, affiliation-adjusted access, heavy/combat-vehicle workflow, ammo and condition tracking, true character locking, negative-Trait purchase UI, PDF export, Planetary work, and playable-sheet runtime behavior remain outside the current implementation.
 
-The primary product direction is an offline/PWA-capable, local-first web application whose Character Generator can later evolve into a playable character sheet. Initial character persistence is local browser storage plus import/export through a versioned portable format; server accounts and cloud character storage are not initial requirements.
+The primary product direction is an offline/PWA-capable, local-first web application whose Character Generator can later evolve into a playable character sheet. Public Alpha access targets an ordinary public browser URL and does not depend on ChatGPT login, workspace access, or session hosting. Character persistence remains local browser storage plus JSON import/export. Clearing browser data may remove saved work, so users should export backups. No app account, backend, or cloud save exists in this slice; account/login/cloud save is expected before v1.0 but remains deferred.
 
 ## Established implementation order
 
@@ -50,13 +50,27 @@ npm run dev
 
 Use `npm run check` to run lint, unit tests, TypeScript compilation, and the production build.
 
+## Static public-preview readiness
+
+The application builds as static files and has no server, authentication, analytics, external API, secret, or environment-variable requirement:
+
+```bash
+npm install
+npm run build
+npm run preview
+```
+
+`npm run build` writes the deployable site to `dist/`. The hash-based routes work on a conventional static host without provider-specific rewrite rules. A future host should publish `dist/` at a normal public HTTPS URL that requires neither ChatGPT access nor an application login. No hosting provider is hardwired, and Slice 19 does not perform a live deployment.
+
+The public notice in the application identifies version `0.1.0-alpha.19`, browser-local storage, JSON backup/import portability, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
+
 ## Current resume points
 
-Repository bootstrap and Alpha Slices 1–18 are complete. The implemented app is local-first and requires no server, database, or account.
+Repository bootstrap and Alpha Slices 1–19 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, account, or ChatGPT login.
 
 The Core + Companion rules audit is in progress. Its next audit target is **Campaign / Rules Configuration reconciliation**, specifically the boundaries among durable character state, current campaign rules, creation-rules provenance, and per-character GM exceptions.
 
-The next recommended implementation slice, only when separately authorized and supplied with audited data, is **Alpha Slice 19 — the next bounded Core equipment-catalog batch or an equally narrow Character Creator foundation increment**. It must preserve the non-positional, hand-audited Availability rule and inert item-metadata boundary, and must not add runtime equipment effects, heavy/combat Vehicle Trait handling, PDF export, or ready-for-play status without separate authorization. Planetary Data Foundation Rollout 1 remains designed but unimplemented and requires separate authorization.
+The next recommended implementation slice is **Alpha Slice 20 — public-preview hosting configuration and deployment**, only when a hosting target and live-deployment authorization are supplied. It should publish the existing static `dist/` output at a normal public URL without adding authentication, backend storage, analytics, rules content, or catalog data. Rules/catalog expansion and Planetary Data Foundation Rollout 1 remain separate future authorizations.
 
 ## Status vocabulary
 

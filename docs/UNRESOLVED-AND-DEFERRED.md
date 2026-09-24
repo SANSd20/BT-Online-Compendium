@@ -62,7 +62,7 @@ The data layer must not make those semantic decisions.
 - Issued Gear occupation eligibility, employer catalogs, cheapest-item selection, and full GM approval workflow. Slice 10 stores an optional issuer and `gm-review` state but does not adjudicate them.
 - Full Core + Companion rules-catalog data entry.
 - Persistable playable-sheet functionality.
-- Server/database/accounts and cloud character storage.
+- Server/database/accounts and cloud character storage. Account/login/cloud save is expected before v1.0 but remains unimplemented in the Public Alpha.
 - Planetary Rollout 1 until separately authorized.
 - Political Geography (Rollout 2).
 - AToW nearest-state integration (Rollout 3).
@@ -71,4 +71,4 @@ The data layer must not make those semantic decisions.
 
 ## Current scope boundary
 
-Alpha Slices 1–18 supersede the bootstrap's implementation prohibition only for the explicitly authorized application foundation, Core Archetype v0.1, Point Buy v0.1, and the narrow Life Modules v0.15/Final Touches/84-item-equipment scope recorded above. They do not authorize broader Life Module content, a full equipment catalog, active item effects, true finalization, resolution of open rules questions, PDF export, playable-sheet runtime behavior, post-Beta publications, or progression through any planetary rollout. Beta 1 remains a future milestone requiring completed Core + Companion character creation and PDF export.
+Alpha Slices 1–19 supersede the bootstrap's implementation prohibition only for the explicitly authorized application foundation, Core Archetype v0.1, Point Buy v0.1, the narrow Life Modules v0.15/Final Touches/84-item-equipment scope, and static Public Alpha readiness recorded above. Slice 19 adds no rules or equipment data. These slices do not authorize broader Life Module content, a full equipment catalog, active item effects, true finalization, account/login/cloud save, backend services, live deployment, resolution of open rules questions, PDF export, playable-sheet runtime behavior, post-Beta publications, or progression through any planetary rollout. Beta 1 remains a future milestone requiring completed Core + Companion character creation and PDF export; v1.0 remains later.

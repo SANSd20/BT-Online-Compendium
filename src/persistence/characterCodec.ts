@@ -1,4 +1,5 @@
 import type { CharacterDefinition, CreationMethod } from '../domain/character/model'
+import { APP_VERSION } from '../appMetadata'
 import { getLifeModule } from '../domain/lifeModules/catalog'
 import { validateCharacter } from '../validation/validateCharacter'
 import {
@@ -7,7 +8,6 @@ import {
   type SavedCharacterEnvelope,
 } from './schema'
 
-const APPLICATION_VERSION = '0.1.0-alpha.18'
 const CREATION_METHODS: CreationMethod[] = ['archetype', 'point-buy', 'life-modules']
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -58,7 +58,7 @@ export function encodeCharacter(character: CharacterDefinition, exportedAt = new
     format: CHARACTER_FILE_FORMAT,
     schemaVersion: CHARACTER_SCHEMA_VERSION,
     exportedAt,
-    application: { name: 'BT Online Compendium', version: APPLICATION_VERSION },
+    application: { name: 'BT Online Compendium', version: APP_VERSION },
     character,
   }
   return JSON.stringify(envelope, null, 2)

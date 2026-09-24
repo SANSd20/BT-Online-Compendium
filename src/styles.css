@@ -19,10 +19,20 @@ button, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; }
 
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
-.site-header { height: 68px; padding: 0 6vw; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; background: rgb(10 15 20 / 88%); backdrop-filter: blur(12px); }
+.site-header { min-height: 68px; padding: 12px 6vw; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 20px; background: rgb(10 15 20 / 88%); backdrop-filter: blur(12px); }
 .brand { display: flex; gap: 12px; align-items: center; text-decoration: none; font-weight: 750; letter-spacing: .02em; }
 .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--amber); color: var(--amber); font-size: .8rem; letter-spacing: .12em; }
 .local-badge { color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 6px 10px; font-size: .78rem; }
+.site-status { display: flex; align-items: center; gap: 10px; }
+.header-version { color: var(--muted); font: 650 .76rem/1 ui-monospace, monospace; }
+.public-alpha-notice { width: min(1120px, 88vw); margin: 28px auto 0; padding: clamp(20px, 3vw, 30px); border: 1px solid #7b622d; background: linear-gradient(145deg, #211b0f, #111922); }
+.public-alpha-heading { display: flex; justify-content: space-between; align-items: start; gap: 20px; }
+.public-alpha-heading h2 { margin-bottom: 14px; }
+.version-badge { flex: none; color: var(--amber); border: 1px solid #7b622d; padding: 7px 10px; font: 700 .78rem/1 ui-monospace, monospace; }
+.public-alpha-notice > p { max-width: 850px; }
+.public-alpha-notice ul { margin: 18px 0 0; padding-left: 22px; color: var(--muted); line-height: 1.6; }
+.public-alpha-notice li + li { margin-top: 8px; }
+.public-alpha-notice strong { color: #e8edf2; }
 main { width: min(1120px, 88vw); margin: 0 auto; flex: 1; padding: 64px 0 80px; }
 .hero { max-width: 760px; padding: 20px 0 64px; }
 .hero.compact { padding-bottom: 32px; }
@@ -151,6 +161,7 @@ tbody th { color: #e8edf2; font-weight: 650; }
 footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
 
 @media (max-width: 760px) {
+  .site-header, .site-status, .public-alpha-heading { align-items: flex-start; flex-direction: column; }
   .method-grid { grid-template-columns: 1fr; }
   .method-card { min-height: 240px; }
   .draft-panel form { grid-template-columns: 1fr; }

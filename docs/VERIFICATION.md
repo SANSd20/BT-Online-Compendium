@@ -341,6 +341,22 @@ Slice 18 canonicalizes the existing page-306 Power Pack, Clan stable ID and adds
 
 Manual UI verification should confirm all 84 entries remain searchable/filterable, the four Clan packs display their source-backed ratings and inert metadata, manual entry remains available, and no active power or recharge behavior is implied.
 
+## Alpha Slice 19 verification
+
+Slice 19 prepares the unchanged Character Creator for a static Public Alpha preview. Automated and build coverage verifies:
+
+- application and exported-character metadata use version `0.1.0-alpha.19`;
+- the always-visible Public Alpha notice identifies browser-local storage, the risk of browser-data clearing, and JSON export/import as the portability path;
+- the notice states that no ChatGPT or application login is required and that no backend or cloud save exists;
+- account/login/cloud save is described as planned before v1.0 rather than active;
+- Core *A Time of War* remains first in scope, Companion support remains later, and incomplete rules/equipment/final validation do not imply a finalized or play-ready character;
+- PDF export is explicitly unavailable;
+- the equipment catalog remains exactly 84 unique entries and the existing catalog tests continue to protect IDs, ratings, sources, metadata, and behavior;
+- the Vite production build emits a static `dist/` site without backend, authentication, analytics, external API, or secret configuration; and
+- all earlier Archetype, Point Buy, Life Module, Final Touches, access-calculator, persistence, and catalog tests continue to pass.
+
+Manual preview verification should confirm the status/version notice is legible on desktop and mobile layouts, remains visible on every route, and does not imply live deployment, complete rules coverage, PDF output, or ready-for-play status. A live public deployment requires a separately authorized hosting target.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

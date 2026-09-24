@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import type { CharacterDefinition, CreationMethod } from '../domain/character/model'
 import { LocalStorageCharacterRepository } from '../persistence/characterRepository'
+import { APP_PHASE, APP_VERSION } from '../appMetadata'
+import { PublicAlphaNotice } from './components/PublicAlphaNotice'
 import { ArchetypeScreen } from './screens/ArchetypeScreen'
 import { HomeScreen } from './screens/HomeScreen'
 import { LifeModulesScreen } from './screens/LifeModulesScreen'
@@ -35,8 +37,12 @@ export function App() {
           <span className="brand-mark">BT</span>
           <span>Online Compendium</span>
         </a>
-        <span className="local-badge">Local-first</span>
+        <div className="site-status">
+          <span className="local-badge">{APP_PHASE} · Local-first</span>
+          <span className="header-version">v{APP_VERSION}</span>
+        </div>
       </header>
+      <PublicAlphaNotice />
       {method === 'archetype' ? (
         <ArchetypeScreen onSave={save} />
       ) : method === 'point-buy' ? (
@@ -48,7 +54,7 @@ export function App() {
       ) : (
         <HomeScreen characters={characters} onImport={save} onDelete={remove} />
       )}
-      <footer>Core + Companion foundation · No server account required</footer>
+      <footer>{APP_PHASE} · v{APP_VERSION} · Local browser storage · JSON portability · No account or cloud save</footer>
     </div>
   )
 }

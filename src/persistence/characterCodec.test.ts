@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { APP_VERSION } from '../appMetadata'
 import { createCharacterDraft } from '../engine/characterFactory'
 import { BLUE_COLLAR_ID } from '../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../engine/lifeModuleEngine'
@@ -15,7 +16,9 @@ function character() {
 describe('character codec', () => {
   it('round-trips a versioned character envelope', () => {
     const source = character()
-    const restored = decodeCharacter(encodeCharacter(source, '3025-01-02T00:00:00.000Z'))
+    const encoded = encodeCharacter(source, '3025-01-02T00:00:00.000Z')
+    expect(JSON.parse(encoded).application).toEqual({ name: 'BT Online Compendium', version: APP_VERSION })
+    const restored = decodeCharacter(encoded)
     expect(restored).toEqual(source)
   })
 
