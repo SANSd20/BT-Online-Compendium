@@ -153,7 +153,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     <main className="creation-page life-modules-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Alpha · Slice 14</p>
+        <p className="eyebrow">Alpha · Slice 15</p>
         <h1>Life Modules</h1>
         <p>Build through the audited Agitator branch, complete final review, and use the 75-item audited Core equipment catalog with affiliation-adjusted access or the manual inventory fallback. Full catalog coverage and finalization remain deferred.</p>
       </section>
@@ -340,7 +340,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <h3>Inventory draft</h3>
             {character.inventory.length === 0 ? <p>No personal equipment recorded.</p> : <ul className="module-history">{character.inventory.map((item) => <li key={item.id}><div><strong>{item.displayName} × {item.quantity}</strong><span>{item.entryKind === 'catalog' ? 'Catalog' : 'Manual'} · {item.ownership} · {item.totalCostCBills?.toLocaleString()} C-bills · {formatEquipmentRating(item.equipmentRating)}{item.ownership === 'Issued' ? ' · employer property' : ' · personal property'}</span></div><button className="button secondary" type="button" onClick={() => operate(() => removeInventoryItem(character, item.id), 'Inventory item removed.')}>Remove</button></li>)}</ul>}
             <div className="row-actions"><button className="button" type="button" onClick={() => operate(() => markReadyForEquipmentReview(character), 'Equipment draft marked ready for equipment review.')}>Mark ready for equipment review</button></div>
-            <p className="scope-note">The starter catalog contains 17 audited/example-backed items; manual entry remains available. Catalog metadata does not automate combat, ammunition, power, armor, healing, or play state. Combat/heavy Vehicle Trait entitlements, PDF export, final lock, and ready-for-play status are not implemented.</p>
+            <p className="scope-note">The hardened catalog contains 75 current audited items; 14 legacy Slice 11 entries retain normalized ratings while their unsupplied raw triplets remain explicitly unknown. Manual entry remains available. Catalog metadata does not create combat, ammunition, magazine, power, armor, healing, addiction, sensor, communications, repair, movement, or other play-state automation. Combat/heavy Vehicle Trait entitlements, PDF export, final lock, and ready-for-play status are not implemented.</p>
           </section>}
 
           {state.finalReview && <section className="life-stage-panel">

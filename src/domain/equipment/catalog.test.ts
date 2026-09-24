@@ -12,7 +12,7 @@ import {
   validateEquipmentCatalog,
 } from './catalog'
 
-describe('Alpha Slice 11 starter equipment catalog', () => {
+describe('Alpha equipment catalog', () => {
   it('contains exactly the 17 audited starter entries with unique valid IDs', () => {
     expect(STARTER_EQUIPMENT_CATALOG).toHaveLength(17)
     expect(new Set(STARTER_EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(17)
@@ -89,6 +89,14 @@ describe('Alpha Slice 11 starter equipment catalog', () => {
     expect(getEquipmentCatalogItem('core.personalWeapon.laserPistol.pulse')).toMatchObject({ rawEquipmentRating: 'D/B-F-C/D', rawAvailabilityCodes: ['B', 'F', 'C'], ratings: { availability: 'C' } })
     expect(getEquipmentCatalogItem('core.armor.neoChain.vest')).toMatchObject({ rawEquipmentRating: 'D/X-X-C/D', rawAvailabilityCodes: ['X', 'X', 'C'], ratings: { availability: 'C' } })
     expect(getEquipmentCatalogItem('core.armor.ablative.vest')).toMatchObject({ rawEquipmentRating: 'D/A-B-A/C', rawAvailabilityCodes: ['A', 'B', 'A'], ratings: { availability: 'B' } })
+    const rulesExample = {
+      ...getEquipmentCatalogItem('core.personalWeapon.laserPistol.pulse'),
+      id: 'core.test.rulesExample',
+      rawEquipmentRating: 'C/X-F-D/D',
+      rawAvailabilityCodes: ['X', 'F', 'D'] as [string, string, string],
+      ratings: { tech: 'C' as const, availability: 'D' as const, legality: 'D' as const },
+    }
+    expect(validateEquipmentCatalog([rulesExample])).toEqual([])
   })
 
   it('validates malformed raw ratings and normalized mismatches', () => {
@@ -150,5 +158,44 @@ describe('Alpha Slice 11 starter equipment catalog', () => {
     const item = getEquipmentCatalogItem('core.personalWeapon.autoPistol.standard')
     expect(validateEquipmentCatalog([item, item])).toContain(`Duplicate or missing equipment catalog ID: ${item.id}`)
     expect(validateEquipmentCatalog([{ ...item, ratings: { tech: null, availability: null, legality: null } }])).toContain(`Audited Core item requires complete ratings: ${item.id}`)
+  })
+
+  it('hardens all 75 current entries without adding or renaming catalog items', () => {
+    expect(EQUIPMENT_CATALOG).toHaveLength(75)
+    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(75)
+    expect(validateEquipmentCatalog()).toEqual([])
+    for (const item of EQUIPMENT_CATALOG) {
+      expect(item.id).toMatch(/^core\.[a-z][A-Za-z0-9]*(?:\.[a-z][A-Za-z0-9]*)+$/)
+      expect(item.categoryPath.length).toBeGreaterThan(0)
+      expect(item.sourceKey).toBeTruthy()
+      expect(item.sourceStatus).toBe('audited-core')
+      expect(item.source.ruleId).toBe(item.sourceKey)
+      expect(item.metadata).toBeTypeOf('object')
+      expect(Array.isArray(item.notes)).toBe(true)
+      expect(['preserved', 'not-supplied-in-audit']).toContain(item.rawRatingStatus)
+    }
+  })
+
+  it('marks the 14 normalized-only Slice 11 records instead of inventing raw Availability triplets', () => {
+    const normalizedOnly = EQUIPMENT_CATALOG.filter((item) => item.rawRatingStatus === 'not-supplied-in-audit')
+    expect(normalizedOnly).toHaveLength(14)
+    expect(normalizedOnly.every((item) => !item.rawEquipmentRating && !item.rawAvailabilityCodes)).toBe(true)
+    expect(EQUIPMENT_CATALOG.filter((item) => item.rawRatingStatus === 'preserved')).toHaveLength(61)
+  })
+
+  it('rejects unsafe IDs, categories, affiliation codes, source data, and raw-rating omissions', () => {
+    const item = getEquipmentCatalogItem('core.personalWeapon.laserPistol.pulse')
+    expect(validateEquipmentCatalog([{ ...item, id: 'Core.Bad ID' }])).toContain('Unsafe equipment catalog ID: Core.Bad ID')
+    expect(validateEquipmentCatalog([{ ...item, categoryPath: [' Weapon'] }])).toContain(`Unsafe or missing equipment category: ${item.id}`)
+    expect(validateEquipmentCatalog([{ ...item, affiliationCode: 'bad code' }])).toContain(`Unsafe equipment affiliation code: ${item.id}`)
+    expect(validateEquipmentCatalog([{ ...item, sourceKey: '' }])).toContain(`Missing or inconsistent equipment source reference: ${item.id}`)
+    expect(validateEquipmentCatalog([{ ...item, sourceStatus: 'unknown' as never }])).toContain(`Unknown equipment source status: ${item.id}`)
+    expect(validateEquipmentCatalog([{ ...item, rawAvailabilityCodes: undefined }])).toContain(`Missing raw Availability triplet: ${item.id}`)
+    expect(validateEquipmentCatalog([{ ...item, rawEquipmentRating: undefined }])).toContain(`Preserved raw equipment rating is missing: ${item.id}`)
+  })
+
+  it('preserves unknown but safe affiliation codes without requiring a faction registry', () => {
+    const item = getEquipmentCatalogItem('core.personalWeapon.laserPistol.pulse')
+    expect(validateEquipmentCatalog([{ ...item, affiliationCode: 'FUTURE-CODE' }])).toEqual([])
   })
 })

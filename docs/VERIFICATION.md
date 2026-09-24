@@ -275,6 +275,25 @@ Slice 14 extends the same `npm run check` gate. Automated coverage verifies:
 
 Manual UI verification should confirm all 75 entries remain searchable/filterable, Batch 4 ratings and sources display through the existing catalog workflow, access review behavior is unchanged, and no metadata-only detail is presented as runtime automation.
 
+## Alpha Slice 15 verification
+
+Slice 15 adds no equipment and retains the 75-item current catalog. Automated coverage verifies:
+
+- all current IDs are unique, follow the established stable-ID syntax, and retain the pre-Slice-15 values;
+- category paths are non-empty, safe, and consistent with an explicit current domain-to-top-level-category audit map;
+- source keys, source citations, source statuses, affiliation codes, metadata, and notes are structurally valid;
+- all 61 entries supplied with raw printed ratings retain an exact parseable rating and matching raw Availability triplet;
+- the 14 normalized-only Slice 11 records are explicitly marked `not-supplied-in-audit` instead of receiving invented raw triplets;
+- normalized Tech and Legality match raw endpoints, while normalized Availability may match any triplet position and is never assumed to be the middle code;
+- current purchases create version-2 snapshots preserving purchase-time name, cost, category, source, affiliation, ratings, metadata, and notes;
+- older example-backed Medical Kit, Medipatch, and Stimpatch snapshots remain accepted and round-trip without being rewritten to current catalog data;
+- Owned and Issued behavior remains correct across weapons, armor, electronics, power, medical, repair, and field-gear categories;
+- manual entries remain non-catalog records, preserve entered data, and use the same Owned/Issued accounting;
+- direct power, ammunition, magazine, armor, medical, sensor, communications, repair, consumable, movement, and other runtime-like inventory state is rejected; and
+- all earlier Archetype, Point Buy, Life Module, Final Touches, access-calculator, persistence, and catalog tests continue to pass.
+
+Manual UI verification should confirm all 75 entries remain searchable/filterable, normalized-only legacy ratings are described as unsupplied rather than inferred, manual entry remains available, and catalog metadata is not presented as active play-state automation.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

@@ -18,6 +18,7 @@ export interface EquipmentCatalogItem {
   sourceKey: string
   source: SourceCitation
   sourceStatus: EquipmentCatalogSourceStatus
+  rawRatingStatus?: 'preserved' | 'not-supplied-in-audit'
   rawEquipmentRating?: string
   rawAvailabilityCodes?: [string, string, string]
   metadata: Record<string, string | number | boolean>
@@ -25,6 +26,30 @@ export interface EquipmentCatalogItem {
 }
 
 const CORE_SOURCE = 'atow-core-corrected-third'
+const SOURCE_STATUSES: readonly EquipmentCatalogSourceStatus[] = ['audited-core', 'example-backed']
+const CATALOG_ID_PATTERN = /^core\.[a-z][A-Za-z0-9]*(?:\.[a-z][A-Za-z0-9]*)+$/
+const CATEGORY_SEGMENT_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 /&'()+-]*$/
+const AFFILIATION_CODE_PATTERN = /^[A-Z][A-Z0-9-]*$/
+const DOMAIN_CATEGORY: Readonly<Record<string, string>> = {
+  personalWeapon: 'Weapon',
+  meleeWeapon: 'Weapon',
+  clothing: 'Clothing',
+  electronics: 'Electronics',
+  power: 'Power',
+  fieldGear: 'Field Gear',
+  medical: 'Medical',
+  weaponAccessory: 'Weapon Accessory',
+  armor: 'Armor',
+  security: 'Security',
+  espionage: 'Espionage',
+  repair: 'Repair',
+  remoteSensor: 'Electronics',
+}
+const ALLOWED_STABLE_ID_REPLACEMENTS = new Set([
+  'core.medical.kit.standard',
+  'core.medical.medipatch',
+  'core.medical.stimpatch',
+])
 
 function source(sourceKey: string, page?: number): SourceCitation {
   return {
@@ -289,10 +314,24 @@ export function validateEquipmentCatalog(catalog: readonly EquipmentCatalogItem[
   for (const item of catalog) {
     if (!item.id || ids.has(item.id)) issues.push(`Duplicate or missing equipment catalog ID: ${item.id || '(missing)'}`)
     ids.add(item.id)
-    if (!item.displayName || item.categoryPath.length === 0 || !Number.isInteger(item.costCBills) || item.costCBills < 0 || !item.sourceKey || !item.source.sourceId) issues.push(`Malformed equipment catalog item: ${item.id}`)
+    if (item.id && !CATALOG_ID_PATTERN.test(item.id)) issues.push(`Unsafe equipment catalog ID: ${item.id}`)
+    if (!item.displayName.trim() || !Number.isInteger(item.costCBills) || item.costCBills < 0) issues.push(`Malformed equipment catalog item: ${item.id}`)
+    if (!Array.isArray(item.categoryPath) || item.categoryPath.length === 0 || item.categoryPath.some((segment) => !segment || segment !== segment.trim() || !CATEGORY_SEGMENT_PATTERN.test(segment))) {
+      issues.push(`Unsafe or missing equipment category: ${item.id}`)
+    } else {
+      const domain = item.id.split('.')[1]
+      if (DOMAIN_CATEGORY[domain] && DOMAIN_CATEGORY[domain] !== item.categoryPath[0]) issues.push(`Equipment ID domain does not match category: ${item.id}`)
+    }
+    if (item.affiliationCode !== null && (!item.affiliationCode || !AFFILIATION_CODE_PATTERN.test(item.affiliationCode))) issues.push(`Unsafe equipment affiliation code: ${item.id}`)
+    if (!item.sourceKey || !item.source?.sourceId || !item.source.edition || item.source.ruleId !== item.sourceKey) issues.push(`Missing or inconsistent equipment source reference: ${item.id}`)
+    if (!SOURCE_STATUSES.includes(item.sourceStatus as EquipmentCatalogSourceStatus)) issues.push(`Unknown equipment source status: ${item.id}`)
+    if (!item.metadata || typeof item.metadata !== 'object' || Array.isArray(item.metadata) || !Array.isArray(item.notes) || item.notes.some((note) => typeof note !== 'string')) issues.push(`Malformed equipment metadata or notes: ${item.id}`)
     const ratingValues = Object.values(item.ratings)
     if (item.sourceStatus === 'audited-core' && ratingValues.some((value) => value === null)) issues.push(`Audited Core item requires complete ratings: ${item.id}`)
     if (item.sourceStatus === 'example-backed' && ratingValues.some((value) => value !== null)) issues.push(`Example-backed item must preserve unaudited ratings as null: ${item.id}`)
+    if (item.rawRatingStatus === 'preserved' && !item.rawEquipmentRating) issues.push(`Preserved raw equipment rating is missing: ${item.id}`)
+    if (item.rawRatingStatus === 'not-supplied-in-audit' && item.rawEquipmentRating) issues.push(`Legacy raw-rating status conflicts with preserved rating: ${item.id}`)
+    if (!item.rawEquipmentRating && item.rawRatingStatus !== 'not-supplied-in-audit') issues.push(`Missing raw equipment rating status: ${item.id}`)
     if (item.rawEquipmentRating) {
       const parsed = parseRawEquipmentRating(item.rawEquipmentRating)
       if (!parsed) issues.push(`Malformed raw equipment rating: ${item.id}`)
@@ -300,7 +339,8 @@ export function validateEquipmentCatalog(catalog: readonly EquipmentCatalogItem[
         if (item.ratings.tech !== parsed.tech) issues.push(`Normalized Tech does not match raw rating: ${item.id}`)
         if (item.ratings.legality !== parsed.legality) issues.push(`Normalized Legality does not match raw rating: ${item.id}`)
         if (!item.ratings.availability || !parsed.availabilityCodes.includes(item.ratings.availability)) issues.push(`Normalized Availability does not appear in raw rating: ${item.id}`)
-        if (item.rawAvailabilityCodes && item.rawAvailabilityCodes.some((value, index) => value !== parsed.availabilityCodes[index])) issues.push(`Stored availability triplet does not match raw rating: ${item.id}`)
+        if (!item.rawAvailabilityCodes || item.rawAvailabilityCodes.length !== 3) issues.push(`Missing raw Availability triplet: ${item.id}`)
+        else if (item.rawAvailabilityCodes.some((value, index) => value !== parsed.availabilityCodes[index])) issues.push(`Stored availability triplet does not match raw rating: ${item.id}`)
       }
     }
   }
@@ -329,7 +369,7 @@ function equipment(
   const parsed = parseRawEquipmentRating(rawEquipmentRating)
   if (!parsed) throw new Error(`Invalid embedded raw equipment rating: ${rawEquipmentRating}`)
   return {
-    id, displayName, categoryPath, costCBills, rawEquipmentRating, rawAvailabilityCodes: parsed.availabilityCodes,
+    id, displayName, categoryPath, costCBills, rawRatingStatus: 'preserved', rawEquipmentRating, rawAvailabilityCodes: parsed.availabilityCodes,
     ratings, affiliationCode, sourceKey, source: source(sourceKey, page), sourceStatus: 'audited-core', metadata, notes,
   }
 }
@@ -337,7 +377,16 @@ function equipment(
 function mergeEquipmentCatalogBatches(...batches: readonly (readonly EquipmentCatalogItem[])[]): EquipmentCatalogItem[] {
   const merged = new Map<string, EquipmentCatalogItem>()
   for (const batch of batches) {
-    for (const item of batch) merged.set(item.id, item)
+    for (const item of batch) {
+      const previous = merged.get(item.id)
+      if (previous && (!ALLOWED_STABLE_ID_REPLACEMENTS.has(item.id) || previous.sourceStatus !== 'example-backed' || item.sourceStatus !== 'audited-core')) {
+        throw new Error(`Unexpected duplicate equipment catalog ID across batches: ${item.id}`)
+      }
+      merged.set(item.id, {
+        ...item,
+        rawRatingStatus: item.rawEquipmentRating ? 'preserved' : 'not-supplied-in-audit',
+      })
+    }
   }
   return [...merged.values()]
 }

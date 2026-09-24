@@ -132,7 +132,10 @@ describe('Final Touches and equipment foundation', () => {
     expect(character.inventory[0]).toMatchObject({
       catalogItemId: 'core.personalWeapon.autoPistol.standard', entryKind: 'catalog', displayName: 'Auto-Pistol', quantity: 2,
       costPerItemCBills: 50, totalCostCBills: 100, equipmentRating: { tech: 'C', availability: 'A', legality: 'C' },
-      catalogSnapshot: { sourceKey: 'AToW-CTP-p265', sourceStatus: 'audited-core', categoryPath: ['Weapon', 'Small Arms', 'Pistol'], metadata: { shots: 10 } },
+      catalogSnapshot: {
+        snapshotVersion: 2, displayName: 'Auto-Pistol', costCBills: 50, affiliationCode: null,
+        sourceKey: 'AToW-CTP-p265', sourceStatus: 'audited-core', categoryPath: ['Weapon', 'Small Arms', 'Pistol'], metadata: { shots: 10 },
+      },
     })
     expect(character.inventory[0].source?.ruleId).toBe('AToW-CTP-p265')
     expect(character.provenance.some((entry) => entry.id === character.inventory[0].provenanceId)).toBe(true)
@@ -145,9 +148,10 @@ describe('Final Touches and equipment foundation', () => {
     let character = enterFinalTouches(readyForFinalTouches())
     character = addCatalogInventoryItem(character, { catalogItemId: 'core.weaponAccessory.sight.laserSight', quantity: 1, ownership: 'Owned' })
     expect(character.inventory[0].catalogSnapshot).toMatchObject({
+      snapshotVersion: 2, displayName: 'Laser Sight', costCBills: 25, affiliationCode: null,
       rawEquipmentRating: 'C/A-A-A/A', rawAvailabilityCodes: ['A', 'A', 'A'],
       normalizedEquipmentRating: { tech: 'C', availability: 'A', legality: 'A' },
-      metadata: { attackModifier: 1 },
+      metadata: { attackModifier: 1 }, notes: ['Attack and power effects are metadata only.'],
     })
     const decoded = decodeCharacter(encodeCharacter(character, '2026-09-24T00:00:00.000Z'))
     expect(decoded.inventory[0].catalogSnapshot).toEqual(character.inventory[0].catalogSnapshot)
@@ -189,6 +193,29 @@ describe('Final Touches and equipment foundation', () => {
     expect(validateCharacter(character).issues.map((entry) => entry.id)).not.toContain('inventory.rating.invalid')
   })
 
+  it('accepts historical example-backed medical snapshots without rewriting them', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.medical.medipatch', quantity: 2, ownership: 'Owned' })
+    const item = character.inventory[0]
+    item.equipmentRating = { tech: null, availability: null, legality: null }
+    item.source = { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', ruleId: 'AToW-CTP-example-final-touches' }
+    item.catalogSnapshot = {
+      categoryPath: ['Medical'], sourceKey: 'AToW-CTP-example-final-touches', sourceStatus: 'example-backed',
+      normalizedEquipmentRating: { tech: null, availability: null, legality: null },
+      metadata: { massKg: 0, exampleBacked: true },
+    }
+    expect(validateCharacter(character).valid).toBe(true)
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-09-24T00:00:00.000Z'))
+    expect(decoded.inventory[0].catalogSnapshot).toEqual(item.catalogSnapshot)
+  })
+
+  it('requires complete durable metadata on current versioned purchase snapshots', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.power.recharger.solar', quantity: 1, ownership: 'Owned' })
+    delete character.inventory[0].catalogSnapshot!.displayName
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).toContain('inventory.catalog-snapshot.durable-metadata')
+  })
+
   it('preserves Batch 3 catalog metadata and provenance through JSON round-trip', () => {
     let character = enterFinalTouches(readyForFinalTouches())
     character = addCatalogInventoryItem(character, { catalogItemId: 'core.electronics.recorder.microRecorder', quantity: 1, ownership: 'Owned' })
@@ -226,6 +253,33 @@ describe('Final Touches and equipment foundation', () => {
     character = addCatalogInventoryItem(character, { catalogItemId: 'core.electronics.communicator.military', quantity: 1, ownership: 'Issued' })
     expect(character.cBills).toBe(1000)
     expect(character.inventory[0]).toMatchObject({ ownership: 'Issued', personalProperty: false, totalCostCBills: 50 })
+  })
+
+  it('regression-tests Owned catalog purchases across equipment categories', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    const ids = [
+      'core.personalWeapon.autoPistol.standard', 'core.armor.flak.vest', 'core.electronics.communicator.civilian',
+      'core.power.powerPack.standard', 'core.medical.kit.standard', 'core.repair.smallArms.slugThrowerKit',
+      'core.fieldGear.survival.basicFieldKit',
+    ]
+    for (const catalogItemId of ids) character = addCatalogInventoryItem(character, { catalogItemId, quantity: 1, ownership: 'Owned' })
+    expect(character.inventory.every((item) => item.personalProperty && item.ownership === 'Owned')).toBe(true)
+    expect(character.creation.finalTouches).toMatchObject({ spentCBillTotal: 270, remainingCBillTotal: 730 })
+    expect(getEquipmentFoundationIssues(character)).toEqual([])
+  })
+
+  it('regression-tests Issued catalog purchases across equipment categories', () => {
+    let character = setIssuedGearEnabled(enterFinalTouches(readyForFinalTouches()), true)
+    const ids = [
+      'core.personalWeapon.laserPistol.standard', 'core.armor.ballisticPlate.vest', 'core.electronics.communicator.military',
+      'core.power.recharger.solar', 'core.medical.lifeSupportUnit.standard', 'core.repair.smallArms.energyWeaponKit',
+      'core.fieldGear.survival.advancedFieldKit',
+    ]
+    for (const catalogItemId of ids) character = addCatalogInventoryItem(character, { catalogItemId, quantity: 1, ownership: 'Issued' })
+    expect(character.inventory.every((item) => !item.personalProperty && item.ownership === 'Issued')).toBe(true)
+    expect(character.creation.finalTouches).toMatchObject({ spentCBillTotal: 0, remainingCBillTotal: 1000 })
+    expect(character.cBills).toBe(1000)
+    expect(getEquipmentFoundationIssues(character)).toEqual([])
   })
 
   it('validates unaffordable and above-limit Owned equipment', () => {
@@ -272,6 +326,32 @@ describe('Final Touches and equipment foundation', () => {
     const repository = new LocalStorageCharacterRepository(new MemoryStorage())
     repository.save(character)
     expect(repository.get(character.id)).toEqual(character)
+  })
+
+  it('keeps manual fallback non-catalog, durable, and subject to ownership rules', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    character = addManualInventoryItem(character, {
+      name: 'Locally Built Analyzer', quantity: 2, costPerItemCBills: 75, ownership: 'Owned',
+      rating: { tech: 'C', availability: 'A', legality: 'A' }, affiliationCode: 'local-code', notes: 'Player-entered item.',
+    })
+    expect(character.inventory[0]).toMatchObject({ entryKind: 'manual', affiliationCode: 'LOCAL-CODE', notes: ['Player-entered item.'], totalCostCBills: 150 })
+    expect(character.inventory[0]).not.toHaveProperty('catalogItemId')
+    expect(character.inventory[0]).not.toHaveProperty('catalogSnapshot')
+    expect(decodeCharacter(encodeCharacter(character, '2026-09-24T00:00:00.000Z')).inventory[0]).toEqual(character.inventory[0])
+    character.inventory[0].catalogItemId = 'core.clothing.fatigues'
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).toContain('inventory.manual.catalog-data')
+  })
+
+  it('rejects runtime state derived from inert equipment metadata', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.power.powerPack.standard', quantity: 1, ownership: 'Owned' })
+    ;(character.inventory[0] as unknown as Record<string, unknown>).currentPower = 20
+    ;(character.inventory[0] as unknown as Record<string, unknown>).ammo = 10
+    ;(character.inventory[0] as unknown as Record<string, unknown>).armorCondition = 4
+    ;(character.inventory[0] as unknown as Record<string, unknown>).sensorState = 'active'
+    const issues = validateCharacter(character).issues
+    expect(issues.map((entry) => entry.id)).toContain('inventory.runtime-state.unsupported')
+    expect(issues.find((entry) => entry.id === 'inventory.runtime-state.unsupported')?.message).toContain('currentPower')
   })
 
   it('continues to reject full finalization', () => {

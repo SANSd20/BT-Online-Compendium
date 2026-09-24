@@ -30,6 +30,13 @@ import {
 } from '../domain/finalTouches/rules'
 import { getEquipmentCatalogItem, parseRawEquipmentRating } from '../domain/equipment/catalog'
 
+const SAFE_AFFILIATION_CODE = /^[A-Z][A-Z0-9-]*$/
+const FORBIDDEN_INVENTORY_RUNTIME_KEYS = [
+  'currentPower', 'remainingPower', 'powerState', 'ammo', 'ammunition', 'magazineCount', 'reloadState',
+  'armorCondition', 'barCurrent', 'fatigue', 'addiction', 'consciousness', 'healing', 'sensorState',
+  'networkState', 'movementState', 'repairJobs', 'remainingUses',
+] as const
+
 function issue(
   id: string,
   path: string,
@@ -204,6 +211,14 @@ function validateFinalTouches(character: CharacterDefinition, issues: Validation
     if (!['manual', 'catalog'].includes(entry.entryKind ?? '') || !entry.source?.sourceId || !entry.id || !provenanceIds.has(entry.provenanceId)) {
       issues.push(issue('final-touches.inventory.provenance', `inventory.${index}`, 'Final Touches inventory requires a supported entry kind, source, stable ID, and valid provenance.'))
     }
+    if (entry.affiliationCode !== undefined && (!entry.affiliationCode || !SAFE_AFFILIATION_CODE.test(entry.affiliationCode))) {
+      issues.push(issue('inventory.affiliation-code.invalid', `inventory.${index}.affiliationCode`, 'Inventory affiliation codes must be uppercase, non-empty, and safe to preserve as raw codes.'))
+    }
+    const runtimeKeys = FORBIDDEN_INVENTORY_RUNTIME_KEYS.filter((key) => Object.prototype.hasOwnProperty.call(entry, key))
+    if (runtimeKeys.length > 0) issues.push(issue('inventory.runtime-state.unsupported', `inventory.${index}`, `Equipment metadata must not create runtime item state (${runtimeKeys.join(', ')}).`))
+    if (entry.entryKind === 'manual' && (entry.catalogItemId !== undefined || entry.catalogSnapshot !== undefined)) {
+      issues.push(issue('inventory.manual.catalog-data', `inventory.${index}`, 'Manual inventory entries must remain non-catalog records without a catalog ID or catalog snapshot.'))
+    }
     if (entry.entryKind === 'catalog') {
       try {
         getEquipmentCatalogItem(entry.catalogItemId ?? '')
@@ -213,6 +228,24 @@ function validateFinalTouches(character: CharacterDefinition, issues: Validation
       const snapshot = entry.catalogSnapshot
       if (!snapshot?.sourceKey || !Array.isArray(snapshot.categoryPath) || snapshot.categoryPath.length === 0 || !['audited-core', 'example-backed'].includes(snapshot.sourceStatus) || !snapshot.metadata || typeof snapshot.metadata !== 'object' || Array.isArray(snapshot.metadata)) {
         issues.push(issue('final-touches.inventory.catalog-snapshot', `inventory.${index}.catalogSnapshot`, 'Catalog inventory requires a durable category, source-status, metadata, and source-key snapshot.'))
+      }
+      if (snapshot?.snapshotVersion !== undefined && snapshot.snapshotVersion !== 2) {
+        issues.push(issue('inventory.catalog-snapshot.version', `inventory.${index}.catalogSnapshot.snapshotVersion`, 'Catalog snapshot version is unsupported.'))
+      }
+      if (snapshot?.snapshotVersion === 2 && (
+        snapshot.displayName !== entry.displayName ||
+        snapshot.costCBills !== entry.costPerItemCBills ||
+        snapshot.affiliationCode !== (entry.affiliationCode ?? null) ||
+        !Array.isArray(snapshot.notes) || JSON.stringify(snapshot.notes) !== JSON.stringify(entry.notes ?? []) ||
+        snapshot.sourceKey !== entry.source?.ruleId
+      )) {
+        issues.push(issue('inventory.catalog-snapshot.durable-metadata', `inventory.${index}.catalogSnapshot`, 'Current catalog purchases require a complete and internally consistent purchase-time name, cost, affiliation, notes, and source snapshot.'))
+      }
+      if (snapshot?.rawRatingStatus === 'preserved' && !snapshot.rawEquipmentRating) {
+        issues.push(issue('inventory.raw-rating.missing', `inventory.${index}.catalogSnapshot.rawEquipmentRating`, 'Catalog snapshot marks the raw rating preserved but does not contain it.'))
+      }
+      if (snapshot?.rawRatingStatus === 'not-supplied-in-audit' && snapshot.rawEquipmentRating) {
+        issues.push(issue('inventory.raw-rating.status-mismatch', `inventory.${index}.catalogSnapshot.rawRatingStatus`, 'Catalog snapshot raw-rating status conflicts with its preserved printed rating.'))
       }
       if (snapshot?.rawEquipmentRating) {
         const parsed = parseRawEquipmentRating(snapshot.rawEquipmentRating)
@@ -231,7 +264,7 @@ function validateFinalTouches(character: CharacterDefinition, issues: Validation
   if (state.equipmentReviewState === 'ready-for-equipment-review' && getEquipmentFoundationIssues(character).length > 0) {
     issues.push(issue('final-touches.review-state.invalid', 'creation.finalTouches.equipmentReviewState', 'An equipment draft with validation errors cannot be ready for equipment review.'))
   }
-  issues.push(issue('final-touches.scope.alpha', 'creation.finalTouches', 'Equipment remains an Alpha draft with a 75-item audited catalog and manual fallback; the full catalog, PDF export, true finalization, and ready-for-play status are unsupported.', { severity: 'information', kind: 'availability' }))
+  issues.push(issue('final-touches.scope.alpha', 'creation.finalTouches', 'Equipment remains an Alpha draft with a hardened 75-item audited catalog and manual fallback; active item effects, the full catalog, PDF export, true finalization, and ready-for-play status are unsupported.', { severity: 'information', kind: 'availability' }))
 }
 
 function validateLifeModules(character: CharacterDefinition, issues: ValidationIssue[]): void {

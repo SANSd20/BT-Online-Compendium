@@ -111,9 +111,14 @@ export type EquipmentRatingCode = 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
 export type EquipmentCatalogSourceStatus = 'audited-core' | 'example-backed'
 
 export interface EquipmentCatalogSnapshot {
+  snapshotVersion?: 2
+  displayName?: string
+  costCBills?: number
   categoryPath: string[]
   sourceKey: string
   sourceStatus: EquipmentCatalogSourceStatus
+  affiliationCode?: string | null
+  rawRatingStatus?: 'preserved' | 'not-supplied-in-audit'
   rawEquipmentRating?: string
   rawAvailabilityCodes?: string[]
   normalizedEquipmentRating: {
@@ -122,6 +127,7 @@ export interface EquipmentCatalogSnapshot {
     legality: EquipmentRatingCode | null
   }
   metadata: Record<string, string | number | boolean>
+  notes?: string[]
 }
 
 export type EquipmentAffiliationCategory = 'inner-sphere' | 'periphery' | 'clan'
