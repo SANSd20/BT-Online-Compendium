@@ -244,6 +244,22 @@ Slice 12 extends the same `npm run check` gate. Automated coverage verifies:
 
 Manual UI verification should confirm printed, normalized, and effective ratings are distinct; the access profile updates limits and allowed/blocked reasons; catalog purchasing respects Owned/Issued selection; and no combat, armor, health, power, ammunition, finalization, or PDF behavior is implied.
 
+## Alpha Slice 13 verification
+
+Slice 13 extends the same `npm run check` gate. Automated coverage verifies:
+
+- Batch 3 contains exactly 24 unique audited records and the merged current catalog contains 55 unique entries;
+- 21 records add new stable IDs while Medical Kit, Medipatch, and Stimpatch promote the three existing IDs to audited page-313 definitions;
+- each Batch 3 record retains its supplied page source, exact raw rating, raw Availability triplet, hand-audited normalized rating, affiliation code, and inert metadata;
+- raw-rating validation continues to match Tech and Legality endpoints while accepting normalized Availability from any position in the triplet;
+- LA, DC, CS, and CLAN item affiliation codes survive catalog lookup and feed the existing access calculator;
+- page-313 medical upgrades use current audited ratings without mutating the historical Slice 11 records;
+- recording, optics, security, repair, medical, fatigue, healing, addiction, and power data remain metadata rather than runtime mechanics;
+- purchase-time Batch 3 metadata, ratings, source, and provenance survive versioned JSON round trips; and
+- all earlier Archetype, Point Buy, Life Module, Final Touches, access-calculator, and equipment-catalog tests continue to pass.
+
+Manual UI verification should confirm all 55 current entries remain searchable/filterable, promoted medical entries display audited ratings and sources, affiliation-adjusted access still reports blocking reasons, and no metadata-only behavior is presented as automated play state.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

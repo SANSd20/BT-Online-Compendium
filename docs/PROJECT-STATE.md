@@ -34,11 +34,12 @@ Saved characters must retain enough underlying information to reproduce and audi
 | Alpha Slice 10 Life Modules v0.7 | Implemented and verified | Final Touches descriptions, Wealth-derived starting C-bills, Equipped-derived access limits, manual Owned/Issued inventory, optional Issued Gear, persistence, validation, and UI |
 | Alpha Slice 11 Life Modules v0.8 | Implemented and verified | Searchable/filterable 17-item Core starter catalog, catalog purchases, durable source/metadata snapshots, example-backed null ratings, manual fallback, persistence, validation, and UI |
 | Alpha Slice 12 Life Modules v0.9 | Implemented and verified | Second 17-item batch, raw/normalized ratings, hand-audited Availability, native/foreign adjustments, Periphery/Clan Tech caps, Issued review, persistence, validation, and UI |
+| Alpha Slice 13 Life Modules v0.10 | Implemented and verified | Third 24-record batch, 21 net-new items, three stable-ID medical upgrades, inert rules metadata, persistence, validation, and UI |
 | Shared Character/Rules engine | Foundation implemented and exercised | Archetype, Point Buy, and Life Modules use the common representation, ledgers, validation, persistence, and provenance |
 | Archetype v0.1 | Implemented | Published packages are source-faithful, non-customizable starting configurations |
 | Point Buy v0.1 | Implemented | Core 5,000-XP default, GM-adjusted allotment recording, Attribute/Skill/Trait costs, negative-Trait ceiling, drafts, persistence, and focused catalogs |
-| Life Modules v0.9 | Implemented, deliberately narrow | Existing Stage 0–4 path, final review/Optimization, Final Touches, and 34-item equipment catalog; true finalization and broad catalogs remain deferred |
-| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 12 |
+| Life Modules v0.10 | Implemented, deliberately narrow | Existing Stage 0–4 path, final review/Optimization, Final Touches, and 55-item equipment catalog; true finalization and broad catalogs remain deferred |
+| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 13 |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
 | Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |
@@ -154,7 +155,7 @@ The application currently provides:
 - a 17-item starter Core equipment catalog spanning weapons, clothing, electronics, power, field gear, and medical items;
 - text search plus category and source-status filtering, with quantity and Owned/Issued selection at purchase time;
 - purchase-time catalog snapshots preserving stable catalog ID, category, source key/status, rules metadata, cost, ratings, affiliation code, source citation, and provenance;
-- example-backed Medical Kit, Medipatch, and Stimpatch records whose unaudited ratings remain `null` and therefore receive cost/quantity/source validation without invented access ratings;
+- historical example-backed Medical Kit, Medipatch, and Stimpatch definitions retained in the Slice 11 batch, with their active stable IDs promoted by Slice 13 to audited page-313 records without rewriting saved purchase snapshots;
 - a second 17-item audited batch covering energy/flechette/miscellaneous weapons, weapon accessories, and personal armor;
 - exact raw printed rating strings and raw Availability triplets alongside hand-audited normalized Tech/Availability/Legality values;
 - catalog validation requiring normalized Tech and Legality to match the raw endpoints and normalized Availability to occur somewhere in the raw triplet, without assuming a universal positional rule;
@@ -170,7 +171,7 @@ The application currently provides:
 
 All three creation screens use the common catalog → creation → validation → local save → export/import path. The Life Module route additionally exposes current phase, module-pool accounting, selected history, applied awards, unresolved awards, and prerequisite status.
 
-Life Modules v0.9 retains the existing minimal Stage 0–4, final-review, and Final Touches flow, expands the catalog to 34 items, and adds affiliation-aware access review. Catalog items and manual entries share Owned/Issued accounting. Raw ratings remain intact beside hand-audited normalized ratings. Neutral/native items use normal Availability and Legality; foreign items increase both one step. Periphery and Clan categories adjust only the Owned Tech cap, while Issued review uses E/D/D or F/D/D. Rule metadata remains inert and does not activate combat, ammunition, power, armor, healing, or play-state behavior.
+Life Modules v0.10 retains the existing minimal Stage 0–4, final-review, and Final Touches flow and expands the current catalog to 55 items. Catalog items and manual entries share Owned/Issued accounting. Raw ratings remain intact beside hand-audited normalized ratings. Neutral/native items use normal Availability and Legality; foreign items increase both one step. Periphery and Clan categories adjust only the Owned Tech cap, while Issued review uses E/D/D or F/D/D. Batch 3 adds electronics, security/espionage, repair, and medical equipment; its three page-313 medical records supersede the current catalog definitions for the earlier example-backed stable IDs without rewriting saved purchase snapshots. Rule metadata remains inert and does not activate combat, recording, power, armor, healing, addiction, or play-state behavior.
 
 The Core introduction describes the archetypes as 4,500-XP packages, but independently summing the printed Attribute, Trait, and Skill XP produces different totals for several sheets. Corrected Third Printing values are preserved without speculative repair, the declared package total and calculated line-item total remain separate, and each mismatch is recorded as a catalog note. Errata v4.0 does not provide a correction for these sheets.
 
@@ -199,6 +200,6 @@ The next rules-audit target is **Campaign / Rules Configuration reconciliation**
 
 Audit resume point: **Campaign / Rules Configuration reconciliation.**
 
-Implementation resume point: **Alpha Slice 13 — the next audited Core personal-equipment catalog batch and affiliation-code coverage**, only when separately authorized and supplied with audited rules data. Preserve raw/normalized/effective rating distinctions, purchase-time snapshots, manual fallback, and the Vehicle Trait boundary.
+Implementation resume point: **Alpha Slice 14 — continued audited Core equipment coverage or a focused catalog-review slice**, only when separately authorized and supplied with audited rules data. Preserve raw/normalized/effective rating distinctions, stable-ID upgrade semantics, purchase-time snapshots, manual fallback, and the Vehicle Trait boundary.
 
 Planetary Rollout 1 remains a separate future authorization. Do not automatically proceed from a queued or documented rollout.

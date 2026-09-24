@@ -163,7 +163,62 @@ export const SLICE_12_EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [
     { patchCostCBills: 17, bar: '3/3/2/2', massKg: 1.7, coverage: 'Torso', concealable: true }, ['BAR, patch cost, coverage, and concealability are metadata only.']),
 ] as const
 
-export const EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [...STARTER_EQUIPMENT_CATALOG, ...SLICE_12_EQUIPMENT_CATALOG]
+export const SLICE_13_EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [
+  equipment('core.electronics.recorder.microRecorder', 'Micro-Recorder', ['Electronics', 'Audio-Video', 'Recording'], 100, 'C/A-B-B/A', { tech: 'C', availability: 'B', legality: 'A' }, 302,
+    { massKg: 0.15, powerUsePph: 0.5, recordingType: 'Audio only', highQualityRecordingHours: 1, lowQualityRecordingHours: 10, size: 'Tiny' }, ['Recording limits and power use are metadata only.']),
+  equipment('core.electronics.recorder.microCamcorder', 'Micro-Camcorder', ['Electronics', 'Audio-Video', 'Recording'], 1000, 'D/B-D-C/A', { tech: 'D', availability: 'C', legality: 'A' }, 302,
+    { massKg: 0.4, powerUsePph: 1, recordingType: 'Audio-video', videoRecordingHours: 1, stillImageCapacity: 5000, size: 'Tiny' }, ['Recording limits and power use are metadata only.']),
+  equipment('core.electronics.audio.personalMusicSet', 'Personal Music Set', ['Electronics', 'Audio-Video', 'Playback'], 20, 'C/A-B-A/A', { tech: 'C', availability: 'A', legality: 'A' }, 302,
+    { massKg: 2, powerUsePph: 1, media: 'Live and recorded audio only' }, ['Playback and power use are metadata only.']),
+  equipment('core.electronics.computer.compad', 'Compad', ['Electronics', 'Computers', 'Personal Computing'], 150, 'D/A-C-B/A', { tech: 'D', availability: 'B', legality: 'A' }, 303,
+    { massKg: 0.2, portable: true, requiresMicroPowerPack: true, powerUsePph: 0.1, textReaderOnly: true }, ['Computing and power-pack behavior are metadata only.']),
+  equipment('core.electronics.computer.noteputer', 'Noteputer', ['Electronics', 'Computers', 'Personal Computing'], 500, 'C/A-B-A/A', { tech: 'C', availability: 'A', legality: 'A' }, 303,
+    { massKg: 0.5, portable: true, requiresMicroPowerPack: true, powerUsePph: 0.1 }, ['Computing and power-pack behavior are metadata only.']),
+  equipment('core.electronics.computer.personalComputer', 'Personal Computer', ['Electronics', 'Computers', 'Personal Computing'], 250, 'C/A-B-A/A', { tech: 'C', availability: 'A', legality: 'A' }, 303,
+    { massKg: 3, desktop: true, powerSource: 'Power pack or plug', powerUsePph: 1 }, ['Computing and power behavior are metadata only.']),
+  equipment('core.electronics.optics.micheauxElectronicBinoculars', 'Michaeaux Electronic Binoculars', ['Electronics', 'Optics'], 150, 'C/A-B-B/A', { tech: 'C', availability: 'B', legality: 'A' }, 304,
+    { massKg: 0.75, powerUsePph: 0.1, magnification: '400x', perceptionModifier: 4, modifierRanges: 'Medium, long, extreme' }, ['Perception and power effects are metadata only.'], 'LA'),
+  equipment('core.electronics.optics.irScanner', 'IR Scanner', ['Electronics', 'Optics'], 100, 'D/A-C-B/A', { tech: 'D', availability: 'B', legality: 'A' }, 304,
+    { massKg: 0.4, powerUsePph: 0.1, detects: 'Heat signatures only', magnification: '300x', perceptionModifier: 3, modifierRanges: 'Medium, long, extreme', ignoresDarkness: true }, ['Perception and power effects are metadata only.']),
+  equipment('core.electronics.optics.nightVisionGoggles', 'Night Vision Goggles', ['Electronics', 'Optics'], 220, 'D/A-C-B/A', { tech: 'D', availability: 'B', legality: 'A' }, 304,
+    { massKg: 0.6, powerUsePph: 0.1, negatesDarknessModifiers: true, surfaceDetailPerceptionModifier: -1 }, ['Perception and power effects are metadata only.']),
+  equipment('core.electronics.optics.circleVisionVisor', 'Circle-Vision Visor', ['Electronics', 'Optics'], 5000, 'D/D-F-E/B', { tech: 'D', availability: 'E', legality: 'B' }, 304,
+    { massKg: 0.75, powerUsePph: 0.5, perceptionModifier: 4, rangefinder: true, preventsSurprise: true, flashBar: 10 }, ['Perception, surprise, BAR, and power effects are metadata only.'], 'DC'),
+  equipment('core.electronics.optics.ultrasonicDetector', 'Ultrasonic Detector', ['Electronics', 'Optics'], 2500, 'E/D-F-E/B', { tech: 'E', availability: 'E', legality: 'B' }, 304,
+    { massKg: 3, powerUsePpm: 0.1, perceptionModifier: 3, detectionRangeMeters: 10, barrierBarLimit: 3, ignoresDarkness: true, flashBar: 3 }, ['Perception, barrier, BAR, and power effects are metadata only.'], 'CS'),
+  equipment('core.security.lockpick.basicSet', 'Basic Lock Pick Set', ['Security', 'Lock-Picks and Bypasses'], 100, 'B/A-A-A/C', { tech: 'B', availability: 'A', legality: 'C' }, 308,
+    { massKg: 0.365, skill: 'Security Systems/Mechanical', skillModifier: 2, lockType: 'Mechanical only' }, ['Security-system effects are metadata only.']),
+  equipment('core.security.bypass.electronicKit', 'Electronic Security Bypass Kit', ['Security', 'Lock-Picks and Bypasses'], 1200, 'C/C-D-D/E', { tech: 'C', availability: 'D', legality: 'E' }, 308,
+    { massKg: 2, powerUsePph: 0.1, skill: 'Security Systems/Electronic', skillModifier: 2, lockType: 'Electronic only' }, ['Security-system and power effects are metadata only.']),
+  equipment('core.espionage.disguise.makeupKit', 'Disguise/Make-Up Kit', ['Espionage', 'General'], 1000, 'C/A-B-B/A', { tech: 'C', availability: 'B', legality: 'A' }, 308,
+    { massKg: 6.5, skill: 'Disguise', skillModifier: 1, uses: 5 }, ['Skill bonus and uses are metadata only.']),
+  equipment('core.repair.toolkit.basic', 'Basic Toolkit', ['Repair', 'Toolkit'], 250, 'C/A-B-A/A', { tech: 'C', availability: 'A', legality: 'A' }, 310,
+    { massKg: 10, encumbering: true, repairRequirement: 'Required for repairs that require a Skill roll' }, ['Repair requirements and encumbrance are metadata only.']),
+  equipment('core.repair.toolkit.deluxe', 'Deluxe Toolkit', ['Repair', 'Toolkit'], 750, 'D/A-B-A/A', { tech: 'D', availability: 'A', legality: 'A' }, 310,
+    { massKg: 50, encumbering: true, skill: 'Technician', skillModifier: 1 }, ['Skill bonus and encumbrance are metadata only.']),
+  equipment('core.repair.smallArms.energyWeaponKit', 'Energy Weapon Kit', ['Repair', 'Small Arms Maintenance'], 850, 'D/A-B-B/A', { tech: 'D', availability: 'B', legality: 'A' }, 310,
+    { massKg: 2.5, weaponTypes: 'Energy-based small arms and support weapons', restockingCostCBills: 160, skill: 'Technician/Weapons', skillModifier: 1 }, ['Maintenance, restocking, and skill effects are metadata only.']),
+  equipment('core.repair.smallArms.slugThrowerKit', 'Slug-Thrower Kit', ['Repair', 'Small Arms Maintenance'], 100, 'C/A-A-A/A', { tech: 'C', availability: 'A', legality: 'A' }, 310,
+    { massKg: 3, weaponTypes: 'Ballistic- and Gauss-based small arms and support weapons', restockingCostCBills: 20, skill: 'Technician/Weapons', skillModifier: 1 }, ['Maintenance, restocking, and skill effects are metadata only.']),
+  equipment('core.medical.kit.standard', 'Medical Kit', ['Medical', 'Kit'], 10, 'C/A-A-A/A', { tech: 'C', availability: 'A', legality: 'A' }, 313,
+    { massKg: 0.25, uses: 1, skill: 'MedTech', skillModifier: 1 }, ['Use count and MedTech effects are metadata only.']),
+  equipment('core.medical.medipatch', 'Medipatch', ['Medical', 'First Aid Consumable'], 10, 'D/A-B-A/B', { tech: 'D', availability: 'B', legality: 'B' }, 313,
+    { massKg: 0.01, skill: 'MedTech', skillModifier: 1, multipleUseModifierCap: 1 }, ['MedTech effects are metadata only; healing automation is not implemented.']),
+  equipment('core.medical.stimpatch', 'Stimpatch', ['Medical', 'First Aid Consumable'], 2, 'D/A-B-A/B', { tech: 'D', availability: 'B', legality: 'B' }, 313,
+    { massKg: 0.009, fatigueRemoved: 2, minimumFatigue: 0, consciousnessCheckModifier: 1, addictive: true, drugStrength: 3 }, ['Fatigue, consciousness, addiction, and play-state automation are not implemented.']),
+  equipment('core.medical.stimpatch.clan', 'Stimpatch, Clan', ['Medical', 'First Aid Consumable'], 5, 'D/X-X-B/B', { tech: 'D', availability: 'B', legality: 'B' }, 313,
+    { massKg: 0.01, fatigueRemoved: 3, minimumFatigue: 0, removesStun: true, consciousnessCheckModifier: 2, addictive: true, drugStrength: 4, truebornAddictionDrugStrengthModifier: -2 }, ['Fatigue, Stun, consciousness, addiction, and play-state automation are not implemented.'], 'CLAN'),
+  equipment('core.medical.monitor.portable', 'Portable Medical Monitor', ['Medical', 'Tool'], 2200, 'E/B-C-B/B', { tech: 'E', availability: 'B', legality: 'B' }, 313,
+    { massKg: 13.3, powerUsePpm: 1, skill: 'MedTech', skillModifier: 1, withLifeSupportSkillModifier: 2 }, ['MedTech and power effects are metadata only.']),
+  equipment('core.medical.lifeSupportUnit.standard', 'Life-Support Unit', ['Medical', 'Tool'], 8500, 'E/B-C-B/B', { tech: 'E', availability: 'B', legality: 'B' }, 313,
+    { massKg: 22.5, powerUsePps: 3, stopsContinuousDamage: true, permitsCriticalPatientMovement: true, healingTimeReductionPercent: 20, withPortableMonitorSkillModifier: 2 }, ['Damage, healing, MedTech, and power effects are metadata only.'], 'CS'),
+] as const
+
+export const EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = mergeEquipmentCatalogBatches(
+  STARTER_EQUIPMENT_CATALOG,
+  SLICE_12_EQUIPMENT_CATALOG,
+  SLICE_13_EQUIPMENT_CATALOG,
+)
 
 export const EQUIPMENT_CATALOG_CATEGORIES = [...new Set(EQUIPMENT_CATALOG.map((entry) => entry.categoryPath[0]))].sort()
 
@@ -224,12 +279,21 @@ function equipment(
   page: number,
   metadata: Record<string, string | number | boolean>,
   notes: string[],
+  affiliationCode: string | null = null,
 ): EquipmentCatalogItem {
   const sourceKey = `AToW-CTP-p${page}`
   const parsed = parseRawEquipmentRating(rawEquipmentRating)
   if (!parsed) throw new Error(`Invalid embedded raw equipment rating: ${rawEquipmentRating}`)
   return {
     id, displayName, categoryPath, costCBills, rawEquipmentRating, rawAvailabilityCodes: parsed.availabilityCodes,
-    ratings, affiliationCode: null, sourceKey, source: source(sourceKey, page), sourceStatus: 'audited-core', metadata, notes,
+    ratings, affiliationCode, sourceKey, source: source(sourceKey, page), sourceStatus: 'audited-core', metadata, notes,
   }
+}
+
+function mergeEquipmentCatalogBatches(...batches: readonly (readonly EquipmentCatalogItem[])[]): EquipmentCatalogItem[] {
+  const merged = new Map<string, EquipmentCatalogItem>()
+  for (const batch of batches) {
+    for (const item of batch) merged.set(item.id, item)
+  }
+  return [...merged.values()]
 }

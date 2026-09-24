@@ -6,6 +6,7 @@ import {
   getEquipmentCatalogItem,
   STARTER_EQUIPMENT_CATALOG,
   SLICE_12_EQUIPMENT_CATALOG,
+  SLICE_13_EQUIPMENT_CATALOG,
   parseRawEquipmentRating,
   validateEquipmentCatalog,
 } from './catalog'
@@ -19,11 +20,28 @@ describe('Alpha Slice 11 starter equipment catalog', () => {
 
   it('adds exactly 17 Slice 12 entries with raw and hand-audited normalized ratings', () => {
     expect(SLICE_12_EQUIPMENT_CATALOG).toHaveLength(17)
-    expect(EQUIPMENT_CATALOG).toHaveLength(34)
-    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(34)
+    expect(EQUIPMENT_CATALOG).toHaveLength(55)
+    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(55)
     for (const item of SLICE_12_EQUIPMENT_CATALOG) {
       expect(item.sourceStatus).toBe('audited-core')
       expect(item.sourceKey).toMatch(/^AToW-CTP-p(267|268|269|286|288)$/)
+      expect(item.rawEquipmentRating).toBeTruthy()
+      const parsed = parseRawEquipmentRating(item.rawEquipmentRating!)
+      expect(parsed).not.toBeNull()
+      expect(item.ratings.tech).toBe(parsed!.tech)
+      expect(item.ratings.legality).toBe(parsed!.legality)
+      expect(parsed!.availabilityCodes).toContain(item.ratings.availability)
+    }
+    expect(validateEquipmentCatalog()).toEqual([])
+  })
+
+  it('adds 24 Slice 13 records as 21 new items and three stable-ID upgrades', () => {
+    expect(SLICE_13_EQUIPMENT_CATALOG).toHaveLength(24)
+    expect(new Set(SLICE_13_EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(24)
+    expect(EQUIPMENT_CATALOG).toHaveLength(55)
+    for (const item of SLICE_13_EQUIPMENT_CATALOG) {
+      expect(item.sourceStatus).toBe('audited-core')
+      expect(item.sourceKey).toMatch(/^AToW-CTP-p(302|303|304|308|310|313)$/)
       expect(item.rawEquipmentRating).toBeTruthy()
       const parsed = parseRawEquipmentRating(item.rawEquipmentRating!)
       expect(parsed).not.toBeNull()
@@ -64,21 +82,35 @@ describe('Alpha Slice 11 starter equipment catalog', () => {
     expect(getEquipmentCatalogItem('core.clothing.leatherBoots').metadata).toMatchObject({ bar: '1/1/0/1' })
   })
 
-  it('preserves example-backed medical ratings as null', () => {
+  it('preserves the historical example-backed records while promoting their current stable IDs', () => {
     for (const id of ['core.medical.kit.standard', 'core.medical.medipatch', 'core.medical.stimpatch']) {
-      expect(getEquipmentCatalogItem(id)).toMatchObject({
+      expect(STARTER_EQUIPMENT_CATALOG.find((entry) => entry.id === id)).toMatchObject({
         ratings: { tech: null, availability: null, legality: null },
         sourceStatus: 'example-backed',
         sourceKey: 'AToW-CTP-example-final-touches',
       })
+      expect(getEquipmentCatalogItem(id)).toMatchObject({
+        sourceStatus: 'audited-core',
+        sourceKey: 'AToW-CTP-p313',
+      })
     }
+  })
+
+  it('preserves Batch 3 affiliation codes and inert rule metadata', () => {
+    expect(getEquipmentCatalogItem('core.electronics.optics.micheauxElectronicBinoculars')).toMatchObject({ affiliationCode: 'LA' })
+    expect(getEquipmentCatalogItem('core.electronics.optics.circleVisionVisor')).toMatchObject({ affiliationCode: 'DC' })
+    expect(getEquipmentCatalogItem('core.electronics.optics.ultrasonicDetector')).toMatchObject({ affiliationCode: 'CS' })
+    expect(getEquipmentCatalogItem('core.medical.stimpatch.clan')).toMatchObject({ affiliationCode: 'CLAN' })
+    expect(getEquipmentCatalogItem('core.medical.stimpatch.clan').metadata).toMatchObject({ drugStrength: 4, truebornAddictionDrugStrengthModifier: -2 })
+    expect(getEquipmentCatalogItem('core.medical.lifeSupportUnit.standard').metadata).toMatchObject({ healingTimeReductionPercent: 20 })
   })
 
   it('supports text, category, and source-status filtering', () => {
     expect(EQUIPMENT_CATALOG_CATEGORIES).toContain('Medical')
     expect(filterEquipmentCatalog({ search: 'magnum' }).map((entry) => entry.id)).toEqual(['core.personalWeapon.autoPistol.magnum'])
     expect(filterEquipmentCatalog({ category: 'Power' })).toHaveLength(2)
-    expect(filterEquipmentCatalog({ sourceStatus: 'example-backed' })).toHaveLength(3)
+    expect(filterEquipmentCatalog({ search: 'ultrasonic' }).map((entry) => entry.id)).toEqual(['core.electronics.optics.ultrasonicDetector'])
+    expect(filterEquipmentCatalog({ sourceStatus: 'example-backed' })).toHaveLength(0)
   })
 
   it('detects duplicate IDs and malformed source-rating combinations', () => {

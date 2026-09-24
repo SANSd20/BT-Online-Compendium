@@ -178,11 +178,28 @@ describe('Final Touches and equipment foundation', () => {
     expect(validateCharacter(character).issues.map((entry) => entry.id)).toContain('inventory.owned.rating.exceeded')
   })
 
-  it('allows example-backed catalog items with intentionally null ratings', () => {
+  it('uses the audited replacement for a formerly example-backed medical item', () => {
     let character = enterFinalTouches(readyForFinalTouches())
     character = addCatalogInventoryItem(character, { catalogItemId: 'core.medical.medipatch', quantity: 2, ownership: 'Owned' })
-    expect(character.inventory[0]).toMatchObject({ totalCostCBills: 20, equipmentRating: { tech: null, availability: null, legality: null }, catalogSnapshot: { sourceStatus: 'example-backed' } })
+    expect(character.inventory[0]).toMatchObject({
+      totalCostCBills: 20,
+      equipmentRating: { tech: 'D', availability: 'B', legality: 'B' },
+      catalogSnapshot: { sourceStatus: 'audited-core', sourceKey: 'AToW-CTP-p313', rawEquipmentRating: 'D/A-B-A/B' },
+    })
     expect(validateCharacter(character).issues.map((entry) => entry.id)).not.toContain('inventory.rating.invalid')
+  })
+
+  it('preserves Batch 3 catalog metadata and provenance through JSON round-trip', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.electronics.recorder.microRecorder', quantity: 1, ownership: 'Owned' })
+    expect(character.inventory[0].catalogSnapshot).toMatchObject({
+      sourceKey: 'AToW-CTP-p302',
+      rawEquipmentRating: 'C/A-B-B/A',
+      normalizedEquipmentRating: { tech: 'C', availability: 'B', legality: 'A' },
+      metadata: { highQualityRecordingHours: 1, lowQualityRecordingHours: 10 },
+    })
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-09-24T00:00:00.000Z'))
+    expect(decoded.inventory[0].catalogSnapshot).toEqual(character.inventory[0].catalogSnapshot)
   })
 
   it('applies Issued Gear behavior to catalog items', () => {
