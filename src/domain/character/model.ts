@@ -80,14 +80,15 @@ export interface EquipmentItem {
   displayName: string
   quantity: number
   ownership: EquipmentOwnership
-  entryKind?: 'published-package' | 'manual'
+  entryKind?: 'published-package' | 'manual' | 'catalog'
   costPerItemCBills?: number
   totalCostCBills?: number
   equipmentRating?: {
-    tech: EquipmentRatingCode
-    availability: EquipmentRatingCode
-    legality: EquipmentRatingCode
+    tech: EquipmentRatingCode | null
+    availability: EquipmentRatingCode | null
+    legality: EquipmentRatingCode | null
   }
+  catalogSnapshot?: EquipmentCatalogSnapshot
   affiliationCode?: string
   personalProperty?: boolean
   issuerOrEmployer?: string
@@ -106,6 +107,15 @@ export interface EquipmentItem {
 }
 
 export type EquipmentRatingCode = 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
+
+export type EquipmentCatalogSourceStatus = 'audited-core' | 'example-backed'
+
+export interface EquipmentCatalogSnapshot {
+  categoryPath: string[]
+  sourceKey: string
+  sourceStatus: EquipmentCatalogSourceStatus
+  metadata: Record<string, string | number | boolean>
+}
 
 export interface PersonalDescription {
   physicalDescription: string

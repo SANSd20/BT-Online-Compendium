@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import type { CharacterDefinition, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
+import type { CharacterDefinition, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
+import { EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
-import { addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
+import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 
@@ -56,6 +57,11 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const [finalAllocationTarget, setFinalAllocationTarget] = useState('attribute:STR')
   const [finalAllocationXp, setFinalAllocationXp] = useState(1)
   const [equipmentDraft, setEquipmentDraft] = useState<EquipmentDraft>(EMPTY_EQUIPMENT_DRAFT)
+  const [catalogSearch, setCatalogSearch] = useState('')
+  const [catalogCategory, setCatalogCategory] = useState('all')
+  const [catalogSourceStatus, setCatalogSourceStatus] = useState<EquipmentCatalogSourceStatus | 'all'>('all')
+  const [catalogQuantity, setCatalogQuantity] = useState(1)
+  const [catalogOwnership, setCatalogOwnership] = useState<EquipmentOwnership>('Owned')
   const [message, setMessage] = useState('')
 
   function start(event: FormEvent<HTMLFormElement>) {
@@ -96,6 +102,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const validation = character ? validateCharacter(character) : null
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
   const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
+  const catalogItems = filterEquipmentCatalog({ search: catalogSearch, category: catalogCategory, sourceStatus: catalogSourceStatus })
 
   function allocateFinalXp() {
     if (!character) return
@@ -125,13 +132,22 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     if (added) setEquipmentDraft(EMPTY_EQUIPMENT_DRAFT)
   }
 
+  function addCatalogItem(itemId: string) {
+    if (!character) return
+    operate(() => addCatalogInventoryItem(character, {
+      catalogItemId: itemId,
+      quantity: catalogQuantity,
+      ownership: catalogOwnership,
+    }), 'Catalog item added to inventory.')
+  }
+
   return (
     <main className="creation-page life-modules-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Alpha · Slice 10</p>
+        <p className="eyebrow">Alpha · Slice 11</p>
         <h1>Life Modules</h1>
-        <p>Build through the audited Agitator branch, complete final review, and record descriptive Final Touches plus a manual starting-equipment draft. Full catalog shopping and finalization remain deferred.</p>
+        <p>Build through the audited Agitator branch, complete final review, and use the 17-item starter Core equipment catalog or manual inventory fallback. Full catalog coverage and finalization remain deferred.</p>
       </section>
 
       {!character ? (
@@ -258,6 +274,27 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <label><input type="checkbox" checked={character.creation.finalTouches.issuedGearEnabled} onChange={(event) => operate(() => setIssuedGearEnabled(character, event.target.checked), `Issued Gear ${event.target.checked ? 'enabled' : 'disabled'}.`)} /> Enable optional Issued Gear prospectively</label>
             <p className="scope-note">Issued items are employer property, cost no personal C-bills, and remain recorded if this option is later disabled.</p>
 
+            <h3>Starter Core equipment catalog</h3>
+            <div className="form-grid equipment-catalog-controls">
+              <label>Search<input type="search" value={catalogSearch} onChange={(event) => setCatalogSearch(event.target.value)} placeholder="Name, category, source, or note" /></label>
+              <label>Category<select value={catalogCategory} onChange={(event) => setCatalogCategory(event.target.value)}><option value="all">All categories</option>{EQUIPMENT_CATALOG_CATEGORIES.map((value) => <option key={value}>{value}</option>)}</select></label>
+              <label>Source status<select value={catalogSourceStatus} onChange={(event) => setCatalogSourceStatus(event.target.value as EquipmentCatalogSourceStatus | 'all')}><option value="all">All source statuses</option><option value="audited-core">Audited Core</option><option value="example-backed">Example-backed</option></select></label>
+              <label>Quantity<input type="number" min="1" step="1" value={catalogQuantity} onChange={(event) => setCatalogQuantity(Number(event.target.value))} /></label>
+              <label>Ownership<select value={catalogOwnership} onChange={(event) => setCatalogOwnership(event.target.value as EquipmentOwnership)}><option>Owned</option><option>Issued</option></select></label>
+            </div>
+            <p>{catalogItems.length} of 17 starter items shown.</p>
+            <div className="equipment-catalog-grid">{catalogItems.map((item) => (
+              <article key={item.id}>
+                <p className="eyebrow">{item.categoryPath.join(' / ')}</p>
+                <h4>{item.displayName}</h4>
+                <p><strong>{item.costCBills.toLocaleString()} C-bills</strong> · {formatEquipmentRating(item.ratings)}{item.affiliationCode ? ` · Affiliation ${item.affiliationCode}` : ''}</p>
+                <p>{formatCatalogMetadata(item.metadata)}</p>
+                <p>{item.sourceKey} · {item.sourceStatus}</p>
+                {item.notes.length > 0 && <p className="scope-note">{item.notes.join(' ')}</p>}
+                <button className="button secondary" type="button" onClick={() => addCatalogItem(item.id)}>Add × {catalogQuantity} as {catalogOwnership}</button>
+              </article>
+            ))}</div>
+
             <h3>Add manual inventory item</h3>
             <form onSubmit={addEquipment} className="form-grid">
               <label>Item name<input required value={equipmentDraft.name} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, name: event.target.value })} /></label>
@@ -273,10 +310,10 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <button className="button" type="submit">Add inventory item</button>
             </form>
 
-            <h3>Manual inventory</h3>
-            {character.inventory.length === 0 ? <p>No personal equipment recorded.</p> : <ul className="module-history">{character.inventory.map((item) => <li key={item.id}><div><strong>{item.displayName} × {item.quantity}</strong><span>{item.ownership} · {item.totalCostCBills?.toLocaleString()} C-bills · {item.equipmentRating?.tech}/{item.equipmentRating?.availability}/{item.equipmentRating?.legality}{item.ownership === 'Issued' ? ' · employer property' : ' · personal property'}</span></div><button className="button secondary" type="button" onClick={() => operate(() => removeInventoryItem(character, item.id), 'Inventory item removed.')}>Remove</button></li>)}</ul>}
+            <h3>Inventory draft</h3>
+            {character.inventory.length === 0 ? <p>No personal equipment recorded.</p> : <ul className="module-history">{character.inventory.map((item) => <li key={item.id}><div><strong>{item.displayName} × {item.quantity}</strong><span>{item.entryKind === 'catalog' ? 'Catalog' : 'Manual'} · {item.ownership} · {item.totalCostCBills?.toLocaleString()} C-bills · {formatEquipmentRating(item.equipmentRating)}{item.ownership === 'Issued' ? ' · employer property' : ' · personal property'}</span></div><button className="button secondary" type="button" onClick={() => operate(() => removeInventoryItem(character, item.id), 'Inventory item removed.')}>Remove</button></li>)}</ul>}
             <div className="row-actions"><button className="button" type="button" onClick={() => operate(() => markReadyForEquipmentReview(character), 'Equipment draft marked ready for equipment review.')}>Mark ready for equipment review</button></div>
-            <p className="scope-note">Manual inventory only. Combat/heavy Vehicle Trait entitlements, ammo, armor condition, health, PDF export, final lock, and ready-for-play status are not implemented.</p>
+            <p className="scope-note">The starter catalog contains 17 audited/example-backed items; manual entry remains available. Catalog metadata does not automate combat, ammunition, power, armor, healing, or play state. Combat/heavy Vehicle Trait entitlements, PDF export, final lock, and ready-for-play status are not implemented.</p>
           </section>}
 
           {state.finalReview && <section className="life-stage-panel">
@@ -401,6 +438,15 @@ function formatPhase(phase: string): string {
 
 function signed(value: number): string {
   return value > 0 ? `+${value}` : String(value)
+}
+
+function formatEquipmentRating(rating: { tech: EquipmentRatingCode | null; availability: EquipmentRatingCode | null; legality: EquipmentRatingCode | null } | undefined): string {
+  if (!rating || Object.values(rating).every((value) => value === null)) return 'ratings not audited'
+  return `${rating.tech ?? '—'}/${rating.availability ?? '—'}/${rating.legality ?? '—'}`
+}
+
+function formatCatalogMetadata(metadata: Record<string, string | number | boolean>): string {
+  return Object.entries(metadata).map(([key, value]) => `${key}: ${String(value)}`).join(' · ')
 }
 
 function defaultResolutionDraft(pending: PendingLifeModuleAward): ResolutionDraft {

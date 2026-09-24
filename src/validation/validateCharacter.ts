@@ -28,6 +28,7 @@ import {
   getEquipmentFoundationIssues,
   startingCBillsForWealth,
 } from '../domain/finalTouches/rules'
+import { getEquipmentCatalogItem } from '../domain/equipment/catalog'
 
 function issue(
   id: string,
@@ -153,9 +154,9 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
 
 function validateFinalTouches(character: CharacterDefinition, issues: ValidationIssue[], provenanceIds: Set<string>): void {
   const state = character.creation.finalTouches
-  const hasManualInventory = character.inventory.some((entry) => entry.entryKind === 'manual')
+  const hasFinalTouchesInventory = character.inventory.some((entry) => entry.entryKind === 'manual' || entry.entryKind === 'catalog')
   if (!state) {
-    if (character.personalDescription || hasManualInventory) issues.push(issue('final-touches.state.required', 'creation.finalTouches', 'Final Touches state is required for descriptive or manually entered equipment data.'))
+    if (character.personalDescription || hasFinalTouchesInventory) issues.push(issue('final-touches.state.required', 'creation.finalTouches', 'Final Touches state is required for descriptive or equipment-draft data.'))
     return
   }
   const lifeModules = character.creation.lifeModules
@@ -195,14 +196,25 @@ function validateFinalTouches(character: CharacterDefinition, issues: Validation
     issues.push(issue(equipmentIssue.id, equipmentIssue.itemId ? `inventory.${equipmentIssue.itemId}` : 'creation.finalTouches', equipmentIssue.message))
   }
   character.inventory.forEach((entry, index) => {
-    if (entry.entryKind !== 'manual' || !entry.source?.sourceId || !entry.id || !provenanceIds.has(entry.provenanceId)) {
-      issues.push(issue('final-touches.inventory.provenance', `inventory.${index}`, 'Final Touches inventory requires a manual-entry marker, source, stable ID, and valid provenance.'))
+    if (!['manual', 'catalog'].includes(entry.entryKind ?? '') || !entry.source?.sourceId || !entry.id || !provenanceIds.has(entry.provenanceId)) {
+      issues.push(issue('final-touches.inventory.provenance', `inventory.${index}`, 'Final Touches inventory requires a supported entry kind, source, stable ID, and valid provenance.'))
+    }
+    if (entry.entryKind === 'catalog') {
+      try {
+        getEquipmentCatalogItem(entry.catalogItemId ?? '')
+      } catch {
+        issues.push(issue('final-touches.inventory.catalog-id', `inventory.${index}.catalogItemId`, 'Catalog inventory requires a known stable catalog item ID.'))
+      }
+      const snapshot = entry.catalogSnapshot
+      if (!snapshot?.sourceKey || !Array.isArray(snapshot.categoryPath) || snapshot.categoryPath.length === 0 || !['audited-core', 'example-backed'].includes(snapshot.sourceStatus) || !snapshot.metadata || typeof snapshot.metadata !== 'object' || Array.isArray(snapshot.metadata)) {
+        issues.push(issue('final-touches.inventory.catalog-snapshot', `inventory.${index}.catalogSnapshot`, 'Catalog inventory requires a durable category, source-status, metadata, and source-key snapshot.'))
+      }
     }
   })
   if (state.equipmentReviewState === 'ready-for-equipment-review' && getEquipmentFoundationIssues(character).length > 0) {
     issues.push(issue('final-touches.review-state.invalid', 'creation.finalTouches.equipmentReviewState', 'An equipment draft with validation errors cannot be ready for equipment review.'))
   }
-  issues.push(issue('final-touches.scope.alpha', 'creation.finalTouches', 'Equipment remains a manual Alpha draft; full catalog lookup, PDF export, true finalization, and ready-for-play status are unsupported.', { severity: 'information', kind: 'availability' }))
+  issues.push(issue('final-touches.scope.alpha', 'creation.finalTouches', 'Equipment remains an Alpha draft with a 17-item starter catalog and manual fallback; the full catalog, PDF export, true finalization, and ready-for-play status are unsupported.', { severity: 'information', kind: 'availability' }))
 }
 
 function validateLifeModules(character: CharacterDefinition, issues: ValidationIssue[]): void {

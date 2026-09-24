@@ -1,4 +1,5 @@
 import type { CharacterDefinition, EquipmentOwnership, EquipmentRatingCode, PersonalDescription } from '../domain/character/model'
+import { getEquipmentCatalogItem } from '../domain/equipment/catalog'
 import {
   effectivePrimaryTraitTp,
   equipmentLimitsForEquipped,
@@ -16,6 +17,15 @@ export interface ManualInventoryInput {
   ownership: EquipmentOwnership
   affiliationCode?: string
   notes?: string
+  location?: string
+  carriedNote?: string
+  issuerOrEmployer?: string
+}
+
+export interface CatalogInventoryInput {
+  catalogItemId: string
+  quantity: number
+  ownership: EquipmentOwnership
   location?: string
   carriedNote?: string
   issuerOrEmployer?: string
@@ -111,6 +121,48 @@ export function addManualInventoryItem(character: CharacterDefinition, input: Ma
     carried: null,
     provenanceId,
     source: { ...FINAL_TOUCHES_RULES_SOURCE },
+  })
+  synchronizeCurrency(next)
+  next.updatedAt = new Date().toISOString()
+  markEquipmentDraft(next)
+  return next
+}
+
+export function addCatalogInventoryItem(character: CharacterDefinition, input: CatalogInventoryInput): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireFinalTouches(next)
+  const item = getEquipmentCatalogItem(input.catalogItemId)
+  if (!Number.isInteger(input.quantity) || input.quantity <= 0) throw new RangeError('Inventory quantity must be a positive whole number.')
+  if (input.ownership === 'Issued' && !state.issuedGearEnabled) throw new Error('Enable the Issued Gear optional rule before recording an Issued item.')
+  const id = makeId('catalog-equipment')
+  const provenanceId = makeId('catalog-equipment-provenance')
+  next.provenance.push({ id: provenanceId, kind: 'player-choice', description: `Starter equipment catalog selection: ${item.displayName}`, source: { ...item.source } })
+  next.inventory.push({
+    id,
+    catalogItemId: item.id,
+    displayName: item.displayName,
+    quantity: input.quantity,
+    ownership: input.ownership,
+    entryKind: 'catalog',
+    costPerItemCBills: item.costCBills,
+    totalCostCBills: input.quantity * item.costCBills,
+    equipmentRating: { ...item.ratings },
+    catalogSnapshot: {
+      categoryPath: [...item.categoryPath],
+      sourceKey: item.sourceKey,
+      sourceStatus: item.sourceStatus,
+      metadata: { ...item.metadata },
+    },
+    ...(item.affiliationCode ? { affiliationCode: item.affiliationCode } : {}),
+    personalProperty: input.ownership === 'Owned',
+    ...(input.issuerOrEmployer?.trim() ? { issuerOrEmployer: input.issuerOrEmployer.trim() } : {}),
+    reviewState: input.ownership === 'Issued' ? 'gm-review' : 'recorded',
+    notes: [...item.notes],
+    ...(input.location?.trim() ? { location: input.location.trim() } : {}),
+    ...(input.carriedNote?.trim() ? { carriedNote: input.carriedNote.trim() } : {}),
+    carried: null,
+    provenanceId,
+    source: { ...item.source },
   })
   synchronizeCurrency(next)
   next.updatedAt = new Date().toISOString()

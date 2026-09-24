@@ -20,6 +20,7 @@ import {
 } from './lifeModuleEngine'
 import { enterLifeModuleFinalReview } from './lifeModuleFinalReview'
 import {
+  addCatalogInventoryItem,
   addManualInventoryItem,
   enterFinalTouches,
   markReadyForEquipmentReview,
@@ -123,6 +124,38 @@ describe('Final Touches and equipment foundation', () => {
     expect(character.inventory[0]).toMatchObject({ ownership: 'Owned', totalCostCBills: 200, personalProperty: true, entryKind: 'manual' })
   })
 
+  it('adds catalog equipment with quantity, catalog data, source, and provenance', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.personalWeapon.autoPistol.standard', quantity: 2, ownership: 'Owned' })
+    expect(character.creation.finalTouches).toMatchObject({ spentCBillTotal: 100, remainingCBillTotal: 900 })
+    expect(character.inventory[0]).toMatchObject({
+      catalogItemId: 'core.personalWeapon.autoPistol.standard', entryKind: 'catalog', displayName: 'Auto-Pistol', quantity: 2,
+      costPerItemCBills: 50, totalCostCBills: 100, equipmentRating: { tech: 'C', availability: 'A', legality: 'C' },
+      catalogSnapshot: { sourceKey: 'AToW-CTP-p265', sourceStatus: 'audited-core', categoryPath: ['Weapon', 'Small Arms', 'Pistol'], metadata: { shots: 10 } },
+    })
+    expect(character.inventory[0].source?.ruleId).toBe('AToW-CTP-p265')
+    expect(character.provenance.some((entry) => entry.id === character.inventory[0].provenanceId)).toBe(true)
+    expect(getEquipmentFoundationIssues(character)).toEqual([])
+    expect(() => addCatalogInventoryItem(character, { catalogItemId: 'missing.item', quantity: 1, ownership: 'Owned' })).toThrow('Unknown equipment catalog item')
+    expect(() => addCatalogInventoryItem(character, { catalogItemId: 'core.clothing.fatigues', quantity: 0, ownership: 'Owned' })).toThrow('positive whole number')
+  })
+
+  it('allows example-backed catalog items with intentionally null ratings', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.medical.medipatch', quantity: 2, ownership: 'Owned' })
+    expect(character.inventory[0]).toMatchObject({ totalCostCBills: 20, equipmentRating: { tech: null, availability: null, legality: null }, catalogSnapshot: { sourceStatus: 'example-backed' } })
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).not.toContain('inventory.rating.invalid')
+  })
+
+  it('applies Issued Gear behavior to catalog items', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    expect(() => addCatalogInventoryItem(character, { catalogItemId: 'core.electronics.communicator.military', quantity: 1, ownership: 'Issued' })).toThrow('Enable the Issued Gear')
+    character = setIssuedGearEnabled(character, true)
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.electronics.communicator.military', quantity: 1, ownership: 'Issued' })
+    expect(character.cBills).toBe(1000)
+    expect(character.inventory[0]).toMatchObject({ ownership: 'Issued', personalProperty: false, totalCostCBills: 50 })
+  })
+
   it('validates unaffordable and above-limit Owned equipment', () => {
     let character = enterFinalTouches(readyForFinalTouches())
     character = addManualInventoryItem(character, { name: 'Restricted Prototype', quantity: 1, costPerItemCBills: 1200, ownership: 'Owned', rating: { tech: 'E', availability: 'C', legality: 'D' } })
@@ -161,6 +194,7 @@ describe('Final Touches and equipment foundation', () => {
     let character = enterFinalTouches(readyForFinalTouches())
     character = updatePersonalDescription(character, { homeworld: 'Sian', backgroundNotes: 'Organizer and technician.' })
     character = addManualInventoryItem(character, { name: 'Datapad', quantity: 1, costPerItemCBills: 250, ownership: 'Owned', rating: { tech: 'D', availability: 'B', legality: 'B' }, location: 'Satchel' })
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.clothing.fatigues', quantity: 2, ownership: 'Owned' })
     const decoded = decodeCharacter(encodeCharacter(character, '2026-09-23T00:00:00.000Z'))
     expect(decoded).toEqual(character)
     const repository = new LocalStorageCharacterRepository(new MemoryStorage())

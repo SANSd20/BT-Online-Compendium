@@ -206,6 +206,24 @@ Slice 10 extends the same `npm run check` gate. Automated coverage verifies:
 
 Manual UI verification should confirm the Final Touches gate, description fields, Wealth/C-bill and Equipped-limit summaries, Owned/Issued entry behavior, validation messages, local save/export/import controls, and truthful warnings that catalog lookup, runtime tracking, PDF export, and finalization are unavailable.
 
+## Alpha Slice 11 verification
+
+Slice 11 extends the same `npm run check` gate. Automated coverage verifies:
+
+- the starter catalog contains exactly 17 unique, structurally valid entries;
+- audited cost, ratings, affiliation, rules metadata, source labels, and `audited-core`/`example-backed` status are preserved;
+- search plus category and source-status filtering return the expected catalog entries;
+- catalog quantities calculate total cost and Owned entries reduce C-bills through the existing accounting path;
+- catalog entries retain stable IDs, purchase-time catalog snapshots, source citations, and provenance;
+- fully rated Owned and Issued catalog items use the existing Equipped/Issued limits;
+- example-backed Medical Kit, Medipatch, and Stimpatch preserve null ratings and are not rejected solely for missing unaudited ratings;
+- catalog Issued items require Issued Gear and cost no personal C-bills;
+- unknown catalog IDs and invalid quantities are rejected;
+- manual entry remains available; and
+- browser-local save/load plus versioned JSON preserve mixed manual and catalog inventory.
+
+Manual UI verification should confirm all 17 items are browsable, text/category/source filters work, quantity and ownership controls feed catalog purchases, null ratings are visibly identified rather than invented, manual entry remains usable, and metadata does not expose runtime controls.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

@@ -92,8 +92,11 @@ export function getEquipmentFoundationIssues(character: CharacterDefinition): Eq
     if (!item.displayName.trim()) issues.push({ id: 'inventory.name.required', itemId: item.id, message: 'Inventory item name is required.' })
     if (!Number.isInteger(item.quantity) || item.quantity <= 0) issues.push({ id: 'inventory.quantity.invalid', itemId: item.id, message: `${item.displayName || 'Inventory item'} requires a positive whole-number quantity.` })
     if (!Number.isFinite(item.costPerItemCBills) || (item.costPerItemCBills ?? -1) < 0) issues.push({ id: 'inventory.cost.invalid', itemId: item.id, message: `${item.displayName || 'Inventory item'} has an invalid unit cost.` })
-    if (!item.equipmentRating || !isRating(item.equipmentRating.tech) || !isRating(item.equipmentRating.availability) || !isRating(item.equipmentRating.legality)) {
-      issues.push({ id: 'inventory.rating.invalid', itemId: item.id, message: `${item.displayName || 'Inventory item'} requires valid Tech, Availability, and Legality ratings.` })
+    const completeRatings = hasCompleteRatings(item.equipmentRating) ? item.equipmentRating : null
+    const hasFullRatings = completeRatings !== null
+    const hasNullExampleRatings = item.entryKind === 'catalog' && item.catalogSnapshot?.sourceStatus === 'example-backed' && item.equipmentRating != null && Object.values(item.equipmentRating).every((rating) => rating === null)
+    if (!hasFullRatings && !hasNullExampleRatings) {
+      issues.push({ id: 'inventory.rating.invalid', itemId: item.id, message: `${item.displayName || 'Inventory item'} requires complete ratings unless it is an example-backed catalog item whose unaudited ratings remain null.` })
       continue
     }
     const expectedTotal = item.quantity * (item.costPerItemCBills ?? 0)
@@ -104,11 +107,11 @@ export function getEquipmentFoundationIssues(character: CharacterDefinition): Eq
     }
     if (item.ownership === 'Owned') {
       if (item.personalProperty !== true) issues.push({ id: 'inventory.owned.personal-property', itemId: item.id, message: `${item.displayName} is Owned and must be recorded as personal property.` })
-      if (!ratingsWithin(item.equipmentRating, ownedLimits)) issues.push({ id: 'inventory.owned.rating.exceeded', itemId: item.id, message: `${item.displayName} exceeds the character's Equipped-derived access limits.` })
+      if (completeRatings && !ratingsWithin(completeRatings, ownedLimits)) issues.push({ id: 'inventory.owned.rating.exceeded', itemId: item.id, message: `${item.displayName} exceeds the character's Equipped-derived access limits.` })
     } else {
       if (!state.issuedGearEnabled) issues.push({ id: 'inventory.issued.option-disabled', itemId: item.id, message: `${item.displayName} is Issued, but the Issued Gear optional rule is disabled.` })
       if (item.personalProperty !== false) issues.push({ id: 'inventory.issued.personal-property', itemId: item.id, message: `${item.displayName} is Issued and cannot be personal property.` })
-      if (!ratingsWithin(item.equipmentRating, issuedLimits)) issues.push({ id: 'inventory.issued.rating.exceeded', itemId: item.id, message: `${item.displayName} exceeds the modeled Issued Gear limits.` })
+      if (completeRatings && !ratingsWithin(completeRatings, issuedLimits)) issues.push({ id: 'inventory.issued.rating.exceeded', itemId: item.id, message: `${item.displayName} exceeds the modeled Issued Gear limits.` })
     }
   }
 
@@ -124,6 +127,10 @@ function isRating(value: unknown): value is EquipmentRatingCode {
   return typeof value === 'string' && RATING_ORDER.includes(value as EquipmentRatingCode)
 }
 
-function ratingsWithin(rating: NonNullable<EquipmentItem['equipmentRating']>, limits: EquipmentAccessLimits): boolean {
+function hasCompleteRatings(rating: EquipmentItem['equipmentRating']): rating is { tech: EquipmentRatingCode; availability: EquipmentRatingCode; legality: EquipmentRatingCode } {
+  return Boolean(rating && isRating(rating.tech) && isRating(rating.availability) && isRating(rating.legality))
+}
+
+function ratingsWithin(rating: { tech: EquipmentRatingCode; availability: EquipmentRatingCode; legality: EquipmentRatingCode }, limits: EquipmentAccessLimits): boolean {
   return ratingWithinLimit(rating.tech, limits.tech) && ratingWithinLimit(rating.availability, limits.availability) && ratingWithinLimit(rating.legality, limits.legality)
 }
