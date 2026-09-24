@@ -8,6 +8,7 @@ import {
   SLICE_12_EQUIPMENT_CATALOG,
   SLICE_13_EQUIPMENT_CATALOG,
   SLICE_14_EQUIPMENT_CATALOG,
+  SLICE_17_EQUIPMENT_CATALOG,
   parseRawEquipmentRating,
   validateEquipmentCatalog,
 } from './catalog'
@@ -21,8 +22,8 @@ describe('Alpha equipment catalog', () => {
 
   it('adds exactly 17 Slice 12 entries with raw and hand-audited normalized ratings', () => {
     expect(SLICE_12_EQUIPMENT_CATALOG).toHaveLength(17)
-    expect(EQUIPMENT_CATALOG).toHaveLength(75)
-    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(75)
+    expect(EQUIPMENT_CATALOG).toHaveLength(81)
+    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(81)
     for (const item of SLICE_12_EQUIPMENT_CATALOG) {
       expect(item.sourceStatus).toBe('audited-core')
       expect(item.sourceKey).toMatch(/^AToW-CTP-p(267|268|269|286|288)$/)
@@ -39,7 +40,7 @@ describe('Alpha equipment catalog', () => {
   it('adds 24 Slice 13 records as 21 new items and three stable-ID upgrades', () => {
     expect(SLICE_13_EQUIPMENT_CATALOG).toHaveLength(24)
     expect(new Set(SLICE_13_EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(24)
-    expect(EQUIPMENT_CATALOG).toHaveLength(75)
+    expect(EQUIPMENT_CATALOG).toHaveLength(81)
     for (const item of SLICE_13_EQUIPMENT_CATALOG) {
       expect(item.sourceStatus).toBe('audited-core')
       expect(item.sourceKey).toMatch(/^AToW-CTP-p(302|303|304|308|310|313)$/)
@@ -56,8 +57,8 @@ describe('Alpha equipment catalog', () => {
   it('adds exactly 20 Slice 14 communications, sensors, power, and field-gear entries', () => {
     expect(SLICE_14_EQUIPMENT_CATALOG).toHaveLength(20)
     expect(new Set(SLICE_14_EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(20)
-    expect(EQUIPMENT_CATALOG).toHaveLength(75)
-    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(75)
+    expect(EQUIPMENT_CATALOG).toHaveLength(81)
+    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(81)
     for (const item of SLICE_14_EQUIPMENT_CATALOG) {
       expect(item.sourceStatus).toBe('audited-core')
       expect(item.sourceKey).toMatch(/^AToW-CTP-p(301|305|306|312)$/)
@@ -83,6 +84,58 @@ describe('Alpha equipment catalog', () => {
     expect(getEquipmentCatalogItem('core.power.recharger.solar').metadata).toMatchObject({ powerGenerationPph: 45 })
     expect(getEquipmentCatalogItem('core.fieldGear.survival.emergencyRations').metadata).toMatchObject({ consumable: true })
     expect(getEquipmentCatalogItem('core.fieldGear.flight.parachute').metadata).toMatchObject({ encumbering: true, skillModifier: 4 })
+  })
+
+  it('adds exactly six Slice 17 Core clothing and leatherwear records', () => {
+    const expected = [
+      { id: 'core.clothing.workBoots', displayName: 'Work Boots', categoryPath: ['Clothing', 'Footwear', 'Work'], costCBills: 36, rawEquipmentRating: 'B/A-A-A/A', ratings: { tech: 'B', availability: 'A', legality: 'A' }, metadata: { massKg: 1.7, coverage: 'Feet', bar: '1/1/0/1' } },
+      { id: 'core.clothing.leather.jacket', displayName: 'Leather Jacket', categoryPath: ['Clothing', 'Leatherwear'], costCBills: 50, rawEquipmentRating: 'A/A-A-A/A', ratings: { tech: 'A', availability: 'A', legality: 'A' }, metadata: { massKg: 2, coverage: 'Torso, Arms', bar: '1/1/0/1' } },
+      { id: 'core.clothing.leather.gloves', displayName: 'Leather Gloves', categoryPath: ['Clothing', 'Leatherwear'], costCBills: 20, rawEquipmentRating: 'A/A-A-A/A', ratings: { tech: 'A', availability: 'A', legality: 'A' }, metadata: { massKg: 0.4, coverage: 'Hands', bar: '1/1/0/1', dexRelatedRollModifier: -1 } },
+      { id: 'core.clothing.leather.pantsChaps', displayName: 'Leather Pants/Chaps', categoryPath: ['Clothing', 'Leatherwear'], costCBills: 35, rawEquipmentRating: 'A/A-A-A/A', ratings: { tech: 'A', availability: 'A', legality: 'A' }, metadata: { massKg: 3, coverage: 'Legs', bar: '1/1/0/1' } },
+      { id: 'core.clothing.leather.shoes', displayName: 'Leather Shoes', categoryPath: ['Clothing', 'Leatherwear'], costCBills: 25, rawEquipmentRating: 'A/A-A-A/A', ratings: { tech: 'A', availability: 'A', legality: 'A' }, metadata: { massKg: 0.8, coverage: 'Feet', bar: '1/1/0/1' } },
+      { id: 'core.clothing.leather.vestApron', displayName: 'Leather Vest/Apron', categoryPath: ['Clothing', 'Leatherwear'], costCBills: 25, rawEquipmentRating: 'A/A-A-A/A', ratings: { tech: 'A', availability: 'A', legality: 'A' }, metadata: { massKg: 1.2, coverage: 'Torso', bar: '1/1/0/1', apronFrontOnly: true } },
+    ] as const
+    expect(SLICE_17_EQUIPMENT_CATALOG).toHaveLength(6)
+    expect(SLICE_17_EQUIPMENT_CATALOG.map((entry) => entry.id)).toEqual(expected.map((entry) => entry.id))
+    for (const expectedItem of expected) {
+      const item = getEquipmentCatalogItem(expectedItem.id)
+      expect(item).toMatchObject({
+        ...expectedItem,
+        sourceKey: 'AToW-CTP-p299',
+        sourceStatus: 'audited-core',
+        rawRatingStatus: 'preserved',
+        affiliationCode: null,
+      })
+      expect(item.rawEquipmentRating).toBeTruthy()
+      const parsed = parseRawEquipmentRating(item.rawEquipmentRating!)
+      expect(parsed).not.toBeNull()
+      expect(item.rawAvailabilityCodes).toEqual(parsed!.availabilityCodes)
+      expect(item.ratings.tech).toBe(parsed!.tech)
+      expect(item.ratings.legality).toBe(parsed!.legality)
+      expect(parsed!.availabilityCodes).toContain(item.ratings.availability)
+      expect(item).not.toHaveProperty('bar')
+      expect(item).not.toHaveProperty('coverage')
+      expect(item).not.toHaveProperty('dexRelatedRollModifier')
+    }
+    expect(validateEquipmentCatalog()).toEqual([])
+  })
+
+  it('keeps the existing page-299 clothing records unchanged', () => {
+    expect(getEquipmentCatalogItem('core.clothing.fatigues')).toMatchObject({
+      displayName: 'Fatigues', costCBills: 30, categoryPath: ['Clothing', 'Military-Work Attire'],
+      rawEquipmentRating: 'B/A-A-A/A', rawAvailabilityCodes: ['A', 'A', 'A'],
+      ratings: { tech: 'B', availability: 'A', legality: 'A' }, sourceKey: 'AToW-CTP-p299',
+    })
+    expect(getEquipmentCatalogItem('core.clothing.jumpSuit')).toMatchObject({
+      displayName: 'Jump Suit', costCBills: 24, categoryPath: ['Clothing', 'Military-Work Attire'],
+      rawEquipmentRating: 'B/A-A-A/A', rawAvailabilityCodes: ['A', 'A', 'A'],
+      ratings: { tech: 'B', availability: 'A', legality: 'A' }, sourceKey: 'AToW-CTP-p299',
+    })
+    expect(getEquipmentCatalogItem('core.clothing.leatherBoots')).toMatchObject({
+      displayName: 'Leather Boots', costCBills: 25, categoryPath: ['Clothing', 'Leatherwear'],
+      rawEquipmentRating: 'A/A-A-A/A', rawAvailabilityCodes: ['A', 'A', 'A'],
+      ratings: { tech: 'A', availability: 'A', legality: 'A' }, sourceKey: 'AToW-CTP-p299',
+    })
   })
 
   it('preserves hand-audited availability without imposing a triplet position', () => {
@@ -160,9 +213,9 @@ describe('Alpha equipment catalog', () => {
     expect(validateEquipmentCatalog([{ ...item, ratings: { tech: null, availability: null, legality: null } }])).toContain(`Audited Core item requires complete ratings: ${item.id}`)
   })
 
-  it('hardens all 75 current entries without adding or renaming catalog items', () => {
-    expect(EQUIPMENT_CATALOG).toHaveLength(75)
-    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(75)
+  it('hardens all 81 current entries without renaming existing catalog items', () => {
+    expect(EQUIPMENT_CATALOG).toHaveLength(81)
+    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(81)
     expect(validateEquipmentCatalog()).toEqual([])
     for (const item of EQUIPMENT_CATALOG) {
       expect(item.id).toMatch(/^core\.[a-z][A-Za-z0-9]*(?:\.[a-z][A-Za-z0-9]*)+$/)
@@ -207,7 +260,7 @@ describe('Alpha equipment catalog', () => {
       })
     }
     expect(EQUIPMENT_CATALOG.filter((item) => item.rawRatingStatus === 'not-supplied-in-audit')).toHaveLength(0)
-    expect(EQUIPMENT_CATALOG.filter((item) => item.rawRatingStatus === 'preserved')).toHaveLength(75)
+    expect(EQUIPMENT_CATALOG.filter((item) => item.rawRatingStatus === 'preserved')).toHaveLength(81)
   })
 
   it('rejects unsafe IDs, categories, affiliation codes, source data, and raw-rating omissions', () => {

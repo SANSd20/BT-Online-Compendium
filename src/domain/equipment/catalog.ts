@@ -296,11 +296,27 @@ export const SLICE_14_EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [
     { massKg: 8, encumbering: true, skill: 'Acrobatics/Free-Fall', skillModifier: 4 }, ['Landing, control, movement, and falling behavior are metadata only.']),
 ] as const
 
+export const SLICE_17_EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [
+  equipment('core.clothing.workBoots', 'Work Boots', ['Clothing', 'Footwear', 'Work'], 36, 'B/A-A-A/A', { tech: 'B', availability: 'A', legality: 'A' }, 299,
+    { massKg: 1.7, coverage: 'Feet', bar: '1/1/0/1' }, ['BAR and coverage are metadata only; protection, coverage, and runtime clothing effects are not implemented.']),
+  equipment('core.clothing.leather.jacket', 'Leather Jacket', ['Clothing', 'Leatherwear'], 50, 'A/A-A-A/A', { tech: 'A', availability: 'A', legality: 'A' }, 299,
+    { massKg: 2, coverage: 'Torso, Arms', bar: '1/1/0/1' }, ['BAR and coverage are metadata only; protection, coverage, and runtime clothing effects are not implemented.']),
+  equipment('core.clothing.leather.gloves', 'Leather Gloves', ['Clothing', 'Leatherwear'], 20, 'A/A-A-A/A', { tech: 'A', availability: 'A', legality: 'A' }, 299,
+    { massKg: 0.4, coverage: 'Hands', bar: '1/1/0/1', dexRelatedRollModifier: -1 }, ['BAR, coverage, and the DEX-related roll penalty are metadata only; the modifier is not applied at runtime.']),
+  equipment('core.clothing.leather.pantsChaps', 'Leather Pants/Chaps', ['Clothing', 'Leatherwear'], 35, 'A/A-A-A/A', { tech: 'A', availability: 'A', legality: 'A' }, 299,
+    { massKg: 3, coverage: 'Legs', bar: '1/1/0/1' }, ['BAR and coverage are metadata only; protection, coverage, and runtime clothing effects are not implemented.']),
+  equipment('core.clothing.leather.shoes', 'Leather Shoes', ['Clothing', 'Leatherwear'], 25, 'A/A-A-A/A', { tech: 'A', availability: 'A', legality: 'A' }, 299,
+    { massKg: 0.8, coverage: 'Feet', bar: '1/1/0/1' }, ['BAR and coverage are metadata only; protection, coverage, and runtime clothing effects are not implemented.']),
+  equipment('core.clothing.leather.vestApron', 'Leather Vest/Apron', ['Clothing', 'Leatherwear'], 25, 'A/A-A-A/A', { tech: 'A', availability: 'A', legality: 'A' }, 299,
+    { massKg: 1.2, coverage: 'Torso', bar: '1/1/0/1', apronFrontOnly: true }, ['The apron covers only the front. BAR, coverage, facing, and runtime clothing effects are metadata only and are not implemented.']),
+] as const
+
 export const EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = mergeEquipmentCatalogBatches(
   STARTER_EQUIPMENT_CATALOG,
   SLICE_12_EQUIPMENT_CATALOG,
   SLICE_13_EQUIPMENT_CATALOG,
   SLICE_14_EQUIPMENT_CATALOG,
+  SLICE_17_EQUIPMENT_CATALOG,
 )
 
 export const EQUIPMENT_CATALOG_CATEGORIES = [...new Set(EQUIPMENT_CATALOG.map((entry) => entry.categoryPath[0]))].sort()

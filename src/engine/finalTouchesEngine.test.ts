@@ -158,6 +158,47 @@ describe('Final Touches and equipment foundation', () => {
     expect(decoded.inventory[0].catalogSnapshot).toEqual(character.inventory[0].catalogSnapshot)
   })
 
+  it('preserves Slice 17 clothing snapshots and inert metadata for Owned and Issued purchases', () => {
+    let character = setIssuedGearEnabled(enterFinalTouches(readyForFinalTouches()), true)
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.clothing.leather.jacket', quantity: 2, ownership: 'Owned' })
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.clothing.leather.gloves', quantity: 1, ownership: 'Issued' })
+
+    expect(character.creation.finalTouches).toMatchObject({ spentCBillTotal: 100, remainingCBillTotal: 900 })
+    expect(character.inventory[0]).toMatchObject({
+      entryKind: 'catalog', ownership: 'Owned', personalProperty: true, totalCostCBills: 100,
+      equipmentRating: { tech: 'A', availability: 'A', legality: 'A' },
+      catalogSnapshot: {
+        snapshotVersion: 2, displayName: 'Leather Jacket', costCBills: 50,
+        categoryPath: ['Clothing', 'Leatherwear'], affiliationCode: null,
+        sourceKey: 'AToW-CTP-p299', sourceStatus: 'audited-core',
+        rawRatingStatus: 'preserved', rawEquipmentRating: 'A/A-A-A/A', rawAvailabilityCodes: ['A', 'A', 'A'],
+        normalizedEquipmentRating: { tech: 'A', availability: 'A', legality: 'A' },
+        metadata: { massKg: 2, coverage: 'Torso, Arms', bar: '1/1/0/1' },
+      },
+    })
+    expect(character.inventory[1]).toMatchObject({
+      entryKind: 'catalog', ownership: 'Issued', personalProperty: false, totalCostCBills: 20,
+      catalogSnapshot: { metadata: { coverage: 'Hands', bar: '1/1/0/1', dexRelatedRollModifier: -1 } },
+    })
+    for (const item of character.inventory) {
+      expect(item).not.toHaveProperty('bar')
+      expect(item).not.toHaveProperty('coverage')
+      expect(item).not.toHaveProperty('dexRelatedRollModifier')
+    }
+    expect(getEquipmentFoundationIssues(character)).toEqual([])
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-09-24T00:00:00.000Z'))
+    expect(decoded.inventory).toEqual(character.inventory)
+  })
+
+  it('rejects clothing-rule metadata promoted into inventory runtime state', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.clothing.leather.vestApron', quantity: 1, ownership: 'Owned' })
+    ;(character.inventory[0] as unknown as Record<string, unknown>).bar = '1/1/0/1'
+    ;(character.inventory[0] as unknown as Record<string, unknown>).coverage = 'Torso'
+    ;(character.inventory[0] as unknown as Record<string, unknown>).facing = 'Front'
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).toContain('inventory.runtime-state.unsupported')
+  })
+
   it('accepts and preserves a pre-backfill normalized-only Slice 11 purchase snapshot', () => {
     let character = enterFinalTouches(readyForFinalTouches())
     character = addCatalogInventoryItem(character, { catalogItemId: 'core.personalWeapon.autoPistol.standard', quantity: 1, ownership: 'Owned' })

@@ -310,6 +310,21 @@ Slice 16 adds no equipment and retains the 75-item current catalog. Automated co
 
 Manual UI verification should confirm the 14 reconciled records display their printed ratings, all 75 entries remain searchable/filterable, manual entry remains available, and catalog metadata is not presented as active play-state automation.
 
+## Alpha Slice 17 verification
+
+Slice 17 adds six audited Core non-combat attire/leatherwear records from printed page 299 and increases the current catalog from 75 to 81 items. Automated coverage verifies:
+
+- all six supplied stable IDs, costs, categories, neutral affiliations, raw ratings, Availability triplets, normalized ratings, page-299 source references, and `audited-core` status;
+- normalized Tech and Legality match the raw endpoints and normalized Availability occurs in the raw triplet;
+- Fatigues, Jump Suit, and Leather Boots retain their existing stable IDs and catalog values;
+- Owned and Issued clothing purchases retain the established C-bill/property behavior;
+- version-2 purchase snapshots and JSON round trips preserve cost, category, affiliation, source, raw/normalized ratings, notes, and inert metadata;
+- BAR, coverage, front-only facing, and the Leather Gloves DEX-related penalty remain catalog metadata rather than inventory runtime state;
+- catalog count is exactly 81 with unique IDs and all entries pass catalog validation; and
+- all earlier Archetype, Point Buy, Life Module, Final Touches, access-calculator, persistence, and catalog tests continue to pass.
+
+Manual UI verification should confirm all 81 entries remain searchable/filterable, the new clothing records display their source-backed ratings and metadata, manual entry remains available, and no active protection, coverage, facing, or clothing-penalty behavior is implied.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

@@ -34,7 +34,8 @@ const SAFE_AFFILIATION_CODE = /^[A-Z][A-Z0-9-]*$/
 const FORBIDDEN_INVENTORY_RUNTIME_KEYS = [
   'currentPower', 'remainingPower', 'powerState', 'ammo', 'ammunition', 'magazineCount', 'reloadState',
   'armorCondition', 'barCurrent', 'fatigue', 'addiction', 'consciousness', 'healing', 'sensorState',
-  'networkState', 'movementState', 'repairJobs', 'remainingUses',
+  'networkState', 'movementState', 'repairJobs', 'remainingUses', 'bar', 'coverage', 'facing',
+  'dexRelatedRollModifier', 'protection',
 ] as const
 
 function issue(
@@ -264,7 +265,7 @@ function validateFinalTouches(character: CharacterDefinition, issues: Validation
   if (state.equipmentReviewState === 'ready-for-equipment-review' && getEquipmentFoundationIssues(character).length > 0) {
     issues.push(issue('final-touches.review-state.invalid', 'creation.finalTouches.equipmentReviewState', 'An equipment draft with validation errors cannot be ready for equipment review.'))
   }
-  issues.push(issue('final-touches.scope.alpha', 'creation.finalTouches', 'Equipment remains an Alpha draft with a hardened 75-item audited catalog and manual fallback; active item effects, the full catalog, PDF export, true finalization, and ready-for-play status are unsupported.', { severity: 'information', kind: 'availability' }))
+  issues.push(issue('final-touches.scope.alpha', 'creation.finalTouches', 'Equipment remains an Alpha draft with an 81-item audited catalog and manual fallback; active item effects, the full catalog, PDF export, true finalization, and ready-for-play status are unsupported.', { severity: 'information', kind: 'availability' }))
 }
 
 function validateLifeModules(character: CharacterDefinition, issues: ValidationIssue[]): void {

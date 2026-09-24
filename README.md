@@ -4,9 +4,9 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 16 is implemented.** The React + TypeScript + Vite application includes Archetype v0.1, Point Buy v0.1, and Life Modules v0.13 on the shared Character/Rules model, with versioned JSON character files, browser-local persistence, and import/export.
+**Alpha Slice 17 is implemented.** The React + TypeScript + Vite application includes Archetype v0.1, Point Buy v0.1, and Life Modules v0.14 on the shared Character/Rules model, with versioned JSON character files, browser-local persistence, and import/export.
 
-All eight published Core archetypes can create, display, save, export, and import characters with source provenance. Point Buy v0.1 creates a Normal Human draft with a focused catalog. Life Modules v0.13 covers the narrow Stage 0–4 branch, final review, Final Touches, and a hardened searchable 75-item audited Core equipment catalog with manual fallback. All current catalog records now preserve their supplied raw ratings and Availability triplets beside hand-audited normalized ratings; stable IDs and historical purchase snapshots remain compatible.
+All eight published Core archetypes can create, display, save, export, and import characters with source provenance. Point Buy v0.1 creates a Normal Human draft with a focused catalog. Life Modules v0.14 covers the narrow Stage 0–4 branch, final review, Final Touches, and a searchable 81-item audited Core equipment catalog with manual fallback. Slice 17 adds six page-299 non-combat attire and leatherwear records without changing existing stable IDs. BAR, coverage, facing, and clothing penalties remain inert metadata.
 
 The project remains in **Alpha**. Final Touches and “ready for equipment review” are draft states, not a finalized or ready-for-play character. Beta 1 is a future milestone requiring completed Core + Companion character creation and PDF export. The full equipment catalog, affiliation-adjusted access, heavy/combat-vehicle workflow, ammo and condition tracking, true character locking, negative-Trait purchase UI, PDF export, Planetary work, and playable-sheet runtime behavior remain outside the current implementation.
 
@@ -31,7 +31,7 @@ Planetary functionality is supporting infrastructure. It does not replace or sup
 - [`src/engine/`](src/engine/) — shared character factory plus Archetype, Point Buy, and Life Module engines
 - [`src/validation/`](src/validation/) — typed validation results and minimal structural validation
 - [`src/persistence/`](src/persistence/) — versioned JSON codec, local repository, and browser import/export
-- [`src/ui/`](src/ui/) — app shell and functional Archetype v0.1, Point Buy v0.1, and Life Modules v0.13 routes
+- [`src/ui/`](src/ui/) — app shell and functional Archetype v0.1, Point Buy v0.1, and Life Modules v0.14 routes
 - [`docs/PROJECT-STATE.md`](docs/PROJECT-STATE.md) — purpose, approved direction, statuses, sequence, and resume point
 - [`docs/SOURCE-AUTHORITY.md`](docs/SOURCE-AUTHORITY.md) — rules scope, errata policy, provenance, and planetary upstream authority
 - [`docs/CHARACTER-AND-RULES-ARCHITECTURE.md`](docs/CHARACTER-AND-RULES-ARCHITECTURE.md) — established Character Generator domain and engine requirements
@@ -52,11 +52,11 @@ Use `npm run check` to run lint, unit tests, TypeScript compilation, and the pro
 
 ## Current resume points
 
-Repository bootstrap and Alpha Slices 1–16 are complete. The implemented app is local-first and requires no server, database, or account.
+Repository bootstrap and Alpha Slices 1–17 are complete. The implemented app is local-first and requires no server, database, or account.
 
 The Core + Companion rules audit is in progress. Its next audit target is **Campaign / Rules Configuration reconciliation**, specifically the boundaries among durable character state, current campaign rules, creation-rules provenance, and per-character GM exceptions.
 
-The next recommended implementation slice, only when separately authorized and supplied with audited data, is **Alpha Slice 17 — the next bounded Core equipment-catalog batch or an equally narrow Character Creator foundation increment**. It must preserve the non-positional, hand-audited Availability rule and must not add runtime ammunition, power, sensors, communications, consumables, movement, armor, health, heavy/combat Vehicle Trait handling, PDF export, or ready-for-play status without separate authorization. Planetary Data Foundation Rollout 1 remains designed but unimplemented and requires separate authorization.
+The next recommended implementation slice, only when separately authorized and supplied with audited data, is **Alpha Slice 18 — the next bounded Core equipment-catalog batch or an equally narrow Character Creator foundation increment**. It must preserve the non-positional, hand-audited Availability rule and inert item-metadata boundary, and must not add runtime equipment effects, heavy/combat Vehicle Trait handling, PDF export, or ready-for-play status without separate authorization. Planetary Data Foundation Rollout 1 remains designed but unimplemented and requires separate authorization.
 
 ## Status vocabulary
 
