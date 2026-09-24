@@ -202,6 +202,23 @@ describe('Final Touches and equipment foundation', () => {
     expect(decoded.inventory[0].catalogSnapshot).toEqual(character.inventory[0].catalogSnapshot)
   })
 
+  it('preserves Slice 14 metadata without creating runtime tracking state', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.power.recharger.solar', quantity: 1, ownership: 'Owned' })
+    expect(character.inventory[0].catalogSnapshot).toMatchObject({
+      sourceKey: 'AToW-CTP-p306',
+      rawEquipmentRating: 'D/A-B-B/A',
+      normalizedEquipmentRating: { tech: 'D', availability: 'B', legality: 'A' },
+      metadata: { massKg: 1.5, powerGenerationPph: 45 },
+    })
+    expect(character.inventory[0]).not.toHaveProperty('currentPower')
+    expect(character.inventory[0]).not.toHaveProperty('sensorState')
+    expect(character.inventory[0]).not.toHaveProperty('remainingUses')
+    expect(character.inventory[0]).not.toHaveProperty('movementState')
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-09-24T00:00:00.000Z'))
+    expect(decoded.inventory[0]).toEqual(character.inventory[0])
+  })
+
   it('applies Issued Gear behavior to catalog items', () => {
     let character = enterFinalTouches(readyForFinalTouches())
     expect(() => addCatalogInventoryItem(character, { catalogItemId: 'core.electronics.communicator.military', quantity: 1, ownership: 'Issued' })).toThrow('Enable the Issued Gear')

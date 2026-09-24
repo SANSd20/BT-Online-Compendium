@@ -7,6 +7,7 @@ import {
   STARTER_EQUIPMENT_CATALOG,
   SLICE_12_EQUIPMENT_CATALOG,
   SLICE_13_EQUIPMENT_CATALOG,
+  SLICE_14_EQUIPMENT_CATALOG,
   parseRawEquipmentRating,
   validateEquipmentCatalog,
 } from './catalog'
@@ -20,8 +21,8 @@ describe('Alpha Slice 11 starter equipment catalog', () => {
 
   it('adds exactly 17 Slice 12 entries with raw and hand-audited normalized ratings', () => {
     expect(SLICE_12_EQUIPMENT_CATALOG).toHaveLength(17)
-    expect(EQUIPMENT_CATALOG).toHaveLength(55)
-    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(55)
+    expect(EQUIPMENT_CATALOG).toHaveLength(75)
+    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(75)
     for (const item of SLICE_12_EQUIPMENT_CATALOG) {
       expect(item.sourceStatus).toBe('audited-core')
       expect(item.sourceKey).toMatch(/^AToW-CTP-p(267|268|269|286|288)$/)
@@ -38,7 +39,7 @@ describe('Alpha Slice 11 starter equipment catalog', () => {
   it('adds 24 Slice 13 records as 21 new items and three stable-ID upgrades', () => {
     expect(SLICE_13_EQUIPMENT_CATALOG).toHaveLength(24)
     expect(new Set(SLICE_13_EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(24)
-    expect(EQUIPMENT_CATALOG).toHaveLength(55)
+    expect(EQUIPMENT_CATALOG).toHaveLength(75)
     for (const item of SLICE_13_EQUIPMENT_CATALOG) {
       expect(item.sourceStatus).toBe('audited-core')
       expect(item.sourceKey).toMatch(/^AToW-CTP-p(302|303|304|308|310|313)$/)
@@ -50,6 +51,38 @@ describe('Alpha Slice 11 starter equipment catalog', () => {
       expect(parsed!.availabilityCodes).toContain(item.ratings.availability)
     }
     expect(validateEquipmentCatalog()).toEqual([])
+  })
+
+  it('adds exactly 20 Slice 14 communications, sensors, power, and field-gear entries', () => {
+    expect(SLICE_14_EQUIPMENT_CATALOG).toHaveLength(20)
+    expect(new Set(SLICE_14_EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(20)
+    expect(EQUIPMENT_CATALOG).toHaveLength(75)
+    expect(new Set(EQUIPMENT_CATALOG.map((entry) => entry.id)).size).toBe(75)
+    for (const item of SLICE_14_EQUIPMENT_CATALOG) {
+      expect(item.sourceStatus).toBe('audited-core')
+      expect(item.sourceKey).toMatch(/^AToW-CTP-p(301|305|306|312)$/)
+      expect(item.rawEquipmentRating).toBeTruthy()
+      const parsed = parseRawEquipmentRating(item.rawEquipmentRating!)
+      expect(parsed).not.toBeNull()
+      expect(item.ratings.tech).toBe(parsed!.tech)
+      expect(item.ratings.legality).toBe(parsed!.legality)
+      expect(parsed!.availabilityCodes).toContain(item.ratings.availability)
+      expect(item.rawAvailabilityCodes).toEqual(parsed!.availabilityCodes)
+    }
+    expect(validateEquipmentCatalog()).toEqual([])
+  })
+
+  it('preserves Slice 14 affiliation and rule data as inert metadata', () => {
+    expect(getEquipmentCatalogItem('core.power.powerPack.clan')).toMatchObject({
+      affiliationCode: 'CLAN',
+      rawEquipmentRating: 'F/X-D-B/A',
+      metadata: { capacityPp: 30, quickCharge: true },
+    })
+    expect(getEquipmentCatalogItem('core.remoteSensor.heatSensor')).toMatchObject({ affiliationCode: null, metadata: { detectionMode: 'Heat only' } })
+    expect(getEquipmentCatalogItem('core.electronics.communications.headset').metadata).toMatchObject({ powerUsePpw: 1, range: '100 m' })
+    expect(getEquipmentCatalogItem('core.power.recharger.solar').metadata).toMatchObject({ powerGenerationPph: 45 })
+    expect(getEquipmentCatalogItem('core.fieldGear.survival.emergencyRations').metadata).toMatchObject({ consumable: true })
+    expect(getEquipmentCatalogItem('core.fieldGear.flight.parachute').metadata).toMatchObject({ encumbering: true, skillModifier: 4 })
   })
 
   it('preserves hand-audited availability without imposing a triplet position', () => {
@@ -108,7 +141,7 @@ describe('Alpha Slice 11 starter equipment catalog', () => {
   it('supports text, category, and source-status filtering', () => {
     expect(EQUIPMENT_CATALOG_CATEGORIES).toContain('Medical')
     expect(filterEquipmentCatalog({ search: 'magnum' }).map((entry) => entry.id)).toEqual(['core.personalWeapon.autoPistol.magnum'])
-    expect(filterEquipmentCatalog({ category: 'Power' })).toHaveLength(2)
+    expect(filterEquipmentCatalog({ category: 'Power' })).toHaveLength(8)
     expect(filterEquipmentCatalog({ search: 'ultrasonic' }).map((entry) => entry.id)).toEqual(['core.electronics.optics.ultrasonicDetector'])
     expect(filterEquipmentCatalog({ sourceStatus: 'example-backed' })).toHaveLength(0)
   })

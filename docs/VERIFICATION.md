@@ -260,6 +260,21 @@ Slice 13 extends the same `npm run check` gate. Automated coverage verifies:
 
 Manual UI verification should confirm all 55 current entries remain searchable/filterable, promoted medical entries display audited ratings and sources, affiliation-adjusted access still reports blocking reasons, and no metadata-only behavior is presented as automated play state.
 
+## Alpha Slice 14 verification
+
+Slice 14 extends the same `npm run check` gate. Automated coverage verifies:
+
+- Batch 4 contains exactly 20 unique audited entries and the merged current catalog contains 75 unique entries;
+- every Batch 4 entry retains its supplied stable ID, Core page source, exact raw rating, raw Availability triplet, hand-audited normalized rating, and metadata;
+- normalized Tech and Legality match the raw endpoints and normalized Availability occurs somewhere in the triplet without assuming a position;
+- the Clan Power Pack retains `CLAN` affiliation while generic items remain neutral;
+- communications range and PPW/PPH, remote-sensor detection, power capacity/recharge, visibility, consumable, Skill-bonus, encumbrance, and falling data remain inert metadata;
+- adding Slice 14 equipment creates no power counter, sensor state, remaining-use counter, or movement/falling state;
+- purchase-time Slice 14 metadata, ratings, source, and provenance survive versioned JSON round trips; and
+- all earlier Archetype, Point Buy, Life Module, Final Touches, access-calculator, and equipment-catalog tests continue to pass.
+
+Manual UI verification should confirm all 75 entries remain searchable/filterable, Batch 4 ratings and sources display through the existing catalog workflow, access review behavior is unchanged, and no metadata-only detail is presented as runtime automation.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

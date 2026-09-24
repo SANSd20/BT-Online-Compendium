@@ -2,7 +2,7 @@ import type { RulesCatalog, RulesSnapshot } from './model'
 
 export const ALPHA_RULES_CATALOG: RulesCatalog = {
   id: 'atow.core-companion',
-  version: 'alpha-slice-13',
+  version: 'alpha-slice-14',
   sources: [
     {
       id: 'atow-core-corrected-third',
