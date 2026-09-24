@@ -172,15 +172,42 @@ describe('Alpha equipment catalog', () => {
       expect(item.source.ruleId).toBe(item.sourceKey)
       expect(item.metadata).toBeTypeOf('object')
       expect(Array.isArray(item.notes)).toBe(true)
-      expect(['preserved', 'not-supplied-in-audit']).toContain(item.rawRatingStatus)
+      expect(item.rawRatingStatus).toBe('preserved')
     }
   })
 
-  it('marks the 14 normalized-only Slice 11 records instead of inventing raw Availability triplets', () => {
-    const normalizedOnly = EQUIPMENT_CATALOG.filter((item) => item.rawRatingStatus === 'not-supplied-in-audit')
-    expect(normalizedOnly).toHaveLength(14)
-    expect(normalizedOnly.every((item) => !item.rawEquipmentRating && !item.rawAvailabilityCodes)).toBe(true)
-    expect(EQUIPMENT_CATALOG.filter((item) => item.rawRatingStatus === 'preserved')).toHaveLength(61)
+  it('backfills the 14 legacy Slice 11 raw ratings without changing stable IDs or normalized ratings', () => {
+    const expected = {
+      'core.personalWeapon.autoPistol.standard': ['C/A-A-A/C', ['A', 'A', 'A'], ['C', 'A', 'C'], 'AToW-CTP-p265'],
+      'core.personalWeapon.autoPistol.magnum': ['C/A-A-B/D', ['A', 'A', 'B'], ['C', 'B', 'D'], 'AToW-CTP-p265'],
+      'core.meleeWeapon.vibroblade.vibrodagger': ['D/B-C-B/C', ['B', 'C', 'B'], ['D', 'C', 'C'], 'AToW-CTP-p265'],
+      'core.clothing.fatigues': ['B/A-A-A/A', ['A', 'A', 'A'], ['B', 'A', 'A'], 'AToW-CTP-p299'],
+      'core.clothing.jumpSuit': ['B/A-A-A/A', ['A', 'A', 'A'], ['B', 'A', 'A'], 'AToW-CTP-p299'],
+      'core.clothing.leatherBoots': ['A/A-A-A/A', ['A', 'A', 'A'], ['A', 'A', 'A'], 'AToW-CTP-p299'],
+      'core.electronics.communicator.civilian': ['C/A-A-A/A', ['A', 'A', 'A'], ['C', 'A', 'A'], 'AToW-CTP-p301'],
+      'core.electronics.communicator.military': ['D/A-A-A/B', ['A', 'A', 'A'], ['D', 'A', 'B'], 'AToW-CTP-p301'],
+      'core.electronics.optics.rangefinderBinoculars': ['D/A-C-B/A', ['A', 'C', 'B'], ['D', 'C', 'A'], 'AToW-CTP-p304'],
+      'core.power.powerPack.standard': ['C/A-B-A/A', ['A', 'B', 'A'], ['C', 'B', 'A'], 'AToW-CTP-p306'],
+      'core.power.powerPack.highCapacity': ['D/A-C-B/A', ['A', 'C', 'B'], ['D', 'C', 'A'], 'AToW-CTP-p306'],
+      'core.fieldGear.survival.basicFieldKit': ['B/A-A-A/A', ['A', 'A', 'A'], ['B', 'A', 'A'], 'AToW-CTP-p311'],
+      'core.fieldGear.survival.advancedFieldKit': ['C/A-A-A/A', ['A', 'A', 'A'], ['C', 'A', 'A'], 'AToW-CTP-p311'],
+      'core.fieldGear.navigation.electronicCompass': ['C/A-A-A/A', ['A', 'A', 'A'], ['C', 'A', 'A'], 'AToW-CTP-p311'],
+    } as const
+
+    expect(Object.keys(expected)).toHaveLength(14)
+    for (const [id, [rawEquipmentRating, rawAvailabilityCodes, normalized, sourceKey]] of Object.entries(expected)) {
+      expect(getEquipmentCatalogItem(id)).toMatchObject({
+        id,
+        rawRatingStatus: 'preserved',
+        rawEquipmentRating,
+        rawAvailabilityCodes,
+        ratings: { tech: normalized[0], availability: normalized[1], legality: normalized[2] },
+        sourceKey,
+        sourceStatus: 'audited-core',
+      })
+    }
+    expect(EQUIPMENT_CATALOG.filter((item) => item.rawRatingStatus === 'not-supplied-in-audit')).toHaveLength(0)
+    expect(EQUIPMENT_CATALOG.filter((item) => item.rawRatingStatus === 'preserved')).toHaveLength(75)
   })
 
   it('rejects unsafe IDs, categories, affiliation codes, source data, and raw-rating omissions', () => {
@@ -192,6 +219,7 @@ describe('Alpha equipment catalog', () => {
     expect(validateEquipmentCatalog([{ ...item, sourceStatus: 'unknown' as never }])).toContain(`Unknown equipment source status: ${item.id}`)
     expect(validateEquipmentCatalog([{ ...item, rawAvailabilityCodes: undefined }])).toContain(`Missing raw Availability triplet: ${item.id}`)
     expect(validateEquipmentCatalog([{ ...item, rawEquipmentRating: undefined }])).toContain(`Preserved raw equipment rating is missing: ${item.id}`)
+    expect(validateEquipmentCatalog([{ ...item, rawRatingStatus: 'not-supplied-in-audit', rawEquipmentRating: undefined, rawAvailabilityCodes: undefined }])).toContain(`Current catalog raw equipment rating is not preserved: ${item.id}`)
   })
 
   it('preserves unknown but safe affiliation codes without requiring a faction registry', () => {

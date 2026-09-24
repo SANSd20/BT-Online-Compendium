@@ -294,6 +294,22 @@ Slice 15 adds no equipment and retains the 75-item current catalog. Automated co
 
 Manual UI verification should confirm all 75 entries remain searchable/filterable, normalized-only legacy ratings are described as unsupplied rather than inferred, manual entry remains available, and catalog metadata is not presented as active play-state automation.
 
+## Alpha Slice 16 verification
+
+Slice 16 adds no equipment and retains the 75-item current catalog. Automated coverage verifies:
+
+- the 14 formerly normalized-only Slice 11 records retain their stable IDs and supplied normalized ratings while gaining exact raw ratings and matching raw Availability triplets;
+- all 75 current records carry `preserved` raw-rating status and pass the established raw/normalized consistency validator;
+- normalized Tech and Legality match raw endpoints and normalized Availability occurs somewhere in the raw triplet without assuming a positional rule;
+- the two power-pack records use the supplied page-306 source reference while the other 12 backfilled records retain their supplied page references;
+- Medical Kit, Medipatch, and Stimpatch remain governed by their Slice 13 audited replacements and are not changed by the backfill;
+- new purchases snapshot the backfilled raw rating and triplet;
+- pre-backfill normalized-only purchase snapshots remain valid and survive JSON round trips without being rewritten;
+- catalog count remains exactly 75 and no stable IDs are added or removed; and
+- all earlier Archetype, Point Buy, Life Module, Final Touches, access-calculator, persistence, and catalog tests continue to pass.
+
+Manual UI verification should confirm the 14 reconciled records display their printed ratings, all 75 entries remain searchable/filterable, manual entry remains available, and catalog metadata is not presented as active play-state automation.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

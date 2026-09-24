@@ -135,6 +135,7 @@ describe('Final Touches and equipment foundation', () => {
       catalogSnapshot: {
         snapshotVersion: 2, displayName: 'Auto-Pistol', costCBills: 50, affiliationCode: null,
         sourceKey: 'AToW-CTP-p265', sourceStatus: 'audited-core', categoryPath: ['Weapon', 'Small Arms', 'Pistol'], metadata: { shots: 10 },
+        rawRatingStatus: 'preserved', rawEquipmentRating: 'C/A-A-A/C', rawAvailabilityCodes: ['A', 'A', 'A'],
       },
     })
     expect(character.inventory[0].source?.ruleId).toBe('AToW-CTP-p265')
@@ -155,6 +156,24 @@ describe('Final Touches and equipment foundation', () => {
     })
     const decoded = decodeCharacter(encodeCharacter(character, '2026-09-24T00:00:00.000Z'))
     expect(decoded.inventory[0].catalogSnapshot).toEqual(character.inventory[0].catalogSnapshot)
+  })
+
+  it('accepts and preserves a pre-backfill normalized-only Slice 11 purchase snapshot', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.personalWeapon.autoPistol.standard', quantity: 1, ownership: 'Owned' })
+    const snapshot = character.inventory[0].catalogSnapshot!
+    snapshot.rawRatingStatus = 'not-supplied-in-audit'
+    delete snapshot.rawEquipmentRating
+    delete snapshot.rawAvailabilityCodes
+
+    expect(validateCharacter(character).valid).toBe(true)
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-09-24T00:00:00.000Z'))
+    expect(decoded.inventory[0].catalogSnapshot).toEqual(snapshot)
+    expect(decoded.inventory[0].catalogItemId).toBe('core.personalWeapon.autoPistol.standard')
+    expect(decoded.inventory[0].catalogSnapshot).toMatchObject({
+      rawRatingStatus: 'not-supplied-in-audit',
+      normalizedEquipmentRating: { tech: 'C', availability: 'A', legality: 'C' },
+    })
   })
 
   it('validates malformed raw snapshots, normalization mismatches, and missing native affiliation', () => {
