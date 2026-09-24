@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from 'react'
-import type { CharacterDefinition, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
-import { EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
+import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
+import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
+import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
-import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
+import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 
@@ -103,6 +104,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
   const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
   const catalogItems = filterEquipmentCatalog({ search: catalogSearch, category: catalogCategory, sourceStatus: catalogSourceStatus })
+  const accessProfile = character?.creation.finalTouches?.equipmentAccessProfile ?? { enabled: false, affiliationCategory: 'inner-sphere' as const, nativeAffiliationCode: '' }
+  const effectiveOwnedLimits = character?.creation.finalTouches ? adjustedOwnedEquipmentLimits(character.creation.finalTouches.equippedTpUsed, accessProfile.affiliationCategory) : null
 
   function allocateFinalXp() {
     if (!character) return
@@ -141,13 +144,18 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     }), 'Catalog item added to inventory.')
   }
 
+  function updateAccessProfile(patch: Partial<typeof accessProfile>) {
+    if (!character) return
+    operate(() => setEquipmentAccessProfile(character, { ...accessProfile, ...patch }), 'Equipment affiliation access profile updated.')
+  }
+
   return (
     <main className="creation-page life-modules-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Alpha · Slice 11</p>
+        <p className="eyebrow">Alpha · Slice 12</p>
         <h1>Life Modules</h1>
-        <p>Build through the audited Agitator branch, complete final review, and use the 17-item starter Core equipment catalog or manual inventory fallback. Full catalog coverage and finalization remain deferred.</p>
+        <p>Build through the audited Agitator branch, complete final review, and use the 34-item audited Core equipment catalog with affiliation-adjusted access or the manual inventory fallback. Full catalog coverage and finalization remain deferred.</p>
       </section>
 
       {!character ? (
@@ -257,7 +265,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <div><span>Owned spending</span><strong>{character.creation.finalTouches.spentCBillTotal.toLocaleString()}</strong></div>
               <div><span>Remaining C-bills</span><strong>{character.creation.finalTouches.remainingCBillTotal.toLocaleString()}</strong></div>
             </div>
-            <p><strong>Equipped {signed(character.creation.finalTouches.equippedTpUsed)} TP:</strong> maximum Tech {character.creation.finalTouches.maxTechRating} / Availability {character.creation.finalTouches.maxAvailabilityRating} / Legality {character.creation.finalTouches.maxLegalityRating}.</p>
+            <p><strong>Equipped {signed(character.creation.finalTouches.equippedTpUsed)} TP:</strong> base maximum {character.creation.finalTouches.maxTechRating}/{character.creation.finalTouches.maxAvailabilityRating}/{character.creation.finalTouches.maxLegalityRating}; affiliation-adjusted Owned maximum {effectiveOwnedLimits?.tech}/{effectiveOwnedLimits?.availability}/{effectiveOwnedLimits?.legality}.</p>
 
             <h3>Personal details</h3>
             <div className="form-grid">
@@ -274,6 +282,14 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <label><input type="checkbox" checked={character.creation.finalTouches.issuedGearEnabled} onChange={(event) => operate(() => setIssuedGearEnabled(character, event.target.checked), `Issued Gear ${event.target.checked ? 'enabled' : 'disabled'}.`)} /> Enable optional Issued Gear prospectively</label>
             <p className="scope-note">Issued items are employer property, cost no personal C-bills, and remain recorded if this option is later disabled.</p>
 
+            <h3>Equipment affiliation access</h3>
+            <div className="form-grid">
+              <label>Character affiliation category<select value={accessProfile.affiliationCategory} onChange={(event) => updateAccessProfile({ affiliationCategory: event.target.value as EquipmentAffiliationCategory })}><option value="inner-sphere">Inner Sphere / ordinary</option><option value="periphery">Periphery</option><option value="clan">Clan</option></select></label>
+              <label>Native affiliation code<input value={accessProfile.nativeAffiliationCode} onChange={(event) => updateAccessProfile({ nativeAffiliationCode: event.target.value })} placeholder="For example CC or LA" /></label>
+              <label><input type="checkbox" checked={accessProfile.enabled} onChange={(event) => updateAccessProfile({ enabled: event.target.checked })} /> Apply native/foreign affiliation adjustment</label>
+            </div>
+            <p className="scope-note">Periphery reduces the character’s Tech cap one step (minimum B); Clan increases it one step (maximum F). A non-neutral item with a different affiliation code increases effective Availability and Legality one step.</p>
+
             <h3>Starter Core equipment catalog</h3>
             <div className="form-grid equipment-catalog-controls">
               <label>Search<input type="search" value={catalogSearch} onChange={(event) => setCatalogSearch(event.target.value)} placeholder="Name, category, source, or note" /></label>
@@ -282,18 +298,29 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <label>Quantity<input type="number" min="1" step="1" value={catalogQuantity} onChange={(event) => setCatalogQuantity(Number(event.target.value))} /></label>
               <label>Ownership<select value={catalogOwnership} onChange={(event) => setCatalogOwnership(event.target.value as EquipmentOwnership)}><option>Owned</option><option>Issued</option></select></label>
             </div>
-            <p>{catalogItems.length} of 17 starter items shown.</p>
-            <div className="equipment-catalog-grid">{catalogItems.map((item) => (
-              <article key={item.id}>
+            <p>{catalogItems.length} of {EQUIPMENT_CATALOG.length} current catalog items shown.</p>
+            <div className="equipment-catalog-grid">{catalogItems.map((item) => {
+              const access = calculateEquipmentAccess({
+                equippedTp: character.creation.finalTouches!.equippedTpUsed,
+                affiliationCategory: accessProfile.affiliationCategory,
+                nativeAffiliationCode: accessProfile.enabled ? accessProfile.nativeAffiliationCode : '',
+                itemAffiliationCode: item.affiliationCode,
+                itemRating: item.ratings,
+                ownership: catalogOwnership,
+                issuedGearEnabled: character.creation.finalTouches!.issuedGearEnabled,
+              })
+              return <article key={item.id}>
                 <p className="eyebrow">{item.categoryPath.join(' / ')}</p>
                 <h4>{item.displayName}</h4>
-                <p><strong>{item.costCBills.toLocaleString()} C-bills</strong> · {formatEquipmentRating(item.ratings)}{item.affiliationCode ? ` · Affiliation ${item.affiliationCode}` : ''}</p>
+                <p><strong>{item.costCBills.toLocaleString()} C-bills</strong>{item.affiliationCode ? ` · Affiliation ${item.affiliationCode}` : ' · Neutral'}</p>
+                <p>Printed: {item.rawEquipmentRating ?? 'not included in current audit'}<br />Normalized: {formatEquipmentRating(item.ratings)}<br />Effective: {formatEquipmentRating(access.effectiveItemRating)} · limit {formatEquipmentRating(access.characterLimits)}</p>
                 <p>{formatCatalogMetadata(item.metadata)}</p>
                 <p>{item.sourceKey} · {item.sourceStatus}</p>
                 {item.notes.length > 0 && <p className="scope-note">{item.notes.join(' ')}</p>}
-                <button className="button secondary" type="button" onClick={() => addCatalogItem(item.id)}>Add × {catalogQuantity} as {catalogOwnership}</button>
+                <p className={access.allowed ? 'success' : 'error'}>{access.allowed ? 'Allowed' : 'Blocked'} · {access.reasons.join(', ')}{access.foreignAffiliation ? ' · foreign-affiliation adjustment applied' : ''}</p>
+                <button className="button secondary" type="button" disabled={!access.allowed} onClick={() => addCatalogItem(item.id)}>Add × {catalogQuantity} as {catalogOwnership}</button>
               </article>
-            ))}</div>
+            })}</div>
 
             <h3>Add manual inventory item</h3>
             <form onSubmit={addEquipment} className="form-grid">

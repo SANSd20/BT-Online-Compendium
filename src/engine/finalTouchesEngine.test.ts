@@ -24,6 +24,7 @@ import {
   addManualInventoryItem,
   enterFinalTouches,
   markReadyForEquipmentReview,
+  setEquipmentAccessProfile,
   setIssuedGearEnabled,
   updatePersonalDescription,
 } from './finalTouchesEngine'
@@ -138,6 +139,43 @@ describe('Final Touches and equipment foundation', () => {
     expect(getEquipmentFoundationIssues(character)).toEqual([])
     expect(() => addCatalogInventoryItem(character, { catalogItemId: 'missing.item', quantity: 1, ownership: 'Owned' })).toThrow('Unknown equipment catalog item')
     expect(() => addCatalogInventoryItem(character, { catalogItemId: 'core.clothing.fatigues', quantity: 0, ownership: 'Owned' })).toThrow('positive whole number')
+  })
+
+  it('preserves raw and normalized ratings in the purchase-time snapshot and JSON', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.weaponAccessory.sight.laserSight', quantity: 1, ownership: 'Owned' })
+    expect(character.inventory[0].catalogSnapshot).toMatchObject({
+      rawEquipmentRating: 'C/A-A-A/A', rawAvailabilityCodes: ['A', 'A', 'A'],
+      normalizedEquipmentRating: { tech: 'C', availability: 'A', legality: 'A' },
+      metadata: { attackModifier: 1 },
+    })
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-09-24T00:00:00.000Z'))
+    expect(decoded.inventory[0].catalogSnapshot).toEqual(character.inventory[0].catalogSnapshot)
+  })
+
+  it('validates malformed raw snapshots, normalization mismatches, and missing native affiliation', () => {
+    let character = enterFinalTouches(readyForFinalTouches())
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.personalWeapon.needlerPistol.standard', quantity: 1, ownership: 'Owned' })
+    character.inventory[0].catalogSnapshot!.rawEquipmentRating = 'bad-rating'
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).toContain('inventory.raw-rating.malformed')
+    character.inventory[0].catalogSnapshot!.rawEquipmentRating = 'D/A-A-A/D'
+    character.inventory[0].catalogSnapshot!.normalizedEquipmentRating.availability = 'B'
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).toContain('inventory.normalized-rating.mismatch')
+    character = setEquipmentAccessProfile(character, { enabled: true, affiliationCategory: 'inner-sphere', nativeAffiliationCode: '' })
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).toContain('final-touches.native-affiliation.required')
+  })
+
+  it('applies native and foreign affiliation review to purchased catalog items', () => {
+    const ready = readyForFinalTouches()
+    const equipped = ready.traits.find((entry) => entry.traitId === 'trait.equipped')!
+    equipped.accumulatedXp = 200
+    equipped.attainedTp = 2
+    equipped.active = true
+    let character = enterFinalTouches(ready)
+    character = addCatalogInventoryItem(character, { catalogItemId: 'core.meleeWeapon.vibroblade.vibrodagger', quantity: 1, ownership: 'Owned' })
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).not.toContain('inventory.owned.rating.exceeded')
+    character = setEquipmentAccessProfile(character, { enabled: true, affiliationCategory: 'inner-sphere', nativeAffiliationCode: 'LA' })
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).toContain('inventory.owned.rating.exceeded')
   })
 
   it('allows example-backed catalog items with intentionally null ratings', () => {

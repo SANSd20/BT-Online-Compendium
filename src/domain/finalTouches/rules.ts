@@ -1,4 +1,4 @@
-import type { CharacterDefinition, EquipmentItem, EquipmentRatingCode } from '../character/model'
+import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentItem, EquipmentOwnership, EquipmentRatingCode } from '../character/model'
 import type { SourceCitation } from '../rules/model'
 
 export const FINAL_TOUCHES_RULES_SOURCE: SourceCitation = {
@@ -49,6 +49,26 @@ export interface EquipmentFoundationIssue {
   message: string
 }
 
+export type EquipmentAccessReason =
+  | 'allowed'
+  | 'ratings-not-audited'
+  | 'issued-gear-disabled'
+  | 'tech-exceeded'
+  | 'availability-exceeded'
+  | 'legality-exceeded'
+
+export interface EquipmentAccessResult {
+  allowed: boolean
+  reasons: EquipmentAccessReason[]
+  characterLimits: EquipmentAccessLimits
+  effectiveItemRating: {
+    tech: EquipmentRatingCode | null
+    availability: EquipmentRatingCode | null
+    legality: EquipmentRatingCode | null
+  }
+  foreignAffiliation: boolean
+}
+
 export function startingCBillsForWealth(wealthTp: number): number {
   const amount = WEALTH_STARTING_CBILLS[wealthTp]
   if (amount === undefined) throw new RangeError('Wealth TP must be an integer from -1 through +10 for the modeled starting-C-bill table.')
@@ -72,9 +92,45 @@ export function ratingWithinLimit(rating: EquipmentRatingCode, limit: EquipmentR
   return RATING_ORDER.indexOf(rating) <= RATING_ORDER.indexOf(limit)
 }
 
-export function issuedEquipmentLimits(character: CharacterDefinition): EquipmentAccessLimits {
-  const isClan = character.affiliations.some((entry) => entry.role === 'final' && entry.affiliationId.startsWith('affiliation.clan'))
-  return { tech: isClan ? 'F' : 'E', availability: 'D', legality: 'D' }
+export function adjustedOwnedEquipmentLimits(equippedTp: number, affiliationCategory: EquipmentAffiliationCategory): EquipmentAccessLimits {
+  const limits = equipmentLimitsForEquipped(equippedTp)
+  return {
+    ...limits,
+    tech: affiliationCategory === 'periphery'
+      ? shiftRating(limits.tech, -1, 'B')
+      : affiliationCategory === 'clan'
+        ? shiftRating(limits.tech, 1, 'F')
+        : limits.tech,
+  }
+}
+
+export function calculateEquipmentAccess(input: {
+  equippedTp: number
+  affiliationCategory: EquipmentAffiliationCategory
+  nativeAffiliationCode: string
+  itemAffiliationCode: string | null
+  itemRating: { tech: EquipmentRatingCode | null; availability: EquipmentRatingCode | null; legality: EquipmentRatingCode | null }
+  ownership: EquipmentOwnership
+  issuedGearEnabled: boolean
+}): EquipmentAccessResult {
+  const characterLimits = input.ownership === 'Issued'
+    ? { tech: input.affiliationCategory === 'clan' ? 'F' as const : 'E' as const, availability: 'D' as const, legality: 'D' as const }
+    : adjustedOwnedEquipmentLimits(input.equippedTp, input.affiliationCategory)
+  const native = input.nativeAffiliationCode.trim().toUpperCase()
+  const itemAffiliation = input.itemAffiliationCode?.trim().toUpperCase() ?? ''
+  const foreignAffiliation = Boolean(itemAffiliation && native && itemAffiliation !== native)
+  const effectiveItemRating = {
+    tech: input.itemRating.tech,
+    availability: input.itemRating.availability && foreignAffiliation ? shiftRating(input.itemRating.availability, 1, 'F') : input.itemRating.availability,
+    legality: input.itemRating.legality && foreignAffiliation ? shiftRating(input.itemRating.legality, 1, 'F') : input.itemRating.legality,
+  }
+  if (input.ownership === 'Issued' && !input.issuedGearEnabled) return { allowed: false, reasons: ['issued-gear-disabled'], characterLimits, effectiveItemRating, foreignAffiliation }
+  if (Object.values(effectiveItemRating).every((rating) => rating === null)) return { allowed: true, reasons: ['ratings-not-audited'], characterLimits, effectiveItemRating, foreignAffiliation }
+  const reasons: EquipmentAccessReason[] = []
+  if (effectiveItemRating.tech && !ratingWithinLimit(effectiveItemRating.tech, characterLimits.tech)) reasons.push('tech-exceeded')
+  if (effectiveItemRating.availability && !ratingWithinLimit(effectiveItemRating.availability, characterLimits.availability)) reasons.push('availability-exceeded')
+  if (effectiveItemRating.legality && !ratingWithinLimit(effectiveItemRating.legality, characterLimits.legality)) reasons.push('legality-exceeded')
+  return { allowed: reasons.length === 0, reasons: reasons.length ? reasons : ['allowed'], characterLimits, effectiveItemRating, foreignAffiliation }
 }
 
 export function ownedInventoryCost(inventory: EquipmentItem[]): number {
@@ -85,8 +141,7 @@ export function getEquipmentFoundationIssues(character: CharacterDefinition): Eq
   const state = character.creation.finalTouches
   if (!state) return [{ id: 'final-touches.required', message: 'Final Touches state has not been initialized.' }]
   const issues: EquipmentFoundationIssue[] = []
-  const ownedLimits: EquipmentAccessLimits = { tech: state.maxTechRating, availability: state.maxAvailabilityRating, legality: state.maxLegalityRating }
-  const issuedLimits = issuedEquipmentLimits(character)
+  const profile = state.equipmentAccessProfile ?? { enabled: false, affiliationCategory: 'inner-sphere' as const, nativeAffiliationCode: '' }
 
   for (const item of character.inventory) {
     if (!item.displayName.trim()) issues.push({ id: 'inventory.name.required', itemId: item.id, message: 'Inventory item name is required.' })
@@ -105,13 +160,22 @@ export function getEquipmentFoundationIssues(character: CharacterDefinition): Eq
       issues.push({ id: 'inventory.ownership.invalid', itemId: item.id, message: `${item.displayName || 'Inventory item'} must use Owned or Issued ownership.` })
       continue
     }
+    const access = calculateEquipmentAccess({
+      equippedTp: state.equippedTpUsed,
+      affiliationCategory: profile.affiliationCategory,
+      nativeAffiliationCode: profile.enabled ? profile.nativeAffiliationCode : '',
+      itemAffiliationCode: item.affiliationCode ?? null,
+      itemRating: item.equipmentRating ?? { tech: null, availability: null, legality: null },
+      ownership: item.ownership,
+      issuedGearEnabled: state.issuedGearEnabled,
+    })
     if (item.ownership === 'Owned') {
       if (item.personalProperty !== true) issues.push({ id: 'inventory.owned.personal-property', itemId: item.id, message: `${item.displayName} is Owned and must be recorded as personal property.` })
-      if (completeRatings && !ratingsWithin(completeRatings, ownedLimits)) issues.push({ id: 'inventory.owned.rating.exceeded', itemId: item.id, message: `${item.displayName} exceeds the character's Equipped-derived access limits.` })
+      if (completeRatings && !access.allowed) issues.push({ id: 'inventory.owned.rating.exceeded', itemId: item.id, message: `${item.displayName} exceeds the character's affiliation-adjusted Equipped limits (${access.reasons.join(', ')}).` })
     } else {
       if (!state.issuedGearEnabled) issues.push({ id: 'inventory.issued.option-disabled', itemId: item.id, message: `${item.displayName} is Issued, but the Issued Gear optional rule is disabled.` })
       if (item.personalProperty !== false) issues.push({ id: 'inventory.issued.personal-property', itemId: item.id, message: `${item.displayName} is Issued and cannot be personal property.` })
-      if (completeRatings && !ratingsWithin(completeRatings, issuedLimits)) issues.push({ id: 'inventory.issued.rating.exceeded', itemId: item.id, message: `${item.displayName} exceeds the modeled Issued Gear limits.` })
+      if (completeRatings && state.issuedGearEnabled && !access.allowed) issues.push({ id: 'inventory.issued.rating.exceeded', itemId: item.id, message: `${item.displayName} exceeds the modeled Issued Gear limits (${access.reasons.join(', ')}).` })
     }
   }
 
@@ -131,6 +195,9 @@ function hasCompleteRatings(rating: EquipmentItem['equipmentRating']): rating is
   return Boolean(rating && isRating(rating.tech) && isRating(rating.availability) && isRating(rating.legality))
 }
 
-function ratingsWithin(rating: { tech: EquipmentRatingCode; availability: EquipmentRatingCode; legality: EquipmentRatingCode }, limits: EquipmentAccessLimits): boolean {
-  return ratingWithinLimit(rating.tech, limits.tech) && ratingWithinLimit(rating.availability, limits.availability) && ratingWithinLimit(rating.legality, limits.legality)
+function shiftRating(rating: EquipmentRatingCode, amount: -1 | 1, boundary: EquipmentRatingCode): EquipmentRatingCode {
+  const current = RATING_ORDER.indexOf(rating)
+  const limit = RATING_ORDER.indexOf(boundary)
+  const shifted = amount < 0 ? Math.max(limit, current + amount) : Math.min(limit, current + amount)
+  return RATING_ORDER[shifted]
 }

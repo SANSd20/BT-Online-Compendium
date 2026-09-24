@@ -224,6 +224,26 @@ Slice 11 extends the same `npm run check` gate. Automated coverage verifies:
 
 Manual UI verification should confirm all 17 items are browsable, text/category/source filters work, quantity and ownership controls feed catalog purchases, null ratings are visibly identified rather than invented, manual entry remains usable, and metadata does not expose runtime controls.
 
+## Alpha Slice 12 verification
+
+Slice 12 extends the same `npm run check` gate. Automated coverage verifies:
+
+- the second batch contains exactly 17 unique entries and the combined catalog contains 34;
+- every new entry retains stable ID, Core source, `audited-core` status, exact raw rating, raw Availability triplet, normalized rating, and inert metadata;
+- raw-rating parsing rejects malformed values;
+- normalized Tech/Legality match raw endpoints and normalized Availability occurs somewhere in the triplet without enforcing a position;
+- neutral and native-affiliation items receive no foreign penalty;
+- foreign-affiliation items increase effective Availability and Legality one step;
+- Periphery lowers the Owned Tech cap one step with a B floor and Clan raises it one step with an F ceiling;
+- Owned items above effective access produce reason-coded blocking validation;
+- Issued items require Issued Gear and use Inner Sphere/Periphery E/D/D or Clan F/D/D without consuming C-bills or becoming personal property;
+- missing native affiliation is reported when foreign-affiliation adjustment is enabled;
+- armor BAR/patch and weapon AP/BD data remain metadata only;
+- raw and normalized purchase snapshots survive browser-local and JSON round trips; and
+- all earlier Archetype, Point Buy, Life Module, Final Touches, and catalog tests continue to pass.
+
+Manual UI verification should confirm printed, normalized, and effective ratings are distinct; the access profile updates limits and allowed/blocked reasons; catalog purchasing respects Owned/Issued selection; and no combat, armor, health, power, ammunition, finalization, or PDF behavior is implied.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

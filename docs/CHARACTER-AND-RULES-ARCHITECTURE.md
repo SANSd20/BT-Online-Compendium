@@ -1,8 +1,8 @@
 # Character and Rules Architecture
 
-## Alpha Slice 11 implementation boundary
+## Alpha Slice 12 implementation boundary
 
-The implemented foundation provides typed Character and rules models, one shared character factory, structural validation, a versioned save envelope, browser-local persistence, JSON import/export, Archetype v0.1, Point Buy v0.1, and Life Modules v0.8 with Final Touches, an audited starter equipment catalog, and manual inventory fallback. The project remains Alpha; Beta 1 requires completed Core + Companion character creation and PDF export.
+The implemented foundation provides typed Character and rules models, one shared character factory, structural validation, a versioned save envelope, browser-local persistence, JSON import/export, Archetype v0.1, Point Buy v0.1, and Life Modules v0.9 with Final Touches, a 34-item audited equipment catalog, affiliation-aware access review, and manual inventory fallback. The project remains Alpha; Beta 1 requires completed Core + Companion character creation and PDF export.
 
 The rules catalog contains source/version descriptors, the eight published Core archetype packages, focused Point Buy catalogs, eight audited Core Life Module entries through Agitator, and two audited Skill Fields: Technician/Civilian and Technician/Vehicle. It does not claim that the full Life Module, Skill Field, or Core + Companion catalog has been entered.
 
@@ -23,7 +23,7 @@ Point Buy v0.1 implements the Corrected Third Printing pages 49, 51, 60, 95, 107
 
 The Point Buy UI saves drafts with unspent XP, but structural validation warns that they cannot enter play. A character marked `finalized` is invalid unless remaining creation XP is zero. Slice 3 does not expose finalization because required affiliation, full catalogs, prerequisites, and exhaustive legality validation are not yet implemented.
 
-Life Modules v0.8 implements the Stage 0 universal → Stage 0 affiliation → Stage 1 → Stage 2 → Technical College Stage 3 → Agitator Stage 4 path, with an explicit Alpha stop before each optional continuation, a final-review state after Stage 4, and a gated Final Touches/equipment draft with starter catalog purchasing. It keeps the module-purchasing pool separate from awarded statistic XP, records selected-module and Field history, applies fixed awards to shared ledgers, and resolves pending language, affiliation, `/Any`, multi-choice, and flexible allocations incrementally. Every resolved allocation retains its source award, concrete destination, XP, provenance, and resolution time.
+Life Modules v0.9 implements the Stage 0 universal → Stage 0 affiliation → Stage 1 → Stage 2 → Technical College Stage 3 → Agitator Stage 4 path, with an explicit Alpha stop before each optional continuation, a final-review state after Stage 4, and a gated Final Touches/equipment draft with affiliation-aware catalog purchasing. It keeps the module-purchasing pool separate from awarded statistic XP, records selected-module and Field history, applies fixed awards to shared ledgers, and resolves pending language, affiliation, `/Any`, multi-choice, and flexible allocations incrementally. Every resolved allocation retains its source award, concrete destination, XP, provenance, and resolution time.
 
 Prerequisites are re-evaluated after each allocation. Stage 2 retains its source caps; Stage 3 records Skill Fields as grants rather than playable Skills; and Agitator reaches age 23 with repeat-policy metadata while repeat execution remains blocked. Resolved Stage 4 drafts may explicitly enter `alpha-final-review`. The immutable module-pool remainder seeds a separate final-allocation pool. Final allocation targets existing Attribute, Trait, and Skill instances and records player-choice provenance. Attained values derive from fully purchased thresholds, so partial XP remains durable without increasing the active value.
 
@@ -158,7 +158,7 @@ The starting creation XP pool must be exhausted before normal play. Allocated XP
 
 ## Final Touches, equipment, and currency
 
-Alpha Slice 11 implements this section as a catalog-backed draft boundary with manual fallback. It stores physical description, background, homeworld text, metric height/weight, optional hair/eye color, Wealth-derived starting cash, Equipped-derived access limits, Issued Gear configuration, and inventory. Entering the draft requires the Life Modules `ready-for-final-touches` state. Reaching `ready-for-equipment-review` is not character finalization.
+Alpha Slice 12 implements this section as an affiliation-aware catalog-backed draft boundary with manual fallback. It stores physical description, background, homeworld text, metric height/weight, optional hair/eye color, Wealth-derived starting cash, Equipped-derived access limits, character affiliation category/native code, Issued Gear configuration, and inventory. Entering the draft requires the Life Modules `ready-for-final-touches` state. Reaching `ready-for-equipment-review` is not character finalization.
 
 Descriptive Final Touches, including appearance and background, are not mechanical legality requirements unless a specific rule makes them so.
 
@@ -194,7 +194,9 @@ Issued Gear is an explicit creation-rules option and defaults off. Owned items r
 
 Inventory is character-wide. Preserve equipment location because the Core record sheet records where equipment is kept. Ownership and location are independent.
 
-Slice 11 inventory accepts the 17 audited starter catalog items or manual entries. Catalog entries snapshot stable catalog ID, category path, source key/status, rules metadata, unit and total cost, nullable or complete ratings, affiliation code, ownership, source/provenance, notes, and optional carried/location text. Manual entries continue to require full ratings. The three example-backed medical items retain null ratings because their exact table lines were not audited; they are validated for cost, quantity, and source without invented ratings. No ammunition counter, power consumption, armor degradation, healing, condition state, or combat use is inferred.
+Slice 12 inventory accepts 34 audited/example-backed catalog items or manual entries. New batch entries preserve the exact printed rating, parsed three-code Availability triplet, and supplied hand-audited normalized rating. Normalized Tech and Legality must match the raw endpoints; normalized Availability must occur somewhere in the triplet. No universal position or era meaning is inferred. Purchases snapshot raw, normalized, and rules metadata for reproducibility. Manual entries continue to require full single ratings; three example-backed medical items retain null ratings.
+
+The access calculator keeps four concepts distinct: normalized item rating, effective item rating, base Equipped limits, and adjusted character limits. Neutral or native items retain normal Availability/Legality. A non-neutral foreign affiliation increases both one letter, capped at F. Periphery reduces the Owned Tech cap one letter with a B floor; Clan increases it one letter with an F ceiling. Issued items require the option and use E/D/D for Inner Sphere/Periphery or F/D/D for Clan, cost no C-bills, and remain non-personal property. Employer eligibility remains a review task.
 
 Items not currently carried do not automatically count toward current carried weight or encumbrance. Combat loadout is a subset/reference into inventory, not a duplicate authoritative inventory. Worn armor, currently relevant weapons, and ammunition belong to current combat/loadout state.
 

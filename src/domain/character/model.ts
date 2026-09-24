@@ -114,7 +114,22 @@ export interface EquipmentCatalogSnapshot {
   categoryPath: string[]
   sourceKey: string
   sourceStatus: EquipmentCatalogSourceStatus
+  rawEquipmentRating?: string
+  rawAvailabilityCodes?: string[]
+  normalizedEquipmentRating: {
+    tech: EquipmentRatingCode | null
+    availability: EquipmentRatingCode | null
+    legality: EquipmentRatingCode | null
+  }
   metadata: Record<string, string | number | boolean>
+}
+
+export type EquipmentAffiliationCategory = 'inner-sphere' | 'periphery' | 'clan'
+
+export interface EquipmentAccessProfile {
+  enabled: boolean
+  affiliationCategory: EquipmentAffiliationCategory
+  nativeAffiliationCode: string
 }
 
 export interface PersonalDescription {
@@ -140,6 +155,7 @@ export interface FinalTouchesState {
   maxAvailabilityRating: EquipmentRatingCode
   maxLegalityRating: EquipmentRatingCode
   issuedGearEnabled: boolean
+  equipmentAccessProfile?: EquipmentAccessProfile
   equipmentReviewState: 'equipment-draft' | 'ready-for-equipment-review'
   provenanceId: string
 }

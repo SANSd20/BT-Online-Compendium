@@ -28,7 +28,7 @@ import {
   getEquipmentFoundationIssues,
   startingCBillsForWealth,
 } from '../domain/finalTouches/rules'
-import { getEquipmentCatalogItem } from '../domain/equipment/catalog'
+import { getEquipmentCatalogItem, parseRawEquipmentRating } from '../domain/equipment/catalog'
 
 function issue(
   id: string,
@@ -183,6 +183,11 @@ function validateFinalTouches(character: CharacterDefinition, issues: Validation
 
   const optionalRule = character.creation.rulesSnapshot.optionalRules.find((entry) => entry.ruleId === 'core.optional-issued-gear')
   if (!optionalRule || optionalRule.enabled !== state.issuedGearEnabled) issues.push(issue('final-touches.issued-gear.snapshot', 'creation.rulesSnapshot.optionalRules', 'Issued Gear state must be preserved in the character rules snapshot.'))
+  const accessProfile = state.equipmentAccessProfile
+  if (accessProfile) {
+    if (!['inner-sphere', 'periphery', 'clan'].includes(accessProfile.affiliationCategory)) issues.push(issue('final-touches.affiliation-category.invalid', 'creation.finalTouches.equipmentAccessProfile.affiliationCategory', 'Equipment affiliation category must be Inner Sphere, Periphery, or Clan.'))
+    if (accessProfile.enabled && !accessProfile.nativeAffiliationCode.trim()) issues.push(issue('final-touches.native-affiliation.required', 'creation.finalTouches.equipmentAccessProfile.nativeAffiliationCode', 'Native affiliation code is required while affiliation-based equipment adjustment is enabled.'))
+  }
 
   const description = character.personalDescription
   if (!description || typeof description.physicalDescription !== 'string' || typeof description.backgroundNotes !== 'string' || typeof description.homeworld !== 'string') {
@@ -209,12 +214,24 @@ function validateFinalTouches(character: CharacterDefinition, issues: Validation
       if (!snapshot?.sourceKey || !Array.isArray(snapshot.categoryPath) || snapshot.categoryPath.length === 0 || !['audited-core', 'example-backed'].includes(snapshot.sourceStatus) || !snapshot.metadata || typeof snapshot.metadata !== 'object' || Array.isArray(snapshot.metadata)) {
         issues.push(issue('final-touches.inventory.catalog-snapshot', `inventory.${index}.catalogSnapshot`, 'Catalog inventory requires a durable category, source-status, metadata, and source-key snapshot.'))
       }
+      if (snapshot?.rawEquipmentRating) {
+        const parsed = parseRawEquipmentRating(snapshot.rawEquipmentRating)
+        const normalized = snapshot.normalizedEquipmentRating
+        if (!parsed) issues.push(issue('inventory.raw-rating.malformed', `inventory.${index}.catalogSnapshot.rawEquipmentRating`, 'Catalog purchase has a malformed raw printed equipment rating.'))
+        else if (!normalized || normalized.tech !== parsed.tech || normalized.legality !== parsed.legality || !normalized.availability || !parsed.availabilityCodes.includes(normalized.availability)) {
+          issues.push(issue('inventory.normalized-rating.mismatch', `inventory.${index}.catalogSnapshot.normalizedEquipmentRating`, 'Catalog purchase normalized ratings do not reconcile with the preserved raw printed rating.'))
+        }
+        if (parsed && (!Array.isArray(snapshot.rawAvailabilityCodes) || snapshot.rawAvailabilityCodes.length !== 3 || snapshot.rawAvailabilityCodes.some((value, tripletIndex) => value !== parsed.availabilityCodes[tripletIndex]))) {
+          issues.push(issue('inventory.raw-rating.triplet-mismatch', `inventory.${index}.catalogSnapshot.rawAvailabilityCodes`, 'Stored raw Availability triplet does not match the printed rating.'))
+        }
+        if (normalized && JSON.stringify(normalized) !== JSON.stringify(entry.equipmentRating)) issues.push(issue('inventory.normalized-rating.snapshot-mismatch', `inventory.${index}.equipmentRating`, 'Inventory effective base ratings do not match the purchase-time normalized rating snapshot.'))
+      }
     }
   })
   if (state.equipmentReviewState === 'ready-for-equipment-review' && getEquipmentFoundationIssues(character).length > 0) {
     issues.push(issue('final-touches.review-state.invalid', 'creation.finalTouches.equipmentReviewState', 'An equipment draft with validation errors cannot be ready for equipment review.'))
   }
-  issues.push(issue('final-touches.scope.alpha', 'creation.finalTouches', 'Equipment remains an Alpha draft with a 17-item starter catalog and manual fallback; the full catalog, PDF export, true finalization, and ready-for-play status are unsupported.', { severity: 'information', kind: 'availability' }))
+  issues.push(issue('final-touches.scope.alpha', 'creation.finalTouches', 'Equipment remains an Alpha draft with a 34-item audited catalog and manual fallback; the full catalog, PDF export, true finalization, and ready-for-play status are unsupported.', { severity: 'information', kind: 'availability' }))
 }
 
 function validateLifeModules(character: CharacterDefinition, issues: ValidationIssue[]): void {

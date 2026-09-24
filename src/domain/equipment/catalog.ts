@@ -18,6 +18,8 @@ export interface EquipmentCatalogItem {
   sourceKey: string
   source: SourceCitation
   sourceStatus: EquipmentCatalogSourceStatus
+  rawEquipmentRating?: string
+  rawAvailabilityCodes?: [string, string, string]
   metadata: Record<string, string | number | boolean>
   notes: string[]
 }
@@ -124,17 +126,56 @@ export const STARTER_EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [
   },
 ] as const
 
-export const EQUIPMENT_CATALOG_CATEGORIES = [...new Set(STARTER_EQUIPMENT_CATALOG.map((entry) => entry.categoryPath[0]))].sort()
+export const SLICE_12_EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [
+  equipment('core.personalWeapon.laserPistol.standard', 'Laser Pistol', ['Weapon', 'Small Arms', 'Pistol', 'Energy'], 750, 'D/B-A-A/D', { tech: 'D', availability: 'A', legality: 'D' }, 267,
+    { apBd: '4E/3', range: '15/35/80/225', powerUsePps: 2, massKg: 1, reload: 'Per power pack' }, ['Power consumption is not implemented.']),
+  equipment('core.personalWeapon.laserPistol.pulse', 'Pulse Laser Pistol', ['Weapon', 'Small Arms', 'Pistol', 'Energy'], 1000, 'D/B-F-C/D', { tech: 'D', availability: 'C', legality: 'D' }, 267,
+    { apBd: '3E/2B', range: '12/30/70/195', powerUsePps: 2, massKg: 1, burst: 5, recoil: 0 }, ['Power consumption is not implemented.']),
+  equipment('core.personalWeapon.laserRifle.standard', 'Laser Rifle', ['Weapon', 'Small Arms', 'Rifle', 'Energy'], 1250, 'D/C-B-B/D', { tech: 'D', availability: 'B', legality: 'D' }, 267,
+    { apBd: '4E/4', range: '60/205/465/1100', powerUsePps: 5, massKg: 5, reload: 'Per power pack' }, ['Power consumption is not implemented.']),
+  equipment('core.personalWeapon.needlerPistol.standard', 'Needler Pistol', ['Weapon', 'Small Arms', 'Pistol', 'Flechette'], 50, 'D/A-A-A/D', { tech: 'D', availability: 'A', legality: 'D' }, 268,
+    { apBd: '2B/5S', range: '2/6/12/20', shots: 10, reloadCostCBills: 1, massKg: 0.3, reloadMassKg: 0.07, needler: true }, ['Ammunition tracking is not implemented.']),
+  equipment('core.personalWeapon.shotgun.combat', 'Combat Shotgun', ['Weapon', 'Small Arms', 'Rifle', 'Flechette'], 175, 'C/B-B-B/D', { tech: 'C', availability: 'B', legality: 'D' }, 268,
+    { apBd: '3B/5S', range: '5/12/24/50', shots: 8, reloadCostCBills: 2, massKg: 4.5, reloadMassKg: 0.14 }, ['Ammunition tracking is not implemented.']),
+  equipment('core.personalWeapon.shotgun.pump', 'Pump Shotgun', ['Weapon', 'Small Arms', 'Rifle', 'Flechette'], 40, 'B/A-A-A/B', { tech: 'B', availability: 'A', legality: 'B' }, 268,
+    { apBd: '1B/6S', range: '4/10/20/45', shots: 6, reloadCostCBills: 1, massKg: 4, reloadMassKg: 0.12, recoil: -1 }, ['Ammunition tracking is not implemented.']),
+  equipment('core.personalWeapon.flamerPistol.standard', 'Flamer Pistol', ['Weapon', 'Small Arms', 'Pistol', 'Miscellaneous'], 50, 'C/B-B-B/E', { tech: 'C', availability: 'B', legality: 'E' }, 269,
+    { apBd: '3B/3CS', range: '5/15/25/40', shots: 10, reloadCostCBills: 1, massKg: 1.2, reloadMassKg: 0.8, incendiary: true }, ['Continuous, splash, fire, and ammunition runtime are not implemented.']),
+  equipment('core.personalWeapon.dartGun.standard', 'Dart Gun', ['Weapon', 'Small Arms', 'Pistol', 'Miscellaneous'], 40, 'C/A-A-A/C', { tech: 'C', availability: 'A', legality: 'C' }, 269,
+    { apBd: '1B/3D', range: '1/4/6/10', shots: 1, reloadCostCBills: 1, massKg: 0.65, reloadMassKg: 0.01 }, ['Drug and poison payload runtime is not implemented.']),
+  equipment('core.weaponAccessory.sight.laserSight', 'Laser Sight', ['Weapon Accessory', 'Sight'], 25, 'C/A-A-A/A', { tech: 'C', availability: 'A', legality: 'A' }, 286,
+    { massKg: 0.1, attackModifier: 1, requiresMicroPowerPack: true, powerUsePph: 0.1 }, ['Attack and power effects are metadata only.']),
+  equipment('core.weaponAccessory.scope.telescopic', 'Telescopic Scope', ['Weapon Accessory', 'Scope'], 30, 'C/A-A-A/A', { tech: 'C', availability: 'A', legality: 'A' }, 286,
+    { massKg: 0.2, attackModifier: 2, modifierRanges: 'Medium, long, extreme' }, ['Attack effects are metadata only.']),
+  equipment('core.weaponAccessory.holster.standard', 'Holster', ['Weapon Accessory', 'General'], 20, 'B/A-A-A/A', { tech: 'B', availability: 'A', legality: 'A' }, 286,
+    { massKg: 0.15, compatibleWeapons: 'Pistols and rifles only' }, ['Attachment compatibility is not implemented.']),
+  equipment('core.weaponAccessory.suppressor.sound', 'Sound Suppressor', ['Weapon Accessory', 'Suppressor'], 50, 'C/B-B-B/D', { tech: 'C', availability: 'B', legality: 'D' }, 286,
+    { massKg: 0.25, perceptionCheckModifier: -2, incompatibleWeapons: 'Gauss, gyrojet, plasma' }, ['Perception and attachment effects are metadata only.']),
+  equipment('core.armor.flak.vest', 'Flak Vest', ['Armor', 'Personal', 'Flak'], 50, 'C/A-A-A/B', { tech: 'C', availability: 'A', legality: 'B' }, 288,
+    { patchCostCBills: 10, bar: '1/5/1/3', massKg: 2.8, coverage: 'Torso' }, ['BAR, patch cost, and coverage are metadata only; armor protection and degradation are not implemented.']),
+  equipment('core.armor.flak.jacket', 'Flak Jacket', ['Armor', 'Personal', 'Flak'], 100, 'C/A-A-A/B', { tech: 'C', availability: 'A', legality: 'B' }, 288,
+    { patchCostCBills: 10, bar: '1/5/1/3', massKg: 3.5, coverage: 'Torso, arms' }, ['BAR, patch cost, and coverage are metadata only.']),
+  equipment('core.armor.ablative.vest', 'Ablative Vest', ['Armor', 'Personal', 'Ablative'], 400, 'D/A-B-A/C', { tech: 'D', availability: 'B', legality: 'C' }, 288,
+    { patchCostCBills: 20, bar: '3/1/6/1', massKg: 2.1, coverage: 'Torso' }, ['BAR, patch cost, and coverage are metadata only.']),
+  equipment('core.armor.ballisticPlate.vest', 'Ballistic Plate Vest', ['Armor', 'Personal', 'Ballistic Plate'], 600, 'D/C-C-C/D', { tech: 'D', availability: 'C', legality: 'D' }, 288,
+    { patchCostCBills: 50, bar: '4/6/5/4', massKg: 8.8, coverage: 'Torso', patchRestriction: 'Cannot be patched if any BAR is below half' }, ['BAR, patch cost, and the patch restriction are metadata only.']),
+  equipment('core.armor.neoChain.vest', 'Neo-Chain Vest', ['Armor', 'Personal', 'Neo-Chain'], 375, 'D/X-X-C/D', { tech: 'D', availability: 'C', legality: 'D' }, 288,
+    { patchCostCBills: 17, bar: '3/3/2/2', massKg: 1.7, coverage: 'Torso', concealable: true }, ['BAR, patch cost, coverage, and concealability are metadata only.']),
+] as const
+
+export const EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [...STARTER_EQUIPMENT_CATALOG, ...SLICE_12_EQUIPMENT_CATALOG]
+
+export const EQUIPMENT_CATALOG_CATEGORIES = [...new Set(EQUIPMENT_CATALOG.map((entry) => entry.categoryPath[0]))].sort()
 
 export function getEquipmentCatalogItem(itemId: string): EquipmentCatalogItem {
-  const item = STARTER_EQUIPMENT_CATALOG.find((entry) => entry.id === itemId)
+  const item = EQUIPMENT_CATALOG.find((entry) => entry.id === itemId)
   if (!item) throw new Error(`Unknown equipment catalog item: ${itemId}`)
   return item
 }
 
 export function filterEquipmentCatalog(options: { search?: string; category?: string; sourceStatus?: EquipmentCatalogSourceStatus | 'all' } = {}): EquipmentCatalogItem[] {
   const search = options.search?.trim().toLowerCase() ?? ''
-  return STARTER_EQUIPMENT_CATALOG.filter((entry) => {
+  return EQUIPMENT_CATALOG.filter((entry) => {
     if (options.category && options.category !== 'all' && entry.categoryPath[0] !== options.category) return false
     if (options.sourceStatus && options.sourceStatus !== 'all' && entry.sourceStatus !== options.sourceStatus) return false
     if (!search) return true
@@ -143,7 +184,7 @@ export function filterEquipmentCatalog(options: { search?: string; category?: st
   })
 }
 
-export function validateEquipmentCatalog(catalog: readonly EquipmentCatalogItem[] = STARTER_EQUIPMENT_CATALOG): string[] {
+export function validateEquipmentCatalog(catalog: readonly EquipmentCatalogItem[] = EQUIPMENT_CATALOG): string[] {
   const issues: string[] = []
   const ids = new Set<string>()
   for (const item of catalog) {
@@ -153,6 +194,42 @@ export function validateEquipmentCatalog(catalog: readonly EquipmentCatalogItem[
     const ratingValues = Object.values(item.ratings)
     if (item.sourceStatus === 'audited-core' && ratingValues.some((value) => value === null)) issues.push(`Audited Core item requires complete ratings: ${item.id}`)
     if (item.sourceStatus === 'example-backed' && ratingValues.some((value) => value !== null)) issues.push(`Example-backed item must preserve unaudited ratings as null: ${item.id}`)
+    if (item.rawEquipmentRating) {
+      const parsed = parseRawEquipmentRating(item.rawEquipmentRating)
+      if (!parsed) issues.push(`Malformed raw equipment rating: ${item.id}`)
+      else {
+        if (item.ratings.tech !== parsed.tech) issues.push(`Normalized Tech does not match raw rating: ${item.id}`)
+        if (item.ratings.legality !== parsed.legality) issues.push(`Normalized Legality does not match raw rating: ${item.id}`)
+        if (!item.ratings.availability || !parsed.availabilityCodes.includes(item.ratings.availability)) issues.push(`Normalized Availability does not appear in raw rating: ${item.id}`)
+        if (item.rawAvailabilityCodes && item.rawAvailabilityCodes.some((value, index) => value !== parsed.availabilityCodes[index])) issues.push(`Stored availability triplet does not match raw rating: ${item.id}`)
+      }
+    }
   }
   return issues
+}
+
+export function parseRawEquipmentRating(raw: string): { tech: EquipmentRatingCode; availabilityCodes: [string, string, string]; legality: EquipmentRatingCode } | null {
+  const match = raw.match(/^([A-F])\/([A-FX])-([A-FX])-([A-FX])\/([A-F])$/)
+  if (!match) return null
+  return { tech: match[1] as EquipmentRatingCode, availabilityCodes: [match[2], match[3], match[4]], legality: match[5] as EquipmentRatingCode }
+}
+
+function equipment(
+  id: string,
+  displayName: string,
+  categoryPath: string[],
+  costCBills: number,
+  rawEquipmentRating: string,
+  ratings: EquipmentCatalogItem['ratings'],
+  page: number,
+  metadata: Record<string, string | number | boolean>,
+  notes: string[],
+): EquipmentCatalogItem {
+  const sourceKey = `AToW-CTP-p${page}`
+  const parsed = parseRawEquipmentRating(rawEquipmentRating)
+  if (!parsed) throw new Error(`Invalid embedded raw equipment rating: ${rawEquipmentRating}`)
+  return {
+    id, displayName, categoryPath, costCBills, rawEquipmentRating, rawAvailabilityCodes: parsed.availabilityCodes,
+    ratings, affiliationCode: null, sourceKey, source: source(sourceKey, page), sourceStatus: 'audited-core', metadata, notes,
+  }
 }

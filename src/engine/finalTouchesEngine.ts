@@ -1,4 +1,4 @@
-import type { CharacterDefinition, EquipmentOwnership, EquipmentRatingCode, PersonalDescription } from '../domain/character/model'
+import type { CharacterDefinition, EquipmentAccessProfile, EquipmentOwnership, EquipmentRatingCode, PersonalDescription } from '../domain/character/model'
 import { getEquipmentCatalogItem } from '../domain/equipment/catalog'
 import {
   effectivePrimaryTraitTp,
@@ -58,6 +58,7 @@ export function enterFinalTouches(character: CharacterDefinition): CharacterDefi
     maxAvailabilityRating: limits.availability,
     maxLegalityRating: limits.legality,
     issuedGearEnabled: false,
+    equipmentAccessProfile: inferEquipmentAccessProfile(next),
     equipmentReviewState: 'equipment-draft',
     provenanceId,
   }
@@ -86,6 +87,19 @@ export function setIssuedGearEnabled(character: CharacterDefinition, enabled: bo
   const state = requireFinalTouches(next)
   state.issuedGearEnabled = enabled
   setOptionalRule(next, enabled)
+  next.updatedAt = new Date().toISOString()
+  markEquipmentDraft(next)
+  return next
+}
+
+export function setEquipmentAccessProfile(character: CharacterDefinition, profile: EquipmentAccessProfile): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireFinalTouches(next)
+  state.equipmentAccessProfile = {
+    enabled: profile.enabled,
+    affiliationCategory: profile.affiliationCategory,
+    nativeAffiliationCode: profile.nativeAffiliationCode.trim().toUpperCase(),
+  }
   next.updatedAt = new Date().toISOString()
   markEquipmentDraft(next)
   return next
@@ -151,6 +165,9 @@ export function addCatalogInventoryItem(character: CharacterDefinition, input: C
       categoryPath: [...item.categoryPath],
       sourceKey: item.sourceKey,
       sourceStatus: item.sourceStatus,
+      ...(item.rawEquipmentRating ? { rawEquipmentRating: item.rawEquipmentRating } : {}),
+      ...(item.rawAvailabilityCodes ? { rawAvailabilityCodes: [...item.rawAvailabilityCodes] } : {}),
+      normalizedEquipmentRating: { ...item.ratings },
       metadata: { ...item.metadata },
     },
     ...(item.affiliationCode ? { affiliationCode: item.affiliationCode } : {}),
@@ -213,6 +230,14 @@ function setOptionalRule(character: CharacterDefinition, enabled: boolean): void
   const existing = character.creation.rulesSnapshot.optionalRules.find((entry) => entry.ruleId === ruleId)
   if (existing) existing.enabled = enabled
   else character.creation.rulesSnapshot.optionalRules.push({ ruleId, enabled, source: { ...FINAL_TOUCHES_RULES_SOURCE } })
+}
+
+function inferEquipmentAccessProfile(character: CharacterDefinition): EquipmentAccessProfile {
+  const finalAffiliation = character.affiliations.find((entry) => entry.role === 'final')?.affiliationId ?? ''
+  if (finalAffiliation === 'affiliation.capellan-confederation') return { enabled: true, affiliationCategory: 'inner-sphere', nativeAffiliationCode: 'CC' }
+  if (finalAffiliation.startsWith('affiliation.clan')) return { enabled: false, affiliationCategory: 'clan', nativeAffiliationCode: '' }
+  if (finalAffiliation.startsWith('affiliation.periphery')) return { enabled: false, affiliationCategory: 'periphery', nativeAffiliationCode: '' }
+  return { enabled: false, affiliationCategory: 'inner-sphere', nativeAffiliationCode: '' }
 }
 
 function makeId(prefix: string): string {

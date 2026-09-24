@@ -146,6 +146,8 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .equipment-catalog-grid article { display: flex; flex-direction: column; align-items: flex-start; padding: 18px; border: 1px solid var(--line); background: #0d151d; }
 .equipment-catalog-grid h4, .equipment-catalog-grid p { margin: 0 0 9px; }
 .equipment-catalog-grid .button { margin-top: auto; }
+.equipment-catalog-grid .success { color: #9ce3b2; }
+.equipment-catalog-grid .error { color: #ffb1b1; }
 footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
 
 @media (max-width: 760px) {
