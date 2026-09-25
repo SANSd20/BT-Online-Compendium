@@ -48,11 +48,12 @@ Saved characters must retain enough underlying information to reproduce and audi
 | Alpha Slice 24 Controlled adjustment review and Skill-swap foundation | Implemented and verified | Hardens adjustment validation/export and adds reversible same-XP swaps limited to unambiguous, non-specialty Skill instances already audited in Core Archetypes |
 | Alpha Slice 25 Archetype Sheet Cross-Check | Implemented and verified | Audits all eight Core Archetypes against printed pages 52-59 and back-sheet PDF pages 396-403; records conflicts and sheet-only data without changing source packages, rules, or catalog data |
 | Alpha Slice 26 Stage 0 affiliation-flow hotfix | Implemented and verified | Universal is explicitly non-affiliation context; Stage 0 context/language choices start empty, must be deliberate, persist through save/import, and migrate from older Alpha saves without changing rules/catalog data |
+| Alpha Slice 27 pending-award/progression hotfix | Implemented and verified | Replaces known raw target inputs with safe readable selectors, retains stable IDs internally, reports exact pending blockers, and permits continuation past final-validation-only prerequisite warnings |
 | Shared Character/Rules engine | Foundation implemented and exercised | Archetype, Point Buy, and Life Modules use the common representation, ledgers, validation, persistence, and provenance |
 | Archetype foundation | Controlled adjustment and bounded Skill-swap foundation implemented | Published packages remain source-faithful foundations; level adjustments and safe same-XP swaps are separate, reversible, provenance-backed, and must balance to 0 XP |
 | Point Buy v0.1 | Implemented | Core 5,000-XP default, GM-adjusted allotment recording, Attribute/Skill/Trait costs, negative-Trait ceiling, drafts, persistence, and focused catalogs |
 | Life Modules v0.15 | Implemented, deliberately narrow | Existing Stage 0–4 path, final review/Optimization, Final Touches, and 84-item equipment catalog; true finalization and broad catalogs remain deferred |
-| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 26 |
+| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 27 |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
 | Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |

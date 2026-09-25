@@ -220,6 +220,25 @@ describe('Life Module engine', () => {
     expect(character.attributes.find((entry) => entry.attributeId === 'BOD')).toMatchObject({ accumulatedXp: 500, purchasedLevel: 5 })
   })
 
+  it('allows stage progression when only final-validation prerequisites remain', () => {
+    let character = applyStage1Module(completeStage0(), BACK_WOODS_ID)
+    character = resolveByAward(character, 'commonality.language.fedsuns', 'skill.language', 'Language/French', 'French')
+    character = resolveByAward(character, 'back-woods.skill.survival', 'skill.survival', 'Survival/Forest', 'Forest')
+    character = resolveByAward(character, 'back-woods.flexible', 'STR', 'STR')
+    character = resolveByAward(character, 'back-woods.flexible', 'BOD', 'BOD')
+    const state = character.creation.lifeModules!
+    expect(state.pendingAwards).toEqual([])
+    expect(state.prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => entry.description)).toEqual(['STR 4+', 'BOD 5+'])
+    expect(state.phase).toBe('alpha-partial-stop')
+    expect(continueToStage2(character).creation.lifeModules?.phase).toBe('stage-2-selection')
+  })
+
+  it('rejects values outside safe known pending-award choices', () => {
+    const character = applyStage1Module(completeStage0(), BACK_WOODS_ID)
+    expect(() => resolveByAward(character, 'commonality.language.fedsuns', 'skill.language', 'Language/Klingon', 'Klingon')).toThrow('safe known choice')
+    expect(() => resolveByAward(character, 'back-woods.skill.survival', 'skill.survival', 'Survival/Ocean', 'Ocean')).toThrow('safe known choice')
+  })
+
   it('round-trips partially resolved and unresolved award state', () => {
     let character = applyStage1Module(completeStage0(), BLUE_COLLAR_ID)
     character = resolveByAward(character, 'commonality.language.fedsuns', 'skill.language', 'Language/French', 'French')

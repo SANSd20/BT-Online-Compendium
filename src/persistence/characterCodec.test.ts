@@ -79,6 +79,23 @@ describe('character codec', () => {
     expect(validateCharacter(restored).valid).toBe(true)
   })
 
+  it('migrates final-validation-only prerequisite review to a continuable Alpha stop', () => {
+    let source = createLifeModuleCharacter('Older prerequisite review')
+    source = applyUniversalStage0(source, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
+    source = applyCapellanCommonality(source, 'Russian')
+    source = applyStage1Module(source, BLUE_COLLAR_ID)
+    const envelope = JSON.parse(encodeCharacter(source))
+    envelope.character.creation.lifeModules.pendingAwards = []
+    envelope.character.creation.lifeModules.choiceGrantRequirements = []
+    envelope.character.creation.lifeModules.resolvedAwards = []
+    envelope.character.creation.lifeModules.awardResolutionVersion = 0
+    envelope.character.creation.lifeModules.phase = 'stage-1-prerequisite-review'
+    envelope.character.creation.lifeModules.stopState = 'not-eligible'
+    const restored = decodeCharacter(JSON.stringify(envelope))
+    expect(restored.creation.lifeModules?.phase).toBe('alpha-partial-stop')
+    expect(restored.creation.lifeModules?.stopState).toBe('alpha-partial-stop')
+  })
+
   it('migrates older Alpha Archetype saves into a source-backed foundation without changing allocations', () => {
     const source = createCharacterFromArchetype('archetype.core.tanker', 'Legacy Tanker')
     const originalAllocation = source.xp.creation.allocated

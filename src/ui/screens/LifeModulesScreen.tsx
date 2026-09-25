@@ -3,6 +3,7 @@ import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalo
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
+import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
@@ -17,7 +18,6 @@ interface LifeModulesScreenProps {
 
 const AFFILIATION_LANGUAGES = ['Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English']
 const SECONDARY_LANGUAGES = ['Russian', 'Cantonese', 'Vietnamese', 'English']
-const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG']
 
 interface ResolutionDraft {
   targetType: 'attribute' | 'trait' | 'skill'
@@ -263,6 +263,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.phase === 'alpha-final-review' && <p className="notice">Final review is in progress. Resolve every blocker below before the character can be marked ready for Final Touches.</p>}
             {state.phase === 'ready-for-final-touches' && !character.creation.finalTouches && <div className="life-action"><p className="notice">This draft passed final review and may enter the Alpha Final Touches/equipment foundation.</p><button className="button" type="button" onClick={() => operate(() => enterFinalTouches(character), 'Final Touches opened with Wealth-derived funds and Equipped-derived limits.')}>Enter Final Touches</button></div>}
             {state.phase === 'ready-for-final-touches' && character.creation.finalTouches && <p className="notice">Final Touches equipment state: {formatPhase(character.creation.finalTouches.equipmentReviewState)}. This is not a finalized or ready-for-play character.</p>}
+            {state.pendingAwards.length === 0 && <p><strong>All pending awards resolved.</strong></p>}
+            {state.pendingAwards.length > 0 && <div className="notice"><strong>You cannot complete the current stage because these awards remain unresolved:</strong><ul>{state.pendingAwards.map((entry) => <li key={`blocker-${entry.id}`}>{entry.description} ({entry.allocationMode === 'pool' ? `${entry.remainingXp} XP remaining` : `${entry.remainingGrants} grant${entry.remainingGrants === 1 ? '' : 's'} remaining`})</li>)}</ul></div>}
+            {state.prerequisiteIssues.some((entry) => entry.status === 'outstanding') && <div className="notice"><strong>The following prerequisites remain for final validation.</strong><p>You may continue; these are warnings, not current-stage progression blockers.</p><ul>{state.prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => <li key={`prerequisite-${entry.id}`}>{moduleName(character, entry.moduleId)}: {entry.description}</li>)}</ul></div>}
           </section>
 
           {character.creation.finalTouches && <section className="life-stage-panel">
@@ -408,6 +411,10 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.pendingAwards.length === 0 ? <p>No unresolved award allocations.</p> : (
               <div className="pending-awards">{state.pendingAwards.map((entry) => {
                 const draft = { ...defaultResolutionDraft(entry), ...resolutionDrafts[entry.id] }
+                const optionEntry = entry.kind === 'flexible-xp' ? { ...entry, allowedTargetTypes: [draft.targetType] } : entry
+                const options = pendingAwardOptions(optionEntry, character)
+                const unsupported = pendingAwardUnsupportedMessage(optionEntry, options)
+                const selectedOption = optionValue(draft)
                 return (
                   <article key={entry.id}>
                     <div><strong>{entry.description}</strong><p>{entry.allocationMode === 'pool' ? `${entry.remainingXp} XP remaining` : `${entry.remainingGrants} grant${entry.remainingGrants === 1 ? '' : 's'} remaining · ${signed(entry.xpPerGrant)} XP each`}</p></div>
@@ -418,28 +425,18 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                         </select>
                       </label>{entry.allocationMode === 'pool' && <label>XP to allocate<input type="number" min="1" max={entry.remainingXp} step="1" value={draft.xpAmount} onChange={(event) => updateResolutionDraft(entry, { xpAmount: Number(event.target.value) })} /></label>}</>
                     )}
-                    {draft.targetType === 'attribute' ? (
-                      <label>Attribute
-                        <select value={draft.targetId} onChange={(event) => updateResolutionDraft(entry, { targetId: event.target.value, displayName: event.target.value })}>
-                          {ATTRIBUTE_IDS.map((id) => <option key={id}>{id}</option>)}
-                        </select>
-                      </label>
-                    ) : entry.requiredSkillId ? (
-                      <label>{entry.kind === 'language-choice' ? 'Language' : 'Concrete subskill'}
-                        <input value={draft.parameter} onChange={(event) => updateResolutionDraft(entry, { parameter: event.target.value, displayName: `${skillName(entry.requiredSkillId!)}/${event.target.value}` })} placeholder={entry.kind === 'language-choice' ? 'Concrete language' : 'Concrete subskill'} />
-                      </label>
-                    ) : (
-                      <>
-                        <label>Stable rule ID
-                          <input value={draft.targetId} onChange={(event) => updateResolutionDraft(entry, { targetId: event.target.value })} placeholder={draft.targetType === 'trait' ? 'trait.fit' : 'skill.perception'} />
-                        </label>
-                        {draft.targetType === 'skill' && <label>Subskill, if applicable<input value={draft.parameter} onChange={(event) => updateResolutionDraft(entry, { parameter: event.target.value })} /></label>}
-                        <label>Display name
-                          <input value={draft.displayName} onChange={(event) => updateResolutionDraft(entry, { displayName: event.target.value })} placeholder="Published destination name" />
-                        </label>
-                      </>
-                    )}
-                    <button className="button" type="button" onClick={() => resolve(entry)}>{entry.allocationMode === 'pool' ? 'Allocate XP' : 'Apply one grant'}</button>
+                    {options.length > 0 && <label>{entry.kind === 'language-choice' ? 'Language' : draft.targetType === 'trait' ? 'Trait' : draft.targetType === 'attribute' ? 'Attribute' : 'Destination'}
+                      <select value={selectedOption} onChange={(event) => {
+                        const option = options.find((candidate) => candidate.value === event.target.value)
+                        if (option) updateResolutionDraft(entry, optionDraft(option, draft.xpAmount))
+                        else updateResolutionDraft(entry, { targetId: '', parameter: '', displayName: '' })
+                      }}>
+                        <option value="">Choose a valid target…</option>
+                        {options.map((option) => <option key={option.value} value={option.value}>{option.displayName}</option>)}
+                      </select>
+                    </label>}
+                    {unsupported && <p className="notice">{unsupported}</p>}
+                    <button className="button" type="button" disabled={!draft.targetId || Boolean(unsupported)} onClick={() => resolve(entry)}>{entry.allocationMode === 'pool' ? 'Allocate XP' : 'Apply one grant'}</button>
                   </article>
                 )
               })}</div>
@@ -487,11 +484,11 @@ function formatCatalogMetadata(metadata: Record<string, string | number | boolea
 
 function defaultResolutionDraft(pending: PendingLifeModuleAward): ResolutionDraft {
   if (pending.requiredSkillId) {
-    return { targetType: 'skill', targetId: pending.requiredSkillId, parameter: '', displayName: skillName(pending.requiredSkillId), xpAmount: Math.min(pending.remainingXp ?? pending.xpPerGrant, 35) }
+    return { targetType: 'skill', targetId: '', parameter: '', displayName: '', xpAmount: Math.min(pending.remainingXp ?? pending.xpPerGrant, 35) }
   }
   const targetType = pending.allowedTargetTypes[0]
   const targetCap = pending.maxXpPerTarget?.[targetType] ?? (targetType === 'skill' ? 35 : 200)
-  return { targetType, targetId: targetType === 'attribute' ? 'STR' : '', parameter: '', displayName: targetType === 'attribute' ? 'STR' : '', xpAmount: Math.min(pending.remainingXp ?? pending.xpPerGrant, targetCap) }
+  return { targetType, targetId: '', parameter: '', displayName: '', xpAmount: Math.min(pending.remainingXp ?? pending.xpPerGrant, targetCap) }
 }
 
 function destinationDisplayName(draft: ResolutionDraft): string {
@@ -499,8 +496,23 @@ function destinationDisplayName(draft: ResolutionDraft): string {
   return draft.parameter.trim() ? `${base}/${draft.parameter.trim()}` : base
 }
 
-function skillName(skillId: string): string {
-  return skillId.replace('skill.', '').split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
+function optionDraft(option: PendingAwardOption, xpAmount: number): ResolutionDraft {
+  return {
+    targetType: option.type,
+    targetId: option.targetId,
+    parameter: option.parameter?.value ?? '',
+    displayName: option.displayName,
+    xpAmount,
+  }
+}
+
+function optionValue(draft: ResolutionDraft): string {
+  if (!draft.targetId) return ''
+  return draft.targetType === 'skill' ? `${draft.targetId}/${draft.parameter}` : draft.targetId
+}
+
+function moduleName(character: CharacterDefinition, moduleId: string): string {
+  return character.lifeModuleHistory.find((entry) => entry.moduleId === moduleId)?.displayName ?? moduleId
 }
 
 function currentAge(character: CharacterDefinition): number | null {

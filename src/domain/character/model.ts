@@ -323,6 +323,7 @@ export interface LifeModuleFinalReviewState {
 
 export interface LifeModuleCreationState {
   awardResolutionVersion: 0 | 1
+  awardSelectorVersion?: 1
   source: SourceCitation
   startingAllotment: 'standard' | 'gm-adjusted'
   phase: LifeModulePhase

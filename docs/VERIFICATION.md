@@ -472,6 +472,26 @@ Required release verification is `npm run check` followed by an explicit `npm ru
 
 Slice 26 checkpoint result: lint passed; 19 test files and 173 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. The generated production bundle reports `0.1.0-alpha.26`.
 
+## Alpha Slice 27 verification
+
+Slice 27 is a narrow Life Modules pending-award selector and progression hotfix. Automated coverage verifies:
+
+- known affiliation-language awards expose readable choices, including English and French for the currently supported Federated Suns language award;
+- known `/Any` awards expose safe current-Alpha subskills, including Badlands, Desert, and Forest for Survival;
+- flexible Trait choices display names such as Fit while preserving stable IDs such as `trait.fit` internally;
+- new selector-backed resolutions reject values outside their safe current-Alpha option lists;
+- resolved selector targets survive browser-local and JSON round trips through the existing durable award destination structure;
+- unresolved pending awards remain current-stage blockers and are reported by exact award description and remaining amount;
+- final-validation-only prerequisites remain visible with exact module/prerequisite details but permit the next legal stage transition;
+- older prerequisite-review saves migrate to the corresponding continuable Alpha stop, while older resolved free-text choices remain import-compatible;
+- Life Modules Stage 1–4 rules, Archetype, Point Buy, Final Touches, Public Alpha notice, and equipment regression suites remain passing;
+- the equipment catalog remains exactly 84 unique stable IDs with no rules/catalog data changes; and
+- application/export metadata reports `0.1.0-alpha.27` while the phase remains Public Alpha.
+
+Required release verification is `npm run check` followed by an explicit `npm run build`. If the commit reaches `main`, the existing Pages workflow should deploy and the live Public Alpha should report version `0.1.0-alpha.27`.
+
+Slice 27 checkpoint result: lint passed; 20 test files and 179 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. The generated production bundle reports `0.1.0-alpha.27`.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

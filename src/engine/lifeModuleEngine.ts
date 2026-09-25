@@ -21,6 +21,7 @@ import {
   UNIVERSAL_STAGE_0_ID,
 } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
+import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
 import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
@@ -39,6 +40,7 @@ export function createLifeModuleCharacter(
   const provenanceId = makeId(dependencies, 'life-module-rules')
   character.creation.lifeModules = {
     awardResolutionVersion: 1,
+    awardSelectorVersion: 1,
     source: { ...LIFE_MODULE_RULES_SOURCE },
     startingAllotment: startingXp === 5000 ? 'standard' : 'gm-adjusted',
     phase: 'stage-0-universal',
@@ -457,8 +459,6 @@ function updateLifeModuleProgress(character: CharacterDefinition): CharacterDefi
   state.stopState = 'not-eligible'
   if (state.pendingAwards.length > 0) {
     state.phase = hasStage4 ? 'stage-4-resolution' : hasStage3 ? 'stage-3-resolution' : hasStage2 ? 'stage-2-resolution' : 'stage-1-resolution'
-  } else if (state.prerequisiteIssues.some((entry) => entry.status === 'outstanding')) {
-    state.phase = hasStage4 ? 'stage-4-prerequisite-review' : hasStage3 ? 'stage-3-prerequisite-review' : hasStage2 ? 'stage-2-prerequisite-review' : 'stage-1-prerequisite-review'
   } else if (hasStage4) {
     state.phase = 'alpha-stage-4-stop'
     state.stopState = 'alpha-stage-4-stop'
@@ -533,6 +533,10 @@ function validateResolutionDestination(pending: PendingLifeModuleAward, destinat
   }
   if (pending.choiceSource === 'affiliation-languages' && !CAPELLAN_LANGUAGES.includes(destination.parameter?.value as (typeof CAPELLAN_LANGUAGES)[number])) {
     throw new Error('This award must resolve to a listed affiliation language.')
+  }
+  const knownChoices = knownPendingChoiceValues(pending)
+  if (knownChoices.length > 0 && !knownChoices.includes(destination.parameter?.value ?? '')) {
+    throw new Error('This award must resolve to a safe known choice from the current Alpha data.')
   }
 }
 

@@ -21,6 +21,7 @@ import {
 import type { ValidationIssue, ValidationResult } from './model'
 import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
+import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
 import {
   deriveAttributeLevel,
@@ -636,35 +637,27 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   if (stage1Count === 1) {
     const expectedPhase = state.finalReview
       ? getFinalReviewBlockers(character).length === 0 ? 'ready-for-final-touches' : 'alpha-final-review'
-      : state.phase === 'stage-4-selection' && stage4Count === 0 && stage3Count === 1 && state.pendingAwards.length === 0 && !hasOutstandingPrerequisite
+      : state.phase === 'stage-4-selection' && stage4Count === 0 && stage3Count === 1 && state.pendingAwards.length === 0
       ? 'stage-4-selection'
       : stage4Count === 1
         ? state.pendingAwards.length > 0
           ? 'stage-4-resolution'
-          : hasOutstandingPrerequisite
-            ? 'stage-4-prerequisite-review'
-            : 'alpha-stage-4-stop'
-      : state.phase === 'stage-3-selection' && stage3Count === 0 && stage2Count === 1 && state.pendingAwards.length === 0 && !hasOutstandingPrerequisite
+          : 'alpha-stage-4-stop'
+      : state.phase === 'stage-3-selection' && stage3Count === 0 && stage2Count === 1 && state.pendingAwards.length === 0
       ? 'stage-3-selection'
       : stage3Count === 1
         ? state.pendingAwards.length > 0
           ? 'stage-3-resolution'
-          : hasOutstandingPrerequisite
-            ? 'stage-3-prerequisite-review'
-            : 'alpha-stage-3-stop'
-        : state.phase === 'stage-2-selection' && stage2Count === 0 && state.pendingAwards.length === 0 && !hasOutstandingPrerequisite
+          : 'alpha-stage-3-stop'
+        : state.phase === 'stage-2-selection' && stage2Count === 0 && state.pendingAwards.length === 0
           ? 'stage-2-selection'
           : stage2Count === 1
             ? state.pendingAwards.length > 0
               ? 'stage-2-resolution'
-              : hasOutstandingPrerequisite
-                ? 'stage-2-prerequisite-review'
-                : 'alpha-stage-2-stop'
+              : 'alpha-stage-2-stop'
             : state.pendingAwards.length > 0
               ? 'stage-1-resolution'
-              : hasOutstandingPrerequisite
-                ? 'stage-1-prerequisite-review'
-                : 'alpha-partial-stop'
+              : 'alpha-partial-stop'
     if (state.phase !== expectedPhase) issues.push(issue('life-modules.phase.malformed', 'creation.lifeModules.phase', `Life Module phase should be ${expectedPhase}.`))
     if (expectedPhase === 'alpha-partial-stop' || expectedPhase === 'alpha-stage-2-stop' || expectedPhase === 'alpha-stage-3-stop' || expectedPhase === 'alpha-stage-4-stop') {
       if (state.stopState !== expectedPhase) issues.push(issue('life-modules.stop-state.malformed', 'creation.lifeModules.stopState', 'Completed Life Module award resolution requires the matching Alpha partial-stop state.'))
@@ -855,6 +848,12 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
         ? CAPELLAN_SECONDARY_LANGUAGE_IDS.includes(resolved.destination.parameter?.value ?? '')
         : CAPELLAN_AFFILIATION_LANGUAGE_IDS.includes(resolved.destination.parameter?.value ?? '')
     )
+    const knownChoices = knownPendingChoiceValues({
+      kind: award.kind,
+      choiceSource: award.kind === 'language-choice' ? award.choicesFrom : undefined,
+      requiredSkillId: award.kind === 'affiliation-skill-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' ? award.skillId : award.kind === 'language-choice' ? 'skill.language' : undefined,
+    })
+    const knownChoiceValid = state.awardSelectorVersion !== 1 || knownChoices.length === 0 || knownChoices.includes(resolved.destination.parameter?.value ?? '')
     if (
       resolved.kind !== award.kind ||
       (expectedXp === null ? !Number.isInteger(resolved.xp) || resolved.xp <= 0 : resolved.xp !== expectedXp) ||
@@ -863,6 +862,7 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
       ((award.kind === 'language-choice' || award.kind === 'affiliation-skill-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') && !resolved.destination.parameter?.value) ||
       !targetIdValid ||
       !languageValid ||
+      !knownChoiceValid ||
       !resolved.source.sourceId ||
       !provenanceIds.has(resolved.provenanceId)
     ) {

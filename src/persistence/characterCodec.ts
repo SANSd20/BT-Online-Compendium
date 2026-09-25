@@ -130,6 +130,14 @@ function migrateAlphaLifeModuleState(character: CharacterDefinition): void {
   state.resolvedAwards ??= []
   state.selectedSkillFields ??= []
   state.stopState ??= 'not-eligible'
+  if (state.pendingAwards.length === 0 && state.phase.endsWith('-prerequisite-review')) {
+    const migratedStop = state.currentStage === 4 ? 'alpha-stage-4-stop'
+      : state.currentStage === 3 ? 'alpha-stage-3-stop'
+        : state.currentStage === 2 ? 'alpha-stage-2-stop'
+          : 'alpha-partial-stop'
+    state.phase = migratedStop
+    state.stopState = migratedStop
+  }
   if (
     !state.stage0AffiliationContext &&
     state.selectedModuleIds.includes(UNIVERSAL_STAGE_0_ID) &&
