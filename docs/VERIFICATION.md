@@ -437,6 +437,23 @@ Slice 24 reviews and hardens the Slice 23 ledger and adds bounded same-XP Skill 
 
 Required release verification remains `npm run check` followed by an explicit `npm run build`. If the commit reaches `main`, the existing Pages workflow should deploy and the live Public Alpha should report version `0.1.0-alpha.24`.
 
+## Alpha Slice 25 verification
+
+Slice 25 is an audit/documentation release. Verification confirms:
+
+- `docs/archetype-sheet-cross-check.md` covers MechWarrior, Tanker, Aerospace Pilot, Elemental, Scout, Faceman, Renegade Warrior, and Battlefield Tech;
+- printed Archetype pages 52-59 and back-sheet PDF pages 396-403 were both inspected;
+- the report separates matches, partial matches, mismatches, prose-only, sheet-only, implementation-only, user-decision, and source-expansion categories;
+- Tanker Attribute XP and Elemental Attribute Link conflicts are reported without correction;
+- back-sheet-only movement, condition-monitor, armor/BAR, and weapon-combat presentation is reported without being promoted into source data;
+- no Archetype package, rules data, equipment data, stable ID, Point Buy-from-scratch, Life Modules, Final Touches, or Slice 24 Skill-swap behavior changed;
+- the equipment catalog remains exactly 84 unique stable IDs; and
+- application metadata reports `0.1.0-alpha.25` while the phase remains Public Alpha.
+
+Required release verification is `npm run check` followed by an explicit `npm run build`. If the commit reaches `main`, the existing Pages workflow should deploy and the live Public Alpha should report version `0.1.0-alpha.25`.
+
+Slice 25 checkpoint result: lint passed; 19 test files and 170 tests passed; the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. The generated production bundle reports `0.1.0-alpha.25`.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

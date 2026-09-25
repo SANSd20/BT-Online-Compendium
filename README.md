@@ -4,9 +4,9 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 24 is implemented.** Version `0.1.0-alpha.24` reviews and hardens controlled Archetype adjustments and adds bounded, reversible same-XP Skill swaps over each source-backed Core Archetype foundation.
+**Alpha Slice 25 is implemented.** Version `0.1.0-alpha.25` adds a durable cross-check of all eight Core Archetype packages against both the printed prose entries and the prefilled back-of-book sheets.
 
-All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps are available only when the source and replacement are exact, non-specialty Skill instances already audited in the existing Core Archetype data, their required subskill identities are explicit, and their shared Point Buy XP values match exactly. Ambiguous targets are blocked rather than guessed. All adjustment deltas must net to exactly 0 XP before save, export, or progression. Point Buy v0.1 and Life Modules v0.15 behavior remain unchanged, as does the 84-item audited Core equipment catalog. Slice 24 adds no rules or catalog data.
+All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit reports source matches, presentation-only additions, conflicts, and unresolved governing decisions without correcting or reinterpreting the Archetype packages. Point Buy-from-scratch, Life Modules, Final Touches, rules data, and the 84-item audited Core equipment catalog are unchanged. Slice 25 adds no rules or catalog data.
 
 The project remains in **Alpha**. Final Touches and “ready for equipment review” are draft states, not a finalized or ready-for-play character. Beta 1 is a future milestone requiring completed Core + Companion character creation and PDF export. The full equipment catalog, affiliation-adjusted access, heavy/combat-vehicle workflow, ammo and condition tracking, true character locking, negative-Trait purchase UI, PDF export, Planetary work, and playable-sheet runtime behavior remain outside the current implementation.
 
@@ -38,6 +38,7 @@ Planetary functionality is supporting infrastructure. It does not replace or sup
 - [`docs/PLANETARY-DATA-FOUNDATION.md`](docs/PLANETARY-DATA-FOUNDATION.md) — completed planetary research/design and rollout boundaries
 - [`docs/UNRESOLVED-AND-DEFERRED.md`](docs/UNRESOLVED-AND-DEFERRED.md) — unresolved rules questions, deferred work, and prohibited assumptions
 - [`docs/VERIFICATION.md`](docs/VERIFICATION.md) — verified checkpoints and future implementation expectations
+- [`docs/archetype-sheet-cross-check.md`](docs/archetype-sheet-cross-check.md) — Alpha Slice 25 prose/package versus back-sheet audit and deferred governing decisions
 
 ## Run locally
 
@@ -68,17 +69,17 @@ npm run preview
 
 The repository's Pages **Source** setting must be **GitHub Actions**. The public site opens through a normal browser URL and requires neither a special platform login nor an application login. Character data still lives only in that browser; JSON export/import is the portability and backup mechanism.
 
-The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.24` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
+The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.25` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
 
-The public notice in the application identifies version `0.1.0-alpha.24`, browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
+The public notice in the application identifies version `0.1.0-alpha.25`, browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
 
 ## Current resume points
 
-Repository bootstrap and Alpha Slices 1–24 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, special platform login, or application account.
+Repository bootstrap and Alpha Slices 1–25 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, special platform login, or application account.
 
 The Core + Companion rules audit is in progress. Its next audit target is **Campaign / Rules Configuration reconciliation**, specifically the boundaries among durable character state, current campaign rules, creation-rules provenance, and per-character GM exceptions.
 
-The next recommended slice is **Alpha Slice 25 — Archetype Final Touches Handoff**, contingent on a separate authorization to extend the existing Final Touches entry path beyond Life Modules. Full Skill catalog selection, arbitrary new Skills, specialties, Trait adjustments, GM override, unbalanced completion, and the remaining 500 XP / 5,000 XP campaign buy-up remain deferred. Rules/catalog expansion and Planetary Data Foundation Rollout 1 remain separate future authorizations.
+The next recommended Character Generator slice is **Alpha Slice 26 — Archetype Source Governance**, contingent on explicit user decisions for the conflicts recorded in the Slice 25 cross-check. It should decide and then implement only the approved source treatment; it must not infer corrections from arithmetic. Archetype Final Touches handoff remains a separate future candidate. Full Skill catalog selection, arbitrary new Skills, specialties, Trait adjustments, GM override, unbalanced completion, and the remaining 500 XP / 5,000 XP campaign buy-up remain deferred. Rules/catalog expansion and Planetary Data Foundation Rollout 1 remain separate future authorizations.
 
 ## Status vocabulary
 
