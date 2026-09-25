@@ -1,5 +1,16 @@
 import type { ArchetypeAllocationSnapshot, CharacterDefinition } from '../character/model'
 
+export function standardAttributeXpCost(level: number): number {
+  if (!Number.isInteger(level) || level < 1) {
+    throw new RangeError('Attribute level must be a positive integer.')
+  }
+  return level * 100
+}
+
+export function calculateArchetypeAdjustmentNetXp(character: CharacterDefinition): number {
+  return character.creation.archetype?.adjustmentLedger.reduce((total, entry) => total + entry.xpDelta, 0) ?? 0
+}
+
 export function evaluateSharedXpAccounting(character: CharacterDefinition): ArchetypeAllocationSnapshot {
   const attributeXp = character.attributes.reduce((total, entry) => total + entry.accumulatedXp, 0)
   const traitXp = character.traits.reduce((total, entry) => total + entry.accumulatedXp, 0)

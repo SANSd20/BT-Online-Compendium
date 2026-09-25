@@ -40,7 +40,7 @@ describe('createCharacterFromArchetype', () => {
     expect(character.creation.method).toBe('archetype')
     expect(character.creation.archetype?.archetypeId).toBe(archetypeId)
     expect(character.creation.archetype).toMatchObject({
-      version: 1,
+      version: 2,
       kind: 'source-backed-preset',
       customizationStatus: 'original-package',
       adjustmentLedger: [],

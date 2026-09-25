@@ -44,11 +44,12 @@ Saved characters must retain enough underlying information to reproduce and audi
 | Alpha Slice 20 Public static host foundation | Implemented and verified | GitHub Pages selected, Actions checks/builds/deploys static `dist/`, and Vite production assets use the project-page base path; no rules, catalog, backend, login, or cloud save changes |
 | Alpha Slice 21 deployment verification and text cleanup | Implemented and verified | Live Pages URL verified; public-access wording is platform-neutral; version advanced without rules, catalog, backend, login, or cloud save changes |
 | Alpha Slice 22 Archetype foundation accounting | Implemented and verified | Records each selected Core Archetype as a source-backed preset, preserves original provenance, and evaluates its unchanged allocations through shared Point Buy XP accounting |
+| Alpha Slice 23 Controlled Archetype adjustments | Reimplemented and verified locally | Adds provenance-backed, reversible Attribute and existing-Skill adjustments; zero-net XP is required for save/export/progression; recreated from durable Slice 22 after the earlier local commit was lost |
 | Shared Character/Rules engine | Foundation implemented and exercised | Archetype, Point Buy, and Life Modules use the common representation, ledgers, validation, persistence, and provenance |
-| Archetype foundation | Implemented, read-only accounting | Published packages are source-faithful foundations with durable provenance, shared XP accounting evaluation, and a reserved empty adjustment ledger; customization remains deferred |
+| Archetype foundation | Controlled adjustment foundation implemented | Published packages remain source-faithful foundations; Attribute and existing-Skill adjustments are separate, reversible, provenance-backed, and must balance to 0 XP |
 | Point Buy v0.1 | Implemented | Core 5,000-XP default, GM-adjusted allotment recording, Attribute/Skill/Trait costs, negative-Trait ceiling, drafts, persistence, and focused catalogs |
 | Life Modules v0.15 | Implemented, deliberately narrow | Existing Stage 0–4 path, final review/Optimization, Final Touches, and 84-item equipment catalog; true finalization and broad catalogs remain deferred |
-| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 22 |
+| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 23 |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
 | Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |
@@ -192,6 +193,8 @@ Alpha Slice 21 verifies the live Pages deployment at `https://sansd20.github.io/
 
 Alpha Slice 22 records each selected Core Archetype as a versioned `source-backed-preset`. The foundation retains the original ID, name, source citation, published provenance reference, package notes, declared XP total, shared-accounting allocation breakdown, and any declared-versus-listed difference. An empty adjustment ledger reserves a durable boundary for later equal-XP customization, but the current UI is read-only and the original package remains unchanged. Older Alpha Archetype JSON imports are migrated into this metadata without rewriting their ledgers. Point Buy-from-scratch, Life Modules, and the 84-item equipment catalog are unchanged.
 
+Alpha Slice 23 was freshly reimplemented from the durable Slice 22 checkpoint after the previous local Slice 23 commit and tree could not be recovered. It activates the separate adjustment ledger for controlled Attribute and existing-Skill level changes. Adjustments preserve foundation references, before/after values, Point Buy XP deltas, player-choice provenance, award links, timestamps, and optional notes. They are reversible, and the original Core definition remains unchanged. Temporary unbalanced editing is allowed in memory, but a nonzero net adjustment blocks save, JSON export, and progression. Slice 22 saves migrate with an empty ledger. Trait adjustments, new-Skill swaps, GM override, unbalanced completion, and remaining campaign buy-up handling remain deferred. Point Buy-from-scratch, Life Modules, rules/catalog data, stable IDs, and the 84-item equipment catalog are unchanged.
+
 The Core introduction describes the archetypes as 4,500-XP packages, but independently summing the printed Attribute, Trait, and Skill XP produces different totals for several sheets. Corrected Third Printing values are preserved without speculative repair, the declared package total and calculated line-item total remain separate, and each mismatch is recorded as a catalog note. Errata v4.0 does not provide a correction for these sheets.
 
 ## Current audit checkpoint
@@ -219,6 +222,6 @@ The next rules-audit target is **Campaign / Rules Configuration reconciliation**
 
 Audit resume point: **Campaign / Rules Configuration reconciliation.**
 
-Implementation resume point: **Alpha Slice 22 — Public Alpha operational recovery foundation.** Document and test diagnosis, safe redeployment, and rollback for the existing GitHub Pages workflow without adding authentication, backend/cloud persistence, analytics, rules content, or equipment data.
+Implementation resume point: **Alpha Slice 24 — Controlled Archetype Adjustment Review and Skill-Swap Foundation**, contingent on an audited target catalog. Do not add Trait adjustments, GM override, unbalanced completion, campaign buy-up handling, rules/catalog content, or equipment data without separate authorization.
 
 Planetary Rollout 1 remains a separate future authorization. Do not automatically proceed from a queued or documented rollout.

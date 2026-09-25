@@ -81,7 +81,7 @@ describe('character codec', () => {
 
     const restored = decodeCharacter(JSON.stringify(envelope))
     expect(restored.creation.archetype).toMatchObject({
-      version: 1,
+      version: 2,
       kind: 'source-backed-preset',
       archetypeId: 'archetype.core.tanker',
       displayName: 'Tanker',
@@ -97,5 +97,21 @@ describe('character codec', () => {
       kind: 'published',
       source: restored.creation.archetype?.source,
     })
+  })
+
+  it('migrates a Slice 22 Archetype foundation to an empty Slice 23 adjustment ledger', () => {
+    const source = createCharacterFromArchetype('archetype.core.mechwarrior', 'Slice 22 Save')
+    const envelope = JSON.parse(encodeCharacter(source))
+    envelope.character.creation.archetype.version = 1
+    envelope.character.creation.archetype.adjustmentLedger = []
+    envelope.character.creation.archetype.customizationStatus = 'original-package'
+
+    const restored = decodeCharacter(JSON.stringify(envelope))
+    expect(restored.creation.archetype).toMatchObject({
+      version: 2,
+      customizationStatus: 'original-package',
+      adjustmentLedger: [],
+    })
+    expect(restored.creation.archetype?.accounting.evaluatedAllocation.totalXp).toBe(source.xp.creation.allocated)
   })
 })

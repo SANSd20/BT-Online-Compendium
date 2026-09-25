@@ -4,7 +4,7 @@ import { createCharacterFromArchetype } from '../../engine/archetypeFactory'
 import { CharacterSummary } from './CharacterSummary'
 
 describe('CharacterSummary Archetype foundation', () => {
-  it('renders read-only shared accounting without presenting a method switch', () => {
+  it('renders shared foundation accounting without presenting a method switch', () => {
     const character = createCharacterFromArchetype('archetype.core.mechwarrior', 'Foundation Test')
     const markup = renderToStaticMarkup(<CharacterSummary character={character} />)
 
@@ -12,7 +12,7 @@ describe('CharacterSummary Archetype foundation', () => {
     expect(markup).toContain('same XP accounting model as Point Buy')
     expect(markup).toContain('preserving the original Archetype source')
     expect(markup).toContain('Source-backed preset')
-    expect(markup).toContain('None · customization deferred')
+    expect(markup).toContain('0 · balanced (0 XP)')
     expect(markup).not.toContain('Switch to Point Buy')
   })
 })

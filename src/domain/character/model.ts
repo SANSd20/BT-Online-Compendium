@@ -354,15 +354,24 @@ export interface ArchetypeAllocationSnapshot {
 
 export interface ArchetypeAdjustmentRecord {
   id: string
-  targetType: 'attribute' | 'trait' | 'skill'
+  targetType: 'attribute' | 'skill'
   targetId: string
+  operation: 'increase' | 'decrease'
+  beforeValue: number
+  afterValue: number
+  beforeXp: number
+  afterXp: number
   xpDelta: number
-  offsetAdjustmentId: string
+  sourceFoundationId: string
   provenanceId: string
+  awardId: string
+  createdAt: string
+  modifiedAt: string
+  note?: string
 }
 
 export interface ArchetypeFoundationState {
-  version: 1
+  version: 2
   kind: 'source-backed-preset'
   archetypeId: string
   displayName: string
@@ -376,7 +385,7 @@ export interface ArchetypeFoundationState {
     differenceFromPublishedXp: number
   }
   adjustmentLedger: ArchetypeAdjustmentRecord[]
-  customizationStatus: 'original-package'
+  customizationStatus: 'original-package' | 'controlled-adjustments'
   notes: Array<{ code: string; message: string }>
 }
 

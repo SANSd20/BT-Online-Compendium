@@ -8,7 +8,7 @@ describe('Public Alpha notice', () => {
   it('renders the version, local-only warning, portability path, and deferred capabilities', () => {
     const markup = renderToStaticMarkup(<PublicAlphaNotice />)
 
-    expect(APP_VERSION).toBe('0.1.0-alpha.22')
+    expect(APP_VERSION).toBe('0.1.0-alpha.23')
     expect(markup).toContain('Public Alpha Notice')
     expect(markup).toContain(`v${APP_VERSION}`)
     expect(markup).toContain('normal browser URL')

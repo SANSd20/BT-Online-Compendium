@@ -61,7 +61,7 @@ export function createCharacterFromArchetype(
   }))
   const evaluatedAllocation = evaluateSharedXpAccounting(character)
   character.creation.archetype = {
-    version: 1,
+    version: 2,
     kind: 'source-backed-preset',
     archetypeId: archetype.id,
     displayName: archetype.displayName,

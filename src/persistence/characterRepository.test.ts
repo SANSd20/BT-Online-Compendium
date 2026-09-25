@@ -4,6 +4,8 @@ import { BLUE_COLLAR_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/ca
 import { applyAgitator, applyCapellanCommonality, applyStage1Module, applyStage2Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../engine/lifeModuleFinalReview'
 import { LocalStorageCharacterRepository, type StorageLike } from './characterRepository'
+import { createCharacterFromArchetype } from '../engine/archetypeFactory'
+import { setArchetypeAttributeAdjustment } from '../engine/archetypeAdjustmentEngine'
 
 class MemoryStorage implements StorageLike {
   private readonly values = new Map<string, string>()
@@ -36,6 +38,17 @@ describe('LocalStorageCharacterRepository', () => {
     storage.setItem('bt-online-compendium:character:broken', '{not json')
     const repository = new LocalStorageCharacterRepository(storage)
     expect(repository.list()).toEqual([])
+  })
+
+  it('blocks unbalanced Archetype drafts and preserves balanced adjustment ledgers', () => {
+    const repository = new LocalStorageCharacterRepository(new MemoryStorage())
+    let character = createCharacterFromArchetype('archetype.core.mechwarrior', 'Adjusted Pilot')
+    character = setArchetypeAttributeAdjustment(character, 'STR', 5)
+    expect(() => repository.save(character)).toThrow('Unbalanced Controlled Archetype Adjustments')
+    character = setArchetypeAttributeAdjustment(character, 'BOD', 4)
+    repository.save(character)
+    expect(repository.get(character.id)).toEqual(character)
+    expect(repository.get(character.id)?.creation.archetype?.adjustmentLedger).toHaveLength(2)
   })
 
   it('preserves resolved and unresolved Life Module awards in local storage', () => {

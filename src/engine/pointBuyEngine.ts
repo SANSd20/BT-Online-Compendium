@@ -6,7 +6,7 @@ import {
   getPointBuyTrait,
   standardSkillXpCost,
 } from '../domain/pointBuy/catalog'
-import { calculateNegativeTraitXp, calculatePointBuyAllocatedXp } from '../domain/pointBuy/calculations'
+import { calculateNegativeTraitXp, calculatePointBuyAllocatedXp, standardAttributeXpCost } from '../domain/pointBuy/calculations'
 import type { CharacterDefinition, SkillAddress, XpAward } from '../domain/character/model'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
 
@@ -78,7 +78,7 @@ export function setPointBuyAttribute(
   const entry = next.attributes.find((attribute) => attribute.attributeId === attributeId)
   if (!entry) throw new Error(`Point Buy character is missing Attribute: ${attributeId}`)
   entry.purchasedLevel = level
-  entry.accumulatedXp = level * 100
+  entry.accumulatedXp = standardAttributeXpCost(level)
   entry.sourceAwards = [award(entry.accumulatedXp, requirePointBuy(next).costProvenanceId)]
   return enforceBudget(synchronizePointBuyXp(next))
 }

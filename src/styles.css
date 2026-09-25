@@ -128,6 +128,18 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .point-buy-status ul { color: var(--muted); line-height: 1.55; }
 .point-buy-status li.error { color: #ffb1b1; }
 .point-buy-status li.warning { color: #f8ddb0; }
+.adjustment-panel { margin-top: 20px; padding: clamp(22px, 4vw, 38px); border: 1px solid var(--line); background: var(--panel); }
+.adjustment-heading { display: flex; justify-content: space-between; align-items: start; gap: 18px; }
+.adjustment-heading h2 { margin-top: 4px; }
+.balance-badge { white-space: nowrap; padding: 8px 12px; border: 1px solid var(--line); font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.balance-badge.balanced { color: #9ce3b2; border-color: #36794b; background: #102919; }
+.balance-badge.unbalanced { color: #ffb1b1; border-color: #8a3f3f; background: #2b1414; }
+.adjustment-form { display: grid; grid-template-columns: .65fr 1.4fr .55fr 1.2fr auto; gap: 12px; align-items: end; margin: 22px 0; }
+.adjustment-form label { display: grid; gap: 6px; color: var(--muted); font-size: .78rem; }
+.adjustment-form input, .adjustment-form select { width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); color: #fff; background: #091017; }
+.adjustment-balance { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 16px 0; }
+.character-actions { display: flex; gap: 10px; margin-top: 18px; }
+.button:disabled { opacity: .45; cursor: not-allowed; }
 .life-modules-page { max-width: 1120px; }
 .life-stage-panel { margin-top: 20px; padding: clamp(22px, 4vw, 38px); border: 1px solid var(--line); background: var(--panel); }
 .life-action { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, .55fr) auto; gap: 16px; align-items: end; }
@@ -175,6 +187,9 @@ footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--mute
   .stage-options, .award-columns { grid-template-columns: 1fr; }
   .pending-awards article { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
+  .adjustment-heading { align-items: stretch; flex-direction: column; }
+  .adjustment-form, .adjustment-balance { grid-template-columns: 1fr; }
+  .character-actions { align-items: stretch; flex-direction: column; }
   .module-history li { align-items: stretch; flex-direction: column; }
   .source-card { min-width: 0; width: 100%; }
 }

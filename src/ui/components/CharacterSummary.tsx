@@ -1,4 +1,5 @@
 import type { CharacterDefinition } from '../../domain/character/model'
+import { getArchetypeAdjustmentBalance } from '../../engine/archetypeAdjustmentEngine'
 
 interface CharacterSummaryProps {
   character: CharacterDefinition
@@ -6,6 +7,7 @@ interface CharacterSummaryProps {
 
 export function CharacterSummary({ character }: CharacterSummaryProps) {
   const source = character.creation.archetype?.source
+  const adjustmentBalance = character.creation.archetype ? getArchetypeAdjustmentBalance(character) : null
 
   return (
     <section className="character-sheet" aria-labelledby="character-result-heading">
@@ -35,7 +37,7 @@ export function CharacterSummary({ character }: CharacterSummaryProps) {
             <div><dt>Foundation</dt><dd>Source-backed preset</dd></div>
             <div><dt>Published total</dt><dd>{character.creation.archetype.accounting.publishedXpTotal.toLocaleString()} XP</dd></div>
             <div><dt>Evaluated allocation</dt><dd>{character.creation.archetype.accounting.evaluatedAllocation.totalXp.toLocaleString()} XP</dd></div>
-            <div><dt>Adjustments</dt><dd>None · customization deferred</dd></div>
+            <div><dt>Adjustments</dt><dd>{character.creation.archetype.adjustmentLedger.length} · {adjustmentBalance?.balanced ? 'balanced' : 'unbalanced'} ({adjustmentBalance ? formatSigned(adjustmentBalance.netXp) : '0'} XP)</dd></div>
           </dl>
         </section>
       )}
@@ -137,6 +139,10 @@ export function CharacterSummary({ character }: CharacterSummaryProps) {
 
 function formatModifier(value: number): string {
   return value >= 0 ? `+${value}` : String(value)
+}
+
+function formatSigned(value: number): string {
+  return value > 0 ? `+${value}` : String(value)
 }
 
 function formatSkill(skillId: string, subskill?: string): string {

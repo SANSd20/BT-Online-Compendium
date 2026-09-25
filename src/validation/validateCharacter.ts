@@ -7,7 +7,14 @@ import {
   getPointBuyTrait,
   standardSkillXpCost,
 } from '../domain/pointBuy/catalog'
-import { calculateNegativeTraitXp, calculatePointBuyAllocatedXp, evaluateSharedXpAccounting } from '../domain/pointBuy/calculations'
+import {
+  calculateArchetypeAdjustmentNetXp,
+  calculateNegativeTraitXp,
+  calculatePointBuyAllocatedXp,
+  evaluateSharedXpAccounting,
+  standardAttributeXpCost,
+} from '../domain/pointBuy/calculations'
+import { archetypeSkillTargetId } from '../engine/archetypeAdjustmentEngine'
 import type { ValidationIssue, ValidationResult } from './model'
 import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
@@ -181,14 +188,12 @@ function validateArchetypeFoundation(
     return
   }
 
-  if (
-    state.version !== 1 ||
-    state.kind !== 'source-backed-preset' ||
-    state.customizationStatus !== 'original-package' ||
-    !Array.isArray(state.adjustmentLedger) ||
-    state.adjustmentLedger.length !== 0
-  ) {
-    issues.push(issue('archetype.foundation.malformed', 'creation.archetype', 'Archetype foundation metadata or deferred adjustment ledger is malformed.'))
+  if (state.version !== 2 || state.kind !== 'source-backed-preset' || !Array.isArray(state.adjustmentLedger)) {
+    issues.push(issue('archetype.foundation.malformed', 'creation.archetype', 'Archetype foundation metadata or controlled adjustment ledger is malformed.'))
+  }
+  const expectedCustomizationStatus = state.adjustmentLedger.length === 0 ? 'original-package' : 'controlled-adjustments'
+  if (state.customizationStatus !== expectedCustomizationStatus) {
+    issues.push(issue('archetype.adjustments.status-mismatch', 'creation.archetype.customizationStatus', 'Archetype customization status must match its adjustment ledger.'))
   }
   if (
     state.displayName !== definition.displayName ||
@@ -196,27 +201,91 @@ function validateArchetypeFoundation(
   ) {
     issues.push(issue('archetype.foundation.source-mismatch', 'creation.archetype', 'Original Archetype name and source provenance must match the selected Core foundation.'))
   }
+  const adjustmentKeys = new Set<string>()
+  state.adjustmentLedger.forEach((adjustment, index) => {
+    const path = `creation.archetype.adjustmentLedger.${index}`
+    const key = `${adjustment.targetType}:${adjustment.targetId}`
+    if (adjustmentKeys.has(key)) {
+      issues.push(issue('archetype.adjustment.target.duplicate', `${path}.targetId`, 'Only one controlled adjustment may exist for each Archetype target.'))
+    }
+    adjustmentKeys.add(key)
+
+    let beforeValue: number | undefined
+    let beforeXp: number | undefined
+    let afterXp: number | undefined
+    if (adjustment.targetType === 'attribute') {
+      const source = definition.attributes.find((entry) => entry.attributeId === adjustment.targetId)
+      beforeValue = source?.purchasedLevel
+      if (source) beforeXp = standardAttributeXpCost(source.purchasedLevel)
+      if (Number.isInteger(adjustment.afterValue) && adjustment.afterValue >= 1 && adjustment.afterValue <= 10) {
+        afterXp = standardAttributeXpCost(adjustment.afterValue)
+      }
+    } else if (adjustment.targetType === 'skill') {
+      const source = definition.skills.find((entry) => archetypeSkillTargetId(entry.address) === adjustment.targetId)
+      beforeValue = source?.level
+      if (source) beforeXp = standardSkillXpCost(source.level)
+      if (Number.isInteger(adjustment.afterValue) && adjustment.afterValue >= 0 && adjustment.afterValue <= 10) {
+        afterXp = standardSkillXpCost(adjustment.afterValue)
+      }
+    }
+    const expectedOperation = adjustment.afterValue > adjustment.beforeValue ? 'increase' : 'decrease'
+    if (
+      !adjustment.id || !adjustment.targetId || !adjustment.provenanceId || !adjustment.awardId ||
+      !adjustment.createdAt || !adjustment.modifiedAt ||
+      beforeValue === undefined || beforeXp === undefined || afterXp === undefined ||
+      adjustment.beforeValue !== beforeValue || adjustment.beforeXp !== beforeXp ||
+      adjustment.afterValue === adjustment.beforeValue || adjustment.afterXp !== afterXp ||
+      adjustment.xpDelta !== afterXp - beforeXp || adjustment.operation !== expectedOperation ||
+      adjustment.sourceFoundationId !== state.foundationProvenanceId
+    ) {
+      issues.push(issue('archetype.adjustment.malformed', path, 'Controlled Archetype adjustment values, Point Buy XP delta, operation, or foundation reference are malformed.'))
+    }
+    const provenance = character.provenance.find((entry) => entry.id === adjustment.provenanceId)
+    if (!provenanceIds.has(adjustment.provenanceId) || provenance?.kind !== 'player-choice' || !sameCitation(provenance.source, state.source)) {
+      issues.push(issue('archetype.adjustment.provenance-reference', `${path}.provenanceId`, 'Controlled Archetype adjustment provenance is invalid.'))
+    }
+  })
+
   const originalAllocationsMatch =
     character.attributes.length === definition.attributes.length &&
     character.attributes.every((entry, index) => {
       const original = definition.attributes[index]
-      return entry.attributeId === original.attributeId && entry.accumulatedXp === original.xp
+      const adjustment = state.adjustmentLedger.find((candidate) => candidate.targetType === 'attribute' && candidate.targetId === original.attributeId)
+      const adjustmentAward = adjustment
+        ? entry.sourceAwards.find((award) => award.id === adjustment.awardId && award.provenanceId === adjustment.provenanceId && award.xp === adjustment.xpDelta)
+        : undefined
+      const sourceAward = entry.sourceAwards.some((award) => award.provenanceId === state.foundationProvenanceId && award.xp === original.xp)
+      return entry.attributeId === original.attributeId &&
+        entry.purchasedLevel === (adjustment?.afterValue ?? original.purchasedLevel) &&
+        entry.phenotypeModifier === original.phenotypeModifier &&
+        entry.accumulatedXp === original.xp + (adjustment?.xpDelta ?? 0) &&
+        sourceAward && Boolean(adjustment ? adjustmentAward : true)
     }) &&
     character.traits.length === definition.traits.length &&
     character.traits.every((entry, index) => {
       const original = definition.traits[index]
-      return entry.traitId === original.traitId && entry.accumulatedXp === original.xp
+      return entry.traitId === original.traitId && entry.accumulatedXp === original.xp &&
+        entry.attainedTp === original.tp &&
+        entry.sourceAwards.some((award) => award.provenanceId === state.foundationProvenanceId && award.xp === original.xp)
     }) &&
     character.skills.length === definition.skills.length &&
     character.skills.every((entry, index) => {
       const original = definition.skills[index]
+      const targetId = archetypeSkillTargetId(original.address)
+      const adjustment = state.adjustmentLedger.find((candidate) => candidate.targetType === 'skill' && candidate.targetId === targetId)
+      const adjustmentAward = adjustment
+        ? entry.sourceAwards.find((award) => award.id === adjustment.awardId && award.provenanceId === adjustment.provenanceId && award.xp === adjustment.xpDelta)
+        : undefined
+      const sourceAward = entry.sourceAwards.some((award) => award.provenanceId === state.foundationProvenanceId && award.xp === original.xp)
       return entry.address.skillId === original.address.skillId &&
         entry.address.parameter?.kind === original.address.parameter?.kind &&
         entry.address.parameter?.value === original.address.parameter?.value &&
-        entry.accumulatedXp === original.xp
+        entry.level === (adjustment?.afterValue ?? original.level) &&
+        entry.accumulatedXp === original.xp + (adjustment?.xpDelta ?? 0) &&
+        sourceAward && Boolean(adjustment ? adjustmentAward : true)
     })
   if (!originalAllocationsMatch) {
-    issues.push(issue('archetype.foundation.package-allocation-mismatch', 'creation.archetype', 'An unchanged Archetype foundation must retain the original source-backed Attribute, Trait, and Skill XP allocations.'))
+    issues.push(issue('archetype.foundation.package-allocation-mismatch', 'creation.archetype', 'The character ledgers must equal the original source-backed Archetype package plus its recorded controlled adjustments.'))
   }
   const foundationProvenance = character.provenance.find((entry) => entry.id === state.foundationProvenanceId)
   if (
@@ -244,6 +313,14 @@ function validateArchetypeFoundation(
     character.xp.creation.allocated !== evaluation.totalXp
   ) {
     issues.push(issue('archetype.foundation.accounting-mismatch', 'creation.archetype.accounting', 'Archetype allocations must retain a current shared Point Buy accounting evaluation without changing the published package total.'))
+  }
+  const netAdjustmentXp = calculateArchetypeAdjustmentNetXp(character)
+  if (netAdjustmentXp !== 0) {
+    issues.push(issue('archetype.adjustments.unbalanced', 'creation.archetype.adjustmentLedger', `Controlled Archetype adjustments must balance to 0 XP; current net is ${netAdjustmentXp > 0 ? '+' : ''}${netAdjustmentXp} XP.`))
+  }
+  const expectedStatus = netAdjustmentXp === 0 ? 'ready-for-final-validation' : 'draft'
+  if (character.creation.status !== expectedStatus) {
+    issues.push(issue('archetype.adjustments.progression-state', 'creation.status', 'Unbalanced Archetype adjustments must remain a draft; balanced foundations may proceed to final validation.'))
   }
 }
 

@@ -401,6 +401,24 @@ Slice 22 integrates Core Archetypes with the shared Point Buy XP accounting mode
 
 After the Slice 22 commit reaches `main`, deployment verification should confirm the existing Pages workflow succeeds and the live Public Alpha reports version `0.1.0-alpha.22`.
 
+## Alpha Slice 23 verification
+
+Slice 23 was reimplemented from durable Slice 22 after the earlier local Slice 23 commit could not be recovered. Automated coverage verifies:
+
+- every Core Archetype still produces the same source-backed package and published/listed totals;
+- empty adjustment ledgers remain valid and Slice 22 foundations migrate to the version 2 foundation state without allocation changes;
+- balanced Attribute and existing-Skill adjustments pass validation while nonzero net XP blocks completion, save, and JSON export;
+- every adjustment retains its target, operation, before/after values, Point Buy XP delta, source-foundation reference, provenance, award link, timestamps, and optional note;
+- removal restores the exact source-backed level and XP;
+- balanced adjustment ledgers survive JSON and browser-local save/load round trips;
+- the adjustment UI displays per-entry and net XP, balanced/unbalanced status, and reversible removal;
+- Trait changes, new-Skill swaps, GM override, and unbalanced completion remain unavailable;
+- Point Buy-from-scratch, Life Modules, Final Touches, and all existing regression suites remain unchanged;
+- the equipment catalog remains exactly 84 unique stable IDs with no rules/catalog data changes; and
+- application/export metadata reports `0.1.0-alpha.23` while the phase remains Public Alpha.
+
+Required release verification remains `npm run check` followed by an explicit `npm run build`. If the commit reaches `main`, the existing Pages workflow should deploy and the live Public Alpha should report version `0.1.0-alpha.23`.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

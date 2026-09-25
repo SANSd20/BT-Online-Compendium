@@ -5,6 +5,8 @@ import { createCharacterFromArchetype } from '../../engine/archetypeFactory'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 import { CharacterSummary } from '../components/CharacterSummary'
+import { ArchetypeAdjustmentPanel } from '../components/ArchetypeAdjustmentPanel'
+import { getArchetypeAdjustmentBalance } from '../../engine/archetypeAdjustmentEngine'
 
 interface ArchetypeScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -37,7 +39,7 @@ export function ArchetypeScreen({ onSave }: ArchetypeScreenProps) {
     <main className="creation-page archetype-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Public Alpha · Slice 22</p>
+        <p className="eyebrow">Public Alpha · Slice 23</p>
         <h1>Start from an Archetype</h1>
         <p>Select one of the eight published Core packages as a source-backed foundation. The app evaluates its allocations with the shared Point Buy XP accounting model while preserving the original package and provenance.</p>
       </section>
@@ -79,8 +81,22 @@ export function ArchetypeScreen({ onSave }: ArchetypeScreenProps) {
       {message && <p className="notice" role="status">{message}</p>}
       {character && (
         <>
+          <ArchetypeAdjustmentPanel character={character} onChange={(updated) => { setCharacter(updated); setMessage('Adjustment draft updated. Save and export remain blocked until the net adjustment is 0 XP.') }} />
           <CharacterSummary character={character} />
-          <button className="button secondary export-character" type="button" onClick={() => downloadCharacter(character)}>Export character JSON</button>
+          <div className="character-actions">
+            <button
+              className="button"
+              type="button"
+              disabled={!getArchetypeAdjustmentBalance(character).balanced}
+              onClick={() => { onSave(character); setMessage('Balanced Archetype foundation saved locally.') }}
+            >Save balanced character</button>
+            <button
+              className="button secondary export-character"
+              type="button"
+              disabled={!getArchetypeAdjustmentBalance(character).balanced}
+              onClick={() => downloadCharacter(character)}
+            >Export character JSON</button>
+          </div>
         </>
       )}
     </main>

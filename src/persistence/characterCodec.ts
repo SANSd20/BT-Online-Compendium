@@ -3,7 +3,7 @@ import { APP_VERSION } from '../appMetadata'
 import { getCoreArchetype } from '../domain/archetypes/coreArchetypes'
 import { getLifeModule } from '../domain/lifeModules/catalog'
 import { XP_COST_TABLE_SOURCE } from '../domain/pointBuy/catalog'
-import { evaluateSharedXpAccounting } from '../domain/pointBuy/calculations'
+import { calculateArchetypeAdjustmentNetXp, evaluateSharedXpAccounting } from '../domain/pointBuy/calculations'
 import { validateCharacter } from '../validation/validateCharacter'
 import {
   CHARACTER_FILE_FORMAT,
@@ -57,6 +57,9 @@ function assertEnvelope(value: unknown): asserts value is SavedCharacterEnvelope
 }
 
 export function encodeCharacter(character: CharacterDefinition, exportedAt = new Date().toISOString()): string {
+  if (character.creation.method === 'archetype' && calculateArchetypeAdjustmentNetXp(character) !== 0) {
+    throw new Error('Unbalanced Controlled Archetype Adjustments cannot be saved or exported.')
+  }
   const envelope: SavedCharacterEnvelope = {
     format: CHARACTER_FILE_FORMAT,
     schemaVersion: CHARACTER_SCHEMA_VERSION,
@@ -87,7 +90,9 @@ export function decodeCharacter(json: string): CharacterDefinition {
 
 function migrateAlphaArchetypeState(character: CharacterDefinition): void {
   const state = character.creation.archetype
-  if (!state || state.version !== undefined) return
+  if (!state) return
+  const version = (state as { version?: number }).version
+  if (version === 2) return
 
   let definition
   try { definition = getCoreArchetype(state.archetypeId) } catch { return }
@@ -97,7 +102,7 @@ function migrateAlphaArchetypeState(character: CharacterDefinition): void {
   ))?.id ?? ''
 
   Object.assign(state, {
-    version: 1,
+    version: 2,
     kind: 'source-backed-preset',
     foundationProvenanceId,
     accounting: {
