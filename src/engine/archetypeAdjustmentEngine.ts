@@ -1,5 +1,12 @@
 import { getCoreArchetype } from '../domain/archetypes/coreArchetypes'
 import type { ArchetypeDefinition, ArchetypeSkill } from '../domain/archetypes/model'
+import {
+  archetypeSkillAddressId,
+  findKnownSafeSkillSwapTarget,
+  getKnownSafeSkillSwapTargets,
+  isKnownSafeSkillSwapSource,
+  type KnownSafeSkillSwapTarget,
+} from '../domain/archetypes/skillSwapTargets'
 import type {
   ArchetypeAdjustmentRecord,
   CharacterDefinition,
@@ -69,6 +76,9 @@ export function setArchetypeSkillAdjustment(
   const definition = getCoreArchetype(state.archetypeId)
   const source = definition.skills.find((entry) => archetypeSkillTargetId(entry.address) === targetId)
   if (!source) throw new Error(`Skill is not part of the selected Archetype foundation: ${targetId}`)
+  if (state.adjustmentLedger.some((entry) => entry.operation === 'skill-swap' && entry.targetId === targetId)) {
+    throw new Error('Remove the Skill swap before changing the source Skill level.')
+  }
   if (!Number.isInteger(afterLevel) || afterLevel < 0 || afterLevel > 10) {
     throw new RangeError('Adjusted Skill level must be an integer from 0 through 10.')
   }
@@ -83,6 +93,98 @@ export function setArchetypeSkillAdjustment(
   }, dependencies)
 }
 
+export function swapArchetypeSkill(
+  character: CharacterDefinition,
+  sourceTargetId: string,
+  replacementTargetId: string,
+  note?: string,
+  dependencies: ArchetypeAdjustmentDependencies = defaultDependencies,
+): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireArchetypeFoundation(next)
+  const definition = getCoreArchetype(state.archetypeId)
+  const source = definition.skills.find((entry) => archetypeSkillTargetId(entry.address) === sourceTargetId)
+  if (!source) throw new Error(`Skill is not part of the selected Archetype foundation: ${sourceTargetId}`)
+  if (!isKnownSafeSkillSwapSource(definition.id, sourceTargetId)) {
+    throw new Error('This source Skill is not eligible for a safe swap because its identity, specialty, subskill, or XP accounting is not unambiguous.')
+  }
+  if (state.adjustmentLedger.some((entry) => entry.targetId === sourceTargetId)) {
+    throw new Error('Remove the existing adjustment for this source Skill before swapping it.')
+  }
+  const replacement = findKnownSafeSkillSwapTarget(definition.id, sourceTargetId, replacementTargetId)
+  if (!replacement) {
+    throw new Error('Replacement Skill is not an audited, unambiguous, XP-equivalent target for this source Skill.')
+  }
+  if (next.skills.some((entry) => archetypeSkillTargetId(entry.address) === replacement.targetId)) {
+    throw new Error('The replacement Skill is already present in the character ledger.')
+  }
+  const sourceEntry = next.skills.find((entry) => archetypeSkillTargetId(entry.address) === sourceTargetId)
+  const sourceAward = sourceEntry?.sourceAwards.find((award) => award.provenanceId === state.foundationProvenanceId && award.xp === source.xp)
+  if (!sourceEntry || !sourceAward || sourceEntry.level !== source.level || sourceEntry.accumulatedXp !== source.xp) {
+    throw new Error('The source Skill no longer matches its unchanged Archetype foundation allocation.')
+  }
+
+  const now = dependencies.now()
+  const provenanceId = dependencies.id()
+  const awardId = dependencies.id()
+  const adjustment: ArchetypeAdjustmentRecord = {
+    id: dependencies.id(),
+    targetType: 'skill',
+    targetId: sourceTargetId,
+    operation: 'skill-swap',
+    beforeValue: source.level,
+    afterValue: replacement.level,
+    beforeXp: standardSkillXpCost(source.level),
+    afterXp: standardSkillXpCost(replacement.level),
+    xpDelta: 0,
+    sourceFoundationId: state.foundationProvenanceId,
+    provenanceId,
+    awardId,
+    createdAt: now,
+    modifiedAt: now,
+    sourceSkill: {
+      targetId: sourceTargetId,
+      address: cloneSkillAddress(source.address),
+      displayName: source.displayName,
+      level: source.level,
+      xp: source.xp,
+      sourceAwardId: sourceAward.id,
+    },
+    replacementSkill: {
+      targetId: replacement.targetId,
+      address: cloneSkillAddress(replacement.address),
+      displayName: replacement.displayName,
+      level: replacement.level,
+      xp: replacement.xp,
+      catalogArchetypeId: replacement.catalogArchetypeId,
+      catalogSource: { ...replacement.catalogSource },
+    },
+    ...(note?.trim() ? { note: note.trim() } : {}),
+  }
+  next.provenance.push({
+    id: provenanceId,
+    kind: 'player-choice',
+    description: `Controlled Archetype Skill swap: ${source.displayName} → ${replacement.displayName}`,
+    source: { ...state.source },
+  })
+  applyAdjustment(next, adjustment)
+  state.adjustmentLedger.push(adjustment)
+  return synchronize(next)
+}
+
+export function getArchetypeSkillSwapTargets(
+  character: CharacterDefinition,
+  sourceTargetId: string,
+): KnownSafeSkillSwapTarget[] {
+  const state = requireArchetypeFoundation(character)
+  if (state.adjustmentLedger.some((entry) => entry.targetId === sourceTargetId)) return []
+  const usedReplacementIds = new Set(state.adjustmentLedger
+    .filter((entry) => entry.operation === 'skill-swap')
+    .map((entry) => entry.replacementSkill.targetId))
+  return getKnownSafeSkillSwapTargets(state.archetypeId, sourceTargetId)
+    .filter((entry) => !usedReplacementIds.has(entry.targetId))
+}
+
 export function removeArchetypeAdjustment(
   character: CharacterDefinition,
   adjustmentId: string,
@@ -94,9 +196,7 @@ export function removeArchetypeAdjustment(
 }
 
 export function archetypeSkillTargetId(address: SkillAddress): string {
-  return [address.skillId, address.parameter?.kind ?? '', address.parameter?.value ?? '']
-    .map((part) => encodeURIComponent(part))
-    .join('|')
+  return archetypeSkillAddressId(address)
 }
 
 export function getArchetypeSkillDefinition(
@@ -151,6 +251,18 @@ function setAdjustment(
 }
 
 function applyAdjustment(character: CharacterDefinition, adjustment: ArchetypeAdjustmentRecord): void {
+  if (adjustment.operation === 'skill-swap') {
+    const index = character.skills.findIndex((candidate) => archetypeSkillTargetId(candidate.address) === adjustment.sourceSkill.targetId)
+    if (index < 0) throw new Error(`Skill swap source is missing: ${adjustment.sourceSkill.targetId}`)
+    character.skills[index] = {
+      address: cloneSkillAddress(adjustment.replacementSkill.address),
+      displayName: adjustment.replacementSkill.displayName,
+      accumulatedXp: adjustment.replacementSkill.xp,
+      level: adjustment.replacementSkill.level,
+      sourceAwards: [{ id: adjustment.awardId, xp: adjustment.replacementSkill.xp, provenanceId: adjustment.provenanceId }],
+    }
+    return
+  }
   const award: XpAward = { id: adjustment.awardId, xp: adjustment.xpDelta, provenanceId: adjustment.provenanceId }
   if (adjustment.targetType === 'attribute') {
     const entry = character.attributes.find((candidate) => candidate.attributeId === adjustment.targetId)
@@ -170,7 +282,20 @@ function applyAdjustment(character: CharacterDefinition, adjustment: ArchetypeAd
 function removeAdjustment(character: CharacterDefinition, adjustment: ArchetypeAdjustmentRecord): CharacterDefinition {
   const state = requireArchetypeFoundation(character)
   const definition = getCoreArchetype(state.archetypeId)
-  if (adjustment.targetType === 'attribute') {
+  if (adjustment.operation === 'skill-swap') {
+    const source = definition.skills.find((entry) => archetypeSkillTargetId(entry.address) === adjustment.sourceSkill.targetId)
+    const index = character.skills.findIndex((candidate) => archetypeSkillTargetId(candidate.address) === adjustment.replacementSkill.targetId)
+    if (!source || index < 0) throw new Error(`Skill swap is missing: ${adjustment.sourceSkill.targetId}`)
+    character.skills[index] = {
+      address: cloneSkillAddress(source.address),
+      displayName: source.displayName,
+      accumulatedXp: source.xp,
+      level: source.level,
+      ...(source.specialty ? { specialty: source.specialty } : {}),
+      ...(source.notes ? { notes: [...source.notes] } : {}),
+      sourceAwards: [{ id: adjustment.sourceSkill.sourceAwardId, xp: source.xp, provenanceId: state.foundationProvenanceId }],
+    }
+  } else if (adjustment.targetType === 'attribute') {
     const source = definition.attributes.find((entry) => entry.attributeId === adjustment.targetId)
     const entry = character.attributes.find((candidate) => candidate.attributeId === adjustment.targetId)
     if (!source || !entry) throw new Error(`Adjusted Attribute is missing: ${adjustment.targetId}`)
@@ -188,6 +313,13 @@ function removeAdjustment(character: CharacterDefinition, adjustment: ArchetypeA
   state.adjustmentLedger = state.adjustmentLedger.filter((entry) => entry.id !== adjustment.id)
   character.provenance = character.provenance.filter((entry) => entry.id !== adjustment.provenanceId)
   return synchronize(character)
+}
+
+function cloneSkillAddress(address: SkillAddress): SkillAddress {
+  return {
+    skillId: address.skillId,
+    ...(address.parameter ? { parameter: { ...address.parameter } } : {}),
+  }
 }
 
 function synchronize(character: CharacterDefinition): CharacterDefinition {

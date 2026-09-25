@@ -5,7 +5,12 @@ import { applyAgitator, applyCapellanCommonality, applyStage1Module, applyStage2
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../engine/lifeModuleFinalReview'
 import { LocalStorageCharacterRepository, type StorageLike } from './characterRepository'
 import { createCharacterFromArchetype } from '../engine/archetypeFactory'
-import { setArchetypeAttributeAdjustment } from '../engine/archetypeAdjustmentEngine'
+import {
+  archetypeSkillTargetId,
+  getArchetypeSkillSwapTargets,
+  setArchetypeAttributeAdjustment,
+  swapArchetypeSkill,
+} from '../engine/archetypeAdjustmentEngine'
 
 class MemoryStorage implements StorageLike {
   private readonly values = new Map<string, string>()
@@ -49,6 +54,21 @@ describe('LocalStorageCharacterRepository', () => {
     repository.save(character)
     expect(repository.get(character.id)).toEqual(character)
     expect(repository.get(character.id)?.creation.archetype?.adjustmentLedger).toHaveLength(2)
+  })
+
+  it('preserves a balanced Skill swap and its provenance in local storage', () => {
+    const repository = new LocalStorageCharacterRepository(new MemoryStorage())
+    let character = createCharacterFromArchetype('archetype.core.mechwarrior', 'Swapped Pilot')
+    const art = character.skills.find((entry) => entry.displayName === 'Art/Painting')!
+    const sourceTargetId = archetypeSkillTargetId(art.address)
+    const replacement = getArchetypeSkillSwapTargets(character, sourceTargetId).find((entry) => entry.displayName === 'Swimming')!
+    character = swapArchetypeSkill(character, sourceTargetId, replacement.targetId)
+    repository.save(character)
+    expect(repository.get(character.id)).toEqual(character)
+    expect(repository.get(character.id)?.creation.archetype?.adjustmentLedger[0]).toMatchObject({
+      operation: 'skill-swap',
+      xpDelta: 0,
+    })
   })
 
   it('preserves resolved and unresolved Life Module awards in local storage', () => {

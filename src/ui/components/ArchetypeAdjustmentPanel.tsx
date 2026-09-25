@@ -4,9 +4,11 @@ import {
   archetypeSkillTargetId,
   getArchetypeAdjustmentBalance,
   getArchetypeDefinition,
+  getArchetypeSkillSwapTargets,
   removeArchetypeAdjustment,
   setArchetypeAttributeAdjustment,
   setArchetypeSkillAdjustment,
+  swapArchetypeSkill,
 } from '../../engine/archetypeAdjustmentEngine'
 
 interface ArchetypeAdjustmentPanelProps {
@@ -25,6 +27,20 @@ export function ArchetypeAdjustmentPanel({ character, onChange }: ArchetypeAdjus
   const selectedTarget = targets.find((entry) => entry.id === targetId) ?? targets[0]
   const [afterLevel, setAfterLevel] = useState(selectedTarget?.level ?? 0)
   const [note, setNote] = useState('')
+  const swapSources = useMemo(() => definition.skills
+    .map((entry) => ({
+      id: archetypeSkillTargetId(entry.address),
+      label: entry.displayName,
+      level: entry.level,
+    }))
+    .filter((entry) => getArchetypeSkillSwapTargets(character, entry.id).length > 0),
+  [character, definition])
+  const [swapSourceId, setSwapSourceId] = useState(swapSources[0]?.id ?? '')
+  const selectedSwapSourceId = swapSources.some((entry) => entry.id === swapSourceId) ? swapSourceId : (swapSources[0]?.id ?? '')
+  const swapTargets = useMemo(() => selectedSwapSourceId ? getArchetypeSkillSwapTargets(character, selectedSwapSourceId) : [], [character, selectedSwapSourceId])
+  const [swapTargetId, setSwapTargetId] = useState(swapTargets[0]?.targetId ?? '')
+  const selectedSwapTargetId = swapTargets.some((entry) => entry.targetId === swapTargetId) ? swapTargetId : (swapTargets[0]?.targetId ?? '')
+  const [swapNote, setSwapNote] = useState('')
   const [message, setMessage] = useState('')
   const state = character.creation.archetype!
   const balance = getArchetypeAdjustmentBalance(character)
@@ -72,6 +88,18 @@ export function ArchetypeAdjustmentPanel({ character, onChange }: ArchetypeAdjus
     }
   }
 
+  function submitSwap(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!selectedSwapSourceId || !selectedSwapTargetId) return
+    try {
+      onChange(swapArchetypeSkill(character, selectedSwapSourceId, selectedSwapTargetId, swapNote))
+      setSwapNote('')
+      setMessage('XP-balanced Skill swap recorded. The original Skill remains preserved in the Archetype foundation.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Skill swap failed.')
+    }
+  }
+
   return (
     <section className="adjustment-panel" aria-labelledby="archetype-adjustment-heading">
       <div className="adjustment-heading">
@@ -84,7 +112,7 @@ export function ArchetypeAdjustmentPanel({ character, onChange }: ArchetypeAdjus
         </span>
       </div>
       <p>You may adjust this Archetype before Final Touches by making XP-balanced changes. The original Archetype is preserved as the source foundation, and all adjustments are tracked separately.</p>
-      <p className="notice">Total increases must equal total decreases. There is no GM override or freeform unbalanced completion. Trait adjustments and swaps to Skills not already in this Archetype remain deferred.</p>
+      <p className="notice">Total increases must equal total decreases. There is no GM override or freeform unbalanced completion. Trait adjustments remain deferred.</p>
 
       <form className="adjustment-form" onSubmit={submit}>
         <label>Target type
@@ -107,6 +135,32 @@ export function ArchetypeAdjustmentPanel({ character, onChange }: ArchetypeAdjus
         <button className="button" type="submit">Record adjustment</button>
       </form>
 
+      <section className="skill-swap-panel" aria-labelledby="skill-swap-heading">
+        <h3 id="skill-swap-heading">Bounded Skill swap</h3>
+        <p>Skill swaps are limited to safe, XP-balanced replacements already audited in the Core Archetype data. The original Skill remains preserved in the foundation; the swap is recorded separately as an adjustment.</p>
+        <p className="notice">Some Skills require a subskill. Ambiguous or unresolved subskills are blocked rather than guessed. Full Skill catalog selection, specialties, and arbitrary new Skills remain future work.</p>
+        {swapSources.length === 0 ? (
+          <p>No currently unadjusted foundation Skill has an available safe replacement.</p>
+        ) : (
+          <form className="adjustment-form" onSubmit={submitSwap}>
+            <label>Source foundation Skill
+              <select value={selectedSwapSourceId} onChange={(event) => { setSwapSourceId(event.target.value); setSwapTargetId(''); setMessage('') }}>
+                {swapSources.map((entry) => <option key={entry.id} value={entry.id}>{entry.label} · level {entry.level}</option>)}
+              </select>
+            </label>
+            <label>Audited XP-equivalent replacement
+              <select value={selectedSwapTargetId} onChange={(event) => { setSwapTargetId(event.target.value); setMessage('') }}>
+                {swapTargets.map((entry) => <option key={entry.targetId} value={entry.targetId}>{entry.displayName} · level {entry.level} · {entry.xp} XP</option>)}
+              </select>
+            </label>
+            <label>Swap note (optional)
+              <input value={swapNote} onChange={(event) => setSwapNote(event.target.value)} placeholder="Reason for this Skill swap" />
+            </label>
+            <button className="button" type="submit">Record Skill swap</button>
+          </form>
+        )}
+      </section>
+
       {message && <p className="notice" role="status">{message}</p>}
       <dl className="source-card adjustment-balance">
         <div><dt>Increases</dt><dd>+{balance.positiveXp} XP</dd></div>
@@ -124,8 +178,8 @@ export function ArchetypeAdjustmentPanel({ character, onChange }: ArchetypeAdjus
             <tbody>
               {state.adjustmentLedger.map((entry) => (
                 <tr key={entry.id}>
-                  <th>{labelForAdjustment(character, entry.targetType, entry.targetId)}</th>
-                  <td>{entry.beforeValue} → {entry.afterValue}</td>
+                  <th>{entry.operation === 'skill-swap' ? `${entry.sourceSkill.displayName} → ${entry.replacementSkill.displayName}` : labelForAdjustment(character, entry.targetType, entry.targetId)}</th>
+                  <td>{entry.operation === 'skill-swap' ? `Skill swap · level ${entry.beforeValue}` : `${entry.beforeValue} → ${entry.afterValue}`}</td>
                   <td>{signed(entry.xpDelta)} XP</td>
                   <td>{entry.note ?? '—'}</td>
                   <td><button className="button secondary" type="button" onClick={() => remove(entry.id)}>Remove</button></td>

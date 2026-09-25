@@ -137,6 +137,9 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .adjustment-form { display: grid; grid-template-columns: .65fr 1.4fr .55fr 1.2fr auto; gap: 12px; align-items: end; margin: 22px 0; }
 .adjustment-form label { display: grid; gap: 6px; color: var(--muted); font-size: .78rem; }
 .adjustment-form input, .adjustment-form select { width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); color: #fff; background: #091017; }
+.skill-swap-panel { margin: 28px 0 20px; padding-top: 22px; border-top: 1px solid var(--line); }
+.skill-swap-panel h3 { margin-bottom: 8px; }
+.skill-swap-panel .adjustment-form { grid-template-columns: 1fr 1.5fr 1.2fr auto; }
 .adjustment-balance { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 16px 0; }
 .character-actions { display: flex; gap: 10px; margin-top: 18px; }
 .button:disabled { opacity: .45; cursor: not-allowed; }
@@ -188,7 +191,7 @@ footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--mute
   .pending-awards article { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
   .adjustment-heading { align-items: stretch; flex-direction: column; }
-  .adjustment-form, .adjustment-balance { grid-template-columns: 1fr; }
+  .adjustment-form, .skill-swap-panel .adjustment-form, .adjustment-balance { grid-template-columns: 1fr; }
   .character-actions { align-items: stretch; flex-direction: column; }
   .module-history li { align-items: stretch; flex-direction: column; }
   .source-card { min-width: 0; width: 100%; }

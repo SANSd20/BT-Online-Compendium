@@ -419,6 +419,24 @@ Slice 23 was reimplemented from durable Slice 22 after the earlier local Slice 2
 
 Required release verification remains `npm run check` followed by an explicit `npm run build`. If the commit reaches `main`, the existing Pages workflow should deploy and the live Public Alpha should report version `0.1.0-alpha.23`.
 
+## Alpha Slice 24 verification
+
+Slice 24 reviews and hardens the Slice 23 ledger and adds bounded same-XP Skill swaps without creating a full Skill catalog. Automated coverage verifies:
+
+- all Slice 23 Attribute and existing-Skill level adjustment behavior remains passing;
+- a safe Skill swap is offered only for an exact Skill instance already audited in the existing Core Archetype definitions;
+- source and replacement use equal shared Point Buy XP and retain explicit source/replacement snapshots and provenance;
+- under-specified mixed subskill identities, specialties, conflicting identities, Field Aptitude/nonstandard XP cases, duplicates, and unequal-XP targets are unavailable or rejected;
+- a swap replaces only the working character ledger entry and never mutates the Core Archetype definition;
+- removal restores the exact source-backed Skill address, level, XP, source award identity, notes, and specialty state;
+- Skill-swap records survive JSON and browser-local save/load round trips;
+- malformed balanced Archetype state is blocked from save/export in addition to the existing nonzero-net-XP block;
+- Point Buy-from-scratch, Life Modules, Final Touches, and all prior regression suites remain passing;
+- the equipment catalog remains exactly 84 unique stable IDs with no rules/catalog data changes; and
+- application/export metadata reports `0.1.0-alpha.24` while the phase remains Public Alpha.
+
+Required release verification remains `npm run check` followed by an explicit `npm run build`. If the commit reaches `main`, the existing Pages workflow should deploy and the live Public Alpha should report version `0.1.0-alpha.24`.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

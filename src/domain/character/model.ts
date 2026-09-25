@@ -352,11 +352,9 @@ export interface ArchetypeAllocationSnapshot {
   totalXp: number
 }
 
-export interface ArchetypeAdjustmentRecord {
+interface ArchetypeAdjustmentBase {
   id: string
-  targetType: 'attribute' | 'skill'
   targetId: string
-  operation: 'increase' | 'decrease'
   beforeValue: number
   afterValue: number
   beforeXp: number
@@ -369,6 +367,35 @@ export interface ArchetypeAdjustmentRecord {
   modifiedAt: string
   note?: string
 }
+
+export interface ArchetypeLevelAdjustmentRecord extends ArchetypeAdjustmentBase {
+  targetType: 'attribute' | 'skill'
+  operation: 'increase' | 'decrease'
+}
+
+export interface ArchetypeSkillSwapSnapshot {
+  targetId: string
+  address: SkillAddress
+  displayName: string
+  level: number
+  xp: number
+}
+
+export interface ArchetypeSkillSwapAdjustmentRecord extends ArchetypeAdjustmentBase {
+  targetType: 'skill'
+  operation: 'skill-swap'
+  sourceSkill: ArchetypeSkillSwapSnapshot & {
+    sourceAwardId: string
+  }
+  replacementSkill: ArchetypeSkillSwapSnapshot & {
+    catalogArchetypeId: string
+    catalogSource: SourceCitation
+  }
+}
+
+export type ArchetypeAdjustmentRecord =
+  | ArchetypeLevelAdjustmentRecord
+  | ArchetypeSkillSwapAdjustmentRecord
 
 export interface ArchetypeFoundationState {
   version: 2

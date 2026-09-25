@@ -15,6 +15,10 @@ describe('ArchetypeAdjustmentPanel', () => {
     expect(markup).toContain('Balanced')
     expect(markup).toContain('Save/export allowed')
     expect(markup).toContain('Trait adjustments')
+    expect(markup).toContain('Bounded Skill swap')
+    expect(markup).toContain('Audited XP-equivalent replacement')
+    expect(markup).toContain('Ambiguous or unresolved subskills are blocked rather than guessed')
+    expect(markup).toContain('Full Skill catalog selection')
   })
 
   it('shows an unbalanced adjustment and reversible removal', () => {

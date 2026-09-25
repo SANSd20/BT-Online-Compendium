@@ -60,6 +60,12 @@ export function encodeCharacter(character: CharacterDefinition, exportedAt = new
   if (character.creation.method === 'archetype' && calculateArchetypeAdjustmentNetXp(character) !== 0) {
     throw new Error('Unbalanced Controlled Archetype Adjustments cannot be saved or exported.')
   }
+  if (character.creation.method === 'archetype') {
+    const validation = validateCharacter(character)
+    if (!validation.valid) {
+      throw new Error(`Invalid Archetype foundation cannot be saved or exported: ${validation.issues.filter((item) => item.severity === 'error').map((item) => item.message).join(' ')}`)
+    }
+  }
   const envelope: SavedCharacterEnvelope = {
     format: CHARACTER_FILE_FORMAT,
     schemaVersion: CHARACTER_SCHEMA_VERSION,

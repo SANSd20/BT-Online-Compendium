@@ -1,6 +1,10 @@
 import type { CharacterDefinition, LifeModuleOptimizationRecord } from '../domain/character/model'
 import { getCoreArchetype } from '../domain/archetypes/coreArchetypes'
 import {
+  archetypeSkillAddressId as archetypeSkillTargetId,
+  findKnownSafeSkillSwapTarget,
+} from '../domain/archetypes/skillSwapTargets'
+import {
   POINT_BUY_ATTRIBUTE_MAXIMUMS,
   XP_COST_TABLE_SOURCE,
   getPointBuySkill,
@@ -14,7 +18,6 @@ import {
   evaluateSharedXpAccounting,
   standardAttributeXpCost,
 } from '../domain/pointBuy/calculations'
-import { archetypeSkillTargetId } from '../engine/archetypeAdjustmentEngine'
 import type { ValidationIssue, ValidationResult } from './model'
 import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
@@ -202,6 +205,7 @@ function validateArchetypeFoundation(
     issues.push(issue('archetype.foundation.source-mismatch', 'creation.archetype', 'Original Archetype name and source provenance must match the selected Core foundation.'))
   }
   const adjustmentKeys = new Set<string>()
+  const replacementTargetIds = new Set<string>()
   state.adjustmentLedger.forEach((adjustment, index) => {
     const path = `creation.archetype.adjustmentLedger.${index}`
     const key = `${adjustment.targetType}:${adjustment.targetId}`
@@ -210,35 +214,82 @@ function validateArchetypeFoundation(
     }
     adjustmentKeys.add(key)
 
-    let beforeValue: number | undefined
-    let beforeXp: number | undefined
-    let afterXp: number | undefined
-    if (adjustment.targetType === 'attribute') {
+    if (
+      !adjustment.id || !adjustment.targetId || !adjustment.provenanceId || !adjustment.awardId ||
+      !adjustment.createdAt || !adjustment.modifiedAt ||
+      adjustment.sourceFoundationId !== state.foundationProvenanceId
+    ) {
+      issues.push(issue('archetype.adjustment.malformed', path, 'Controlled Archetype adjustment identity, provenance, or foundation reference is malformed.'))
+    }
+
+    if (adjustment.operation === 'skill-swap') {
+      if (!adjustment.sourceSkill || !adjustment.replacementSkill) {
+        issues.push(issue('archetype.skill-swap.malformed', path, 'Skill swap must preserve complete source and replacement snapshots.'))
+        return
+      }
+      const source = definition.skills.find((entry) => archetypeSkillTargetId(entry.address) === adjustment.targetId)
+      const replacement = findKnownSafeSkillSwapTarget(definition.id, adjustment.targetId, adjustment.replacementSkill.targetId)
+      if (!source) {
+        issues.push(issue('archetype.skill-swap.source.invalid', `${path}.sourceSkill`, 'Skill swap source must exist in the selected Archetype foundation.'))
+      }
+      if (!replacement) {
+        issues.push(issue('archetype.skill-swap.target.invalid', `${path}.replacementSkill`, 'Skill swap replacement must be an audited, unambiguous target with a valid subskill identity where required.'))
+      }
+      if (replacementTargetIds.has(adjustment.replacementSkill.targetId)) {
+        issues.push(issue('archetype.skill-swap.target.duplicate', `${path}.replacementSkill.targetId`, 'A replacement Skill may be used by only one controlled swap.'))
+      }
+      replacementTargetIds.add(adjustment.replacementSkill.targetId)
+      const sharedSourceXp = source ? standardSkillXpCost(source.level) : undefined
+      const sharedReplacementXp = replacement ? standardSkillXpCost(replacement.level) : undefined
+      if (sharedSourceXp !== undefined && sharedReplacementXp !== undefined && sharedSourceXp !== sharedReplacementXp) {
+        issues.push(issue('archetype.skill-swap.xp-mismatch', path, 'Skill swap source and replacement must have exactly equal shared Point Buy XP values.'))
+      }
+      if (
+        !source || !replacement || !adjustment.sourceSkill.sourceAwardId ||
+        adjustment.sourceSkill.targetId !== adjustment.targetId ||
+        !sameSkillAddress(adjustment.sourceSkill.address, source.address) ||
+        adjustment.sourceSkill.displayName !== source.displayName ||
+        adjustment.sourceSkill.level !== source.level || adjustment.sourceSkill.xp !== source.xp ||
+        adjustment.replacementSkill.targetId !== replacement.targetId ||
+        !sameSkillAddress(adjustment.replacementSkill.address, replacement.address) ||
+        adjustment.replacementSkill.displayName !== replacement.displayName ||
+        adjustment.replacementSkill.level !== replacement.level || adjustment.replacementSkill.xp !== replacement.xp ||
+        adjustment.replacementSkill.catalogArchetypeId !== replacement.catalogArchetypeId ||
+        !sameCitation(adjustment.replacementSkill.catalogSource, replacement.catalogSource) ||
+        adjustment.beforeValue !== source.level || adjustment.afterValue !== replacement.level ||
+        adjustment.beforeXp !== sharedSourceXp || adjustment.afterXp !== sharedReplacementXp ||
+        adjustment.xpDelta !== 0
+      ) {
+        issues.push(issue('archetype.skill-swap.malformed', path, 'Skill swap snapshots, source award, audited target provenance, or shared XP accounting are malformed.'))
+      }
+    } else {
+      let beforeValue: number | undefined
+      let beforeXp: number | undefined
+      let afterXp: number | undefined
+      if (adjustment.targetType === 'attribute') {
       const source = definition.attributes.find((entry) => entry.attributeId === adjustment.targetId)
       beforeValue = source?.purchasedLevel
       if (source) beforeXp = standardAttributeXpCost(source.purchasedLevel)
       if (Number.isInteger(adjustment.afterValue) && adjustment.afterValue >= 1 && adjustment.afterValue <= 10) {
         afterXp = standardAttributeXpCost(adjustment.afterValue)
       }
-    } else if (adjustment.targetType === 'skill') {
-      const source = definition.skills.find((entry) => archetypeSkillTargetId(entry.address) === adjustment.targetId)
-      beforeValue = source?.level
-      if (source) beforeXp = standardSkillXpCost(source.level)
-      if (Number.isInteger(adjustment.afterValue) && adjustment.afterValue >= 0 && adjustment.afterValue <= 10) {
-        afterXp = standardSkillXpCost(adjustment.afterValue)
+      } else {
+        const source = definition.skills.find((entry) => archetypeSkillTargetId(entry.address) === adjustment.targetId)
+        beforeValue = source?.level
+        if (source) beforeXp = standardSkillXpCost(source.level)
+        if (Number.isInteger(adjustment.afterValue) && adjustment.afterValue >= 0 && adjustment.afterValue <= 10) {
+          afterXp = standardSkillXpCost(adjustment.afterValue)
+        }
       }
-    }
-    const expectedOperation = adjustment.afterValue > adjustment.beforeValue ? 'increase' : 'decrease'
-    if (
-      !adjustment.id || !adjustment.targetId || !adjustment.provenanceId || !adjustment.awardId ||
-      !adjustment.createdAt || !adjustment.modifiedAt ||
-      beforeValue === undefined || beforeXp === undefined || afterXp === undefined ||
-      adjustment.beforeValue !== beforeValue || adjustment.beforeXp !== beforeXp ||
-      adjustment.afterValue === adjustment.beforeValue || adjustment.afterXp !== afterXp ||
-      adjustment.xpDelta !== afterXp - beforeXp || adjustment.operation !== expectedOperation ||
-      adjustment.sourceFoundationId !== state.foundationProvenanceId
-    ) {
-      issues.push(issue('archetype.adjustment.malformed', path, 'Controlled Archetype adjustment values, Point Buy XP delta, operation, or foundation reference are malformed.'))
+      const expectedOperation = adjustment.afterValue > adjustment.beforeValue ? 'increase' : 'decrease'
+      if (
+        beforeValue === undefined || beforeXp === undefined || afterXp === undefined ||
+        adjustment.beforeValue !== beforeValue || adjustment.beforeXp !== beforeXp ||
+        adjustment.afterValue === adjustment.beforeValue || adjustment.afterXp !== afterXp ||
+        adjustment.xpDelta !== afterXp - beforeXp || adjustment.operation !== expectedOperation
+      ) {
+        issues.push(issue('archetype.adjustment.malformed', path, 'Controlled Archetype adjustment values, Point Buy XP delta, or operation are malformed.'))
+      }
     }
     const provenance = character.provenance.find((entry) => entry.id === adjustment.provenanceId)
     if (!provenanceIds.has(adjustment.provenanceId) || provenance?.kind !== 'player-choice' || !sameCitation(provenance.source, state.source)) {
@@ -273,13 +324,25 @@ function validateArchetypeFoundation(
       const original = definition.skills[index]
       const targetId = archetypeSkillTargetId(original.address)
       const adjustment = state.adjustmentLedger.find((candidate) => candidate.targetType === 'skill' && candidate.targetId === targetId)
+      if (adjustment?.operation === 'skill-swap') {
+        const replacement = adjustment.replacementSkill
+        if (!replacement) return false
+        const adjustmentAward = entry.sourceAwards.length === 1 && entry.sourceAwards.some((award) => (
+          award.id === adjustment.awardId &&
+          award.provenanceId === adjustment.provenanceId &&
+          award.xp === replacement.xp
+        ))
+        return sameSkillAddress(entry.address, replacement.address) &&
+          entry.displayName === replacement.displayName &&
+          entry.level === replacement.level &&
+          entry.accumulatedXp === replacement.xp &&
+          entry.specialty === undefined && adjustmentAward
+      }
       const adjustmentAward = adjustment
         ? entry.sourceAwards.find((award) => award.id === adjustment.awardId && award.provenanceId === adjustment.provenanceId && award.xp === adjustment.xpDelta)
         : undefined
       const sourceAward = entry.sourceAwards.some((award) => award.provenanceId === state.foundationProvenanceId && award.xp === original.xp)
-      return entry.address.skillId === original.address.skillId &&
-        entry.address.parameter?.kind === original.address.parameter?.kind &&
-        entry.address.parameter?.value === original.address.parameter?.value &&
+      return sameSkillAddress(entry.address, original.address) &&
         entry.level === (adjustment?.afterValue ?? original.level) &&
         entry.accumulatedXp === original.xp + (adjustment?.xpDelta ?? 0) &&
         sourceAward && Boolean(adjustment ? adjustmentAward : true)
@@ -322,6 +385,15 @@ function validateArchetypeFoundation(
   if (character.creation.status !== expectedStatus) {
     issues.push(issue('archetype.adjustments.progression-state', 'creation.status', 'Unbalanced Archetype adjustments must remain a draft; balanced foundations may proceed to final validation.'))
   }
+}
+
+function sameSkillAddress(
+  left: { skillId: string; parameter?: { kind: string; value: string } } | undefined,
+  right: { skillId: string; parameter?: { kind: string; value: string } } | undefined,
+): boolean {
+  return Boolean(left && right && left.skillId === right.skillId &&
+    left.parameter?.kind === right.parameter?.kind &&
+    left.parameter?.value === right.parameter?.value)
 }
 
 function sameCitation(
