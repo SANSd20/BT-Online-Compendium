@@ -330,6 +330,7 @@ export interface LifeModuleCreationState {
   moduleXp: LifeModuleXpPool
   selectedModuleIds: string[]
   selectedSkillFields: SkillFieldGrantRecord[]
+  stage0AffiliationContext?: string
   affiliationLanguage?: string
   pendingAwards: PendingLifeModuleAward[]
   resolvedAwards: ResolvedLifeModuleAward[]

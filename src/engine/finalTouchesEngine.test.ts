@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BLUE_COLLAR_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
+import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
 import { equipmentLimitsForEquipped, getEquipmentFoundationIssues, startingCBillsForWealth } from '../domain/finalTouches/rules'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
@@ -49,7 +49,7 @@ function resolveByAward(character: ReturnType<typeof createLifeModuleCharacter>,
 
 function readyForFinalTouches() {
   let character = createLifeModuleCharacter('Final Touches Fixture')
-  character = applyUniversalStage0(character, 'Mandarin Chinese')
+  character = applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
   character = applyCapellanCommonality(character, 'Russian')
   character = applyStage1Module(character, BLUE_COLLAR_ID)
   character = resolveByAward(character, 'commonality.language.fedsuns', 'skill.language', 'Language/French', 'French')

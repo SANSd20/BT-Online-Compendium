@@ -454,6 +454,24 @@ Required release verification is `npm run check` followed by an explicit `npm ru
 
 Slice 25 checkpoint result: lint passed; 19 test files and 170 tests passed; the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. The generated production bundle reports `0.1.0-alpha.25`.
 
+## Alpha Slice 26 verification
+
+Slice 26 is a narrow Life Modules Stage 0 affiliation-flow hotfix. Automated coverage verifies:
+
+- a new Stage 0 Universal draft contains neither an affiliation context nor an affiliation-language selection;
+- Mandarin Chinese is not applied unless the user explicitly selects the Capellan Confederation / Capellan Commonality context and then selects Mandarin Chinese;
+- the engine rejects a missing or mismatched Stage 0 affiliation context and rejects an empty or invalid affiliation language;
+- validation requires the stored context, language, and resolved Universal affiliation-language award to agree;
+- save/load and JSON export/import preserve explicit Stage 0 context and language state;
+- older Alpha saves without the new context field migrate to the only compatible context already implied by their resolved Stage 0 language;
+- Life Modules Stage 1–4, Archetype, Point Buy, Final Touches, Public Alpha notice, and equipment regression suites remain passing;
+- the equipment catalog remains exactly 84 unique stable IDs with no rules/catalog data changes; and
+- application/export metadata reports `0.1.0-alpha.26` while the phase remains Public Alpha.
+
+Required release verification is `npm run check` followed by an explicit `npm run build`. If the commit reaches `main`, the existing Pages workflow should deploy and the live Public Alpha should report version `0.1.0-alpha.26`.
+
+Slice 26 checkpoint result: lint passed; 19 test files and 173 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. The generated production bundle reports `0.1.0-alpha.26`.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

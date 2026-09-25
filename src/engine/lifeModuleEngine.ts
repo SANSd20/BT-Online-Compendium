@@ -62,9 +62,16 @@ export function createLifeModuleCharacter(
   return character
 }
 
-export function applyUniversalStage0(character: CharacterDefinition, affiliationLanguage: string): CharacterDefinition {
+export function applyUniversalStage0(
+  character: CharacterDefinition,
+  affiliationContextModuleId: string,
+  affiliationLanguage: string,
+): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-0-universal') throw new Error('The universal Stage 0 package is not the current legal action.')
+  if (affiliationContextModuleId !== CAPELLAN_COMMONALITY_ID) {
+    throw new Error('Choose an explicit Stage 0 affiliation context before resolving the Universal affiliation-language award.')
+  }
   const language = affiliationLanguage.trim()
   if (!CAPELLAN_LANGUAGES.includes(language as (typeof CAPELLAN_LANGUAGES)[number])) {
     throw new Error('Universal affiliation language must be a Capellan primary or secondary language in this Alpha catalog.')
@@ -74,6 +81,7 @@ export function applyUniversalStage0(character: CharacterDefinition, affiliation
       type: 'skill', address: { skillId: 'skill.language', parameter: { kind: 'subskill', value: language } }, displayName: `Language/${language}`,
     },
   })
+  requireLifeModules(next).stage0AffiliationContext = affiliationContextModuleId
   requireLifeModules(next).affiliationLanguage = language
   requireLifeModules(next).phase = 'stage-0-affiliation'
   return next
@@ -82,6 +90,9 @@ export function applyUniversalStage0(character: CharacterDefinition, affiliation
 export function applyCapellanCommonality(character: CharacterDefinition, capellanSecondaryLanguage?: string): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-0-affiliation') throw new Error('The Stage 0 affiliation is not the current legal action.')
+  if (state.stage0AffiliationContext !== CAPELLAN_COMMONALITY_ID) {
+    throw new Error('The selected Stage 0 affiliation package must match the explicit Universal affiliation context.')
+  }
   const resolutions: Record<string, LifeModuleDestination> = {}
   const language = capellanSecondaryLanguage?.trim()
   if (language) {

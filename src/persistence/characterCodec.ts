@@ -1,7 +1,7 @@
 import type { CharacterDefinition, CreationMethod } from '../domain/character/model'
 import { APP_VERSION } from '../appMetadata'
 import { getCoreArchetype } from '../domain/archetypes/coreArchetypes'
-import { getLifeModule } from '../domain/lifeModules/catalog'
+import { CAPELLAN_COMMONALITY_ID, getLifeModule, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { XP_COST_TABLE_SOURCE } from '../domain/pointBuy/catalog'
 import { calculateArchetypeAdjustmentNetXp, evaluateSharedXpAccounting } from '../domain/pointBuy/calculations'
 import { validateCharacter } from '../validation/validateCharacter'
@@ -130,6 +130,13 @@ function migrateAlphaLifeModuleState(character: CharacterDefinition): void {
   state.resolvedAwards ??= []
   state.selectedSkillFields ??= []
   state.stopState ??= 'not-eligible'
+  if (
+    !state.stage0AffiliationContext &&
+    state.selectedModuleIds.includes(UNIVERSAL_STAGE_0_ID) &&
+    state.affiliationLanguage
+  ) {
+    state.stage0AffiliationContext = CAPELLAN_COMMONALITY_ID
+  }
   state.choiceGrantRequirements ??= state.pendingAwards.map((pending) => ({
     moduleId: pending.moduleId,
     awardId: pending.awardId,

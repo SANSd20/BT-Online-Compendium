@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { APP_VERSION } from '../appMetadata'
 import { createCharacterDraft } from '../engine/characterFactory'
 import { createCharacterFromArchetype } from '../engine/archetypeFactory'
-import { BLUE_COLLAR_ID } from '../domain/lifeModules/catalog'
+import { BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID } from '../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../engine/lifeModuleEngine'
+import { validateCharacter } from '../validation/validateCharacter'
 import { decodeCharacter, encodeCharacter } from './characterCodec'
 
 function character() {
@@ -45,7 +46,7 @@ describe('character codec', () => {
 
   it('migrates Alpha Slice 4 pending-award saves without losing unresolved grants', () => {
     let source = createLifeModuleCharacter('Older Alpha Draft')
-    source = applyUniversalStage0(source, 'Mandarin Chinese')
+    source = applyUniversalStage0(source, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
     source = applyCapellanCommonality(source, 'Russian')
     source = applyStage1Module(source, BLUE_COLLAR_ID)
     const envelope = JSON.parse(encodeCharacter(source))
@@ -65,6 +66,17 @@ describe('character codec', () => {
     expect(restored.creation.lifeModules?.pendingAwards.find((entry) => entry.awardId === 'blue-collar.career')?.requiredSkillId).toBe('skill.career')
     expect(restored.creation.lifeModules?.choiceGrantRequirements).toHaveLength(4)
     expect(restored.creation.lifeModules?.selectedSkillFields).toEqual([])
+  })
+
+  it('migrates an older Stage 0 save to the only compatible explicit affiliation context', () => {
+    let source = createLifeModuleCharacter('Older Stage 0 Draft')
+    source = applyUniversalStage0(source, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
+    const envelope = JSON.parse(encodeCharacter(source))
+    delete envelope.character.creation.lifeModules.stage0AffiliationContext
+    const restored = decodeCharacter(JSON.stringify(envelope))
+    expect(restored.creation.lifeModules?.stage0AffiliationContext).toBe(CAPELLAN_COMMONALITY_ID)
+    expect(restored.creation.lifeModules?.affiliationLanguage).toBe('Mandarin Chinese')
+    expect(validateCharacter(restored).valid).toBe(true)
   })
 
   it('migrates older Alpha Archetype saves into a source-backed foundation without changing allocations', () => {

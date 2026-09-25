@@ -566,6 +566,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   }
   const hasUniversal = selectedIds.has('stage0.universal-fixed-xp')
   const hasAffiliation = selectedIds.has('stage0.capellan-confederation.capellan-commonality')
+  const universalAffiliationResolution = state.resolvedAwards?.find((entry) => entry.moduleId === 'stage0.universal-fixed-xp' && entry.awardId === 'universal.language.affiliation')
   const stage1Count = character.lifeModuleHistory.filter((entry) => entry.stage === 1).length
   const stage2Count = character.lifeModuleHistory.filter((entry) => entry.stage === 2).length
   const stage3Count = character.lifeModuleHistory.filter((entry) => entry.stage === 3).length
@@ -573,6 +574,16 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const stage4Count = stage4Entries.length
   if (!hasUniversal) issues.push(issue('life-modules.universal.outstanding', 'lifeModuleHistory', 'The universal Stage 0 package is still required.', { severity: 'warning' }))
   if (!hasAffiliation) issues.push(issue('life-modules.affiliation.outstanding', 'lifeModuleHistory', 'A Stage 0 affiliation is still required.', { severity: 'warning' }))
+  if (hasUniversal && state.awardResolutionVersion === 1 && (
+    state.stage0AffiliationContext !== 'stage0.capellan-confederation.capellan-commonality' ||
+    !state.affiliationLanguage ||
+    universalAffiliationResolution?.destination.parameter?.value !== state.affiliationLanguage
+  )) {
+    issues.push(issue('life-modules.stage-0.affiliation-context.required', 'creation.lifeModules.stage0AffiliationContext', 'Stage 0 Universal requires an explicit affiliation context and matching affiliation-language resolution.'))
+  }
+  if (hasAffiliation && state.stage0AffiliationContext !== 'stage0.capellan-confederation.capellan-commonality') {
+    issues.push(issue('life-modules.stage-0.affiliation-context.mismatch', 'creation.lifeModules.stage0AffiliationContext', 'The selected Stage 0 affiliation must match the explicit Universal affiliation context.'))
+  }
   if (stage1Count !== 1) issues.push(issue('life-modules.stage-1.outstanding', 'lifeModuleHistory', 'Exactly one Stage 1 module is required.', { severity: stage1Count === 0 ? 'warning' : 'error' }))
   if (stage2Count > 1) issues.push(issue('life-modules.stage-2.multiple', 'lifeModuleHistory', 'No more than one Stage 2 module may be selected.'))
   if (state.currentStage === 2 && stage2Count === 0 && state.phase !== 'stage-2-selection') issues.push(issue('life-modules.stage-2.outstanding', 'lifeModuleHistory', 'Stage 2 has not been selected for this continuation.', { severity: 'warning' }))

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
@@ -10,7 +10,7 @@ import { createPointBuyCharacter } from './pointBuyEngine'
 
 function completeStage0() {
   let character = createLifeModuleCharacter('Xiang', 5000)
-  character = applyUniversalStage0(character, 'Mandarin Chinese')
+  character = applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
   return applyCapellanCommonality(character, 'Russian')
 }
 
@@ -73,6 +73,25 @@ describe('Life Module engine', () => {
     expect(character.provenance.some((entry) => entry.source?.ruleId === 'life-module-character-creation')).toBe(true)
   })
 
+  it('requires explicit Stage 0 affiliation context and language choices', () => {
+    const character = createLifeModuleCharacter('No implicit affiliation')
+    expect(character.creation.lifeModules?.stage0AffiliationContext).toBeUndefined()
+    expect(character.creation.lifeModules?.affiliationLanguage).toBeUndefined()
+    expect(character.skills.some((entry) => entry.displayName === 'Language/Mandarin Chinese')).toBe(false)
+    expect(() => applyUniversalStage0(character, '', 'Mandarin Chinese')).toThrow('explicit Stage 0 affiliation context')
+    expect(() => applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, '')).toThrow('Capellan primary or secondary language')
+  })
+
+  it('records Mandarin Chinese only after an explicit Capellan context choice', () => {
+    const character = applyUniversalStage0(createLifeModuleCharacter('Explicit choice'), CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
+    expect(character.creation.lifeModules).toMatchObject({
+      stage0AffiliationContext: CAPELLAN_COMMONALITY_ID,
+      affiliationLanguage: 'Mandarin Chinese',
+    })
+    expect(character.skills.find((entry) => entry.displayName === 'Language/Mandarin Chinese')?.accumulatedXp).toBe(20)
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).not.toContain('life-modules.stage-0.affiliation-context.required')
+  })
+
   it('applies the universal package and Capellan/Commonality without cross-financing the module pool', () => {
     const character = completeStage0()
     const state = character.creation.lifeModules!
@@ -114,7 +133,7 @@ describe('Life Module engine', () => {
   it('rejects an unknown module request and overspending', () => {
     expect(() => applyStage1Module(completeStage0(), 'stage1.unknown' as typeof BLUE_COLLAR_ID)).toThrow('Unknown Alpha Stage 1 module')
     let character = createLifeModuleCharacter('Short Pool', 900)
-    character = applyUniversalStage0(character, 'English')
+    character = applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'English')
     expect(() => applyCapellanCommonality(character, 'Russian')).toThrow('overspend')
   })
 

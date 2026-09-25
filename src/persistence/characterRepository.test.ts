@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createPointBuyCharacter } from '../engine/pointBuyEngine'
-import { BLUE_COLLAR_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
+import { BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
 import { applyAgitator, applyCapellanCommonality, applyStage1Module, applyStage2Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../engine/lifeModuleFinalReview'
 import { LocalStorageCharacterRepository, type StorageLike } from './characterRepository'
@@ -73,7 +73,7 @@ describe('LocalStorageCharacterRepository', () => {
 
   it('preserves resolved and unresolved Life Module awards in local storage', () => {
     let character = createLifeModuleCharacter('Local Module Character')
-    character = applyUniversalStage0(character, 'Mandarin Chinese')
+    character = applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
     character = applyCapellanCommonality(character, 'Russian')
     character = applyStage1Module(character, BLUE_COLLAR_ID)
     const pending = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'blue-collar.interests')!
@@ -88,7 +88,7 @@ describe('LocalStorageCharacterRepository', () => {
 
   it('preserves Stage 3 school and Skill Field state in local storage', () => {
     let character = createLifeModuleCharacter('Local Technical Student')
-    character = applyUniversalStage0(character, 'Mandarin Chinese')
+    character = applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
     character = applyCapellanCommonality(character, 'Russian')
     character = applyStage1Module(character, BLUE_COLLAR_ID)
     character = resolveAward(character, 'commonality.language.fedsuns', 'skill.language', 'Language/French', 'French')
@@ -115,7 +115,7 @@ describe('LocalStorageCharacterRepository', () => {
 
   it('preserves Stage 4 and final-review allocation/Optimization state in local storage', () => {
     let character = createLifeModuleCharacter('Local Agitator')
-    character = applyUniversalStage0(character, 'Mandarin Chinese')
+    character = applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
     character = applyCapellanCommonality(character, 'Russian')
     character = applyStage1Module(character, BLUE_COLLAR_ID)
     character = resolveAward(character, 'commonality.language.fedsuns', 'skill.language', 'Language/French', 'French')
