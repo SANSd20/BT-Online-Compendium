@@ -207,7 +207,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                     {getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector).map((language) => <option key={language}>{language}</option>)}
                   </select>
                 </label>
-                <button className="button" type="button" onClick={() => operate(() => applyCapellanCommonality(character, secondaryLanguage), secondaryLanguage ? 'Capellan affiliation package applied with an explicit secondary language.' : 'Capellan affiliation package applied; secondary-language award left pending.')}>Select affiliation</button>
+                <button className="button" type="button" onClick={() => operate(() => applyCapellanCommonality(character, secondaryLanguage), secondaryLanguage ? 'Capellan affiliation package applied with an explicit secondary language.' : 'Capellan affiliation package applied; secondary-language award left pending.')}>Apply</button>
               </div>
             )}
             {state.phase === 'stage-1-selection' && (

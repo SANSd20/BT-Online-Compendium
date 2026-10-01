@@ -530,6 +530,12 @@ Verify that Stage 0 Universal presents explanation and explicit non-affiliation 
 
 Slice 31 checkpoint result: lint passed; 24 test files and 197 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. Existing engine, persistence, affiliation-framework, equipment-catalog, Archetype, Point Buy, Final Touches, public-title, blocker/warning, and selector coverage remained green. The equipment catalog and resource data have no diff, and the generated production bundle reports `0.1.0-alpha.31`.
 
+## Alpha 0.1.0-alpha.32 Stage 0 label verification
+
+Verify that the Stage 0 Universal and affiliation-package action buttons both read `Apply`; the Universal validity gate, non-affiliation guidance, empty defaults, engine progression, pending selectors, and Stage 1–4 behavior remain unchanged; application metadata reports `0.1.0-alpha.32`; the public title remains `A Time of War character creator`; and the equipment catalog remains exactly 84 unique stable IDs with no data changes. Required release verification is `npm run check` followed by a separate `npm run build`.
+
+Hotfix checkpoint result: lint passed; 24 test files and 197 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. The equipment catalog and resource data have no diff, and the generated production bundle reports `0.1.0-alpha.32` with the Stage 0 `Apply` label.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

@@ -4,7 +4,7 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 31 is implemented.** Version `0.1.0-alpha.31` polishes the Stage 0 Universal wizard step with a stable two-control choice card, unabridged affiliation labels, a clearly separated apply action, and explicit non-affiliation guidance. Rules and catalog data are unchanged.
+**Alpha Slice 31 is implemented.** Version `0.1.0-alpha.32` applies the small Stage 0 button-label hotfix: both Stage 0 package actions now read `Apply`. Behavior, rules, and catalog data are unchanged.
 
 All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit remains the evidence record; Slice 28 governs its conflicts without silently correcting Tanker, Elemental, or Scout values, adding `REF`, renaming stable IDs, or activating back-sheet combat fields. Point Buy, Life Modules, Final Touches, and the 84-item audited Core equipment catalog are unchanged.
 
@@ -71,9 +71,9 @@ npm run preview
 
 The repository's Pages **Source** setting must be **GitHub Actions**. The public site opens through a normal browser URL and requires neither a special platform login nor an application login. Character data still lives only in that browser; JSON export/import is the portability and backup mechanism.
 
-The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.31` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
+The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.32` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
 
-The public notice in the application identifies version `0.1.0-alpha.31`, browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
+The public notice in the application identifies version `0.1.0-alpha.32`, browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
 
 ## Current resume points
 

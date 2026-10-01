@@ -40,7 +40,7 @@ export function Stage0UniversalStep({ affiliationContext, affiliationLanguage, o
         </label>
       </div>
       <div className="stage0-choice-action">
-        <button className="button" type="button" disabled={!ready} onClick={onApply}>Apply universal package</button>
+        <button className="button" type="button" disabled={!ready} onClick={onApply}>Apply</button>
         {!ready && <span>Select both an affiliation context and language to continue.</span>}
       </div>
     </fieldset>
