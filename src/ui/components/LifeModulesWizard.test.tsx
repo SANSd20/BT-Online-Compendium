@@ -16,7 +16,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · v0.1.0-alpha.40')
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.41')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -83,7 +83,7 @@ describe('Life Modules wizard presentation', () => {
     const character = createLifeModuleCharacter('Dashboard')
     const preview = previewStage0Affiliation(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')
     const markup = renderToStaticMarkup(
-      <LifeModuleDashboard character={character} previewCharacter={preview} toolbar={<><button>Save draft</button><button>Export character JSON</button></>}>
+      <LifeModuleDashboard character={character} previewCharacter={preview} previewSelections={['Affiliation context selected', 'Affiliation language: Mandarin Chinese', 'Secondary language: Russian']} toolbar={<><button>Save draft</button><button>Export character JSON</button></>}>
         <LifeModuleStageHeading phase="stage-0-affiliation" />
         <button>Continue</button>
       </LifeModuleDashboard>,
@@ -92,12 +92,13 @@ describe('Life Modules wizard presentation', () => {
     expect(markup).toContain('aria-label="Life Modules progress"')
     expect(markup).toContain('aria-label="Current character summary"')
     expect(markup).toContain('aria-label="Current Life Modules stage"')
-    expect(markup).toContain('aria-label="Pending Stage 0 changes"')
+    expect(markup).not.toContain('aria-label="Pending Stage 0 changes"')
+    expect(markup).toContain('aria-label="Uncommitted live preview"')
     expect(markup).toContain('aria-label="Life Modules navigation and draft actions"')
     expect(markup).toContain('Choose affiliation details')
     expect(markup).toContain('Continue')
     expect(markup).toContain('Save draft')
-    expect(markup).toContain('Preview · Not saved')
+    expect(markup).toContain('Not saved until Continue')
   })
 
   it('keeps audit material in a secondary drawer that opens for Review only', () => {
@@ -115,18 +116,28 @@ describe('Life Modules wizard presentation', () => {
     }
   })
 
-  it('renders an explicitly unsaved Stage 0 preview beside the committed summary', () => {
+  it('integrates the complete Stage 0 preview into the running character summary', () => {
     const character = createLifeModuleCharacter('Preview')
     const preview = previewStage0Affiliation(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')
     expect(preview).not.toBeNull()
     const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={character} previewCharacter={preview} />)
-    expect(markup).toContain('Preview · Not saved')
+    expect(markup).toContain('Previewing selected choices')
+    expect(markup).toContain('Not saved until Continue')
     expect(markup).toContain('After Continue')
-    expect(markup).toContain('4,150')
     expect(markup).toContain('4,000')
-    expect(markup).toContain('<span>WIL</span><strong>150</strong>')
+    expect(markup).toContain('<span>WIL</span><strong>150<em>Preview</em></strong>')
     expect(markup).toContain('Language/Mandarin Chinese')
     expect(markup).toContain('Language/Russian')
+  })
+
+  it('shows safe partial Stage 0 selection status without inventing package effects', () => {
+    const character = createLifeModuleCharacter('Partial Preview')
+    const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={character} previewSelections={['Affiliation context selected']} />)
+    expect(markup).toContain('Affiliation context selected')
+    expect(markup).toContain('Not saved until Continue')
+    expect(markup).toContain('Complete all required Stage 0 choices')
+    expect(markup).toContain('<dt>Module XP left</dt><dd>4,150</dd>')
+    expect(markup).not.toContain('After Continue')
   })
 
   it('separates exact pending blockers from non-blocking final-validation warnings', () => {

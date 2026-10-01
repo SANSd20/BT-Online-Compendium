@@ -107,6 +107,11 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const stage0Preview = useMemo(() => character && state?.phase === 'stage-0-affiliation'
     ? previewStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage)
     : null, [character, state?.phase, stage0AffiliationContext, affiliationLanguage, secondaryLanguage])
+  const stage0PreviewSelections = state?.phase === 'stage-0-affiliation' ? [
+    ...(stage0AffiliationContext ? ['Affiliation context selected'] : []),
+    ...(affiliationLanguage ? [`Affiliation language: ${affiliationLanguage}`] : []),
+    ...(secondaryLanguage ? [`Secondary language: ${secondaryLanguage}`] : []),
+  ] : []
   const validation = character ? validateCharacter(character) : null
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
   const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
@@ -182,6 +187,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           <LifeModuleDashboard
             character={character}
             previewCharacter={stage0Preview}
+            previewSelections={stage0PreviewSelections}
             toolbar={<>
                 <a className="button secondary" href="#/" title="Return without undoing applied Life Module choices">Return to character creator</a>
                 <button className="button" type="button" onClick={() => { onSave(character); setMessage('Life Module draft saved locally.') }}>Save draft</button>

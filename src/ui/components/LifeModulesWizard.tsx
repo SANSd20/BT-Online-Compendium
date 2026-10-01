@@ -7,7 +7,7 @@ export function LifeModulesVersionBadge() {
   return <p className="eyebrow">Public Alpha · v{APP_VERSION}</p>
 }
 
-export function LifeModuleDashboard({ character, previewCharacter, toolbar, children }: { character: CharacterDefinition; previewCharacter?: CharacterDefinition | null; toolbar: ReactNode; children: ReactNode }) {
+export function LifeModuleDashboard({ character, previewCharacter, previewSelections = [], toolbar, children }: { character: CharacterDefinition; previewCharacter?: CharacterDefinition | null; previewSelections?: string[]; toolbar: ReactNode; children: ReactNode }) {
   const state = character.creation.lifeModules!
   return <section className="life-dashboard" aria-label="Life Modules compact dashboard">
     <header className="life-dashboard-header">
@@ -20,10 +20,9 @@ export function LifeModuleDashboard({ character, previewCharacter, toolbar, chil
       <LifeModuleProgress phase={state.phase} />
       <div className="life-dashboard-toolbar" aria-label="Life Modules navigation and draft actions">{toolbar}</div>
     </header>
-    <div className={previewCharacter ? 'life-wizard-layout has-preview' : 'life-wizard-layout'}>
-      <LifeModuleCharacterSummary character={character} />
+    <div className="life-wizard-layout">
+      <LifeModuleCharacterSummary character={character} previewCharacter={previewCharacter} previewSelections={previewSelections} />
       <div className="life-wizard-workspace" aria-label="Current Life Modules stage">{children}</div>
-      {previewCharacter && <aside className="life-preview-rail" aria-label="Pending Stage 0 changes"><LifeModulePreviewSummary character={character} previewCharacter={previewCharacter} /></aside>}
     </div>
   </section>
 }
@@ -66,41 +65,36 @@ export function LifeModuleReviewSummary({ character }: { character: CharacterDef
   </section>
 }
 
-export function LifeModuleCharacterSummary({ character, previewCharacter }: { character: CharacterDefinition; previewCharacter?: CharacterDefinition | null }) {
+export function LifeModuleCharacterSummary({ character, previewCharacter, previewSelections = [] }: { character: CharacterDefinition; previewCharacter?: CharacterDefinition | null; previewSelections?: string[] }) {
   const state = character.creation.lifeModules!
+  const effectiveCharacter = previewCharacter ?? character
+  const effectiveState = effectiveCharacter.creation.lifeModules!
   const stage = lifeModuleStagePresentation(state.phase)
+  const previewActive = previewSelections.length > 0 || Boolean(previewCharacter)
+  const isPreviewAttribute = (attributeId: string, xp: number) => previewCharacter?.attributes.some((entry) => entry.attributeId === attributeId && entry.accumulatedXp === xp) && character.attributes.find((entry) => entry.attributeId === attributeId)?.accumulatedXp !== xp
+  const isPreviewTrait = (traitId: string, displayName: string | undefined, xp: number) => Boolean(previewCharacter) && !character.traits.some((entry) => entry.traitId === traitId && entry.displayName === displayName && entry.accumulatedXp === xp)
+  const isPreviewSkill = (displayName: string | undefined, xp: number) => Boolean(previewCharacter) && !character.skills.some((entry) => entry.displayName === displayName && entry.accumulatedXp === xp)
+  const committedModules = new Set(character.lifeModuleHistory.map((entry) => entry.moduleId))
   return <aside className="life-summary" aria-label="Current character summary">
     <p className="eyebrow">Character summary</p>
     <h2>{character.displayName || 'Unnamed character'}</h2>
+    {previewActive && <section className="life-summary-preview-status" aria-label="Uncommitted live preview">
+      <strong>Previewing selected choices</strong>
+      <span>Not saved until Continue</span>
+      {previewSelections.length > 0 && <ul>{previewSelections.map((selection) => <li key={selection}>{selection}<em>Preview</em></li>)}</ul>}
+      {!previewCharacter && <p>Complete all required Stage 0 choices to preview package awards and post-Continue totals.</p>}
+    </section>}
     <dl className="life-summary-xp">
       <div><dt>Current stage</dt><dd>{stage.stage}</dd></div>
-      <div><dt>Module XP left</dt><dd>{state.moduleXp.remaining.toLocaleString()}</dd></div>
-      <div><dt>Net stat XP</dt><dd>{character.xp.creation.allocated.toLocaleString()}</dd></div>
-      <div><dt>Pending choices</dt><dd>{state.pendingAwards.length}</dd></div>
+      <div><dt>Module XP left</dt><dd>{effectiveState.moduleXp.remaining.toLocaleString()}{previewCharacter && <small>After Continue · Preview</small>}</dd></div>
+      <div><dt>Net stat XP</dt><dd>{effectiveCharacter.xp.creation.allocated.toLocaleString()}{previewCharacter && effectiveCharacter.xp.creation.allocated !== character.xp.creation.allocated && <small>After Continue · Preview</small>}</dd></div>
+      <div><dt>Pending choices</dt><dd>{effectiveState.pendingAwards.length}{previewCharacter && <small>After Continue · Preview</small>}</dd></div>
     </dl>
-    <details open className="life-summary-attributes"><summary>Attributes</summary><ul>{character.attributes.map((entry) => <li key={entry.attributeId}><span>{entry.attributeId}</span><strong>{entry.accumulatedXp.toLocaleString()}</strong></li>)}</ul></details>
-    <details><summary>Traits ({character.traits.length})</summary><ul>{character.traits.map((entry, index) => <li key={`${entry.traitId}-${index}`}><span>{entry.displayName ?? entry.traitId}</span><strong>{entry.active ? `${entry.attainedTp ?? 0} TP` : 'pending'}</strong></li>)}</ul></details>
-    <details><summary>Skills ({character.skills.length})</summary><ul>{character.skills.map((entry, index) => <li key={`${entry.address.skillId}-${index}`}><span>{entry.displayName ?? entry.address.skillId}</span><strong>{entry.level === null ? '—' : `+${entry.level}`}</strong></li>)}</ul></details>
-    <details open><summary>Chosen modules</summary>{character.lifeModuleHistory.length === 0 ? <p>None yet.</p> : <ol>{character.lifeModuleHistory.map((entry) => <li key={entry.moduleId}>{entry.displayName}</li>)}</ol>}</details>
-    {previewCharacter && <LifeModulePreviewSummary character={character} previewCharacter={previewCharacter} />}
+    <details open className="life-summary-attributes"><summary>Attributes</summary><ul>{effectiveCharacter.attributes.map((entry) => <li key={entry.attributeId} className={isPreviewAttribute(entry.attributeId, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.attributeId}</span><strong>{entry.accumulatedXp.toLocaleString()}{isPreviewAttribute(entry.attributeId, entry.accumulatedXp) && <em>Preview</em>}</strong></li>)}</ul></details>
+    <details open={Boolean(previewCharacter)}><summary>Traits ({effectiveCharacter.traits.length})</summary><ul>{effectiveCharacter.traits.map((entry, index) => <li key={`${entry.traitId}-${index}`} className={isPreviewTrait(entry.traitId, entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.traitId}</span><strong>{entry.active ? `${entry.attainedTp ?? 0} TP` : 'pending'}{isPreviewTrait(entry.traitId, entry.displayName, entry.accumulatedXp) && <em>Preview</em>}</strong></li>)}</ul></details>
+    <details open={Boolean(previewCharacter)}><summary>Skills ({effectiveCharacter.skills.length})</summary><ul>{effectiveCharacter.skills.map((entry, index) => <li key={`${entry.address.skillId}-${index}`} className={isPreviewSkill(entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.address.skillId}</span><strong>{entry.level === null ? '—' : `+${entry.level}`}{isPreviewSkill(entry.displayName, entry.accumulatedXp) && <em>Preview</em>}</strong></li>)}</ul></details>
+    <details open><summary>Chosen modules</summary>{effectiveCharacter.lifeModuleHistory.length === 0 ? <p>None yet.</p> : <ol>{effectiveCharacter.lifeModuleHistory.map((entry) => <li key={entry.moduleId} className={!committedModules.has(entry.moduleId) ? 'preview-row' : ''}>{entry.displayName}{!committedModules.has(entry.moduleId) && <em>Preview</em>}</li>)}</ol>}</details>
   </aside>
-}
-
-export function LifeModulePreviewSummary({ character, previewCharacter }: { character: CharacterDefinition; previewCharacter: CharacterDefinition }) {
-  const committedState = character.creation.lifeModules!
-  const previewState = previewCharacter.creation.lifeModules!
-  const attributeChanges = previewCharacter.attributes.filter((preview) => preview.accumulatedXp !== character.attributes.find((entry) => entry.attributeId === preview.attributeId)?.accumulatedXp)
-  const traitChanges = previewCharacter.traits.filter((preview) => !character.traits.some((entry) => entry.traitId === preview.traitId && entry.displayName === preview.displayName && entry.accumulatedXp === preview.accumulatedXp))
-  const skillChanges = previewCharacter.skills.filter((preview) => !character.skills.some((entry) => entry.displayName === preview.displayName && entry.accumulatedXp === preview.accumulatedXp))
-  return <section className="life-preview-summary" aria-label="Uncommitted Stage 0 preview">
-    <p className="eyebrow">Preview · Not saved</p>
-    <h3>After Continue</h3>
-    <p>Previewing selected Stage 0 choices. Continue to apply these changes.</p>
-    <dl><div><dt>Module XP left</dt><dd>{committedState.moduleXp.remaining.toLocaleString()} → {previewState.moduleXp.remaining.toLocaleString()}</dd></div></dl>
-    {attributeChanges.length > 0 && <><h4>Attributes</h4><ul>{attributeChanges.map((entry) => <li key={entry.attributeId}><span>{entry.attributeId}</span><strong>{entry.accumulatedXp}</strong></li>)}</ul></>}
-    {traitChanges.length > 0 && <><h4>Traits</h4><ul>{traitChanges.map((entry, index) => <li key={`${entry.traitId}-${index}`}><span>{entry.displayName}</span><strong>{entry.accumulatedXp > 0 ? '+' : ''}{entry.accumulatedXp} XP</strong></li>)}</ul></>}
-    {skillChanges.length > 0 && <><h4>Skills</h4><ul>{skillChanges.map((entry, index) => <li key={`${entry.address.skillId}-${index}`}><span>{entry.displayName}</span><strong>{entry.accumulatedXp > 0 ? '+' : ''}{entry.accumulatedXp} XP</strong></li>)}</ul></>}
-  </section>
 }
 
 export function LifeModuleStageStatus({ pendingAwards, warnings, specializedPendingMessage }: { pendingAwards: PendingLifeModuleAward[]; warnings: string[]; specializedPendingMessage?: string }) {
