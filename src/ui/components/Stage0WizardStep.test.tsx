@@ -21,11 +21,19 @@ describe('merged Stage 0 wizard step', () => {
     expect(markup.match(/>Apply</g)).toHaveLength(1)
   })
 
-  it('shows the included baseline without a Universal action and unlocks only the affiliation Apply action', () => {
+  it('hides the Universal card for a normal draft and requires a real secondary language', () => {
     const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} affiliationLanguage="Mandarin Chinese" secondaryLanguage="" {...handlers} />)
-    expect(markup).toContain('Baseline Awards / Universal Fixed Experience Points are included')
-    expect(markup).toContain('Universal remains non-affiliation')
+    expect(markup).not.toContain('Universal Package')
+    expect(markup).not.toContain('Mandatory baseline')
     expect(markup).toContain('Capellan Confederation / Capellan Commonality')
-    expect(markup.match(/>Apply</g)).toHaveLength(1)
+    expect(markup).not.toContain('Leave pending')
+    expect(markup).toContain('Choose a secondary language…')
+    expect(markup).toContain('award remains unresolved until you choose a listed language')
+    expect(markup).toContain('<button class="button" type="button" disabled="">Apply</button>')
+  })
+
+  it('enables affiliation Apply after explicit context and language choices', () => {
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...handlers} />)
+    expect(markup).toContain('<button class="button" type="button">Apply</button>')
   })
 })

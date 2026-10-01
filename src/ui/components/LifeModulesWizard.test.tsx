@@ -15,7 +15,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · v0.1.0-alpha.34')
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.35')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -28,7 +28,7 @@ describe('Life Modules wizard presentation', () => {
     expect(lifeModuleWizardStepIndex('stage-4-resolution')).toBe(4)
     expect(lifeModuleWizardStepIndex('alpha-final-review')).toBe(5)
     expect(LIFE_MODULE_WIZARD_STEPS).toHaveLength(6)
-    expect(LIFE_MODULE_WIZARD_STEPS[0]).toMatchObject({ id: 'stage-0', label: 'Stage 0' })
+    expect(LIFE_MODULE_WIZARD_STEPS[0]).toEqual({ id: 'stage-0', label: 'Stage 0', detail: 'Affiliation' })
     expect(LIFE_MODULE_WIZARD_STEPS.some((step) => step.id === 'universal')).toBe(false)
     const markup = renderToStaticMarkup(<LifeModuleProgress phase="stage-2-selection" />)
     expect(markup).toContain('Life Modules progress')
@@ -45,6 +45,13 @@ describe('Life Modules wizard presentation', () => {
     expect(markup).toContain('Traits')
     expect(markup).toContain('Skills')
     expect(markup).toContain('Capellan Confederation / Capellan Commonality')
+  })
+
+  it('renders full sheet Attribute values instead of normalized purchased levels', () => {
+    const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={createLifeModuleCharacter('Baseline')} />)
+    for (const attribute of ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG']) {
+      expect(markup).toContain(`<span>${attribute}</span><strong>100</strong>`)
+    }
   })
 
   it('separates exact pending blockers from non-blocking final-validation warnings', () => {

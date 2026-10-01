@@ -445,8 +445,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.prerequisiteIssues.map((entry) => <p className={entry.status === 'outstanding' ? 'notice' : ''} key={entry.id}>{entry.description}: {entry.status}</p>)}
             <h3>Validation</h3>
             <ul>{validation?.issues.map((entry) => <li className={entry.severity} key={`${entry.id}/${entry.path}`}>{entry.message}</li>)}</ul>
-            <div className="row-actions life-wizard-actions">
-              <a className="button secondary" href="#/">Back to creator</a>
+            <div className="row-actions life-wizard-actions" aria-label="Life Modules navigation and draft actions">
+              <a className="button secondary" href="#/" title="Return without undoing applied Life Module choices">Return to character creator</a>
               <button className="button" type="button" onClick={() => { onSave(character); setMessage('Life Module draft saved locally.') }}>Save draft</button>
               <button className="button secondary" type="button" onClick={() => downloadCharacter(character)}>Export character JSON</button>
             </div>

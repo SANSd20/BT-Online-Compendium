@@ -56,11 +56,12 @@ Saved characters must retain enough underlying information to reproduce and audi
 | Alpha 0.1.0-alpha.32 Stage 0 label hotfix | Implemented and verified | Shortens both Stage 0 package action labels to `Apply`; no behavior, rules, layout, or data changes |
 | Alpha Slice 33 merged Stage 0 wizard flow | Implemented and verified | Removes Universal as a separate progress step and presents the unchanged Universal and Affiliation package phases as two sections inside Stage 0 |
 | Alpha Slice 34 Stage 0 baseline and notice polish | Implemented and verified | Includes the Universal baseline at draft creation, keeps context/language explicit, derives the Life Modules badge from the app version, and widens the responsive Public Alpha Notice |
+| Alpha Slice 35 Stage 0 UI cleanup | Implemented and verified | Hides the Universal card for normal drafts, focuses Stage 0 on Affiliation, requires an explicit secondary language in the UI, and displays full Attribute sheet values in the summary |
 | Shared Character/Rules engine | Foundation implemented and exercised | Archetype, Point Buy, and Life Modules use the common representation, ledgers, validation, persistence, and provenance |
 | Archetype foundation | Controlled adjustment and bounded Skill-swap foundation implemented | Published packages remain source-faithful foundations; level adjustments and safe same-XP swaps are separate, reversible, provenance-backed, and must balance to 0 XP |
 | Point Buy v0.1 | Implemented | Core 5,000-XP default, GM-adjusted allotment recording, Attribute/Skill/Trait costs, negative-Trait ceiling, drafts, persistence, and focused catalogs |
 | Life Modules v0.15 | Implemented, deliberately narrow | Existing Stage 0–4 path, final review/Optimization, Final Touches, and 84-item equipment catalog; true finalization and broad catalogs remain deferred |
-| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 34 |
+| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 35 |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
 | Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |
@@ -221,6 +222,8 @@ Alpha Slice 31 completes the focused Stage 0 Universal layout polish. Explanatio
 Alpha Slice 33 merges the existing Universal and Affiliation phases into one top-level Stage 0 wizard presentation. Stage 0 shows both package sections, marks Universal complete before unlocking the existing affiliation action, and advances to Stage 1 through the unchanged engine transition. Universal remains non-affiliation, neither selector receives a silent default, and no rules, award mechanics, saved-data shape, module or affiliation data, random-name behavior, other creation method, or equipment data changed.
 
 Alpha Slice 34 applies the unchanged Universal Fixed Experience Points package when a new Life Modules draft is created. Its fixed awards and 850 XP cost are included immediately, while the affiliation-language award remains pending until the player explicitly chooses a supported context and language in Stage 0. Older `stage-0-universal` saves retain their compatibility path. The Life Modules page badge now derives from the current application version, and the Public Alpha Notice is wider with a responsive two-column desktop list. No broad module or affiliation data, random-name behavior, other creation method, or equipment data changed.
+
+Alpha Slice 35 removes the large Universal card from normal new Stage 0 drafts while preserving it only for legacy `stage-0-universal` compatibility. The tracker subtitle and active workspace now focus on Affiliation. The secondary-language selector uses an instructional placeholder rather than a pending pseudo-language, its Apply action remains separate and is disabled until a listed language is selected, and helper text explains the unresolved state. The Life Modules summary now displays accumulated Attribute sheet values such as 100 instead of normalized purchased levels such as 1. Navigation labels distinguish returning to the creator from undoing choices. No rules, ledger, persistence, module, affiliation, other creation method, or equipment data changed.
 
 ## Current audit checkpoint
 

@@ -26,7 +26,7 @@ export function LifeModuleCharacterSummary({ character }: { character: Character
       <div><dt>Net stat XP</dt><dd>{character.xp.creation.allocated.toLocaleString()}</dd></div>
       <div><dt>Pending choices</dt><dd>{state.pendingAwards.length}</dd></div>
     </dl>
-    <details open><summary>Attributes</summary><ul>{character.attributes.map((entry) => <li key={entry.attributeId}><span>{entry.attributeId}</span><strong>{entry.purchasedLevel ?? '—'}</strong></li>)}</ul></details>
+    <details open><summary>Attributes</summary><ul>{character.attributes.map((entry) => <li key={entry.attributeId}><span>{entry.attributeId}</span><strong>{entry.accumulatedXp.toLocaleString()}</strong></li>)}</ul></details>
     <details><summary>Traits ({character.traits.length})</summary><ul>{character.traits.map((entry, index) => <li key={`${entry.traitId}-${index}`}><span>{entry.displayName ?? entry.traitId}</span><strong>{entry.active ? `${entry.attainedTp ?? 0} TP` : 'pending'}</strong></li>)}</ul></details>
     <details><summary>Skills ({character.skills.length})</summary><ul>{character.skills.map((entry, index) => <li key={`${entry.address.skillId}-${index}`}><span>{entry.displayName ?? entry.address.skillId}</span><strong>{entry.level === null ? '—' : `+${entry.level}`}</strong></li>)}</ul></details>
     <details open><summary>Chosen modules</summary>{character.lifeModuleHistory.length === 0 ? <p>None yet.</p> : <ol>{character.lifeModuleHistory.map((entry) => <li key={entry.moduleId}>{entry.displayName}</li>)}</ol>}</details>

@@ -5,7 +5,7 @@ export interface LifeModuleWizardStep {
 }
 
 export const LIFE_MODULE_WIZARD_STEPS: readonly LifeModuleWizardStep[] = [
-  { id: 'stage-0', label: 'Stage 0', detail: 'Universal + Affiliation' },
+  { id: 'stage-0', label: 'Stage 0', detail: 'Affiliation' },
   { id: 'stage-1', label: 'Stage 1', detail: 'Early Childhood' },
   { id: 'stage-2', label: 'Stage 2', detail: 'Late Childhood' },
   { id: 'stage-3', label: 'Stage 3', detail: 'Higher Education' },
