@@ -20,9 +20,10 @@ export function LifeModuleDashboard({ character, previewCharacter, toolbar, chil
       <LifeModuleProgress phase={state.phase} />
       <div className="life-dashboard-toolbar" aria-label="Life Modules navigation and draft actions">{toolbar}</div>
     </header>
-    <div className="life-wizard-layout">
-      <LifeModuleCharacterSummary character={character} previewCharacter={previewCharacter} />
+    <div className={previewCharacter ? 'life-wizard-layout has-preview' : 'life-wizard-layout'}>
+      <LifeModuleCharacterSummary character={character} />
       <div className="life-wizard-workspace" aria-label="Current Life Modules stage">{children}</div>
+      {previewCharacter && <aside className="life-preview-rail" aria-label="Pending Stage 0 changes"><LifeModulePreviewSummary character={character} previewCharacter={previewCharacter} /></aside>}
     </div>
   </section>
 }
@@ -77,7 +78,7 @@ export function LifeModuleCharacterSummary({ character, previewCharacter }: { ch
       <div><dt>Net stat XP</dt><dd>{character.xp.creation.allocated.toLocaleString()}</dd></div>
       <div><dt>Pending choices</dt><dd>{state.pendingAwards.length}</dd></div>
     </dl>
-    <details open><summary>Attributes</summary><ul>{character.attributes.map((entry) => <li key={entry.attributeId}><span>{entry.attributeId}</span><strong>{entry.accumulatedXp.toLocaleString()}</strong></li>)}</ul></details>
+    <details open className="life-summary-attributes"><summary>Attributes</summary><ul>{character.attributes.map((entry) => <li key={entry.attributeId}><span>{entry.attributeId}</span><strong>{entry.accumulatedXp.toLocaleString()}</strong></li>)}</ul></details>
     <details><summary>Traits ({character.traits.length})</summary><ul>{character.traits.map((entry, index) => <li key={`${entry.traitId}-${index}`}><span>{entry.displayName ?? entry.traitId}</span><strong>{entry.active ? `${entry.attainedTp ?? 0} TP` : 'pending'}</strong></li>)}</ul></details>
     <details><summary>Skills ({character.skills.length})</summary><ul>{character.skills.map((entry, index) => <li key={`${entry.address.skillId}-${index}`}><span>{entry.displayName ?? entry.address.skillId}</span><strong>{entry.level === null ? '—' : `+${entry.level}`}</strong></li>)}</ul></details>
     <details open><summary>Chosen modules</summary>{character.lifeModuleHistory.length === 0 ? <p>None yet.</p> : <ol>{character.lifeModuleHistory.map((entry) => <li key={entry.moduleId}>{entry.displayName}</li>)}</ol>}</details>

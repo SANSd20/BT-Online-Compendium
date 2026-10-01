@@ -2,7 +2,7 @@
 
 Do not invent behavior for these items. A future source clarification or explicit user/project decision is required.
 
-Alpha Slice 39 completes the bounded compact Life Modules dashboard layout while preserving Stage 0 preview-then-continue. Extending preview behavior to Stage 1–4 remains future work. Full affiliation-data expansion, broader accessibility and keyboard-navigation review, the post-Beta random name generator, Beta 1, and PDF export remain future work.
+Alpha Slice 40 completes the corrective wide-screen Life Modules dashboard pass while preserving Stage 0 preview-then-continue. Extending preview behavior to Stage 1–4 remains future work. Full affiliation-data expansion, broader accessibility and keyboard-navigation review, the post-Beta random name generator, Beta 1, and PDF export remain future work.
 
 ## Unresolved Character Generator rules
 

@@ -49,7 +49,10 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
     <section className={`stage0-package-section ${universalComplete ? 'current' : 'pending'}`} aria-labelledby="stage0-affiliation-heading">
       <header className="stage0-package-heading">
         <div><p className="eyebrow">Affiliation and sub-affiliation</p><h3 id="stage0-affiliation-heading">Affiliation Package</h3></div>
-        <strong className="stage0-package-status">{universalComplete ? 'Current' : 'Next'}</strong>
+        <div className="stage0-package-controls">
+          <strong className="stage0-package-status">{universalComplete ? 'Current' : 'Next'}</strong>
+          {universalComplete && <button className="button" type="button" disabled={!affiliationReady} onClick={props.onApplyAffiliation}>Continue</button>}
+        </div>
       </header>
       {universalComplete
         ? <div className="stage0-affiliation-form">
@@ -77,7 +80,6 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
                 </select>
                 <small>This award remains unresolved until you choose a listed language.</small>
               </label>
-              <button className="button" type="button" disabled={!affiliationReady} onClick={props.onApplyAffiliation}>Continue</button>
             </div>
             <div className={affiliationReady ? 'stage0-requirements ready' : 'stage0-requirements'} role="status">
               {affiliationReady

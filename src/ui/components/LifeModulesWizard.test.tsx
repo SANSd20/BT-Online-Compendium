@@ -16,7 +16,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · v0.1.0-alpha.39')
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.40')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -81,8 +81,9 @@ describe('Life Modules wizard presentation', () => {
 
   it('renders compact dashboard landmarks with summary, progress, stage action, and draft controls together', () => {
     const character = createLifeModuleCharacter('Dashboard')
+    const preview = previewStage0Affiliation(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')
     const markup = renderToStaticMarkup(
-      <LifeModuleDashboard character={character} toolbar={<><button>Save draft</button><button>Export character JSON</button></>}>
+      <LifeModuleDashboard character={character} previewCharacter={preview} toolbar={<><button>Save draft</button><button>Export character JSON</button></>}>
         <LifeModuleStageHeading phase="stage-0-affiliation" />
         <button>Continue</button>
       </LifeModuleDashboard>,
@@ -91,10 +92,12 @@ describe('Life Modules wizard presentation', () => {
     expect(markup).toContain('aria-label="Life Modules progress"')
     expect(markup).toContain('aria-label="Current character summary"')
     expect(markup).toContain('aria-label="Current Life Modules stage"')
+    expect(markup).toContain('aria-label="Pending Stage 0 changes"')
     expect(markup).toContain('aria-label="Life Modules navigation and draft actions"')
     expect(markup).toContain('Choose affiliation details')
     expect(markup).toContain('Continue')
     expect(markup).toContain('Save draft')
+    expect(markup).toContain('Preview · Not saved')
   })
 
   it('keeps audit material in a secondary drawer that opens for Review only', () => {
