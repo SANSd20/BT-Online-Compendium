@@ -2,11 +2,10 @@ import { useMemo, useState, type FormEvent } from 'react'
 import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
-import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
-import { applyStage0Affiliation, applyStage1Module, applyStage2Module, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
+import { applyStage0Affiliation, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
@@ -15,6 +14,7 @@ import { LifeModuleAuditDrawer, LifeModuleDashboard, LifeModuleReviewSummary, Li
 import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesAffiliationTheme, previewStage0Affiliation } from '../components/stage0PreviewModel'
+import { applySupportedStageModule, previewSupportedStageModule, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -55,6 +55,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const [stage0AffiliationContext, setStage0AffiliationContext] = useState('')
   const [affiliationLanguage, setAffiliationLanguage] = useState('')
   const [secondaryLanguage, setSecondaryLanguage] = useState('')
+  const [stageModulePreviewId, setStageModulePreviewId] = useState<SupportedStageModuleId | ''>('')
   const [character, setCharacter] = useState<CharacterDefinition | null>(null)
   const [resolutionDrafts, setResolutionDrafts] = useState<Record<string, ResolutionDraft>>({})
   const [finalAllocationTarget, setFinalAllocationTarget] = useState('attribute:STR')
@@ -76,6 +77,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     try {
       const next = operation()
       setCharacter(next)
+      setStageModulePreviewId('')
       onSave(next)
       setMessage(success)
       return true
@@ -112,6 +114,14 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     ...(affiliationLanguage ? [`Affiliation language: ${affiliationLanguage}`] : []),
     ...(secondaryLanguage ? [`Secondary language: ${secondaryLanguage}`] : []),
   ] : []
+  const stageModulePreview = useMemo(() => character
+    ? previewSupportedStageModule(character, stageModulePreviewId)
+    : null, [character, stageModulePreviewId])
+  const activePreview = stage0Preview ?? stageModulePreview
+  const activePreviewSelections = stage0PreviewSelections.length > 0
+    ? stage0PreviewSelections
+    : stageModulePreviewId ? [`Selected module: ${stageModulePreview?.lifeModuleHistory.at(-1)?.displayName ?? stageModulePreviewId}`] : []
+  const previewState = activePreview?.creation.lifeModules
   const validation = character ? validateCharacter(character) : null
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
   const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
@@ -186,8 +196,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
         <>
           <LifeModuleDashboard
             character={character}
-            previewCharacter={stage0Preview}
-            previewSelections={stage0PreviewSelections}
+            previewCharacter={activePreview}
+            previewSelections={activePreviewSelections}
             toolbar={<>
                 <a className="button secondary" href="#/" title="Return without undoing applied Life Module choices">Return to character creator</a>
                 <button className="button" type="button" onClick={() => { onSave(character); setMessage('Life Module draft saved locally.') }}>Save draft</button>
@@ -211,48 +221,48 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               />
             )}
             {state.phase === 'stage-1-selection' && (
-              <div className="stage-options">
-                <article><h3>Blue Collar</h3><p>210 XP · fixed Attribute awards plus unresolved Career, Interest, and flexible awards.</p><button className="button" type="button" onClick={() => operate(() => applyStage1Module(character, BLUE_COLLAR_ID), 'Blue Collar selected; unresolved awards retained.')}>Select Blue Collar</button></article>
-                <article><h3>Back Woods</h3><p>290 XP · fixed Attribute, Trait, and Skill awards; STR 4+ and BOD 5+ are checked for final validation.</p><button className="button" type="button" onClick={() => operate(() => applyStage1Module(character, BACK_WOODS_ID), 'Back Woods selected; unresolved awards and prerequisites retained.')}>Select Back Woods</button></article>
-              </div>
+              <><div className="stage-options">
+                <article className={stageModulePreviewId === BLUE_COLLAR_ID ? 'preview-selected' : ''}><h3>Blue Collar</h3><p>210 XP · fixed Attribute awards plus unresolved Career, Interest, and flexible awards.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === BLUE_COLLAR_ID} onClick={() => setStageModulePreviewId(BLUE_COLLAR_ID)}>Preview Blue Collar</button></article>
+                <article className={stageModulePreviewId === BACK_WOODS_ID ? 'preview-selected' : ''}><h3>Back Woods</h3><p>290 XP · fixed Attribute, Trait, and Skill awards; STR 4+ and BOD 5+ are checked for final validation.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === BACK_WOODS_ID} onClick={() => setStageModulePreviewId(BACK_WOODS_ID)}>Preview Back Woods</button></article>
+              </div>{stageModulePreviewId && <div className="life-action"><p className="notice">Previewing this Early Childhood module. Continue to commit it and open its existing pending-choice flow.</p><button className="button" type="button" onClick={() => operate(() => applySupportedStageModule(character, stageModulePreviewId), 'Stage 1 module selected; unresolved awards retained.')}>Continue with selected module</button></div>}</>
             )}
             {state.phase === 'stage-1-resolution' && <p className="notice">Stage 1 is selected. Resolve every source-bound choice and flexible grant below before reaching an Alpha partial stop.</p>}
             {state.phase === 'stage-1-prerequisite-review' && <p className="notice">All awards are resolved, but one or more module prerequisites remain outstanding for eventual final validation.</p>}
             {state.phase === 'alpha-partial-stop' && <div className="life-action"><p className="notice">Stage 0 and Stage 1 are complete. This is a valid Alpha partial stop—not a finalized Beta 1 character.</p><button className="button" type="button" onClick={() => operate(() => continueToStage2(character), 'Stage 2 continuation opened.')}>Continue to Stage 2</button></div>}
             {state.phase === 'stage-2-selection' && (
-              <div className="stage-options">
-                <article><h3>Back Woods</h3><p>500 XP · fixed awards, Protocol/Affiliation, and a 125 XP flexible pool.</p><button className="button" type="button" onClick={() => operate(() => applyStage2Module(character, STAGE_2_BACK_WOODS_ID), 'Stage 2 Back Woods selected.')}>Select Back Woods</button></article>
-                <article><h3>High School</h3><p>400 XP · requires a non-Clan affiliation and no active Illiterate Trait; includes Interest, affiliation, and 185 flexible XP awards.</p><button className="button" type="button" onClick={() => operate(() => applyStage2Module(character, STAGE_2_HIGH_SCHOOL_ID), 'Stage 2 High School selected.')}>Select High School</button></article>
-              </div>
+              <><div className="stage-options">
+                <article className={stageModulePreviewId === STAGE_2_BACK_WOODS_ID ? 'preview-selected' : ''}><h3>Back Woods</h3><p>500 XP · fixed awards, Protocol/Affiliation, and a 125 XP flexible pool.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === STAGE_2_BACK_WOODS_ID} onClick={() => setStageModulePreviewId(STAGE_2_BACK_WOODS_ID)}>Preview Back Woods</button></article>
+                <article className={stageModulePreviewId === STAGE_2_HIGH_SCHOOL_ID ? 'preview-selected' : ''}><h3>High School</h3><p>400 XP · requires a non-Clan affiliation and no active Illiterate Trait; includes Interest, affiliation, and 185 flexible XP awards.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === STAGE_2_HIGH_SCHOOL_ID} onClick={() => setStageModulePreviewId(STAGE_2_HIGH_SCHOOL_ID)}>Preview High School</button></article>
+              </div>{stageModulePreviewId && <div className="life-action"><p className="notice">Previewing this Late Childhood module. Continue to commit it and open its existing pending-choice flow.</p><button className="button" type="button" onClick={() => operate(() => applySupportedStageModule(character, stageModulePreviewId), 'Stage 2 module selected; unresolved awards retained.')}>Continue with selected module</button></div>}</>
             )}
             {state.phase === 'stage-2-resolution' && <p className="notice">Stage 2 is selected. Resolve all Stage 2 source-bound choices and flexible XP below.</p>}
             {state.phase === 'stage-2-prerequisite-review' && <p className="notice">All Stage 2 awards are resolved, but one or more prerequisites remain outstanding for eventual final validation.</p>}
             {state.phase === 'alpha-stage-2-stop' && <div className="life-action"><p className="notice">Stage 0 through Stage 2 are complete. This is a valid Alpha partial stop—not a finalized Beta 1 character.</p><button className="button" type="button" onClick={() => operate(() => continueToStage3(character), 'Stage 3 continuation opened.')}>Continue to Stage 3</button></div>}
             {state.phase === 'stage-3-selection' && (
-              <div className="stage-options">
+              <><div className="stage-options">
                 <article>
                   <h3>Technical College</h3>
                   <p>600 XP base cost · civilian Higher Education school.</p>
                   <label><input type="checkbox" checked readOnly /> Technician/Civilian — Basic, 120 XP, +1 year</label>
                   <label><input type="checkbox" checked readOnly /> Technician/Vehicle — Advanced, 96 XP, +2 years</label>
                   <p><strong>Total: 816 XP · +3 years · expected age 19</strong></p>
-                  <button className="button" type="button" onClick={() => operate(() => applyTechnicalCollege(character, [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID]), 'Technical College and selected Skill Fields applied.')}>Select Technical College path</button>
+                  <button className="button" type="button" aria-pressed={stageModulePreviewId === TECHNICAL_COLLEGE_ID} onClick={() => setStageModulePreviewId(TECHNICAL_COLLEGE_ID)}>Preview Technical College path</button>
                 </article>
-              </div>
+              </div>{stageModulePreviewId === TECHNICAL_COLLEGE_ID && <div className="life-action"><p className="notice">Previewing Technical College and the displayed Skill Fields. Continue to commit them and open the existing pending-choice flow.</p><button className="button" type="button" onClick={() => operate(() => applySupportedStageModule(character, TECHNICAL_COLLEGE_ID), 'Technical College and selected Skill Fields applied; unresolved awards retained.')}>Continue with Technical College</button></div>}</>
             )}
             {state.phase === 'stage-3-resolution' && <p className="notice">Technical College is selected. Resolve Interest/Any and all flexible XP below.</p>}
             {state.phase === 'stage-3-prerequisite-review' && <p className="notice">All Stage 3 awards are resolved, but one or more Skill Field prerequisites remain outstanding for eventual final validation.</p>}
             {state.phase === 'alpha-stage-3-stop' && <div className="life-action"><p className="notice">The minimal Technical College Stage 3 branch is complete. This is an Alpha partial stop—not a finalized character.</p><button className="button" type="button" onClick={() => operate(() => continueToStage4(character), 'Stage 4 continuation opened.')}>Continue to Stage 4</button></div>}
             {state.phase === 'stage-4-selection' && (
-              <div className="stage-options">
+              <><div className="stage-options">
                 <article>
                   <h3>Agitator</h3>
                   <p>900 XP · Real Life module · +4 years.</p>
                   <p>Includes fixed Attribute, Trait, and Skill awards; three concrete subskill choices; and 125 flexible XP with a 50-XP cap per Attribute.</p>
                   <p><strong>Expected age: 23</strong></p>
-                  <button className="button" type="button" onClick={() => operate(() => applyStage4Module(character, AGITATOR_ID), 'Agitator selected; pending awards retained.')}>Select Agitator</button>
+                  <button className="button" type="button" aria-pressed={stageModulePreviewId === AGITATOR_ID} onClick={() => setStageModulePreviewId(AGITATOR_ID)}>Preview Agitator</button>
                 </article>
-              </div>
+              </div>{stageModulePreviewId === AGITATOR_ID && <div className="life-action"><p className="notice">Previewing Agitator. Continue to commit it and open the existing pending-choice flow.</p><button className="button" type="button" onClick={() => operate(() => applySupportedStageModule(character, AGITATOR_ID), 'Agitator selected; pending awards retained.')}>Continue with Agitator</button></div>}</>
             )}
             {state.phase === 'stage-4-resolution' && <p className="notice">Agitator is selected. Resolve Driving/Any, Prestidigitation/Any, Streetwise/Affiliation, and all flexible XP below.</p>}
             {state.phase === 'stage-4-prerequisite-review' && <div className="life-action"><p className="notice">All Stage 4 awards are resolved, but one or more prerequisites remain outstanding. Enter final review to allocate XP and re-evaluate them.</p><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened with outstanding prerequisites.')}>Enter final review</button></div>}
@@ -263,7 +273,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <LifeModuleStageStatus
               pendingAwards={genericPendingAwards}
               specializedPendingMessage={state.phase === 'stage-0-affiliation' && state.pendingAwards.length > genericPendingAwards.length ? 'Complete the required language choices in the Affiliation Package above.' : undefined}
-              warnings={state.prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => `${moduleName(character, entry.moduleId)}: ${entry.description}`)}
+              warnings={(previewState ?? state).prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => `${moduleName(activePreview ?? character, entry.moduleId)}: ${entry.description}`)}
             />
           </section>
 

@@ -5,6 +5,7 @@ import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, crea
 import { LifeModuleAuditDrawer, LifeModuleCharacterSummary, LifeModuleDashboard, LifeModuleProgress, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from './LifeModulesWizard'
 import { genericPendingAwardsForPhase, LIFE_MODULE_WIZARD_STEPS, lifeModuleStagePresentation, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
 import { previewStage0Affiliation } from './stage0PreviewModel'
+import { previewSupportedStageModule } from './stageModulePreviewModel'
 
 function stage1Draft() {
   let character = createLifeModuleCharacter('Wizard Review')
@@ -16,7 +17,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · v0.1.0-alpha.44')
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.45')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -165,6 +166,26 @@ describe('Life Modules wizard presentation', () => {
     expect(markup).not.toContain('After Continue')
     expect(markup.match(/<details/g)).toHaveLength(4)
     expect(markup.match(/open=""/g)).toHaveLength(4)
+  })
+
+  it('integrates a later-stage module preview without committing its history or provenance', () => {
+    const character = createLifeModuleCharacter('Later Stage Preview')
+    character.creation.lifeModules!.phase = 'stage-1-selection'
+    character.creation.lifeModules!.currentStage = 1
+    const committedJson = JSON.stringify(character)
+    const preview = previewSupportedStageModule(character, BACK_WOODS_ID)
+    const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={character} previewCharacter={preview} previewSelections={['Selected module: Back Woods']} />)
+
+    expect(markup).toContain('Not saved until Continue')
+    expect(markup).toContain('<li class="preview-row">Back Woods</li>')
+    expect(markup).toContain('<span>BOD</span><strong>200</strong>')
+    expect(markup).toContain('<span>Fit</span><strong>1 TP · 100 XP</strong>')
+    expect(markup).toContain('<span>Martial Arts</span><strong>10 XP</strong>')
+    expect(markup).toContain('Pending preview choices')
+    expect(markup).toContain('pending · 50 XP')
+    expect(markup).not.toContain('<em>Preview</em>')
+    expect(JSON.stringify(character)).toBe(committedJson)
+    expect(character.lifeModuleHistory.some((entry) => entry.moduleId === BACK_WOODS_ID)).toBe(false)
   })
 
   it('separates exact pending blockers from non-blocking final-validation warnings', () => {

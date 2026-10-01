@@ -72,8 +72,8 @@ export function LifeModuleCharacterSummary({ character, previewCharacter, previe
   const isPreviewTrait = (traitId: string, displayName: string | undefined, xp: number) => Boolean(previewCharacter) && !character.traits.some((entry) => entry.traitId === traitId && entry.displayName === displayName && entry.accumulatedXp === xp)
   const isPreviewSkill = (displayName: string | undefined, xp: number) => Boolean(previewCharacter) && !character.skills.some((entry) => entry.displayName === displayName && entry.accumulatedXp === xp)
   const committedModules = new Set(character.lifeModuleHistory.map((entry) => entry.moduleId))
-  const previewPendingSkills = previewCharacter
-    ? effectiveState.pendingAwards.filter((entry) => entry.allowedTargetTypes.includes('skill'))
+  const previewPendingAwards = previewCharacter
+    ? effectiveState.pendingAwards
     : []
   return <aside className="life-summary" aria-label="Current character summary">
     <p className="eyebrow">Character summary</p>
@@ -91,8 +91,8 @@ export function LifeModuleCharacterSummary({ character, previewCharacter, previe
     </dl>
     <details open className="life-summary-attributes"><summary>Attributes</summary><ul>{effectiveCharacter.attributes.map((entry) => <li key={entry.attributeId} className={isPreviewAttribute(entry.attributeId, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.attributeId}</span><strong>{entry.accumulatedXp.toLocaleString()}</strong></li>)}</ul></details>
     <details open><summary>Traits ({effectiveCharacter.traits.length})</summary><ul>{effectiveCharacter.traits.map((entry, index) => <li key={`${entry.traitId}-${index}`} className={isPreviewTrait(entry.traitId, entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.traitId}</span><strong>{entry.active ? `${entry.attainedTp ?? 0} TP · ${entry.accumulatedXp.toLocaleString()} XP` : entry.accumulatedXp !== 0 ? `pending · ${entry.accumulatedXp.toLocaleString()} XP` : 'pending'}</strong></li>)}</ul></details>
-    <details open><summary>Skills ({effectiveCharacter.skills.length + previewPendingSkills.length})</summary><ul>{effectiveCharacter.skills.map((entry, index) => <li key={`${entry.address.skillId}-${index}`} className={isPreviewSkill(entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.address.skillId}</span><strong>{entry.accumulatedXp.toLocaleString()} XP</strong></li>)}{previewPendingSkills.map((entry) => <li key={entry.id} className="preview-row pending-row"><span>{entry.description}</span><strong>pending · {(entry.xpPerGrant * entry.remainingGrants).toLocaleString()} XP</strong></li>)}</ul></details>
-    <details open><summary>Chosen modules</summary>{effectiveCharacter.lifeModuleHistory.length === 0 ? <p>None yet.</p> : <ol>{effectiveCharacter.lifeModuleHistory.map((entry) => <li key={entry.moduleId} className={!committedModules.has(entry.moduleId) ? 'preview-row' : ''}>{entry.displayName}</li>)}</ol>}</details>
+    <details open><summary>Skills ({effectiveCharacter.skills.length})</summary><ul>{effectiveCharacter.skills.map((entry, index) => <li key={`${entry.address.skillId}-${index}`} className={isPreviewSkill(entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.address.skillId}</span><strong>{entry.accumulatedXp.toLocaleString()} XP</strong></li>)}</ul></details>
+    <details open><summary>Chosen modules</summary>{effectiveCharacter.lifeModuleHistory.length === 0 ? <p>None yet.</p> : <ol>{effectiveCharacter.lifeModuleHistory.map((entry) => <li key={entry.moduleId} className={!committedModules.has(entry.moduleId) ? 'preview-row' : ''}>{entry.displayName}</li>)}</ol>}{previewPendingAwards.length > 0 && <div className="life-summary-pending"><h3>Pending preview choices</h3><ul>{previewPendingAwards.map((entry) => <li key={entry.id} className="preview-row pending-row"><span>{entry.description}</span><strong>pending · {(entry.allocationMode === 'pool' ? entry.remainingXp : entry.xpPerGrant * entry.remainingGrants)?.toLocaleString()} XP</strong></li>)}</ul></div>}</details>
   </aside>
 }
 
