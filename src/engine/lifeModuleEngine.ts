@@ -60,7 +60,9 @@ export function createLifeModuleCharacter(
   }
   character.provenance.push({ id: provenanceId, kind: 'published', description: 'Life Module character creation rules', source: { ...LIFE_MODULE_RULES_SOURCE } })
   character.xp.creation = { starting: startingXp, remaining: startingXp, allocated: 0 }
-  return character
+  const next = applyModule(character, getLifeModule(UNIVERSAL_STAGE_0_ID), {})
+  requireLifeModules(next).phase = 'stage-0-affiliation'
+  return next
 }
 
 export function applyUniversalStage0(
@@ -69,7 +71,7 @@ export function applyUniversalStage0(
   affiliationLanguage: string,
 ): CharacterDefinition {
   const state = requireLifeModules(character)
-  if (state.phase !== 'stage-0-universal') throw new Error('The universal Stage 0 package is not the current legal action.')
+  if (state.phase !== 'stage-0-universal' && state.phase !== 'stage-0-affiliation') throw new Error('The universal Stage 0 package is not the current legal action.')
   const resolution = resolveLifeModuleAffiliationContext(affiliationContextModuleId)
   if (resolution.support === 'deferred') {
     throw new Error('Choose an explicit Stage 0 affiliation context before resolving the Universal affiliation-language award.')
@@ -78,15 +80,32 @@ export function applyUniversalStage0(
   if (!getLifeModuleLanguageSelectorOptions(resolution.context.affiliationLanguageSelector).includes(language)) {
     throw new Error('Universal affiliation language must be a Capellan primary or secondary language in this Alpha catalog.')
   }
-  const next = applyModule(character, getLifeModule(UNIVERSAL_STAGE_0_ID), {
-    'universal.language.affiliation': {
-      type: 'skill', address: { skillId: 'skill.language', parameter: { kind: 'subskill', value: language } }, displayName: `Language/${language}`,
-    },
-  })
+  const destination: ResolvedLifeModuleDestination = {
+    type: 'skill', targetId: 'skill.language', displayName: `Language/${language}`,
+    parameter: { kind: 'subskill', value: language },
+  }
+  const universalAlreadyIncluded = state.selectedModuleIds.includes(UNIVERSAL_STAGE_0_ID)
+  const next = universalAlreadyIncluded
+    ? resolvePendingLifeModuleAward(character, state.pendingAwards.find((entry) => entry.moduleId === UNIVERSAL_STAGE_0_ID && entry.awardId === 'universal.language.affiliation')?.id ?? '', destination)
+    : applyModule(character, getLifeModule(UNIVERSAL_STAGE_0_ID), {
+        'universal.language.affiliation': toLifeModuleDestination(destination),
+      })
   requireLifeModules(next).stage0AffiliationContext = affiliationContextModuleId
   requireLifeModules(next).affiliationLanguage = language
   requireLifeModules(next).phase = 'stage-0-affiliation'
   return next
+}
+
+export function applyStage0Affiliation(
+  character: CharacterDefinition,
+  affiliationContextModuleId: string,
+  affiliationLanguage: string,
+  capellanSecondaryLanguage?: string,
+): CharacterDefinition {
+  return applyCapellanCommonality(
+    applyUniversalStage0(character, affiliationContextModuleId, affiliationLanguage),
+    capellanSecondaryLanguage,
+  )
 }
 
 export function applyCapellanCommonality(character: CharacterDefinition, capellanSecondaryLanguage?: string): CharacterDefinition {

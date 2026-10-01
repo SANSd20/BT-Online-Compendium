@@ -1,5 +1,10 @@
 import type { CharacterDefinition, PendingLifeModuleAward } from '../../domain/character/model'
+import { APP_VERSION } from '../../appMetadata'
 import { LIFE_MODULE_WIZARD_STEPS, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
+
+export function LifeModulesVersionBadge() {
+  return <p className="eyebrow">Public Alpha · v{APP_VERSION}</p>
+}
 
 export function LifeModuleProgress({ phase }: { phase: string }) {
   const current = lifeModuleWizardStepIndex(phase)

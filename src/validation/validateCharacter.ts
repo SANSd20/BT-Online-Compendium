@@ -569,6 +569,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const hasUniversal = selectedIds.has('stage0.universal-fixed-xp')
   const hasAffiliation = selectedIds.has(CAPELLAN_COMMONALITY_CONTEXT.id)
   const universalAffiliationResolution = state.resolvedAwards?.find((entry) => entry.moduleId === 'stage0.universal-fixed-xp' && entry.awardId === 'universal.language.affiliation')
+  const universalAffiliationPending = state.pendingAwards?.some((entry) => entry.moduleId === 'stage0.universal-fixed-xp' && entry.awardId === 'universal.language.affiliation')
   const stage1Count = character.lifeModuleHistory.filter((entry) => entry.stage === 1).length
   const stage2Count = character.lifeModuleHistory.filter((entry) => entry.stage === 2).length
   const stage3Count = character.lifeModuleHistory.filter((entry) => entry.stage === 3).length
@@ -576,7 +577,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const stage4Count = stage4Entries.length
   if (!hasUniversal) issues.push(issue('life-modules.universal.outstanding', 'lifeModuleHistory', 'The universal Stage 0 package is still required.', { severity: 'warning' }))
   if (!hasAffiliation) issues.push(issue('life-modules.affiliation.outstanding', 'lifeModuleHistory', 'A Stage 0 affiliation is still required.', { severity: 'warning' }))
-  if (hasUniversal && state.awardResolutionVersion === 1 && (
+  if (hasUniversal && !universalAffiliationPending && state.awardResolutionVersion === 1 && (
     !state.stage0AffiliationContext ||
     resolveLifeModuleAffiliationContext(state.stage0AffiliationContext).support !== 'supported' ||
     !state.affiliationLanguage ||

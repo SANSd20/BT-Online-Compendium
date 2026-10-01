@@ -2,7 +2,7 @@
 
 Do not invent behavior for these items. A future source clarification or explicit user/project decision is required.
 
-Alpha Slice 33 changes only the Life Modules wizard presentation: Universal and Affiliation now share the Stage 0 page. Full affiliation-data expansion, broader Life Modules accessibility and responsive review, the post-Beta random name generator, Beta 1, and PDF export remain future work.
+Alpha Slice 34 includes the Universal baseline at Life Modules draft creation and polishes the version badge and Public Alpha Notice layout. Full affiliation-data expansion, broader Life Modules accessibility and responsive review, the post-Beta random name generator, Beta 1, and PDF export remain future work.
 
 ## Unresolved Character Generator rules
 

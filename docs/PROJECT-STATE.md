@@ -55,11 +55,12 @@ Saved characters must retain enough underlying information to reproduce and audi
 | Alpha Slice 31 Stage 0 wizard layout polish | Implemented and verified | Groups Universal affiliation choices in a stable responsive card, preserves full labels and non-affiliation guidance, and separates the apply action without changing mechanics |
 | Alpha 0.1.0-alpha.32 Stage 0 label hotfix | Implemented and verified | Shortens both Stage 0 package action labels to `Apply`; no behavior, rules, layout, or data changes |
 | Alpha Slice 33 merged Stage 0 wizard flow | Implemented and verified | Removes Universal as a separate progress step and presents the unchanged Universal and Affiliation package phases as two sections inside Stage 0 |
+| Alpha Slice 34 Stage 0 baseline and notice polish | Implemented and verified | Includes the Universal baseline at draft creation, keeps context/language explicit, derives the Life Modules badge from the app version, and widens the responsive Public Alpha Notice |
 | Shared Character/Rules engine | Foundation implemented and exercised | Archetype, Point Buy, and Life Modules use the common representation, ledgers, validation, persistence, and provenance |
 | Archetype foundation | Controlled adjustment and bounded Skill-swap foundation implemented | Published packages remain source-faithful foundations; level adjustments and safe same-XP swaps are separate, reversible, provenance-backed, and must balance to 0 XP |
 | Point Buy v0.1 | Implemented | Core 5,000-XP default, GM-adjusted allotment recording, Attribute/Skill/Trait costs, negative-Trait ceiling, drafts, persistence, and focused catalogs |
 | Life Modules v0.15 | Implemented, deliberately narrow | Existing Stage 0–4 path, final review/Optimization, Final Touches, and 84-item equipment catalog; true finalization and broad catalogs remain deferred |
-| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 33 |
+| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 34 |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
 | Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |
@@ -218,6 +219,8 @@ Alpha Slice 30 completes the bounded Life Modules wizard-flow review. The existi
 Alpha Slice 31 completes the focused Stage 0 Universal layout polish. Explanation and non-affiliation guidance precede a stable affiliation-choice card; context and language controls align in two columns at desktop widths and stack on narrow screens; the language control occupies a predictable location before and after context selection; full affiliation text remains available; and the apply action is separated below the choices. No Life Module mechanics, rules data, affiliation data, equipment records, or other creation methods changed.
 
 Alpha Slice 33 merges the existing Universal and Affiliation phases into one top-level Stage 0 wizard presentation. Stage 0 shows both package sections, marks Universal complete before unlocking the existing affiliation action, and advances to Stage 1 through the unchanged engine transition. Universal remains non-affiliation, neither selector receives a silent default, and no rules, award mechanics, saved-data shape, module or affiliation data, random-name behavior, other creation method, or equipment data changed.
+
+Alpha Slice 34 applies the unchanged Universal Fixed Experience Points package when a new Life Modules draft is created. Its fixed awards and 850 XP cost are included immediately, while the affiliation-language award remains pending until the player explicitly chooses a supported context and language in Stage 0. Older `stage-0-universal` saves retain their compatibility path. The Life Modules page badge now derives from the current application version, and the Public Alpha Notice is wider with a responsive two-column desktop list. No broad module or affiliation data, random-name behavior, other creation method, or equipment data changed.
 
 ## Current audit checkpoint
 

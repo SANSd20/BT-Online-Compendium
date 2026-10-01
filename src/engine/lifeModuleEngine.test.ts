@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
@@ -68,8 +68,14 @@ describe('Life Module engine', () => {
   it('creates a sourced draft with a separate module-purchasing pool', () => {
     const character = createLifeModuleCharacter('Xiang')
     expect(character.creation.method).toBe('life-modules')
-    expect(character.creation.lifeModules?.moduleXp).toEqual({ starting: 5000, spent: 0, remaining: 5000 })
-    expect(character.creation.lifeModules?.phase).toBe('stage-0-universal')
+    expect(character.creation.lifeModules?.moduleXp).toEqual({ starting: 5000, spent: 850, remaining: 4150 })
+    expect(character.creation.lifeModules?.phase).toBe('stage-0-affiliation')
+    expect(character.creation.lifeModules?.selectedModuleIds).toContain(UNIVERSAL_STAGE_0_ID)
+    expect(character.creation.lifeModules?.pendingAwards).toContainEqual(expect.objectContaining({ awardId: 'universal.language.affiliation' }))
+    expect(character.attributes.every((entry) => entry.accumulatedXp === 100)).toBe(true)
+    expect(character.skills.find((entry) => entry.displayName === 'Language/English')?.accumulatedXp).toBe(20)
+    expect(character.skills.find((entry) => entry.displayName === 'Perception')?.accumulatedXp).toBe(10)
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).not.toContain('life-modules.stage-0.affiliation-context.required')
     expect(character.provenance.some((entry) => entry.source?.ruleId === 'life-module-character-creation')).toBe(true)
   })
 
@@ -132,8 +138,7 @@ describe('Life Module engine', () => {
 
   it('rejects an unknown module request and overspending', () => {
     expect(() => applyStage1Module(completeStage0(), 'stage1.unknown' as typeof BLUE_COLLAR_ID)).toThrow('Unknown Alpha Stage 1 module')
-    let character = createLifeModuleCharacter('Short Pool', 900)
-    character = applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'English')
+    const character = applyUniversalStage0(createLifeModuleCharacter('Short Pool', 900), CAPELLAN_COMMONALITY_ID, 'English')
     expect(() => applyCapellanCommonality(character, 'Russian')).toThrow('overspend')
   })
 

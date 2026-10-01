@@ -6,12 +6,12 @@ import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAG
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
-import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
+import { applyStage0Affiliation, applyStage1Module, applyStage2Module, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
-import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModuleStageStatus } from '../components/LifeModulesWizard'
+import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModulesVersionBadge, LifeModuleStageStatus } from '../components/LifeModulesWizard'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 
 interface LifeModulesScreenProps {
@@ -153,7 +153,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     <main className="creation-page life-modules-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Public Alpha · Slice 22</p>
+        <LifeModulesVersionBadge />
         <h1>Life Modules</h1>
         <p>Build through the audited Agitator branch, complete final review, and use the 84-item audited Core equipment catalog with affiliation-adjusted access or the manual inventory fallback. Full catalog coverage and finalization remain deferred.</p>
       </section>
@@ -198,7 +198,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 onLanguageChange={setAffiliationLanguage}
                 onSecondaryLanguageChange={setSecondaryLanguage}
                 onApplyUniversal={() => operate(() => applyUniversalStage0(character, stage0AffiliationContext, affiliationLanguage), 'Universal Stage 0 package applied with explicit affiliation context.')}
-                onApplyAffiliation={() => operate(() => applyCapellanCommonality(character, secondaryLanguage), secondaryLanguage ? 'Capellan affiliation package applied with an explicit secondary language.' : 'Capellan affiliation package applied; secondary-language award left pending.')}
+                onApplyAffiliation={() => operate(() => applyStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage), secondaryLanguage ? 'Stage 0 affiliation package applied with explicit language choices.' : 'Stage 0 affiliation package applied; secondary-language award left pending.')}
               />
             )}
             {state.phase === 'stage-1-selection' && (

@@ -21,9 +21,9 @@ describe('merged Stage 0 wizard step', () => {
     expect(markup.match(/>Apply</g)).toHaveLength(1)
   })
 
-  it('marks Universal complete and unlocks the affiliation Apply action', () => {
+  it('shows the included baseline without a Universal action and unlocks only the affiliation Apply action', () => {
     const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} affiliationLanguage="Mandarin Chinese" secondaryLanguage="" {...handlers} />)
-    expect(markup).toContain('Universal Package applied')
+    expect(markup).toContain('Baseline Awards / Universal Fixed Experience Points are included')
     expect(markup).toContain('Universal remains non-affiliation')
     expect(markup).toContain('Capellan Confederation / Capellan Commonality')
     expect(markup.match(/>Apply</g)).toHaveLength(1)

@@ -542,6 +542,12 @@ Verify that the progress tracker contains six top-level steps beginning with Sta
 
 Slice 33 checkpoint result: lint passed; 25 test files and 199 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. Existing engine, persistence, pending-award, blocker/warning, Stage 1–4, Archetype, Point Buy, Final Touches, public-title, and equipment-catalog coverage remained green. The equipment catalog and resource data have no diff, and the generated production bundle reports `0.1.0-alpha.33`.
 
+## Alpha Slice 34 Stage 0 baseline and notice verification
+
+Verify that creating a Life Modules draft immediately records the unchanged 850 XP Universal package, fixed Attribute/English/Perception awards, provenance, and pending affiliation-language award; Stage 0 shows the baseline as included without a redundant Universal action for new drafts; context and language remain empty until explicit selection; applying the affiliation package resolves that pending award and preserves existing progression; and older `stage-0-universal` drafts retain a compatibility path. Verify that the six-step progress tracker remains unchanged, the Life Modules badge derives `v0.1.0-alpha.34` from application metadata and no longer says Slice 22, and the wider Public Alpha Notice uses two desktop columns with a narrow one-column fallback. Existing pending blockers, final-validation warnings, persistence, Stage 1–4, Archetype, Point Buy, Final Touches, title, URL, and equipment behavior must remain unchanged. Also verify exactly 84 equipment records with unchanged stable IDs/data and successful `npm run check` plus a separate `npm run build`.
+
+Slice 34 checkpoint result: lint passed; 25 test files and 200 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. Automatic Universal baseline creation, explicit empty context/language state, pending-award validation, the legacy compatibility path, the six-step tracker, the version-derived badge, and existing Stage 1–4, persistence, Archetype, Point Buy, Final Touches, public-title, and equipment-catalog coverage remained green. The equipment catalog and resource data have no diff, and the generated production bundle reports `0.1.0-alpha.34`.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

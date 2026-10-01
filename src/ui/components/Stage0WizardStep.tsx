@@ -1,4 +1,4 @@
-import { CAPELLAN_COMMONALITY_CONTEXT, getLifeModuleLanguageSelectorOptions } from '../../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, getLifeModuleLanguageSelectorOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS } from '../../domain/lifeModules/affiliations'
 import { Stage0UniversalStep } from './Stage0UniversalStep'
 
 interface Stage0WizardStepProps {
@@ -15,6 +15,9 @@ interface Stage0WizardStepProps {
 
 export function Stage0WizardStep(props: Stage0WizardStepProps) {
   const universalComplete = props.phase === 'stage-0-affiliation'
+  const context = SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.find((entry) => entry.id === props.affiliationContext)
+  const affiliationLanguages = context ? getLifeModuleLanguageSelectorOptions(context.affiliationLanguageSelector) : []
+  const affiliationReady = Boolean(context && props.affiliationLanguage && affiliationLanguages.includes(props.affiliationLanguage))
 
   return <div className="stage0-package-stack">
     <section className={`stage0-package-section ${universalComplete ? 'complete' : 'current'}`} aria-labelledby="stage0-universal-heading">
@@ -23,7 +26,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
         <strong className="stage0-package-status">{universalComplete ? 'Complete' : 'Current'}</strong>
       </header>
       {universalComplete
-        ? <div className="stage0-package-complete"><p>Universal Package applied with the explicit affiliation context and linked language choice.</p><p><strong>Universal remains non-affiliation.</strong> The context only resolves its linked language award.</p></div>
+        ? <div className="stage0-package-complete"><p><strong>Baseline Awards / Universal Fixed Experience Points are included in this draft.</strong> The affiliation-language award remains pending until the explicit choices below are applied.</p><p><strong>Universal remains non-affiliation.</strong></p></div>
         : <Stage0UniversalStep
             affiliationContext={props.affiliationContext}
             affiliationLanguage={props.affiliationLanguage}
@@ -39,15 +42,32 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
         <strong className="stage0-package-status">{universalComplete ? 'Current' : 'Next'}</strong>
       </header>
       {universalComplete
-        ? <div className="life-action">
-            <div><h4>Capellan Confederation / Capellan Commonality</h4><p>150 XP · the audited Alpha affiliation and sub-affiliation package.</p></div>
+        ? <div className="stage0-affiliation-form">
+            <p>Choose the context and linked Universal language explicitly, then apply the audited affiliation and sub-affiliation package.</p>
+            <div className="stage0-choice-grid">
+              <label htmlFor="stage0-affiliation-context">Affiliation context
+                <select id="stage0-affiliation-context" value={props.affiliationContext} onChange={(event) => props.onContextChange(event.target.value)} title={context?.displayName ?? 'Choose an affiliation context'}>
+                  <option value="">Choose an affiliation context…</option>
+                  {SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.map((entry) => <option key={entry.id} value={entry.id} title={entry.displayName}>{entry.id === CAPELLAN_COMMONALITY_CONTEXT.id ? 'Capellan Confederation / Commonality' : entry.displayName}</option>)}
+                </select>
+              </label>
+              <label htmlFor="stage0-affiliation-language">Affiliation language
+                <select id="stage0-affiliation-language" value={props.affiliationLanguage} disabled={!context} onChange={(event) => props.onLanguageChange(event.target.value)}>
+                  <option value="">{context ? 'Choose a language…' : 'Choose a context first…'}</option>
+                  {affiliationLanguages.map((language) => <option key={language}>{language}</option>)}
+                </select>
+              </label>
+            </div>
+            <div className="life-action">
+              <div><h4>Capellan Confederation / Capellan Commonality</h4><p>150 XP · the audited Alpha affiliation and sub-affiliation package.</p></div>
             <label>Capellan secondary-language award
               <select value={props.secondaryLanguage} onChange={(event) => props.onSecondaryLanguageChange(event.target.value)}>
                 <option value="">Leave pending for explicit resolution…</option>
                 {getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector).map((language) => <option key={language}>{language}</option>)}
               </select>
             </label>
-            <button className="button" type="button" onClick={props.onApplyAffiliation}>Apply</button>
+              <button className="button" type="button" disabled={!affiliationReady} onClick={props.onApplyAffiliation}>Apply</button>
+            </div>
           </div>
         : <p className="stage0-package-pending">Apply the Universal Package first. This affiliation package remains visible here and will unlock without becoming a separate wizard step.</p>}
     </section>

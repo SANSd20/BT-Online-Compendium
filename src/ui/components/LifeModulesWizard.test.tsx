@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { BACK_WOODS_ID, CAPELLAN_COMMONALITY_ID } from '../../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
-import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModuleStageStatus } from './LifeModulesWizard'
+import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModulesVersionBadge, LifeModuleStageStatus } from './LifeModulesWizard'
 import { LIFE_MODULE_WIZARD_STEPS, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
 
 function stage1Draft() {
@@ -13,6 +13,12 @@ function stage1Draft() {
 }
 
 describe('Life Modules wizard presentation', () => {
+  it('derives the Life Modules page badge from the current application version', () => {
+    const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.34')
+    expect(markup).not.toContain('Slice 22')
+  })
+
   it('maps every Life Modules stage to the visible progress tracker', () => {
     expect(lifeModuleWizardStepIndex('stage-0-universal')).toBe(0)
     expect(lifeModuleWizardStepIndex('stage-0-affiliation')).toBe(0)
