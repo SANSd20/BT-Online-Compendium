@@ -4,6 +4,7 @@ import { BACK_WOODS_ID, CAPELLAN_COMMONALITY_ID } from '../../domain/lifeModules
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from './LifeModulesWizard'
 import { genericPendingAwardsForPhase, LIFE_MODULE_WIZARD_STEPS, lifeModuleStagePresentation, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
+import { previewStage0Affiliation } from './stage0PreviewModel'
 
 function stage1Draft() {
   let character = createLifeModuleCharacter('Wizard Review')
@@ -15,7 +16,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · v0.1.0-alpha.37')
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.38')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -81,6 +82,20 @@ describe('Life Modules wizard presentation', () => {
     for (const attribute of ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG']) {
       expect(markup).toContain(`<span>${attribute}</span><strong>100</strong>`)
     }
+  })
+
+  it('renders an explicitly unsaved Stage 0 preview beside the committed summary', () => {
+    const character = createLifeModuleCharacter('Preview')
+    const preview = previewStage0Affiliation(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')
+    expect(preview).not.toBeNull()
+    const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={character} previewCharacter={preview} />)
+    expect(markup).toContain('Preview · Not saved')
+    expect(markup).toContain('After Continue')
+    expect(markup).toContain('4,150')
+    expect(markup).toContain('4,000')
+    expect(markup).toContain('<span>WIL</span><strong>150</strong>')
+    expect(markup).toContain('Language/Mandarin Chinese')
+    expect(markup).toContain('Language/Russian')
   })
 
   it('separates exact pending blockers from non-blocking final-validation warnings', () => {

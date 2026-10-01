@@ -168,6 +168,12 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .life-summary summary { cursor: pointer; font-weight: 750; }
 .life-summary ul, .life-summary ol { display: grid; gap: 5px; padding: 8px 0 0; margin: 0; list-style: none; font-size: .78rem; }
 .life-summary li { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); }
+.life-preview-summary { margin-top: 14px; padding: 14px; border: 1px dashed var(--amber); background: #211b0f; }
+.life-preview-summary h3, .life-preview-summary h4 { margin: 6px 0; }
+.life-preview-summary > p:not(.eyebrow) { color: #f8ddb0; font-size: .8rem; }
+.life-preview-summary dl { margin: 10px 0; }
+.life-preview-summary dl div { display: flex; justify-content: space-between; gap: 10px; }
+.life-preview-summary dd { margin: 0; color: var(--amber); font-weight: 800; }
 .life-stage-status { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
 .life-stage-status section { padding: 16px; border: 1px solid var(--line); background: #0d151d; }
 .life-stage-status h3 { margin: 0 0 8px; font-size: .9rem; }

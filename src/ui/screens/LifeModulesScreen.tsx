@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
@@ -14,6 +14,7 @@ import { validateCharacter } from '../../validation/validateCharacter'
 import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from '../components/LifeModulesWizard'
 import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
+import { previewStage0Affiliation } from '../components/stage0PreviewModel'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -103,6 +104,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const state = character?.creation.lifeModules
   const genericPendingAwards = state ? genericPendingAwardsForPhase(state.phase, state.pendingAwards) : []
   const stagePresentation = state ? lifeModuleStagePresentation(state.phase) : null
+  const stage0Preview = useMemo(() => character && state?.phase === 'stage-0-affiliation'
+    ? previewStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage)
+    : null, [character, state?.phase, stage0AffiliationContext, affiliationLanguage, secondaryLanguage])
   const validation = character ? validateCharacter(character) : null
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
   const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
@@ -185,7 +189,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           <LifeModuleProgress phase={state.phase} />
 
           <div className="life-wizard-layout">
-            <LifeModuleCharacterSummary character={character} />
+            <LifeModuleCharacterSummary character={character} previewCharacter={stage0Preview} />
             <div className="life-wizard-workspace">
 
           <section className="life-stage-panel">

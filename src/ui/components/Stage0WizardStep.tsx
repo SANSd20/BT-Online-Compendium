@@ -77,11 +77,11 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
                 </select>
                 <small>This award remains unresolved until you choose a listed language.</small>
               </label>
-              <button className="button" type="button" disabled={!affiliationReady} onClick={props.onApplyAffiliation}>Apply and continue</button>
+              <button className="button" type="button" disabled={!affiliationReady} onClick={props.onApplyAffiliation}>Continue</button>
             </div>
             <div className={affiliationReady ? 'stage0-requirements ready' : 'stage0-requirements'} role="status">
               {affiliationReady
-                ? <p>All required Stage 0 choices are selected. Apply them and continue to Stage 1.</p>
+                ? <p>Previewing selected Stage 0 choices. Continue to apply them and advance to Stage 1.</p>
                 : <><strong>Required before continuing:</strong><ul>{missingChoices.map((choice) => <li key={choice}>{choice}</li>)}</ul></>}
             </div>
           </div>

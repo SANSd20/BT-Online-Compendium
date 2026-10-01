@@ -31,12 +31,13 @@ describe('merged Stage 0 wizard step', () => {
     expect(markup).toContain('award remains unresolved until you choose a listed language')
     expect(markup).toContain('Required before continuing:')
     expect(markup).toContain('Choose a Capellan secondary language.')
-    expect(markup).toContain('<button class="button" type="button" disabled="">Apply and continue</button>')
+    expect(markup).toContain('<button class="button" type="button" disabled="">Continue</button>')
   })
 
-  it('enables affiliation Apply after explicit context and language choices', () => {
+  it('previews complete choices and enables Continue', () => {
     const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...handlers} />)
-    expect(markup).toContain('All required Stage 0 choices are selected')
-    expect(markup).toContain('<button class="button" type="button">Apply and continue</button>')
+    expect(markup).toContain('Previewing selected Stage 0 choices')
+    expect(markup).toContain('Continue to apply them and advance to Stage 1')
+    expect(markup).toContain('<button class="button" type="button">Continue</button>')
   })
 })
