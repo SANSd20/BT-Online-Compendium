@@ -2,7 +2,7 @@
 
 Do not invent behavior for these items. A future source clarification or explicit user/project decision is required.
 
-Alpha Slice 42 clarifies Trait and Skill XP in the integrated Character Summary and removes repeated row-level preview text while preserving the visual distinction. Extending preview behavior to Stage 1–4 remains future work. Full affiliation-data expansion, broader accessibility and keyboard-navigation review, the post-Beta random name generator, Beta 1, and PDF export remain future work.
+Alpha Slice 43 adds progressive Stage 0 package preview and a context-scoped Capellan visual theme while preserving the Continue commit boundary. Extending preview behavior or faction theming to Stage 1–4 and other affiliation contexts remains future work. Full affiliation-data expansion, broader accessibility and keyboard-navigation review, the post-Beta random name generator, Beta 1, and PDF export remain future work.
 
 ## Unresolved Character Generator rules
 

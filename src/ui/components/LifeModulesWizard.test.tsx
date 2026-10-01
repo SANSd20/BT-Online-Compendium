@@ -16,7 +16,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · v0.1.0-alpha.42')
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.43')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -130,28 +130,41 @@ describe('Life Modules wizard presentation', () => {
   })
 
   it('integrates the complete Stage 0 preview into the running character summary', () => {
-    const character = createLifeModuleCharacter('Preview')
+    const character = createLifeModuleCharacter('Complete Stage 0')
     const preview = previewStage0Affiliation(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')
     expect(preview).not.toBeNull()
     const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={character} previewCharacter={preview} />)
     expect(markup).toContain('Previewing selected choices')
     expect(markup).toContain('Not saved until Continue')
-    expect(markup).toContain('After Continue')
+    expect(markup).not.toContain('After Continue')
     expect(markup).toContain('4,000')
     expect(markup).toContain('<li class="preview-row"><span>WIL</span><strong>150</strong></li>')
     expect(markup).toContain('Language/Mandarin Chinese')
     expect(markup).toContain('Language/Russian')
     expect(markup).not.toContain('<em>Preview</em>')
+    expect(markup).not.toContain('>Preview<')
   })
 
-  it('shows safe partial Stage 0 selection status without inventing package effects', () => {
+  it('shows safe known effects and pending choice rows after context selection', () => {
     const character = createLifeModuleCharacter('Partial Preview')
-    const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={character} previewSelections={['Affiliation context selected']} />)
+    const preview = previewStage0Affiliation(character, CAPELLAN_COMMONALITY_ID, '', '')
+    const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={character} previewCharacter={preview} previewSelections={['Affiliation context selected']} />)
     expect(markup).toContain('Affiliation context selected')
     expect(markup).toContain('Not saved until Continue')
-    expect(markup).toContain('Complete all required Stage 0 choices')
-    expect(markup).toContain('<dt>Module XP left</dt><dd>4,150</dd>')
+    expect(markup).toContain('Known package effects are shown now; choice-dependent awards remain pending.')
+    expect(markup).toContain('<li class="preview-row"><span>WIL</span><strong>150</strong></li>')
+    expect(markup).toContain('Exceptional Attribute/EDG')
+    expect(markup).toContain('Protocol/Capellan')
+    expect(markup).toContain('Choose an affiliation primary or secondary language.')
+    expect(markup).toContain('pending · 20 XP')
+    expect(markup).toContain('Choose any Capellan secondary language.')
+    expect(markup).toContain('pending · 10 XP')
+    expect(markup).toContain('Choose any Federated Suns language.')
+    expect(markup).toContain('pending · 5 XP')
+    expect(markup).toContain('<dt>Module XP left</dt><dd>4,000</dd>')
     expect(markup).not.toContain('After Continue')
+    expect(markup.match(/<details/g)).toHaveLength(4)
+    expect(markup.match(/open=""/g)).toHaveLength(4)
   })
 
   it('separates exact pending blockers from non-blocking final-validation warnings', () => {

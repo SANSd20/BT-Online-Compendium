@@ -14,7 +14,7 @@ import { validateCharacter } from '../../validation/validateCharacter'
 import { LifeModuleAuditDrawer, LifeModuleDashboard, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from '../components/LifeModulesWizard'
 import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
-import { previewStage0Affiliation } from '../components/stage0PreviewModel'
+import { lifeModulesAffiliationTheme, previewStage0Affiliation } from '../components/stage0PreviewModel'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -162,7 +162,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   }
 
   return (
-    <main className="creation-page life-modules-page">
+    <main className={`creation-page life-modules-page ${lifeModulesAffiliationTheme(stage0AffiliationContext)}`.trim()}>
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
         <LifeModulesVersionBadge />
@@ -203,7 +203,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 affiliationContext={stage0AffiliationContext}
                 affiliationLanguage={affiliationLanguage}
                 secondaryLanguage={secondaryLanguage}
-                onContextChange={(value) => { setStage0AffiliationContext(value); setAffiliationLanguage('') }}
+                onContextChange={(value) => { setStage0AffiliationContext(value); setAffiliationLanguage(''); setSecondaryLanguage('') }}
                 onLanguageChange={setAffiliationLanguage}
                 onSecondaryLanguageChange={setSecondaryLanguage}
                 onApplyUniversal={() => operate(() => applyUniversalStage0(character, stage0AffiliationContext, affiliationLanguage), 'Universal Stage 0 package applied with explicit affiliation context.')}
