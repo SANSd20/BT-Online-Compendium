@@ -524,6 +524,12 @@ Verify that the Life Modules progress tracker identifies the current Universal/S
 
 Slice 30 checkpoint result: lint passed; 23 test files and 194 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. Existing engine, persistence, affiliation-framework, equipment-catalog, Archetype, Point Buy, Final Touches, public-title, and selector coverage remained green. The equipment catalog and resource data have no diff, and the generated production bundle reports `0.1.0-alpha.30`.
 
+## Alpha Slice 31 Stage 0 layout verification
+
+Verify that Stage 0 Universal presents explanation and explicit non-affiliation guidance before a stable affiliation-choice card; context and language controls remain present in a consistent order; the language selector is disabled until context selection; the apply action occupies a separate row and remains disabled until both current source-backed choices are valid; the full Capellan Confederation / Capellan Commonality label is preserved with title text; and the choice grid stacks at narrow widths. Existing blockers/warnings, engine behavior, empty defaults, affiliation framework, pending selectors, persistence, and Stage 1–4 behavior must remain unchanged. Also verify version `0.1.0-alpha.31`, title `A Time of War character creator`, exactly 84 equipment records with unchanged stable IDs/data, and successful `npm run check` plus a separate `npm run build`.
+
+Slice 31 checkpoint result: lint passed; 24 test files and 197 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. Existing engine, persistence, affiliation-framework, equipment-catalog, Archetype, Point Buy, Final Touches, public-title, blocker/warning, and selector coverage remained green. The equipment catalog and resource data have no diff, and the generated production bundle reports `0.1.0-alpha.31`.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

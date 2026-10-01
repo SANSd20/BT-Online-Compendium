@@ -2,9 +2,9 @@ import { useState, type FormEvent } from 'react'
 import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
-import { CAPELLAN_COMMONALITY_CONTEXT, getLifeModuleLanguageSelectorOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS } from '../../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, getLifeModuleLanguageSelectorOptions } from '../../domain/lifeModules/affiliations'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
@@ -13,6 +13,7 @@ import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, mar
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModuleStageStatus } from '../components/LifeModulesWizard'
+import { Stage0UniversalStep } from '../components/Stage0UniversalStep'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -189,22 +190,13 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <p className="eyebrow">Current state</p>
             <h2>{formatPhase(state.phase)}</h2>
             {state.phase === 'stage-0-universal' && (
-              <div className="life-action">
-                <div><h3>Universal Fixed Experience Points</h3><p>850 XP · +100 XP to every Attribute, two Language awards, and Perception +10 XP.</p><p className="scope-note">Stage 0 Universal is not an affiliation. Choose an affiliation context explicitly before resolving its affiliation-linked Language award.</p></div>
-                <label>Affiliation context
-                  <select value={stage0AffiliationContext} onChange={(event) => { setStage0AffiliationContext(event.target.value); setAffiliationLanguage('') }}>
-                    <option value="">Choose an affiliation context…</option>
-                    {SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.map((context) => <option key={context.id} value={context.id}>{context.displayName}</option>)}
-                  </select>
-                </label>
-                {stage0AffiliationContext === CAPELLAN_COMMONALITY_ID && <label>Affiliation language
-                  <select value={affiliationLanguage} onChange={(event) => setAffiliationLanguage(event.target.value)}>
-                    <option value="">Choose a language…</option>
-                    {getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.affiliationLanguageSelector).map((language) => <option key={language}>{language}</option>)}
-                  </select>
-                </label>}
-                <button className="button" type="button" disabled={!stage0AffiliationContext || !affiliationLanguage} onClick={() => operate(() => applyUniversalStage0(character, stage0AffiliationContext, affiliationLanguage), 'Universal Stage 0 package applied with explicit affiliation context.')}>Apply universal package</button>
-              </div>
+              <Stage0UniversalStep
+                affiliationContext={stage0AffiliationContext}
+                affiliationLanguage={affiliationLanguage}
+                onContextChange={(value) => { setStage0AffiliationContext(value); setAffiliationLanguage('') }}
+                onLanguageChange={setAffiliationLanguage}
+                onApply={() => operate(() => applyUniversalStage0(character, stage0AffiliationContext, affiliationLanguage), 'Universal Stage 0 package applied with explicit affiliation context.')}
+              />
             )}
             {state.phase === 'stage-0-affiliation' && (
               <div className="life-action">

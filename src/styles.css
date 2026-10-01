@@ -179,6 +179,22 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .life-wizard-actions { position: sticky; bottom: 0; z-index: 2; padding: 12px; border: 1px solid var(--line); background: rgb(9 16 23 / 94%); backdrop-filter: blur(8px); }
 .life-wizard-actions .button { text-decoration: none; text-align: center; }
 .life-stage-panel { margin-top: 20px; padding: clamp(22px, 4vw, 38px); border: 1px solid var(--line); background: var(--panel); }
+.stage0-universal-step { display: grid; gap: 24px; }
+.stage0-universal-intro { max-width: 70ch; }
+.stage0-universal-intro h3 { margin-bottom: 8px; }
+.stage0-universal-intro p { margin: 8px 0 0; }
+.stage0-universal-helper { padding: 13px 15px; border-left: 3px solid var(--amber); color: var(--muted); background: #111922; }
+.stage0-universal-helper strong { color: #fff; }
+.stage0-choice-card { min-width: 0; padding: 20px; border: 1px solid var(--line); background: #0d151d; }
+.stage0-choice-card legend { padding: 0 8px; color: var(--amber); font-size: .78rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.stage0-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.stage0-choice-grid label { display: grid; min-width: 0; gap: 7px; color: #e8edf2; font-size: .82rem; font-weight: 700; }
+.stage0-choice-grid select { width: 100%; min-width: 0; min-height: 46px; padding: 9px 38px 9px 12px; border: 1px solid var(--line); color: #fff; background: #091017; }
+.stage0-choice-grid select:disabled { color: var(--muted); opacity: .72; }
+.stage0-choice-grid small { min-height: 2.5em; color: var(--muted); font-size: .74rem; font-weight: 400; line-height: 1.35; }
+.stage0-choice-action { display: flex; align-items: center; gap: 14px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.stage0-choice-action .button { min-width: 210px; }
+.stage0-choice-action span { color: var(--muted); font-size: .78rem; }
 .life-action { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, .55fr) auto; gap: 16px; align-items: end; }
 .life-action label { display: grid; gap: 7px; color: var(--muted); font-size: .82rem; }
 .life-action select { min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); color: #fff; background: #091017; }
@@ -221,6 +237,10 @@ footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--mute
   .purchase-form { align-items: stretch; flex-direction: column; }
   .sheet-heading { flex-direction: column; }
   .life-action { grid-template-columns: 1fr; }
+  .stage0-choice-grid { grid-template-columns: 1fr; }
+  .stage0-choice-grid small { min-height: 0; }
+  .stage0-choice-action { align-items: stretch; flex-direction: column; }
+  .stage0-choice-action .button { width: 100%; min-width: 0; }
   .life-wizard-layout { grid-template-columns: 1fr; }
   .life-summary { position: static; max-height: none; }
   .life-stage-status { grid-template-columns: 1fr; }
