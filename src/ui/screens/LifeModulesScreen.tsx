@@ -12,6 +12,7 @@ import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, mar
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModulesVersionBadge, LifeModuleStageStatus } from '../components/LifeModulesWizard'
+import { genericPendingAwardsForPhase } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 
 interface LifeModulesScreenProps {
@@ -100,6 +101,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   }
 
   const state = character?.creation.lifeModules
+  const genericPendingAwards = state ? genericPendingAwardsForPhase(state.phase, state.pendingAwards) : []
   const validation = character ? validateCharacter(character) : null
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
   const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
@@ -252,16 +254,17 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.phase === 'ready-for-final-touches' && !character.creation.finalTouches && <div className="life-action"><p className="notice">This draft passed final review and may enter the Alpha Final Touches/equipment foundation.</p><button className="button" type="button" onClick={() => operate(() => enterFinalTouches(character), 'Final Touches opened with Wealth-derived funds and Equipped-derived limits.')}>Enter Final Touches</button></div>}
             {state.phase === 'ready-for-final-touches' && character.creation.finalTouches && <p className="notice">Final Touches equipment state: {formatPhase(character.creation.finalTouches.equipmentReviewState)}. This is not a finalized or ready-for-play character.</p>}
             <LifeModuleStageStatus
-              pendingAwards={state.pendingAwards}
+              pendingAwards={genericPendingAwards}
+              specializedPendingMessage={state.phase === 'stage-0-affiliation' && state.pendingAwards.length > genericPendingAwards.length ? 'Complete the required language choices in the Affiliation Package above.' : undefined}
               warnings={state.prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => `${moduleName(character, entry.moduleId)}: ${entry.description}`)}
             />
           </section>
 
-          <section className="life-stage-panel pending-resolution-panel" id="pending-awards">
+          {(state.phase !== 'stage-0-affiliation' || genericPendingAwards.length > 0) && <section className="life-stage-panel pending-resolution-panel" id="pending-awards">
             <p className="eyebrow">Current-stage choices</p>
             <h2>Pending award resolution</h2>
-            {state.pendingAwards.length === 0 ? <p>No unresolved award allocations. Follow the current-stage action above.</p> : (
-              <div className="pending-awards">{state.pendingAwards.map((entry) => {
+            {genericPendingAwards.length === 0 ? <p>No unresolved award allocations. Follow the current-stage action above.</p> : (
+              <div className="pending-awards">{genericPendingAwards.map((entry) => {
                 const draft = { ...defaultResolutionDraft(entry), ...resolutionDrafts[entry.id] }
                 const optionEntry = entry.kind === 'flexible-xp' ? { ...entry, allowedTargetTypes: [draft.targetType] } : entry
                 const options = pendingAwardOptions(optionEntry, character)
@@ -293,7 +296,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 )
               })}</div>
             )}
-          </section>
+          </section>}
             </div>
           </div>
 

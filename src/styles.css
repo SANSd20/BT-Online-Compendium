@@ -196,6 +196,10 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .stage0-secondary-action label { display: grid; min-width: 0; gap: 7px; color: #e8edf2; font-size: .82rem; font-weight: 700; }
 .stage0-secondary-action select { width: 100%; min-width: 0; min-height: 46px; padding: 9px 38px 9px 12px; border: 1px solid var(--line); color: #fff; background: #091017; }
 .stage0-secondary-action small { color: var(--muted); font-size: .74rem; font-weight: 400; line-height: 1.35; }
+.stage0-requirements { padding: 12px 14px; border-left: 3px solid #8a3f3f; color: #ffb1b1; background: #2b1414; }
+.stage0-requirements.ready { border-left-color: #376d49; color: #9ce3b2; background: #0d1913; }
+.stage0-requirements p, .stage0-requirements ul { margin: 0; }
+.stage0-requirements ul { margin-top: 7px; }
 .stage0-universal-step { display: grid; gap: 24px; }
 .stage0-universal-intro { max-width: 70ch; }
 .stage0-universal-intro h3 { margin-bottom: 8px; }

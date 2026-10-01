@@ -21,3 +21,13 @@ export function lifeModuleWizardStepIndex(phase: string): number {
   if (phase.includes('stage-4')) return 4
   return 5
 }
+import type { PendingLifeModuleAward } from '../../domain/character/model'
+
+
+export function genericPendingAwardsForPhase(phase: string, pendingAwards: PendingLifeModuleAward[]): PendingLifeModuleAward[] {
+  if (phase !== 'stage-0-affiliation') return pendingAwards
+  return pendingAwards.filter((entry) => !(
+    entry.moduleId === 'stage0.universal-fixed-xp' &&
+    entry.awardId === 'universal.language.affiliation'
+  ))
+}

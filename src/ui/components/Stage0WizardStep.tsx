@@ -24,6 +24,11 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
     affiliationLanguages.includes(props.affiliationLanguage) &&
     secondaryLanguages.includes(props.secondaryLanguage),
   )
+  const missingChoices = [
+    ...(!context ? ['Choose an affiliation context.'] : []),
+    ...(!props.affiliationLanguage || !affiliationLanguages.includes(props.affiliationLanguage) ? ['Choose an affiliation language.'] : []),
+    ...(!secondaryLanguages.includes(props.secondaryLanguage) ? ['Choose a Capellan secondary language.'] : []),
+  ]
 
   return <div className="stage0-package-stack">
     {!universalComplete && <section className="stage0-package-section current" aria-labelledby="stage0-universal-heading">
@@ -70,9 +75,14 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
                   <option value="" disabled>Choose a secondary language…</option>
                   {secondaryLanguages.map((language) => <option key={language}>{language}</option>)}
                 </select>
-                <small>This award remains unresolved until you choose a listed language and apply the package.</small>
+                <small>This award remains unresolved until you choose a listed language.</small>
               </label>
-              <button className="button" type="button" disabled={!affiliationReady} onClick={props.onApplyAffiliation}>Apply</button>
+              <button className="button" type="button" disabled={!affiliationReady} onClick={props.onApplyAffiliation}>Apply and continue</button>
+            </div>
+            <div className={affiliationReady ? 'stage0-requirements ready' : 'stage0-requirements'} role="status">
+              {affiliationReady
+                ? <p>All required Stage 0 choices are selected. Apply them and continue to Stage 1.</p>
+                : <><strong>Required before continuing:</strong><ul>{missingChoices.map((choice) => <li key={choice}>{choice}</li>)}</ul></>}
             </div>
           </div>
         : <p className="stage0-package-pending">Complete the legacy compatibility step above to unlock the affiliation package.</p>}

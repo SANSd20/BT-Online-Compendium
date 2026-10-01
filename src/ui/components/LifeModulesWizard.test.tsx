@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { BACK_WOODS_ID, CAPELLAN_COMMONALITY_ID } from '../../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModulesVersionBadge, LifeModuleStageStatus } from './LifeModulesWizard'
-import { LIFE_MODULE_WIZARD_STEPS, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
+import { genericPendingAwardsForPhase, LIFE_MODULE_WIZARD_STEPS, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
 
 function stage1Draft() {
   let character = createLifeModuleCharacter('Wizard Review')
@@ -15,7 +15,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · v0.1.0-alpha.35')
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.36')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -34,6 +34,15 @@ describe('Life Modules wizard presentation', () => {
     expect(markup).toContain('Life Modules progress')
     expect(markup).toContain('aria-current="step"')
     expect(markup).toContain('Late Childhood')
+  })
+
+  it('suppresses only the specialized Stage 0 language award from generic resolution', () => {
+    const pending = createLifeModuleCharacter('Stage 0').creation.lifeModules!.pendingAwards
+    expect(pending).toHaveLength(1)
+    expect(genericPendingAwardsForPhase('stage-0-affiliation', pending)).toHaveLength(0)
+    expect(genericPendingAwardsForPhase('stage-1-resolution', pending)).toEqual(pending)
+    const unsupported = { ...pending[0], id: 'unsupported', awardId: 'stage0.unsupported' }
+    expect(genericPendingAwardsForPhase('stage-0-affiliation', [...pending, unsupported])).toEqual([unsupported])
   })
 
   it('renders a persistent character, XP, statistic, and module summary', () => {
