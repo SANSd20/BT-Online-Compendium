@@ -4,6 +4,7 @@ import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
+import { CAPELLAN_COMMONALITY_CONTEXT, getLifeModuleLanguageSelectorOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS } from '../../domain/lifeModules/affiliations'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
@@ -15,9 +16,6 @@ import { validateCharacter } from '../../validation/validateCharacter'
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
 }
-
-const AFFILIATION_LANGUAGES = ['Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English']
-const SECONDARY_LANGUAGES = ['Russian', 'Cantonese', 'Vietnamese', 'English']
 
 interface ResolutionDraft {
   targetType: 'attribute' | 'trait' | 'skill'
@@ -189,13 +187,13 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 <label>Affiliation context
                   <select value={stage0AffiliationContext} onChange={(event) => { setStage0AffiliationContext(event.target.value); setAffiliationLanguage('') }}>
                     <option value="">Choose an affiliation context…</option>
-                    <option value={CAPELLAN_COMMONALITY_ID}>Capellan Confederation / Capellan Commonality</option>
+                    {SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.map((context) => <option key={context.id} value={context.id}>{context.displayName}</option>)}
                   </select>
                 </label>
                 {stage0AffiliationContext === CAPELLAN_COMMONALITY_ID && <label>Affiliation language
                   <select value={affiliationLanguage} onChange={(event) => setAffiliationLanguage(event.target.value)}>
                     <option value="">Choose a language…</option>
-                    {AFFILIATION_LANGUAGES.map((language) => <option key={language}>{language}</option>)}
+                    {getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.affiliationLanguageSelector).map((language) => <option key={language}>{language}</option>)}
                   </select>
                 </label>}
                 <button className="button" type="button" disabled={!stage0AffiliationContext || !affiliationLanguage} onClick={() => operate(() => applyUniversalStage0(character, stage0AffiliationContext, affiliationLanguage), 'Universal Stage 0 package applied with explicit affiliation context.')}>Apply universal package</button>
@@ -207,7 +205,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 <label>Capellan secondary-language award
                   <select value={secondaryLanguage} onChange={(event) => setSecondaryLanguage(event.target.value)}>
                     <option value="">Leave pending for explicit resolution…</option>
-                    {SECONDARY_LANGUAGES.map((language) => <option key={language}>{language}</option>)}
+                    {getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector).map((language) => <option key={language}>{language}</option>)}
                   </select>
                 </label>
                 <button className="button" type="button" onClick={() => operate(() => applyCapellanCommonality(character, secondaryLanguage), secondaryLanguage ? 'Capellan affiliation package applied with an explicit secondary language.' : 'Capellan affiliation package applied; secondary-language award left pending.')}>Select affiliation</button>

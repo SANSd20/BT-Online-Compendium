@@ -22,6 +22,7 @@ import type { ValidationIssue, ValidationResult } from './model'
 import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
+import { CAPELLAN_COMMONALITY_CONTEXT, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
 import {
   deriveAttributeLevel,
@@ -566,7 +567,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     issues.push(issue('life-modules.selection.balance', 'creation.lifeModules.selectedModuleIds', 'Selected module state does not match module history.'))
   }
   const hasUniversal = selectedIds.has('stage0.universal-fixed-xp')
-  const hasAffiliation = selectedIds.has('stage0.capellan-confederation.capellan-commonality')
+  const hasAffiliation = selectedIds.has(CAPELLAN_COMMONALITY_CONTEXT.id)
   const universalAffiliationResolution = state.resolvedAwards?.find((entry) => entry.moduleId === 'stage0.universal-fixed-xp' && entry.awardId === 'universal.language.affiliation')
   const stage1Count = character.lifeModuleHistory.filter((entry) => entry.stage === 1).length
   const stage2Count = character.lifeModuleHistory.filter((entry) => entry.stage === 2).length
@@ -576,13 +577,14 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   if (!hasUniversal) issues.push(issue('life-modules.universal.outstanding', 'lifeModuleHistory', 'The universal Stage 0 package is still required.', { severity: 'warning' }))
   if (!hasAffiliation) issues.push(issue('life-modules.affiliation.outstanding', 'lifeModuleHistory', 'A Stage 0 affiliation is still required.', { severity: 'warning' }))
   if (hasUniversal && state.awardResolutionVersion === 1 && (
-    state.stage0AffiliationContext !== 'stage0.capellan-confederation.capellan-commonality' ||
+    !state.stage0AffiliationContext ||
+    resolveLifeModuleAffiliationContext(state.stage0AffiliationContext).support !== 'supported' ||
     !state.affiliationLanguage ||
     universalAffiliationResolution?.destination.parameter?.value !== state.affiliationLanguage
   )) {
     issues.push(issue('life-modules.stage-0.affiliation-context.required', 'creation.lifeModules.stage0AffiliationContext', 'Stage 0 Universal requires an explicit affiliation context and matching affiliation-language resolution.'))
   }
-  if (hasAffiliation && state.stage0AffiliationContext !== 'stage0.capellan-confederation.capellan-commonality') {
+  if (hasAffiliation && state.stage0AffiliationContext !== CAPELLAN_COMMONALITY_CONTEXT.id) {
     issues.push(issue('life-modules.stage-0.affiliation-context.mismatch', 'creation.lifeModules.stage0AffiliationContext', 'The selected Stage 0 affiliation must match the explicit Universal affiliation context.'))
   }
   if (stage1Count !== 1) issues.push(issue('life-modules.stage-1.outstanding', 'lifeModuleHistory', 'Exactly one Stage 1 module is required.', { severity: stage1Count === 0 ? 'warning' : 'error' }))
@@ -843,11 +845,7 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
     const targetIdValid = resolved.destination.type === 'attribute'
       ? LIFE_MODULE_ATTRIBUTE_IDS.includes(resolved.destination.targetId)
       : resolved.destination.targetId.startsWith(resolved.destination.type === 'trait' ? 'trait.' : 'skill.')
-    const languageValid = award.kind !== 'language-choice' || award.choicesFrom === 'federated-suns-languages' || (
-      award.choicesFrom === 'capellan-secondary'
-        ? CAPELLAN_SECONDARY_LANGUAGE_IDS.includes(resolved.destination.parameter?.value ?? '')
-        : CAPELLAN_AFFILIATION_LANGUAGE_IDS.includes(resolved.destination.parameter?.value ?? '')
-    )
+    const languageValid = award.kind !== 'language-choice' || getLifeModuleLanguageSelectorOptions(award.choicesFrom).includes(resolved.destination.parameter?.value ?? '')
     const knownChoices = knownPendingChoiceValues({
       kind: award.kind,
       choiceSource: award.kind === 'language-choice' ? award.choicesFrom : undefined,
@@ -961,9 +959,6 @@ function skillFieldPrerequisiteSatisfied(character: CharacterDefinition, prerequ
 }
 
 const LIFE_MODULE_ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG']
-const CAPELLAN_AFFILIATION_LANGUAGE_IDS = ['Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English']
-const CAPELLAN_SECONDARY_LANGUAGE_IDS = ['Russian', 'Cantonese', 'Vietnamese', 'English']
-
 function validateChoiceGrantBalance(character: CharacterDefinition, issues: ValidationIssue[]): void {
   const state = character.creation.lifeModules!
   const seen = new Set<string>()

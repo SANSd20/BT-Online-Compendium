@@ -1,5 +1,8 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
+import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
+
+export { CAPELLAN_COMMONALITY_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
 
 export const LIFE_MODULE_RULES_SOURCE: SourceCitation = {
   sourceId: 'atow-core-corrected-third',
@@ -31,8 +34,6 @@ const skill = (skillId: string, displayName: string, parameter?: string): LifeMo
 })
 const fixed = (id: string, xp: number, destination: LifeModuleDestination): LifeModuleAward => ({ id, kind: 'fixed', xp, destination })
 
-export const UNIVERSAL_STAGE_0_ID = 'stage0.universal-fixed-xp'
-export const CAPELLAN_COMMONALITY_ID = 'stage0.capellan-confederation.capellan-commonality'
 export const BLUE_COLLAR_ID = 'stage1.blue-collar'
 export const BACK_WOODS_ID = 'stage1.back-woods'
 export const STAGE_2_BACK_WOODS_ID = 'stage2.back-woods'
@@ -46,7 +47,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     displayName: 'Universal Fixed Experience Points',
     stage: 0,
     kind: 'universal',
-    source: source(62, 'stage-0-universal-fixed-experience-points'),
+    source: UNIVERSAL_LIFE_MODULE_CONTEXT.source,
     costXp: 850,
     prerequisites: [],
     awards: [
@@ -63,10 +64,10 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     displayName: 'Capellan Confederation / Capellan Commonality',
     stage: 0,
     kind: 'affiliation',
-    source: source(64, 'capellan-confederation-capellan-commonality'),
+    source: CAPELLAN_COMMONALITY_CONTEXT.source,
     costXp: 150,
-    primaryLanguage: 'Mandarin Chinese',
-    secondaryLanguages: ['Russian', 'Cantonese', 'Vietnamese', 'English'],
+    primaryLanguage: CAPELLAN_COMMONALITY_CONTEXT.primaryLanguage,
+    secondaryLanguages: [...CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguages],
     prerequisites: [],
     awards: [
       fixed('capellan.attribute.wil', 50, attribute('WIL')),

@@ -1,14 +1,9 @@
 import type { CharacterDefinition, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../character/model'
 import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../pointBuy/catalog'
+import { CAPELLAN_COMMONALITY_CONTEXT, getLifeModuleLanguageSelectorOptions } from './affiliations'
 
 export interface PendingAwardOption extends ResolvedLifeModuleDestination {
   value: string
-}
-
-const LANGUAGE_CHOICES: Readonly<Record<NonNullable<PendingLifeModuleAward['choiceSource']>, readonly string[]>> = {
-  'affiliation-languages': ['Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English'],
-  'capellan-secondary': ['Russian', 'Cantonese', 'Vietnamese', 'English'],
-  'federated-suns-languages': ['English', 'French'],
 }
 
 const KNOWN_SUBSKILLS: Readonly<Record<string, readonly string[]>> = {
@@ -20,8 +15,12 @@ const KNOWN_SUBSKILLS: Readonly<Record<string, readonly string[]>> = {
 }
 
 export function knownPendingChoiceValues(pending: Pick<PendingLifeModuleAward, 'choiceSource' | 'kind' | 'requiredSkillId'>): readonly string[] {
-  if (pending.choiceSource) return LANGUAGE_CHOICES[pending.choiceSource]
-  if (pending.kind === 'affiliation-skill-choice') return ['Capellan']
+  if (pending.choiceSource) return getLifeModuleLanguageSelectorOptions(pending.choiceSource)
+  if (pending.kind === 'affiliation-skill-choice') {
+    return pending.requiredSkillId === 'skill.streetwise'
+      ? [CAPELLAN_COMMONALITY_CONTEXT.streetwiseContextLabel]
+      : [CAPELLAN_COMMONALITY_CONTEXT.protocolContextLabel]
+  }
   return pending.requiredSkillId ? KNOWN_SUBSKILLS[pending.requiredSkillId] ?? [] : []
 }
 
@@ -30,7 +29,10 @@ export function pendingAwardOptions(pending: PendingLifeModuleAward, character: 
     return knownPendingChoiceValues(pending).map((language) => skillOption('skill.language', 'Language', language))
   }
   if (pending.kind === 'affiliation-skill-choice' && pending.requiredSkillId) {
-    return [skillOption(pending.requiredSkillId, skillName(pending.requiredSkillId), 'Capellan')]
+    const label = pending.requiredSkillId === 'skill.streetwise'
+      ? CAPELLAN_COMMONALITY_CONTEXT.streetwiseContextLabel
+      : CAPELLAN_COMMONALITY_CONTEXT.protocolContextLabel
+    return [skillOption(pending.requiredSkillId, skillName(pending.requiredSkillId), label)]
   }
   if (pending.requiredSkillId) {
     return knownPendingChoiceValues(pending).map((parameter) => skillOption(pending.requiredSkillId!, skillName(pending.requiredSkillId!), parameter))

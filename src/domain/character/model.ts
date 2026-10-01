@@ -1,4 +1,5 @@
 import type { GmException, RulesSnapshot, SourceCitation } from '../rules/model'
+import type { AffiliationLanguageSelectorGroupId } from '../lifeModules/affiliations'
 
 export type CreationMethod = 'archetype' | 'point-buy' | 'life-modules'
 export type CharacterStatus = 'draft' | 'ready-for-final-validation' | 'finalized'
@@ -235,7 +236,7 @@ export interface PendingLifeModuleAward {
   remainingXp?: number
   maxXpPerTarget?: Partial<Record<'attribute' | 'trait' | 'skill', number>>
   allowedTargetTypes: Array<'attribute' | 'trait' | 'skill'>
-  choiceSource?: 'affiliation-languages' | 'capellan-secondary' | 'federated-suns-languages'
+  choiceSource?: AffiliationLanguageSelectorGroupId
   requiredSkillId?: string
   source: SourceCitation
 }

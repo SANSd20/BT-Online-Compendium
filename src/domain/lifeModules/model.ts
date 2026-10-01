@@ -1,5 +1,6 @@
 import type { SkillAddress } from '../character/model'
 import type { SourceCitation } from '../rules/model'
+import type { AffiliationLanguageSelectorGroupId } from './affiliations'
 
 export type LifeModuleStage = 0 | 1 | 2 | 3 | 4
 export type LifeModuleKind = 'universal' | 'affiliation' | 'early-childhood' | 'late-childhood' | 'higher-education' | 'real-life'
@@ -12,7 +13,7 @@ export type LifeModuleDestination =
 
 export type LifeModuleAward =
   | { id: string; kind: 'fixed'; xp: number; destination: LifeModuleDestination }
-  | { id: string; kind: 'language-choice'; xp: number; choicesFrom: 'affiliation-languages' | 'capellan-secondary' | 'federated-suns-languages'; description: string }
+  | { id: string; kind: 'language-choice'; xp: number; choicesFrom: AffiliationLanguageSelectorGroupId; description: string }
   | { id: string; kind: 'affiliation-skill-choice'; xp: number; skillId: string; displayName: string; description: string }
   | { id: string; kind: 'any-skill-choice'; xp: number; skillId: string; displayName: string; count: number }
   | { id: string; kind: 'multi-skill-choice'; xp: number; skillId: string; displayName: string; count: number }

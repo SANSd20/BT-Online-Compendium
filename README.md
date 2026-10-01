@@ -4,7 +4,7 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 28 is implemented.** Version `0.1.0-alpha.28` establishes Archetype source governance without changing active package values. Corrected Third Printing prose/package entries govern creation data; back-of-book sheets remain supplemental sheet-ready references and conflict evidence.
+**Alpha Slice 29 is implemented.** Version `0.1.0-alpha.29` establishes a source-governed Life Modules affiliation framework without broadening the affiliation catalog or changing active module awards. Universal remains explicitly non-affiliation; the current Capellan/Commonality context, language selector groups, and Protocol/Streetwise labels are centralized.
 
 All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit remains the evidence record; Slice 28 governs its conflicts without silently correcting Tanker, Elemental, or Scout values, adding `REF`, renaming stable IDs, or activating back-sheet combat fields. Point Buy, Life Modules, Final Touches, and the 84-item audited Core equipment catalog are unchanged.
 
@@ -40,6 +40,7 @@ Planetary functionality is supporting infrastructure. It does not replace or sup
 - [`docs/VERIFICATION.md`](docs/VERIFICATION.md) — verified checkpoints and future implementation expectations
 - [`docs/archetype-sheet-cross-check.md`](docs/archetype-sheet-cross-check.md) — Alpha Slice 25 prose/package versus back-sheet audit and deferred governing decisions
 - [`docs/ARCHETYPE-SOURCE-GOVERNANCE.md`](docs/ARCHETYPE-SOURCE-GOVERNANCE.md) — Alpha Slice 28 policy for active prose/package data, supplemental back sheets, conflicts, and display variants
+- [`docs/LIFE-MODULES-AFFILIATION-FRAMEWORK.md`](docs/LIFE-MODULES-AFFILIATION-FRAMEWORK.md) — Alpha Slice 29 boundary for Universal, the current affiliation context, selector groups, and deferred expansion
 
 ## Run locally
 
@@ -70,13 +71,13 @@ npm run preview
 
 The repository's Pages **Source** setting must be **GitHub Actions**. The public site opens through a normal browser URL and requires neither a special platform login nor an application login. Character data still lives only in that browser; JSON export/import is the portability and backup mechanism.
 
-The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.28` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
+The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.29` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
 
-The public notice in the application identifies version `0.1.0-alpha.28`, browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
+The public notice in the application identifies version `0.1.0-alpha.29`, browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
 
 ## Current resume points
 
-Repository bootstrap and Alpha Slices 1–28 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, special platform login, or application account.
+Repository bootstrap and Alpha Slices 1–29 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, special platform login, or application account.
 
 The Core + Companion rules audit is in progress. Its next audit target is **Campaign / Rules Configuration reconciliation**, specifically the boundaries among durable character state, current campaign rules, creation-rules provenance, and per-character GM exceptions.
 

@@ -1,8 +1,8 @@
 # Character and Rules Architecture
 
-## Alpha Slice 28 implementation boundary
+## Alpha Slice 29 implementation boundary
 
-The implemented foundation provides typed Character and rules models, one shared character factory, structural validation, a versioned save envelope, browser-local persistence, JSON import/export, an Archetype foundation with shared XP accounting, controlled level adjustments, and bounded same-XP Skill swaps, Point Buy v0.1, and Life Modules v0.15 with Final Touches, an unchanged 84-item audited equipment catalog, affiliation-aware access review, and manual inventory fallback. Alpha Slice 28 establishes source governance for the Slice 25 Archetype audit: prose/package entries govern active creation data; back sheets are supplemental sheet-ready references and conflict evidence; discrepancies remain explicit rather than arithmetic corrections. Tanker, Elemental, and Scout active values remain unchanged; RFL remains the internal key; capitalization variants do not rename stable IDs; and back-sheet-only movement, condition, armor/BAR, weapon, and combat fields remain inactive future candidates. No runtime model, package value, Point Buy, Life Modules, Final Touches, or equipment data changes. The project remains Alpha; Beta 1 requires completed Core + Companion character creation and PDF export.
+The implemented foundation provides typed Character and rules models, one shared character factory, structural validation, a versioned save envelope, browser-local persistence, JSON import/export, an Archetype foundation with shared XP accounting, controlled level adjustments, and bounded same-XP Skill swaps, Point Buy v0.1, and Life Modules v0.15 with Final Touches, an unchanged 84-item audited equipment catalog, affiliation-aware access review, and manual inventory fallback. Alpha Slice 28 establishes source governance for the Slice 25 Archetype audit. Alpha Slice 29 centralizes the existing Life Modules affiliation context, selector groups, and Protocol/Streetwise labels while keeping Universal non-affiliation and unknown contexts deferred. It changes no active package value, saved-data shape, Point Buy behavior, Final Touches behavior, or equipment data. The project remains Alpha; Beta 1 requires completed Core + Companion character creation and PDF export.
 
 The Public Alpha is a static browser application at `https://sansd20.github.io/BT-Online-Compendium/`. It opens through a normal browser URL without a special platform login or application account. Characters remain in browser-local storage unless exported as JSON; clearing browser data may remove them. JSON import/export is the current portability mechanism. No backend, account, authentication, cloud save, analytics, or server-side persistence exists. Account/login/cloud save is expected before v1.0 but is not part of the current architecture. Public status does not imply complete rules, complete equipment, final/play-ready legality, PDF export, Beta 1, or v1.0 completion.
 
@@ -85,6 +85,10 @@ The affiliation's listed cost is not the complete Stage 0 cost.
 Changing Affiliations is a separate Stage 0 mechanism. Preserve `birthAffiliation`, `finalAffiliation`, and affiliation history rather than overwriting origin.
 
 The published mechanism applies half the XP values and purchase costs of both affiliations with the applicable rounding rules. Only final-affiliation restrictions apply. Previously resolved `/Affiliation` Skills or Languages remain historical concrete selections and are not dynamically rewritten.
+
+## Life Modules affiliation framework
+
+Life Modules affiliation-dependent behavior reads from a typed registry rather than duplicating selector values across engine, validation, and UI layers. Universal has its own non-affiliation context record and cannot appear in the selectable affiliation registry. Supported affiliation contexts carry the existing durable module/context ID, affiliation identity, affiliation and sub-affiliation labels, primary/secondary language metadata, selector-group IDs, Protocol/Streetwise labels, and source citation. Unknown context IDs resolve to a deferred result and create no choice. Existing save fields remain strings for backward-compatible JSON round trips; the framework validates them without changing their serialized shape.
 
 ## XP model
 

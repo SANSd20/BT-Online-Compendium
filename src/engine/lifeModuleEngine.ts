@@ -22,12 +22,11 @@ import {
 } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
+import { CAPELLAN_COMMONALITY_CONTEXT, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
 import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
 
-const CAPELLAN_LANGUAGES = ['Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English'] as const
-const CAPELLAN_SECONDARY_LANGUAGES = ['Russian', 'Cantonese', 'Vietnamese', 'English'] as const
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
 
 export function createLifeModuleCharacter(
@@ -71,11 +70,12 @@ export function applyUniversalStage0(
 ): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-0-universal') throw new Error('The universal Stage 0 package is not the current legal action.')
-  if (affiliationContextModuleId !== CAPELLAN_COMMONALITY_ID) {
+  const resolution = resolveLifeModuleAffiliationContext(affiliationContextModuleId)
+  if (resolution.support === 'deferred') {
     throw new Error('Choose an explicit Stage 0 affiliation context before resolving the Universal affiliation-language award.')
   }
   const language = affiliationLanguage.trim()
-  if (!CAPELLAN_LANGUAGES.includes(language as (typeof CAPELLAN_LANGUAGES)[number])) {
+  if (!getLifeModuleLanguageSelectorOptions(resolution.context.affiliationLanguageSelector).includes(language)) {
     throw new Error('Universal affiliation language must be a Capellan primary or secondary language in this Alpha catalog.')
   }
   const next = applyModule(character, getLifeModule(UNIVERSAL_STAGE_0_ID), {
@@ -92,13 +92,13 @@ export function applyUniversalStage0(
 export function applyCapellanCommonality(character: CharacterDefinition, capellanSecondaryLanguage?: string): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-0-affiliation') throw new Error('The Stage 0 affiliation is not the current legal action.')
-  if (state.stage0AffiliationContext !== CAPELLAN_COMMONALITY_ID) {
+  if (state.stage0AffiliationContext !== CAPELLAN_COMMONALITY_CONTEXT.id) {
     throw new Error('The selected Stage 0 affiliation package must match the explicit Universal affiliation context.')
   }
   const resolutions: Record<string, LifeModuleDestination> = {}
   const language = capellanSecondaryLanguage?.trim()
   if (language) {
-    if (!CAPELLAN_SECONDARY_LANGUAGES.includes(language as (typeof CAPELLAN_SECONDARY_LANGUAGES)[number])) {
+    if (!getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector).includes(language)) {
       throw new Error('Capellan secondary-language award must resolve to a listed secondary language.')
     }
     resolutions['capellan.language.secondary'] = {
@@ -110,8 +110,8 @@ export function applyCapellanCommonality(character: CharacterDefinition, capella
   const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
   if (!provenanceId) throw new Error('Affiliation provenance was not recorded.')
   next.affiliations.push(
-    { affiliationId: 'affiliation.capellan-confederation', role: 'birth', provenanceId },
-    { affiliationId: 'affiliation.capellan-confederation', role: 'final', provenanceId },
+    { affiliationId: CAPELLAN_COMMONALITY_CONTEXT.affiliationId, role: 'birth', provenanceId },
+    { affiliationId: CAPELLAN_COMMONALITY_CONTEXT.affiliationId, role: 'final', provenanceId },
   )
   nextState.phase = 'stage-1-selection'
   nextState.currentStage = 1
@@ -528,12 +528,6 @@ function validateResolutionDestination(pending: PendingLifeModuleAward, destinat
     throw new Error('A concrete language or subskill choice is required.')
   }
   if (pending.kind === 'language-choice' && destination.targetId !== 'skill.language') throw new Error('Language awards must resolve to a Language subskill.')
-  if (pending.choiceSource === 'capellan-secondary' && !CAPELLAN_SECONDARY_LANGUAGES.includes(destination.parameter?.value as (typeof CAPELLAN_SECONDARY_LANGUAGES)[number])) {
-    throw new Error('This award must resolve to a listed Capellan secondary language.')
-  }
-  if (pending.choiceSource === 'affiliation-languages' && !CAPELLAN_LANGUAGES.includes(destination.parameter?.value as (typeof CAPELLAN_LANGUAGES)[number])) {
-    throw new Error('This award must resolve to a listed affiliation language.')
-  }
   const knownChoices = knownPendingChoiceValues(pending)
   if (knownChoices.length > 0 && !knownChoices.includes(destination.parameter?.value ?? '')) {
     throw new Error('This award must resolve to a safe known choice from the current Alpha data.')

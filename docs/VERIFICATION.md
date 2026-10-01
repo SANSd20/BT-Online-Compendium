@@ -512,6 +512,12 @@ Required release verification is `npm run check` followed by an explicit `npm ru
 
 Slice 28 checkpoint result: lint passed; 21 test files and 188 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. The generated production bundle reports `0.1.0-alpha.28`.
 
+## Alpha Slice 29 affiliation-framework verification
+
+Verify that Universal is explicitly non-affiliation and absent from selectable affiliation contexts; a new Life Modules draft has no affiliation context or language default; the current Capellan/Commonality context resolves through the registry; existing affiliation, Capellan-secondary, and Federated Suns language selectors retain their exact options; Protocol and Streetwise retain the `Capellan` label; unknown contexts resolve as deferred; and Life Modules JSON round trips retain their existing shape and behavior. Also verify version `0.1.0-alpha.29`, title `A Time of War character creator`, exactly 84 equipment records with unchanged stable IDs/data, and successful `npm run check` plus a separate `npm run build`.
+
+Slice 29 checkpoint result: lint passed; 22 test files and 191 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. The equipment catalog and resource data have no diff, and the generated production bundle reports `0.1.0-alpha.29`.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:
