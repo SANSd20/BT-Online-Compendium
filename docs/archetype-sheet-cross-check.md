@@ -2,7 +2,7 @@
 
 ## Scope and result
 
-This is an audit artifact. It does not select a governing source and does not change Archetype, rules, or equipment-catalog data.
+This is the Slice 25 audit evidence artifact. Alpha Slice 28 subsequently selected the governing-source policy in `ARCHETYPE-SOURCE-GOVERNANCE.md`: prose/package entries govern active creation values, while back sheets remain supplemental sheet-ready references and conflict evidence. The audit itself changes no Archetype, rules, or equipment-catalog data.
 
 The audit compares the eight implemented Core Archetypes in `src/domain/archetypes/coreArchetypes.ts` against:
 
@@ -361,16 +361,17 @@ Stable and normalized IDs, ownership/source metadata, and the published-total mi
 
 The back-sheet Revolver adds Skill +2, AP/BD `4B/4`, range `8/18/40/90`, and ammo 6.
 
-## Deferred governing decisions
+## Governed treatment after Alpha Slice 28
 
-No decision is made here. A future correction/decision slice should address, in order:
+Alpha Slice 28 resolves the governance question without correcting active data:
 
-1. Tanker Attribute XP and its resulting package total.
-2. Elemental Attribute Links.
-3. Whether the repeated Scout Equipped 2 TP / 300 XP value is preserved, annotated, or corrected.
-4. Whether `REF+DEX` on the two Piloting rows is a printed label typo for `RFL+DEX`.
-5. Whether back-sheet-only derived/combat presentation belongs in the Archetype source package, a calculated character-sheet layer, or both.
-6. Naming capitalization for Faceman and Battlefield Tech.
-7. The declared-versus-line-item total discrepancies (six in the current implementation, with Tanker overlapping the separate prose/back-sheet conflict).
+1. Prose/package values govern active creation-package data, including Tanker Attribute XP.
+2. Back-sheet differences remain supplemental conflict evidence and never override automatically.
+3. Elemental Attribute Links remain unmodeled; their prose/back-sheet conflict is preserved for future work.
+4. Scout Equipped remains 2 TP / 300 XP and is not normalized from arithmetic.
+5. `REF` is retained as printed wording evidence; `RFL` remains the only internal Attribute key.
+6. `Faceman` and `Battlefield Tech` remain the app names and stable-ID identities; back-sheet capitalization variants remain evidence.
+7. Back-sheet-only movement, condition, armor/BAR, weapon, and combat fields remain future sheet-ready metadata candidates, not active mechanics.
+8. Declared-versus-line-item discrepancies remain explicit source facts rather than inferred corrections.
 
-Until those choices are authorized, `coreArchetypes.ts` remains unchanged.
+`coreArchetypes.ts` remains unchanged by this governance decision.

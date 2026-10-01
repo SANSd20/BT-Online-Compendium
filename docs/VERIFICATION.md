@@ -492,6 +492,26 @@ Required release verification is `npm run check` followed by an explicit `npm ru
 
 Slice 27 checkpoint result: lint passed; 20 test files and 179 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. The generated production bundle reports `0.1.0-alpha.27`.
 
+## Alpha Slice 28 verification
+
+Slice 28 establishes Archetype source governance without changing active package data. Automated coverage verifies:
+
+- prose/package values remain the active creation data and back-sheet conflicts do not overwrite them;
+- Tanker Attribute XP remains `400/500/500/600/400/400/400/300` in STR/BOD/DEX/RFL/INT/WIL/CHA/EDG order;
+- Elemental active Attribute values and phenotype modifiers remain unchanged and Attribute Links remain unmodeled;
+- Scout Equipped remains 2 TP / 300 XP rather than being normalized from the general Trait cost;
+- RFL remains present for every Archetype and no REF Attribute is introduced;
+- `Faceman` / `archetype.core.faceman` and `Battlefield Tech` / `archetype.core.battlefield-tech` remain unchanged;
+- governed Archetype characters retain identical active data through JSON export/import;
+- the public notice retains “A Time of War character creator” and application metadata reports `0.1.0-alpha.28`;
+- Point Buy, Life Modules, Final Touches, and all prior Archetype regression suites remain passing;
+- the equipment catalog remains exactly 84 unique stable IDs with no equipment data changes; and
+- back-sheet-only movement, condition, armor/BAR, weapon, and combat fields remain inactive.
+
+Required release verification is `npm run check` followed by an explicit `npm run build`. If the commit reaches `main`, the existing Pages workflow should deploy and the live Public Alpha should report version `0.1.0-alpha.28`.
+
+Slice 28 checkpoint result: lint passed; 21 test files and 188 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. The generated production bundle reports `0.1.0-alpha.28`.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

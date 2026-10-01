@@ -45,7 +45,7 @@ Alpha Slice 18 uses only the revised supplied page-306 Clan power-pack handoff; 
 
 AToW Errata v4.0 was checked for corrections to the Point Buy starting allotment, Attribute/Trait costs, Skill XP table, and negative-Trait limit; no applicable correction to those rules was identified. The Corrected Third Printing values therefore remain authoritative for Point Buy v0.1.
 
-The archetype catalog preserves printed values even when a sheet's line-item XP does not match the Core page 51 declaration that archetypes use 4,500 XP. Declared and calculated totals remain distinct, and unresolved discrepancies carry explicit source notes. Errata v4.0 contains no archetype-sheet correction that authorizes silently changing those values.
+For the eight implemented Core archetypes, Alpha Slice 28 establishes that the prose/package entries on pages 52–59 govern active creation-package values. Back-of-book sheets are supplemental sheet-ready references and conflict evidence; they do not automatically override the packages. The catalog preserves printed package values even when a sheet differs or line-item XP does not match the Core page 51 declaration that archetypes use 4,500 XP. Declared and calculated totals remain distinct, and discrepancies carry explicit source notes or durable governance documentation. Errata v4.0 contains no archetype-sheet correction that authorizes silently changing those values. See `ARCHETYPE-SOURCE-GOVERNANCE.md` and `archetype-sheet-cross-check.md`.
 
 Tactical Operations, Interstellar Operations, and other available BattleTech books are not authorized to expand or alter current Character Generator rules scope. Their availability as project material does not make them governing Character Generator sources.
 

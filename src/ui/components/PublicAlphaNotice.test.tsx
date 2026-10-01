@@ -8,7 +8,7 @@ describe('Public Alpha notice', () => {
   it('renders the version, local-only warning, portability path, and deferred capabilities', () => {
     const markup = renderToStaticMarkup(<PublicAlphaNotice />)
 
-    expect(APP_VERSION).toBe('0.1.0-alpha.27')
+    expect(APP_VERSION).toBe('0.1.0-alpha.28')
     expect(markup).toContain('Public Alpha Notice')
     expect(markup).toContain(`v${APP_VERSION}`)
     expect(markup).toContain('normal browser URL')
@@ -20,6 +20,7 @@ describe('Public Alpha notice', () => {
     expect(markup).toContain('no backend or cloud save exists')
     expect(markup).toContain('planned before v1.0')
     expect(markup).toContain('Core <em>A Time of War</em> first')
+    expect(markup).toContain('<em>A Time of War</em> character creator')
     expect(markup).toContain('Companion support later')
     expect(markup).toContain('does not guarantee a finalized or play-ready character')
     expect(markup).toContain('PDF export is not yet available')
