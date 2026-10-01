@@ -11,7 +11,7 @@ import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFina
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
-import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from '../components/LifeModulesWizard'
+import { LifeModuleAuditDrawer, LifeModuleDashboard, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from '../components/LifeModulesWizard'
 import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { previewStage0Affiliation } from '../components/stage0PreviewModel'
@@ -179,18 +179,15 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
         </section>
       ) : state ? (
         <>
-          <section className="xp-dashboard" aria-label="Life Module XP status">
-            <div><span>Module pool</span><strong>{state.moduleXp.starting.toLocaleString()}</strong></div>
-            <div><span>Module costs</span><strong>{state.moduleXp.spent.toLocaleString()}</strong></div>
-            <div><span>Remaining</span><strong>{state.moduleXp.remaining.toLocaleString()}</strong></div>
-            <div><span>Stat XP (net)</span><strong>{character.xp.creation.allocated.toLocaleString()}</strong></div>
-          </section>
-
-          <LifeModuleProgress phase={state.phase} />
-
-          <div className="life-wizard-layout">
-            <LifeModuleCharacterSummary character={character} previewCharacter={stage0Preview} />
-            <div className="life-wizard-workspace">
+          <LifeModuleDashboard
+            character={character}
+            previewCharacter={stage0Preview}
+            toolbar={<>
+                <a className="button secondary" href="#/" title="Return without undoing applied Life Module choices">Return to character creator</a>
+                <button className="button" type="button" onClick={() => { onSave(character); setMessage('Life Module draft saved locally.') }}>Save draft</button>
+                <button className="button secondary" type="button" onClick={() => downloadCharacter(character)}>Export character JSON</button>
+            </>}
+          >
 
           <section className="life-stage-panel">
             <LifeModuleStageHeading phase={state.phase} />
@@ -302,8 +299,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               })}</div>
             )}
           </section>}
-            </div>
-          </div>
+          </LifeModuleDashboard>
 
           {character.creation.finalTouches && <section className="life-stage-panel">
             <p className="eyebrow">Final Touches</p>
@@ -421,6 +417,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <p className="scope-note">Final review does not purchase equipment, export PDF, lock the character, or mark it ready for play.</p>
           </section>}
 
+          <LifeModuleAuditDrawer open={state.phase === 'alpha-final-review'}>
           <details className="life-stage-panel life-audit-details" open={state.phase === 'alpha-final-review'}>
             <summary>Show selected-module timeline</summary>
             {character.lifeModuleHistory.length === 0 ? <p className="empty">No modules selected.</p> : (
@@ -449,18 +446,14 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           </details>
 
           <section className="life-stage-panel">
-            <h2>Draft actions</h2>
+            <h2>Rule and validation details</h2>
             <details className="life-audit-inline" open={state.phase === 'alpha-final-review'}><summary>Show rule and validation details</summary>
               {state.prerequisiteIssues.map((entry) => <p className={entry.status === 'outstanding' ? 'notice' : ''} key={entry.id}>{entry.description}: {entry.status}</p>)}
               <h3>Validation</h3>
               <ul>{validation?.issues.map((entry) => <li className={entry.severity} key={`${entry.id}/${entry.path}`}>{entry.message}</li>)}</ul>
             </details>
-            <div className="row-actions life-wizard-actions" aria-label="Life Modules navigation and draft actions">
-              <a className="button secondary" href="#/" title="Return without undoing applied Life Module choices">Return to character creator</a>
-              <button className="button" type="button" onClick={() => { onSave(character); setMessage('Life Module draft saved locally.') }}>Save draft</button>
-              <button className="button secondary" type="button" onClick={() => downloadCharacter(character)}>Export character JSON</button>
-            </div>
           </section>
+          </LifeModuleAuditDrawer>
         </>
       ) : null}
       {message && <p className="notice" role="status">{message}</p>}

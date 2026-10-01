@@ -144,10 +144,19 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .adjustment-balance { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 16px 0; }
 .character-actions { display: flex; gap: 10px; margin-top: 18px; }
 .button:disabled { opacity: .45; cursor: not-allowed; }
-.life-modules-page { max-width: 1120px; }
+.life-modules-page { max-width: 1440px; }
+.life-modules-page > .hero.compact { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 4px 24px; padding-block: 18px; }
+.life-modules-page > .hero.compact h1 { margin: 0; }
+.life-modules-page > .hero.compact > p:last-child { grid-column: 1 / -1; max-width: 100ch; margin: 4px 0 0; font-size: .82rem; }
+.life-dashboard { display: grid; gap: 12px; }
+.life-dashboard-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; align-items: stretch; }
+.life-dashboard-header .xp-dashboard { margin: 0; }
+.life-dashboard-header .life-progress { grid-column: 1 / -1; grid-row: 2; margin: 0; }
+.life-dashboard-toolbar { display: flex; gap: 8px; align-items: stretch; }
+.life-dashboard-toolbar .button { display: grid; place-items: center; min-height: 42px; padding: 8px 12px; text-align: center; text-decoration: none; }
 .life-progress { margin: 0 0 20px; overflow-x: auto; border: 1px solid var(--line); background: #0d151d; }
 .life-progress ol { display: grid; grid-template-columns: repeat(6, minmax(120px, 1fr)); min-width: 730px; padding: 0; margin: 0; list-style: none; }
-.life-progress li { position: relative; display: flex; gap: 9px; align-items: center; min-height: 66px; padding: 12px; border-right: 1px solid var(--line); color: var(--muted); }
+.life-progress li { position: relative; display: flex; gap: 8px; align-items: center; min-height: 52px; padding: 8px 10px; border-right: 1px solid var(--line); color: var(--muted); }
 .life-progress li:last-child { border-right: 0; }
 .life-progress li > span { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; border: 1px solid var(--line); border-radius: 50%; font-size: .75rem; font-weight: 800; }
 .life-progress li div { display: grid; gap: 2px; }
@@ -155,16 +164,16 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .life-progress li.complete { color: #9ce3b2; background: #102219; }
 .life-progress li.current { color: #fff; background: #372913; box-shadow: inset 0 -3px 0 var(--amber); }
 .life-progress li.current > span { color: #111; border-color: var(--amber); background: var(--amber); }
-.life-wizard-layout { display: grid; grid-template-columns: minmax(240px, .68fr) minmax(0, 2fr); gap: 20px; align-items: start; }
+.life-wizard-layout { display: grid; grid-template-columns: minmax(255px, .72fr) minmax(0, 2.25fr); gap: 12px; align-items: start; }
 .life-wizard-workspace { min-width: 0; }
 .life-wizard-workspace .life-stage-panel:first-child { margin-top: 0; }
-.life-summary { position: sticky; top: 118px; padding: 22px; border: 1px solid var(--line); background: var(--panel); max-height: calc(100vh - 136px); overflow: auto; }
+.life-summary { position: sticky; top: 82px; padding: 16px; border: 1px solid var(--line); background: var(--panel); max-height: calc(100vh - 96px); overflow: auto; }
 .life-summary h2 { margin-top: 3px; font-size: 1.35rem; }
-.life-summary-xp { display: grid; gap: 1px; margin: 18px 0; background: var(--line); }
-.life-summary-xp div { display: flex; justify-content: space-between; gap: 12px; padding: 10px; background: #0d151d; }
+.life-summary-xp { display: grid; gap: 1px; margin: 12px 0; background: var(--line); }
+.life-summary-xp div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 9px; background: #0d151d; }
 .life-summary-xp dt { color: var(--muted); font-size: .75rem; }
 .life-summary-xp dd { margin: 0; color: var(--amber); font-weight: 800; }
-.life-summary details { padding: 12px 0; border-top: 1px solid var(--line); }
+.life-summary details { padding: 8px 0; border-top: 1px solid var(--line); }
 .life-summary summary { cursor: pointer; font-weight: 750; }
 .life-summary ul, .life-summary ol { display: grid; gap: 5px; padding: 8px 0 0; margin: 0; list-style: none; font-size: .78rem; }
 .life-summary li { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); }
@@ -183,10 +192,9 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .stage-blockers a { color: #ffb1b1; font-weight: 750; }
 .pending-resolution-panel { scroll-margin-top: 120px; }
 .award-type-badge { display: inline-block; margin-top: 8px; padding: 4px 7px; border: 1px solid #87642d; color: #f8ddb0; font-size: .68rem; letter-spacing: .05em; text-transform: uppercase; }
-.life-wizard-actions { position: sticky; bottom: 0; z-index: 2; padding: 12px; border: 1px solid var(--line); background: rgb(9 16 23 / 94%); backdrop-filter: blur(8px); }
-.life-wizard-actions .button { text-decoration: none; text-align: center; }
-.life-stage-panel { margin-top: 20px; padding: clamp(22px, 4vw, 38px); border: 1px solid var(--line); background: var(--panel); }
-.life-stage-heading { max-width: 72ch; margin-bottom: 24px; }
+.life-stage-panel { margin-top: 14px; padding: clamp(16px, 2.4vw, 26px); border: 1px solid var(--line); background: var(--panel); }
+.life-wizard-workspace > .life-stage-panel:first-child { min-height: min(590px, calc(100vh - 250px)); }
+.life-stage-heading { max-width: 72ch; margin-bottom: 16px; }
 .life-stage-heading h2 { margin-bottom: 8px; }
 .life-stage-heading > p:last-child { color: var(--muted); }
 .life-review-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 18px 0; background: var(--line); }
@@ -198,6 +206,10 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .life-review-summary li span { color: var(--muted); }
 .life-audit-details > summary, .life-audit-inline > summary { cursor: pointer; color: var(--amber); font-weight: 800; }
 .life-audit-details[open] > summary, .life-audit-inline[open] > summary { margin-bottom: 18px; }
+.life-dashboard-details { margin-top: 14px; border: 1px solid var(--line); background: #0d151d; }
+.life-dashboard-details > summary { cursor: pointer; padding: 14px 18px; color: var(--amber); font-weight: 800; }
+.life-dashboard-details[open] > summary { border-bottom: 1px solid var(--line); }
+.life-dashboard-details-body { padding: 0 14px 14px; }
 .stage0-package-stack { display: grid; gap: 20px; }
 .stage0-package-section { padding: clamp(18px, 3vw, 26px); border: 1px solid var(--line); background: #0b1219; }
 .stage0-package-section.current { border-color: #87642d; }
@@ -284,6 +296,11 @@ footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--mute
   .stage0-choice-action .button { width: 100%; min-width: 0; }
   .life-wizard-layout { grid-template-columns: 1fr; }
   .life-summary { position: static; max-height: none; }
+  .life-dashboard-header { grid-template-columns: 1fr; }
+  .life-dashboard-header .life-progress { grid-column: 1; grid-row: auto; }
+  .life-dashboard-toolbar { grid-row: 3; }
+  .life-dashboard-toolbar .button { flex: 1; }
+  .life-wizard-workspace > .life-stage-panel:first-child { min-height: 0; }
   .life-stage-status { grid-template-columns: 1fr; }
   .life-review-summary { grid-template-columns: 1fr 1fr; }
   .stage-options, .award-columns { grid-template-columns: 1fr; }
@@ -300,4 +317,7 @@ footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--mute
   .archetype-grid { grid-template-columns: 1fr; }
   .xp-dashboard, .attribute-purchases { grid-template-columns: 1fr; }
   .purchase-list li { align-items: stretch; flex-direction: column; }
+  .life-modules-page > .hero.compact { grid-template-columns: 1fr; }
+  .life-modules-page > .hero.compact > p:last-child { grid-column: 1; }
+  .life-dashboard-toolbar { flex-direction: column; }
 }

@@ -1,9 +1,37 @@
+import type { ReactNode } from 'react'
 import type { CharacterDefinition, PendingLifeModuleAward } from '../../domain/character/model'
 import { APP_VERSION } from '../../appMetadata'
 import { LIFE_MODULE_WIZARD_STEPS, lifeModuleStagePresentation, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
 
 export function LifeModulesVersionBadge() {
   return <p className="eyebrow">Public Alpha · v{APP_VERSION}</p>
+}
+
+export function LifeModuleDashboard({ character, previewCharacter, toolbar, children }: { character: CharacterDefinition; previewCharacter?: CharacterDefinition | null; toolbar: ReactNode; children: ReactNode }) {
+  const state = character.creation.lifeModules!
+  return <section className="life-dashboard" aria-label="Life Modules compact dashboard">
+    <header className="life-dashboard-header">
+      <section className="xp-dashboard" aria-label="Life Module XP status">
+        <div><span>Module pool</span><strong>{state.moduleXp.starting.toLocaleString()}</strong></div>
+        <div><span>Module costs</span><strong>{state.moduleXp.spent.toLocaleString()}</strong></div>
+        <div><span>Remaining</span><strong>{state.moduleXp.remaining.toLocaleString()}</strong></div>
+        <div><span>Stat XP (net)</span><strong>{character.xp.creation.allocated.toLocaleString()}</strong></div>
+      </section>
+      <LifeModuleProgress phase={state.phase} />
+      <div className="life-dashboard-toolbar" aria-label="Life Modules navigation and draft actions">{toolbar}</div>
+    </header>
+    <div className="life-wizard-layout">
+      <LifeModuleCharacterSummary character={character} previewCharacter={previewCharacter} />
+      <div className="life-wizard-workspace" aria-label="Current Life Modules stage">{children}</div>
+    </div>
+  </section>
+}
+
+export function LifeModuleAuditDrawer({ open = false, children }: { open?: boolean; children: ReactNode }) {
+  return <details className="life-dashboard-details" open={open}>
+    <summary>Audit and details</summary>
+    <div className="life-dashboard-details-body">{children}</div>
+  </details>
 }
 
 export function LifeModuleProgress({ phase }: { phase: string }) {
@@ -39,10 +67,12 @@ export function LifeModuleReviewSummary({ character }: { character: CharacterDef
 
 export function LifeModuleCharacterSummary({ character, previewCharacter }: { character: CharacterDefinition; previewCharacter?: CharacterDefinition | null }) {
   const state = character.creation.lifeModules!
+  const stage = lifeModuleStagePresentation(state.phase)
   return <aside className="life-summary" aria-label="Current character summary">
     <p className="eyebrow">Character summary</p>
     <h2>{character.displayName || 'Unnamed character'}</h2>
     <dl className="life-summary-xp">
+      <div><dt>Current stage</dt><dd>{stage.stage}</dd></div>
       <div><dt>Module XP left</dt><dd>{state.moduleXp.remaining.toLocaleString()}</dd></div>
       <div><dt>Net stat XP</dt><dd>{character.xp.creation.allocated.toLocaleString()}</dd></div>
       <div><dt>Pending choices</dt><dd>{state.pendingAwards.length}</dd></div>

@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { BACK_WOODS_ID, CAPELLAN_COMMONALITY_ID } from '../../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
-import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from './LifeModulesWizard'
+import { LifeModuleAuditDrawer, LifeModuleCharacterSummary, LifeModuleDashboard, LifeModuleProgress, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from './LifeModulesWizard'
 import { genericPendingAwardsForPhase, LIFE_MODULE_WIZARD_STEPS, lifeModuleStagePresentation, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
 import { previewStage0Affiliation } from './stage0PreviewModel'
 
@@ -16,7 +16,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · v0.1.0-alpha.38')
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.39')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -75,6 +75,34 @@ describe('Life Modules wizard presentation', () => {
     expect(markup).toContain('Traits')
     expect(markup).toContain('Skills')
     expect(markup).toContain('Capellan Confederation / Capellan Commonality')
+    expect(markup).toContain('Current stage')
+    expect(markup).toContain('Stage 1 · Early Childhood')
+  })
+
+  it('renders compact dashboard landmarks with summary, progress, stage action, and draft controls together', () => {
+    const character = createLifeModuleCharacter('Dashboard')
+    const markup = renderToStaticMarkup(
+      <LifeModuleDashboard character={character} toolbar={<><button>Save draft</button><button>Export character JSON</button></>}>
+        <LifeModuleStageHeading phase="stage-0-affiliation" />
+        <button>Continue</button>
+      </LifeModuleDashboard>,
+    )
+    expect(markup).toContain('aria-label="Life Modules compact dashboard"')
+    expect(markup).toContain('aria-label="Life Modules progress"')
+    expect(markup).toContain('aria-label="Current character summary"')
+    expect(markup).toContain('aria-label="Current Life Modules stage"')
+    expect(markup).toContain('aria-label="Life Modules navigation and draft actions"')
+    expect(markup).toContain('Choose affiliation details')
+    expect(markup).toContain('Continue')
+    expect(markup).toContain('Save draft')
+  })
+
+  it('keeps audit material in a secondary drawer that opens for Review only', () => {
+    const closed = renderToStaticMarkup(<LifeModuleAuditDrawer><p>Applied awards</p></LifeModuleAuditDrawer>)
+    const review = renderToStaticMarkup(<LifeModuleAuditDrawer open><p>Applied awards</p></LifeModuleAuditDrawer>)
+    expect(closed).toContain('<summary>Audit and details</summary>')
+    expect(closed).not.toContain('open=""')
+    expect(review).toContain('<details class="life-dashboard-details" open="">')
   })
 
   it('renders full sheet Attribute values instead of normalized purchased levels', () => {
