@@ -1,6 +1,6 @@
 import type { CharacterDefinition, PendingLifeModuleAward } from '../../domain/character/model'
 import { APP_VERSION } from '../../appMetadata'
-import { LIFE_MODULE_WIZARD_STEPS, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
+import { LIFE_MODULE_WIZARD_STEPS, lifeModuleStagePresentation, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
 
 export function LifeModulesVersionBadge() {
   return <p className="eyebrow">Public Alpha · v{APP_VERSION}</p>
@@ -14,6 +14,27 @@ export function LifeModuleProgress({ phase }: { phase: string }) {
       <div><strong>{step.label}</strong>{step.detail && <small>{step.detail}</small>}</div>
     </li>)}</ol>
   </nav>
+}
+
+export function LifeModuleStageHeading({ phase }: { phase: string }) {
+  const presentation = lifeModuleStagePresentation(phase)
+  return <header className="life-stage-heading">
+    <p className="eyebrow">{presentation.stage}</p>
+    <h2>{presentation.title}</h2>
+    <p>{presentation.instruction}</p>
+  </header>
+}
+
+export function LifeModuleReviewSummary({ character }: { character: CharacterDefinition }) {
+  const state = character.creation.lifeModules!
+  const warnings = state.prerequisiteIssues.filter((entry) => entry.status === 'outstanding')
+  return <section className="life-review-summary" aria-label="Life Modules review summary">
+    <div><span>Selected modules</span><strong>{character.lifeModuleHistory.length}</strong></div>
+    <div><span>Pending choices</span><strong>{state.pendingAwards.length}</strong></div>
+    <div><span>Final warnings</span><strong>{warnings.length}</strong></div>
+    <div><span>Module XP left</span><strong>{state.moduleXp.remaining.toLocaleString()}</strong></div>
+    <ol>{character.lifeModuleHistory.map((entry) => <li key={entry.moduleId}><span>Stage {entry.stage}</span><strong>{entry.displayName}</strong></li>)}</ol>
+  </section>
 }
 
 export function LifeModuleCharacterSummary({ character }: { character: CharacterDefinition }) {

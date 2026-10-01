@@ -2,7 +2,7 @@
 
 Do not invent behavior for these items. A future source clarification or explicit user/project decision is required.
 
-Alpha Slice 36 unifies specialized Stage 0 language resolution inside the Affiliation Package without changing the underlying pending-award model. Full affiliation-data expansion, broader Life Modules accessibility and responsive review, the post-Beta random name generator, Beta 1, and PDF export remain future work.
+Alpha Slice 37 streamlines Life Modules Stages 1–4 and Review presentation without changing the underlying stage or pending-award model. Full affiliation-data expansion, broader accessibility and keyboard-navigation review, the post-Beta random name generator, Beta 1, and PDF export remain future work.
 
 ## Unresolved Character Generator rules
 

@@ -11,8 +11,8 @@ import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFina
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
-import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModulesVersionBadge, LifeModuleStageStatus } from '../components/LifeModulesWizard'
-import { genericPendingAwardsForPhase } from '../components/lifeModulesWizardModel'
+import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from '../components/LifeModulesWizard'
+import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 
 interface LifeModulesScreenProps {
@@ -102,6 +102,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
 
   const state = character?.creation.lifeModules
   const genericPendingAwards = state ? genericPendingAwardsForPhase(state.phase, state.pendingAwards) : []
+  const stagePresentation = state ? lifeModuleStagePresentation(state.phase) : null
   const validation = character ? validateCharacter(character) : null
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
   const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
@@ -188,8 +189,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <div className="life-wizard-workspace">
 
           <section className="life-stage-panel">
-            <p className="eyebrow">Current state</p>
-            <h2>{state.phase.startsWith('stage-0') ? 'Stage 0' : formatPhase(state.phase)}</h2>
+            <LifeModuleStageHeading phase={state.phase} />
             {(state.phase === 'stage-0-universal' || state.phase === 'stage-0-affiliation') && (
               <Stage0WizardStep
                 phase={state.phase}
@@ -250,7 +250,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.phase === 'stage-4-resolution' && <p className="notice">Agitator is selected. Resolve Driving/Any, Prestidigitation/Any, Streetwise/Affiliation, and all flexible XP below.</p>}
             {state.phase === 'stage-4-prerequisite-review' && <div className="life-action"><p className="notice">All Stage 4 awards are resolved, but one or more prerequisites remain outstanding. Enter final review to allocate XP and re-evaluate them.</p><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened with outstanding prerequisites.')}>Enter final review</button></div>}
             {state.phase === 'alpha-stage-4-stop' && <div className="life-action"><p className="notice">The minimal Agitator Stage 4 branch is complete at age {currentAge(character) ?? 'unknown'}. Enter final review to allocate remaining XP and explicitly apply Optimization.</p><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened.')}>Enter final review</button></div>}
-            {state.phase === 'alpha-final-review' && <p className="notice">Final review is in progress. Resolve every blocker below before the character can be marked ready for Final Touches.</p>}
+            {state.phase === 'alpha-final-review' && <><LifeModuleReviewSummary character={character} /><p className="notice">Final review is in progress. Resolve every blocker below before the character can be marked ready for Final Touches.</p></>}
             {state.phase === 'ready-for-final-touches' && !character.creation.finalTouches && <div className="life-action"><p className="notice">This draft passed final review and may enter the Alpha Final Touches/equipment foundation.</p><button className="button" type="button" onClick={() => operate(() => enterFinalTouches(character), 'Final Touches opened with Wealth-derived funds and Equipped-derived limits.')}>Enter Final Touches</button></div>}
             {state.phase === 'ready-for-final-touches' && character.creation.finalTouches && <p className="notice">Final Touches equipment state: {formatPhase(character.creation.finalTouches.equipmentReviewState)}. This is not a finalized or ready-for-play character.</p>}
             <LifeModuleStageStatus
@@ -261,8 +261,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           </section>
 
           {(state.phase !== 'stage-0-affiliation' || genericPendingAwards.length > 0) && <section className="life-stage-panel pending-resolution-panel" id="pending-awards">
-            <p className="eyebrow">Current-stage choices</p>
-            <h2>Pending award resolution</h2>
+            <p className="eyebrow">{stagePresentation?.stage} work</p>
+            <h2>{stagePresentation?.title} · pending choices</h2>
+            <p>These choices were created by the current module and must be resolved here before its blocking transition.</p>
             {genericPendingAwards.length === 0 ? <p>No unresolved award allocations. Follow the current-stage action above.</p> : (
               <div className="pending-awards">{genericPendingAwards.map((entry) => {
                 const draft = { ...defaultResolutionDraft(entry), ...resolutionDrafts[entry.id] }
@@ -416,12 +417,12 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <p className="scope-note">Final review does not purchase equipment, export PDF, lock the character, or mark it ready for play.</p>
           </section>}
 
-          <section className="life-stage-panel">
-            <h2>Selected modules</h2>
+          <details className="life-stage-panel life-audit-details" open={state.phase === 'alpha-final-review'}>
+            <summary>Show selected-module timeline</summary>
             {character.lifeModuleHistory.length === 0 ? <p className="empty">No modules selected.</p> : (
               <ul className="module-history">{character.lifeModuleHistory.map((entry) => <li key={entry.moduleId}><div><strong>{entry.displayName}</strong><span>Stage {entry.stage} · {entry.costXp} XP{entry.baseCostXp !== undefined ? ` (${entry.baseCostXp} base + ${entry.fieldCostXp} Fields)` : ''}{entry.chronologyYears ? ` · +${entry.chronologyYears} years` : ''}{entry.source.page ? ` · Core p. ${entry.source.page}` : ''}</span></div></li>)}</ul>
             )}
-          </section>
+          </details>
 
           {state.selectedSkillFields.length > 0 && <section className="life-stage-panel">
             <h2>Selected Skill Fields</h2>
@@ -429,25 +430,27 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <p>Current recorded age: {currentAge(character) ?? 'not established'}</p>
           </section>}
 
-          <section className="life-stage-panel">
-            <h2>Applied awards</h2>
+          <details className="life-stage-panel life-audit-details" open={state.phase === 'alpha-final-review'}>
+            <summary>Show applied awards</summary>
             <div className="award-columns">
               <div><h3>Attributes</h3><ul>{character.attributes.map((entry) => <li key={entry.attributeId}>{entry.attributeId}: {signed(entry.accumulatedXp)} XP · attained {entry.purchasedLevel ?? '—'}</li>)}</ul></div>
               <div><h3>Traits</h3><ul>{character.traits.map((entry, index) => <li key={`${entry.traitId}-${index}`}>{entry.displayName}: {signed(entry.accumulatedXp)} XP · {entry.active ? `${signed(entry.attainedTp ?? 0)} TP active` : 'not yet active'}</li>)}</ul></div>
               <div><h3>Skills</h3><ul>{character.skills.map((entry) => <li key={`${entry.address.skillId}-${entry.address.parameter?.value ?? ''}`}>{entry.displayName}: {signed(entry.accumulatedXp)} XP · {entry.level === null ? 'untrained' : `Level +${entry.level}`}</li>)}</ul></div>
             </div>
-          </section>
+          </details>
 
-          <section className="life-stage-panel">
-            <h2>Resolved choices</h2>
+          <details className="life-stage-panel life-audit-details" open={state.phase === 'alpha-final-review'}>
+            <summary>Show resolved choices</summary>
             {state.resolvedAwards.length === 0 ? <p>No choice awards resolved.</p> : <ul className="module-history">{state.resolvedAwards.map((entry) => <li key={entry.id}><div><strong>{entry.destination.displayName}</strong><span>{entry.awardId} · {signed(entry.xp)} XP{entry.source.page ? ` · Core p. ${entry.source.page}` : ''}</span></div></li>)}</ul>}
-          </section>
+          </details>
 
           <section className="life-stage-panel">
-            <h2>Rule status</h2>
-            {state.prerequisiteIssues.map((entry) => <p className={entry.status === 'outstanding' ? 'notice' : ''} key={entry.id}>{entry.description}: {entry.status}</p>)}
-            <h3>Validation</h3>
-            <ul>{validation?.issues.map((entry) => <li className={entry.severity} key={`${entry.id}/${entry.path}`}>{entry.message}</li>)}</ul>
+            <h2>Draft actions</h2>
+            <details className="life-audit-inline" open={state.phase === 'alpha-final-review'}><summary>Show rule and validation details</summary>
+              {state.prerequisiteIssues.map((entry) => <p className={entry.status === 'outstanding' ? 'notice' : ''} key={entry.id}>{entry.description}: {entry.status}</p>)}
+              <h3>Validation</h3>
+              <ul>{validation?.issues.map((entry) => <li className={entry.severity} key={`${entry.id}/${entry.path}`}>{entry.message}</li>)}</ul>
+            </details>
             <div className="row-actions life-wizard-actions" aria-label="Life Modules navigation and draft actions">
               <a className="button secondary" href="#/" title="Return without undoing applied Life Module choices">Return to character creator</a>
               <button className="button" type="button" onClick={() => { onSave(character); setMessage('Life Module draft saved locally.') }}>Save draft</button>
