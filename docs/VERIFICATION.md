@@ -518,6 +518,12 @@ Verify that Universal is explicitly non-affiliation and absent from selectable a
 
 Slice 29 checkpoint result: lint passed; 22 test files and 191 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. The equipment catalog and resource data have no diff, and the generated production bundle reports `0.1.0-alpha.29`.
 
+## Alpha Slice 30 wizard-flow verification
+
+Verify that the Life Modules progress tracker identifies the current Universal/Stage 0–4/Review step; the persistent summary exposes the character, Attributes, Traits, Skills, chosen modules, pending count, and XP; pending and flexible awards remain accessible in the active-stage workspace; exact current-stage blockers and final-validation-only warnings render separately; save/export and Back-to-creator actions remain available; and existing engine progression, persistence, selectors, Universal non-affiliation behavior, and empty Stage 0 defaults remain unchanged. Also verify version `0.1.0-alpha.30`, title `A Time of War character creator`, exactly 84 equipment records with unchanged stable IDs/data, and successful `npm run check` plus a separate `npm run build`.
+
+Slice 30 checkpoint result: lint passed; 23 test files and 194 tests passed; TypeScript compilation and the production build passed inside `npm run check`; and the required second, explicit `npm run build` also passed. Existing engine, persistence, affiliation-framework, equipment-catalog, Archetype, Point Buy, Final Touches, public-title, and selector coverage remained green. The equipment catalog and resource data have no diff, and the generated production bundle reports `0.1.0-alpha.30`.
+
 ## Core + Companion audit requirements
 
 Verify that future implementation:

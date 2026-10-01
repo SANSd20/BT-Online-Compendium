@@ -4,7 +4,7 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 29 is implemented.** Version `0.1.0-alpha.29` establishes a source-governed Life Modules affiliation framework without broadening the affiliation catalog or changing active module awards. Universal remains explicitly non-affiliation; the current Capellan/Commonality context, language selector groups, and Protocol/Streetwise labels are centralized.
+**Alpha Slice 30 is implemented.** Version `0.1.0-alpha.30` presents Life Modules as a stage-focused web wizard with a persistent character summary, progress tracker, visible XP, focused pending-award controls, and clearly separated current blockers and final-validation warnings. Rules and catalog data are unchanged.
 
 All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit remains the evidence record; Slice 28 governs its conflicts without silently correcting Tanker, Elemental, or Scout values, adding `REF`, renaming stable IDs, or activating back-sheet combat fields. Point Buy, Life Modules, Final Touches, and the 84-item audited Core equipment catalog are unchanged.
 
@@ -71,13 +71,13 @@ npm run preview
 
 The repository's Pages **Source** setting must be **GitHub Actions**. The public site opens through a normal browser URL and requires neither a special platform login nor an application login. Character data still lives only in that browser; JSON export/import is the portability and backup mechanism.
 
-The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.29` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
+The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.30` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
 
-The public notice in the application identifies version `0.1.0-alpha.29`, browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
+The public notice in the application identifies version `0.1.0-alpha.30`, browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
 
 ## Current resume points
 
-Repository bootstrap and Alpha Slices 1–29 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, special platform login, or application account.
+Repository bootstrap and Alpha Slices 1–30 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, special platform login, or application account.
 
 The Core + Companion rules audit is in progress. Its next audit target is **Campaign / Rules Configuration reconciliation**, specifically the boundaries among durable character state, current campaign rules, creation-rules provenance, and per-character GM exceptions.
 

@@ -144,6 +144,40 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .character-actions { display: flex; gap: 10px; margin-top: 18px; }
 .button:disabled { opacity: .45; cursor: not-allowed; }
 .life-modules-page { max-width: 1120px; }
+.life-progress { margin: 0 0 20px; overflow-x: auto; border: 1px solid var(--line); background: #0d151d; }
+.life-progress ol { display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); min-width: 850px; padding: 0; margin: 0; list-style: none; }
+.life-progress li { position: relative; display: flex; gap: 9px; align-items: center; min-height: 66px; padding: 12px; border-right: 1px solid var(--line); color: var(--muted); }
+.life-progress li:last-child { border-right: 0; }
+.life-progress li > span { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; border: 1px solid var(--line); border-radius: 50%; font-size: .75rem; font-weight: 800; }
+.life-progress li div { display: grid; gap: 2px; }
+.life-progress li small { font-size: .68rem; }
+.life-progress li.complete { color: #9ce3b2; background: #102219; }
+.life-progress li.current { color: #fff; background: #372913; box-shadow: inset 0 -3px 0 var(--amber); }
+.life-progress li.current > span { color: #111; border-color: var(--amber); background: var(--amber); }
+.life-wizard-layout { display: grid; grid-template-columns: minmax(240px, .68fr) minmax(0, 2fr); gap: 20px; align-items: start; }
+.life-wizard-workspace { min-width: 0; }
+.life-wizard-workspace .life-stage-panel:first-child { margin-top: 0; }
+.life-summary { position: sticky; top: 118px; padding: 22px; border: 1px solid var(--line); background: var(--panel); max-height: calc(100vh - 136px); overflow: auto; }
+.life-summary h2 { margin-top: 3px; font-size: 1.35rem; }
+.life-summary-xp { display: grid; gap: 1px; margin: 18px 0; background: var(--line); }
+.life-summary-xp div { display: flex; justify-content: space-between; gap: 12px; padding: 10px; background: #0d151d; }
+.life-summary-xp dt { color: var(--muted); font-size: .75rem; }
+.life-summary-xp dd { margin: 0; color: var(--amber); font-weight: 800; }
+.life-summary details { padding: 12px 0; border-top: 1px solid var(--line); }
+.life-summary summary { cursor: pointer; font-weight: 750; }
+.life-summary ul, .life-summary ol { display: grid; gap: 5px; padding: 8px 0 0; margin: 0; list-style: none; font-size: .78rem; }
+.life-summary li { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); }
+.life-stage-status { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
+.life-stage-status section { padding: 16px; border: 1px solid var(--line); background: #0d151d; }
+.life-stage-status h3 { margin: 0 0 8px; font-size: .9rem; }
+.life-stage-status p { margin: 6px 0; font-size: .84rem; }
+.stage-blockers.has-items { border-color: #8a3f3f; background: #2b1414; }
+.stage-warnings.has-items { border-color: #87642d; background: #2b2112; }
+.stage-blockers a { color: #ffb1b1; font-weight: 750; }
+.pending-resolution-panel { scroll-margin-top: 120px; }
+.award-type-badge { display: inline-block; margin-top: 8px; padding: 4px 7px; border: 1px solid #87642d; color: #f8ddb0; font-size: .68rem; letter-spacing: .05em; text-transform: uppercase; }
+.life-wizard-actions { position: sticky; bottom: 0; z-index: 2; padding: 12px; border: 1px solid var(--line); background: rgb(9 16 23 / 94%); backdrop-filter: blur(8px); }
+.life-wizard-actions .button { text-decoration: none; text-align: center; }
 .life-stage-panel { margin-top: 20px; padding: clamp(22px, 4vw, 38px); border: 1px solid var(--line); background: var(--panel); }
 .life-action { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, .55fr) auto; gap: 16px; align-items: end; }
 .life-action label { display: grid; gap: 7px; color: var(--muted); font-size: .82rem; }
@@ -187,6 +221,9 @@ footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--mute
   .purchase-form { align-items: stretch; flex-direction: column; }
   .sheet-heading { flex-direction: column; }
   .life-action { grid-template-columns: 1fr; }
+  .life-wizard-layout { grid-template-columns: 1fr; }
+  .life-summary { position: static; max-height: none; }
+  .life-stage-status { grid-template-columns: 1fr; }
   .stage-options, .award-columns { grid-template-columns: 1fr; }
   .pending-awards article { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }

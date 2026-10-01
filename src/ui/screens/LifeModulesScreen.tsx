@@ -12,6 +12,7 @@ import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFina
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
+import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModuleStageStatus } from '../components/LifeModulesWizard'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -178,6 +179,12 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <div><span>Stat XP (net)</span><strong>{character.xp.creation.allocated.toLocaleString()}</strong></div>
           </section>
 
+          <LifeModuleProgress phase={state.phase} />
+
+          <div className="life-wizard-layout">
+            <LifeModuleCharacterSummary character={character} />
+            <div className="life-wizard-workspace">
+
           <section className="life-stage-panel">
             <p className="eyebrow">Current state</p>
             <h2>{formatPhase(state.phase)}</h2>
@@ -261,10 +268,51 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.phase === 'alpha-final-review' && <p className="notice">Final review is in progress. Resolve every blocker below before the character can be marked ready for Final Touches.</p>}
             {state.phase === 'ready-for-final-touches' && !character.creation.finalTouches && <div className="life-action"><p className="notice">This draft passed final review and may enter the Alpha Final Touches/equipment foundation.</p><button className="button" type="button" onClick={() => operate(() => enterFinalTouches(character), 'Final Touches opened with Wealth-derived funds and Equipped-derived limits.')}>Enter Final Touches</button></div>}
             {state.phase === 'ready-for-final-touches' && character.creation.finalTouches && <p className="notice">Final Touches equipment state: {formatPhase(character.creation.finalTouches.equipmentReviewState)}. This is not a finalized or ready-for-play character.</p>}
-            {state.pendingAwards.length === 0 && <p><strong>All pending awards resolved.</strong></p>}
-            {state.pendingAwards.length > 0 && <div className="notice"><strong>You cannot complete the current stage because these awards remain unresolved:</strong><ul>{state.pendingAwards.map((entry) => <li key={`blocker-${entry.id}`}>{entry.description} ({entry.allocationMode === 'pool' ? `${entry.remainingXp} XP remaining` : `${entry.remainingGrants} grant${entry.remainingGrants === 1 ? '' : 's'} remaining`})</li>)}</ul></div>}
-            {state.prerequisiteIssues.some((entry) => entry.status === 'outstanding') && <div className="notice"><strong>The following prerequisites remain for final validation.</strong><p>You may continue; these are warnings, not current-stage progression blockers.</p><ul>{state.prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => <li key={`prerequisite-${entry.id}`}>{moduleName(character, entry.moduleId)}: {entry.description}</li>)}</ul></div>}
+            <LifeModuleStageStatus
+              pendingAwards={state.pendingAwards}
+              warnings={state.prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => `${moduleName(character, entry.moduleId)}: ${entry.description}`)}
+            />
           </section>
+
+          <section className="life-stage-panel pending-resolution-panel" id="pending-awards">
+            <p className="eyebrow">Current-stage choices</p>
+            <h2>Pending award resolution</h2>
+            {state.pendingAwards.length === 0 ? <p>No unresolved award allocations. Follow the current-stage action above.</p> : (
+              <div className="pending-awards">{state.pendingAwards.map((entry) => {
+                const draft = { ...defaultResolutionDraft(entry), ...resolutionDrafts[entry.id] }
+                const optionEntry = entry.kind === 'flexible-xp' ? { ...entry, allowedTargetTypes: [draft.targetType] } : entry
+                const options = pendingAwardOptions(optionEntry, character)
+                const unsupported = pendingAwardUnsupportedMessage(optionEntry, options)
+                const selectedOption = optionValue(draft)
+                return (
+                  <article key={entry.id} className={entry.kind === 'flexible-xp' ? 'flexible-award' : ''}>
+                    <div><strong>{entry.description}</strong><p>{entry.allocationMode === 'pool' ? `${entry.remainingXp} XP remaining` : `${entry.remainingGrants} grant${entry.remainingGrants === 1 ? '' : 's'} remaining · ${signed(entry.xpPerGrant)} XP each`}</p>{entry.kind === 'flexible-xp' && <span className="award-type-badge">Flexible XP</span>}</div>
+                    {entry.kind === 'flexible-xp' && (
+                      <><label>Target type
+                        <select value={draft.targetType} onChange={(event) => updateResolutionDraft(entry, { targetType: event.target.value as ResolutionDraft['targetType'], targetId: '', parameter: '', displayName: '' })}>
+                          {entry.allowedTargetTypes.map((type) => <option key={type}>{type}</option>)}
+                        </select>
+                      </label>{entry.allocationMode === 'pool' && <label>XP to allocate<input type="number" min="1" max={entry.remainingXp} step="1" value={draft.xpAmount} onChange={(event) => updateResolutionDraft(entry, { xpAmount: Number(event.target.value) })} /></label>}</>
+                    )}
+                    {options.length > 0 && <label>{entry.kind === 'language-choice' ? 'Language' : draft.targetType === 'trait' ? 'Trait' : draft.targetType === 'attribute' ? 'Attribute' : 'Destination'}
+                      <select value={selectedOption} onChange={(event) => {
+                        const option = options.find((candidate) => candidate.value === event.target.value)
+                        if (option) updateResolutionDraft(entry, optionDraft(option, draft.xpAmount))
+                        else updateResolutionDraft(entry, { targetId: '', parameter: '', displayName: '' })
+                      }}>
+                        <option value="">Choose a valid target…</option>
+                        {options.map((option) => <option key={option.value} value={option.value}>{option.displayName}</option>)}
+                      </select>
+                    </label>}
+                    {unsupported && <p className="notice">{unsupported}</p>}
+                    <button className="button" type="button" disabled={!draft.targetId || Boolean(unsupported)} onClick={() => resolve(entry)}>{entry.allocationMode === 'pool' ? 'Allocate XP' : 'Apply one grant'}</button>
+                  </article>
+                )
+              })}</div>
+            )}
+          </section>
+            </div>
+          </div>
 
           {character.creation.finalTouches && <section className="life-stage-panel">
             <p className="eyebrow">Final Touches</p>
@@ -405,43 +453,6 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           </section>
 
           <section className="life-stage-panel">
-            <h2>Pending award resolution</h2>
-            {state.pendingAwards.length === 0 ? <p>No unresolved award allocations.</p> : (
-              <div className="pending-awards">{state.pendingAwards.map((entry) => {
-                const draft = { ...defaultResolutionDraft(entry), ...resolutionDrafts[entry.id] }
-                const optionEntry = entry.kind === 'flexible-xp' ? { ...entry, allowedTargetTypes: [draft.targetType] } : entry
-                const options = pendingAwardOptions(optionEntry, character)
-                const unsupported = pendingAwardUnsupportedMessage(optionEntry, options)
-                const selectedOption = optionValue(draft)
-                return (
-                  <article key={entry.id}>
-                    <div><strong>{entry.description}</strong><p>{entry.allocationMode === 'pool' ? `${entry.remainingXp} XP remaining` : `${entry.remainingGrants} grant${entry.remainingGrants === 1 ? '' : 's'} remaining · ${signed(entry.xpPerGrant)} XP each`}</p></div>
-                    {entry.kind === 'flexible-xp' && (
-                      <><label>Target type
-                        <select value={draft.targetType} onChange={(event) => updateResolutionDraft(entry, { targetType: event.target.value as ResolutionDraft['targetType'], targetId: '', parameter: '', displayName: '' })}>
-                          {entry.allowedTargetTypes.map((type) => <option key={type}>{type}</option>)}
-                        </select>
-                      </label>{entry.allocationMode === 'pool' && <label>XP to allocate<input type="number" min="1" max={entry.remainingXp} step="1" value={draft.xpAmount} onChange={(event) => updateResolutionDraft(entry, { xpAmount: Number(event.target.value) })} /></label>}</>
-                    )}
-                    {options.length > 0 && <label>{entry.kind === 'language-choice' ? 'Language' : draft.targetType === 'trait' ? 'Trait' : draft.targetType === 'attribute' ? 'Attribute' : 'Destination'}
-                      <select value={selectedOption} onChange={(event) => {
-                        const option = options.find((candidate) => candidate.value === event.target.value)
-                        if (option) updateResolutionDraft(entry, optionDraft(option, draft.xpAmount))
-                        else updateResolutionDraft(entry, { targetId: '', parameter: '', displayName: '' })
-                      }}>
-                        <option value="">Choose a valid target…</option>
-                        {options.map((option) => <option key={option.value} value={option.value}>{option.displayName}</option>)}
-                      </select>
-                    </label>}
-                    {unsupported && <p className="notice">{unsupported}</p>}
-                    <button className="button" type="button" disabled={!draft.targetId || Boolean(unsupported)} onClick={() => resolve(entry)}>{entry.allocationMode === 'pool' ? 'Allocate XP' : 'Apply one grant'}</button>
-                  </article>
-                )
-              })}</div>
-            )}
-          </section>
-
-          <section className="life-stage-panel">
             <h2>Resolved choices</h2>
             {state.resolvedAwards.length === 0 ? <p>No choice awards resolved.</p> : <ul className="module-history">{state.resolvedAwards.map((entry) => <li key={entry.id}><div><strong>{entry.destination.displayName}</strong><span>{entry.awardId} · {signed(entry.xp)} XP{entry.source.page ? ` · Core p. ${entry.source.page}` : ''}</span></div></li>)}</ul>}
           </section>
@@ -451,7 +462,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.prerequisiteIssues.map((entry) => <p className={entry.status === 'outstanding' ? 'notice' : ''} key={entry.id}>{entry.description}: {entry.status}</p>)}
             <h3>Validation</h3>
             <ul>{validation?.issues.map((entry) => <li className={entry.severity} key={`${entry.id}/${entry.path}`}>{entry.message}</li>)}</ul>
-            <div className="row-actions">
+            <div className="row-actions life-wizard-actions">
+              <a className="button secondary" href="#/">Back to creator</a>
               <button className="button" type="button" onClick={() => { onSave(character); setMessage('Life Module draft saved locally.') }}>Save draft</button>
               <button className="button secondary" type="button" onClick={() => downloadCharacter(character)}>Export character JSON</button>
             </div>

@@ -51,11 +51,12 @@ Saved characters must retain enough underlying information to reproduce and audi
 | Alpha Slice 27 pending-award/progression hotfix | Implemented and verified | Replaces known raw target inputs with safe readable selectors, retains stable IDs internally, reports exact pending blockers, and permits continuation past final-validation-only prerequisite warnings |
 | Alpha Slice 28 Archetype Source Governance | Implemented and verified | Prose/package entries govern active Archetype creation values; back sheets remain supplemental evidence, conflicts/variants are preserved, and no active package values or mechanics change |
 | Alpha Slice 29 Life Modules affiliation framework | Implemented and verified | Centralizes the current Capellan/Commonality context, selector groups, and Protocol/Streetwise labels; Universal remains non-affiliation and broader affiliation data remains deferred |
+| Alpha Slice 30 Life Modules wizard flow review | Implemented and verified | Adds a stage tracker, persistent summary and XP status, focused pending/flexible-award controls, and separate blocker/warning panels without changing rules or catalog data |
 | Shared Character/Rules engine | Foundation implemented and exercised | Archetype, Point Buy, and Life Modules use the common representation, ledgers, validation, persistence, and provenance |
 | Archetype foundation | Controlled adjustment and bounded Skill-swap foundation implemented | Published packages remain source-faithful foundations; level adjustments and safe same-XP swaps are separate, reversible, provenance-backed, and must balance to 0 XP |
 | Point Buy v0.1 | Implemented | Core 5,000-XP default, GM-adjusted allotment recording, Attribute/Skill/Trait costs, negative-Trait ceiling, drafts, persistence, and focused catalogs |
 | Life Modules v0.15 | Implemented, deliberately narrow | Existing Stage 0–4 path, final review/Optimization, Final Touches, and 84-item equipment catalog; true finalization and broad catalogs remain deferred |
-| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 29 |
+| Beta 1 milestone | Future | Requires completed Core + Companion character creation and PDF export; not reached by Alpha Slice 30 |
 | Playable character sheet | Long-term direction; deferred | Play State should eventually be persistable |
 | Planetary Data Foundation research/design | Substantially complete | Supporting infrastructure |
 | Planetary Rollout 1 | Not started; separate authorization required | Lossless import through lookup/distance foundation |
@@ -208,6 +209,8 @@ Alpha Slice 25 performs the durable Archetype Sheet Cross-Check in `docs/archety
 The Core introduction describes the archetypes as 4,500-XP packages, but independently summing the printed Attribute, Trait, and Skill XP produces different totals for several sheets. Corrected Third Printing values are preserved without speculative repair, the declared package total and calculated line-item total remain separate, and each mismatch is recorded as a catalog note. Errata v4.0 does not provide a correction for these sheets.
 
 Alpha Slice 29 establishes the typed, source-governed Life Modules affiliation framework documented in `LIFE-MODULES-AFFILIATION-FRAMEWORK.md`. Universal is explicitly non-affiliation and remains outside the selectable affiliation registry. The existing Capellan Confederation / Capellan Commonality context, three current language selector groups, and current Protocol/Streetwise labels are centralized without changing IDs, award values, persistence fields, or user-facing choices. Unknown contexts are deferred rather than exposed as free text. No broad affiliation data, random name generator, module packages, equipment data, or catalog IDs were added; the catalog remains 84 items.
+
+Alpha Slice 30 completes the bounded Life Modules wizard-flow review. The existing engine phases now drive a modern progress tracker; the active stage shares a two-column workspace with a persistent Character/Attribute/Trait/Skill/module summary; module and stat XP remain visible; pending and flexible awards are placed directly beside the current-stage work; and exact blockers are separated from final-validation-only warnings. Save/export and Back-to-creator actions remain available. No Life Module rules, packages, affiliation data, equipment records, or other creation methods changed.
 
 ## Current audit checkpoint
 
