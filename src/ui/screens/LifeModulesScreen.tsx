@@ -14,7 +14,8 @@ import { LifeModuleAuditDrawer, LifeModuleDashboard, LifeModuleReviewSummary, Li
 import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesAffiliationTheme, previewStage0Affiliation } from '../components/stage0PreviewModel'
-import { applySupportedStageModule, previewSupportedStageModule, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
+import { previewSupportedStageModule, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
+import { emptyStageChoiceSlot, previewStageModuleChoiceSlots, slotValueComplete, stageChoiceSlotCount, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -56,6 +57,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const [affiliationLanguage, setAffiliationLanguage] = useState('')
   const [secondaryLanguage, setSecondaryLanguage] = useState('')
   const [stageModulePreviewId, setStageModulePreviewId] = useState<SupportedStageModuleId | ''>('')
+  const [stageChoiceSlotValues, setStageChoiceSlotValues] = useState<StageChoiceSlotValues>({})
   const [character, setCharacter] = useState<CharacterDefinition | null>(null)
   const [resolutionDrafts, setResolutionDrafts] = useState<Record<string, ResolutionDraft>>({})
   const [finalAllocationTarget, setFinalAllocationTarget] = useState('attribute:STR')
@@ -78,6 +80,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       const next = operation()
       setCharacter(next)
       setStageModulePreviewId('')
+      setStageChoiceSlotValues({})
       onSave(next)
       setMessage(success)
       return true
@@ -114,13 +117,16 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     ...(affiliationLanguage ? [`Affiliation language: ${affiliationLanguage}`] : []),
     ...(secondaryLanguage ? [`Secondary language: ${secondaryLanguage}`] : []),
   ] : []
-  const stageModulePreview = useMemo(() => character
+  const stageModuleBasePreview = useMemo(() => character
     ? previewSupportedStageModule(character, stageModulePreviewId)
     : null, [character, stageModulePreviewId])
-  const activePreview = stage0Preview ?? stageModulePreview
+  const stageModulePreview = useMemo(() => character
+    ? previewStageModuleChoiceSlots(character, stageModulePreviewId, stageChoiceSlotValues)
+    : null, [character, stageModulePreviewId, stageChoiceSlotValues])
+  const activePreview = stage0Preview ?? stageModulePreview?.character ?? null
   const activePreviewSelections = stage0PreviewSelections.length > 0
     ? stage0PreviewSelections
-    : stageModulePreviewId ? [`Selected module: ${stageModulePreview?.lifeModuleHistory.at(-1)?.displayName ?? stageModulePreviewId}`] : []
+    : stageModulePreviewId ? [`Selected module: ${stageModulePreview?.character.lifeModuleHistory.at(-1)?.displayName ?? stageModulePreviewId}`] : []
   const previewState = activePreview?.creation.lifeModules
   const validation = character ? validateCharacter(character) : null
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
@@ -128,6 +134,94 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const catalogItems = filterEquipmentCatalog({ search: catalogSearch, category: catalogCategory, sourceStatus: catalogSourceStatus })
   const accessProfile = character?.creation.finalTouches?.equipmentAccessProfile ?? { enabled: false, affiliationCategory: 'inner-sphere' as const, nativeAffiliationCode: '' }
   const effectiveOwnedLimits = character?.creation.finalTouches ? adjustedOwnedEquipmentLimits(character.creation.finalTouches.equippedTpUsed, accessProfile.affiliationCategory) : null
+
+  const stageModulePendingAwards = stageModuleBasePreview?.creation.lifeModules?.pendingAwards.filter((entry) => entry.moduleId === stageModulePreviewId) ?? []
+
+  function selectStageModule(moduleId: SupportedStageModuleId) {
+    setStageModulePreviewId(moduleId)
+    setStageChoiceSlotValues({})
+  }
+
+  function updateStageChoiceSlot(pending: PendingLifeModuleAward, index: number, change: Partial<StageChoiceSlotValue>) {
+    setStageChoiceSlotValues((current) => {
+      const values = [...(current[pending.awardId] ?? [])]
+      values[index] = { ...emptyStageChoiceSlot(pending), ...values[index], ...change }
+      return { ...current, [pending.awardId]: values }
+    })
+  }
+
+  function addPoolSlot(pending: PendingLifeModuleAward) {
+    setStageChoiceSlotValues((current) => ({
+      ...current,
+      [pending.awardId]: [...(current[pending.awardId] ?? []), emptyStageChoiceSlot(pending)],
+    }))
+  }
+
+  function commitStageModuleChoices(success: string) {
+    if (!stageModulePreview?.complete) {
+      setMessage(stageModulePreview?.error ?? 'Complete every required choice slot before continuing.')
+      return
+    }
+    operate(() => stageModulePreview.character, success)
+  }
+
+  function renderStageChoiceSlots(stageName: string, success: string) {
+    const moduleName = stageModuleBasePreview?.lifeModuleHistory.at(-1)?.displayName ?? stageModulePreviewId
+    return <section className="stage-choice-slots" aria-label={`Pending choices from ${moduleName}`}>
+      <h3>Pending choices from {moduleName}</h3>
+      <p>Fill every slot below. These selections and the module remain uncommitted until Continue.</p>
+      {stageModulePendingAwards.map((pending) => {
+        const values = stageChoiceSlotValues[pending.awardId] ?? []
+        const count = stageChoiceSlotCount(pending, stageChoiceSlotValues)
+        const allocated = values.filter(slotValueComplete).reduce((total, value) => total + value.xpAmount, 0)
+        return <div className="stage-choice-award" key={pending.id}>
+          <p><strong>{pending.description}</strong> · {pending.allocationMode === 'pool' ? `${allocated} of ${pending.remainingXp} XP assigned` : `${count} separate slot${count === 1 ? '' : 's'} · ${signed(pending.xpPerGrant)} XP each`}</p>
+          {Array.from({ length: count }, (_, index) => {
+            const value = { ...emptyStageChoiceSlot(pending), ...values[index] }
+            const optionPending = pending.kind === 'flexible-xp' && value.targetType
+              ? { ...pending, allowedTargetTypes: [value.targetType] }
+              : pending
+            const options = pending.kind === 'flexible-xp' && !value.targetType ? [] : pendingAwardOptions(optionPending, stageModulePreview?.character ?? stageModuleBasePreview ?? character!)
+            const unsupported = value.targetType ? pendingAwardUnsupportedMessage(optionPending, options) : null
+            return <div className="stage-choice-slot" key={`${pending.id}/${index}`}>
+              <strong>{stageChoiceSlotLabel(pending, index)}</strong>
+              <span>{pending.allocationMode === 'pool' ? 'Choose a legal destination and XP amount.' : `${signed(pending.xpPerGrant)} XP`}</span>
+              {pending.kind === 'flexible-xp' && <label>Target type
+                <select value={value.targetType} onChange={(event) => updateStageChoiceSlot(pending, index, { targetType: event.target.value as StageChoiceSlotValue['targetType'], targetId: '', parameter: '', displayName: '' })}>
+                  <option value="">Choose a target type…</option>
+                  {pending.allowedTargetTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </label>}
+              {pending.allocationMode === 'pool' && <label>XP
+                <input type="number" min="1" max={pending.remainingXp} step="1" value={value.xpAmount} onChange={(event) => updateStageChoiceSlot(pending, index, { xpAmount: Number(event.target.value) })} />
+              </label>}
+              {options.length > 0 && <label>{pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Destination'}
+                <select value={optionValue(value)} onChange={(event) => {
+                  const option = options.find((candidate) => candidate.value === event.target.value)
+                  if (option) updateStageChoiceSlot(pending, index, optionDraft(option, value.xpAmount))
+                  else updateStageChoiceSlot(pending, index, { targetId: '', parameter: '', displayName: '' })
+                }}>
+                  <option value="">Choose a valid target…</option>
+                  {options.map((option) => <option key={option.value} value={option.value}>{option.displayName}</option>)}
+                </select>
+              </label>}
+              {unsupported && <p className="notice">{unsupported}</p>}
+              <span className={slotValueComplete(value) ? 'slot-complete' : 'slot-pending'}>{slotValueComplete(value) ? `Selected: ${value.displayName}` : 'Pending'}</span>
+            </div>
+          })}
+          {pending.allocationMode === 'pool' && <div className="row-actions">
+            <button className="button secondary" type="button" disabled={values.length === 0 || !slotValueComplete(values.at(-1))} onClick={() => addPoolSlot(pending)}>Add allocation slot</button>
+            {values.length > 1 && <button className="button secondary" type="button" onClick={() => setStageChoiceSlotValues((current) => ({ ...current, [pending.awardId]: current[pending.awardId].slice(0, -1) }))}>Remove last slot</button>}
+          </div>}
+        </div>
+      })}
+      {stageModulePreview?.error && <p className="notice">{stageModulePreview.error}</p>}
+      <div className="life-action">
+        <p className="notice">Previewing this {stageName} module and filled choice slots. Continue commits them together.</p>
+        <button className="button" type="button" disabled={!stageModulePreview?.complete} onClick={() => commitStageModuleChoices(success)}>Continue</button>
+      </div>
+    </section>
+  }
 
   function allocateFinalXp() {
     if (!character) return
@@ -222,18 +316,18 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             )}
             {state.phase === 'stage-1-selection' && (
               <><div className="stage-options">
-                <article className={stageModulePreviewId === BLUE_COLLAR_ID ? 'preview-selected' : ''}><h3>Blue Collar</h3><p>210 XP · fixed Attribute awards plus unresolved Career, Interest, and flexible awards.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === BLUE_COLLAR_ID} onClick={() => setStageModulePreviewId(BLUE_COLLAR_ID)}>Preview Blue Collar</button></article>
-                <article className={stageModulePreviewId === BACK_WOODS_ID ? 'preview-selected' : ''}><h3>Back Woods</h3><p>290 XP · fixed Attribute, Trait, and Skill awards; STR 4+ and BOD 5+ are checked for final validation.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === BACK_WOODS_ID} onClick={() => setStageModulePreviewId(BACK_WOODS_ID)}>Preview Back Woods</button></article>
-              </div>{stageModulePreviewId && <div className="life-action"><p className="notice">Previewing this Early Childhood module. Continue to commit it and open its existing pending-choice flow.</p><button className="button" type="button" onClick={() => operate(() => applySupportedStageModule(character, stageModulePreviewId), 'Stage 1 module selected; unresolved awards retained.')}>Continue with selected module</button></div>}</>
+                <article className={stageModulePreviewId === BLUE_COLLAR_ID ? 'preview-selected' : ''}><h3>Blue Collar</h3><p>210 XP · fixed Attribute awards plus unresolved Career, Interest, and flexible awards.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === BLUE_COLLAR_ID} onClick={() => selectStageModule(BLUE_COLLAR_ID)}>Preview Blue Collar</button></article>
+                <article className={stageModulePreviewId === BACK_WOODS_ID ? 'preview-selected' : ''}><h3>Back Woods</h3><p>290 XP · fixed Attribute, Trait, and Skill awards; STR 4+ and BOD 5+ are checked for final validation.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === BACK_WOODS_ID} onClick={() => selectStageModule(BACK_WOODS_ID)}>Preview Back Woods</button></article>
+              </div>{stageModulePreviewId && renderStageChoiceSlots('Early Childhood', 'Stage 1 module and choices committed.')}</>
             )}
             {state.phase === 'stage-1-resolution' && <p className="notice">Stage 1 is selected. Resolve every source-bound choice and flexible grant below before reaching an Alpha partial stop.</p>}
             {state.phase === 'stage-1-prerequisite-review' && <p className="notice">All awards are resolved, but one or more module prerequisites remain outstanding for eventual final validation.</p>}
             {state.phase === 'alpha-partial-stop' && <div className="life-action"><p className="notice">Stage 0 and Stage 1 are complete. This is a valid Alpha partial stop—not a finalized Beta 1 character.</p><button className="button" type="button" onClick={() => operate(() => continueToStage2(character), 'Stage 2 continuation opened.')}>Continue to Stage 2</button></div>}
             {state.phase === 'stage-2-selection' && (
               <><div className="stage-options">
-                <article className={stageModulePreviewId === STAGE_2_BACK_WOODS_ID ? 'preview-selected' : ''}><h3>Back Woods</h3><p>500 XP · fixed awards, Protocol/Affiliation, and a 125 XP flexible pool.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === STAGE_2_BACK_WOODS_ID} onClick={() => setStageModulePreviewId(STAGE_2_BACK_WOODS_ID)}>Preview Back Woods</button></article>
-                <article className={stageModulePreviewId === STAGE_2_HIGH_SCHOOL_ID ? 'preview-selected' : ''}><h3>High School</h3><p>400 XP · requires a non-Clan affiliation and no active Illiterate Trait; includes Interest, affiliation, and 185 flexible XP awards.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === STAGE_2_HIGH_SCHOOL_ID} onClick={() => setStageModulePreviewId(STAGE_2_HIGH_SCHOOL_ID)}>Preview High School</button></article>
-              </div>{stageModulePreviewId && <div className="life-action"><p className="notice">Previewing this Late Childhood module. Continue to commit it and open its existing pending-choice flow.</p><button className="button" type="button" onClick={() => operate(() => applySupportedStageModule(character, stageModulePreviewId), 'Stage 2 module selected; unresolved awards retained.')}>Continue with selected module</button></div>}</>
+                <article className={stageModulePreviewId === STAGE_2_BACK_WOODS_ID ? 'preview-selected' : ''}><h3>Back Woods</h3><p>500 XP · fixed awards, Protocol/Affiliation, and a 125 XP flexible pool.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === STAGE_2_BACK_WOODS_ID} onClick={() => selectStageModule(STAGE_2_BACK_WOODS_ID)}>Preview Back Woods</button></article>
+                <article className={stageModulePreviewId === STAGE_2_HIGH_SCHOOL_ID ? 'preview-selected' : ''}><h3>High School</h3><p>400 XP · requires a non-Clan affiliation and no active Illiterate Trait; includes Interest, affiliation, and 185 flexible XP awards.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === STAGE_2_HIGH_SCHOOL_ID} onClick={() => selectStageModule(STAGE_2_HIGH_SCHOOL_ID)}>Preview High School</button></article>
+              </div>{stageModulePreviewId && renderStageChoiceSlots('Late Childhood', 'Stage 2 module and choices committed.')}</>
             )}
             {state.phase === 'stage-2-resolution' && <p className="notice">Stage 2 is selected. Resolve all Stage 2 source-bound choices and flexible XP below.</p>}
             {state.phase === 'stage-2-prerequisite-review' && <p className="notice">All Stage 2 awards are resolved, but one or more prerequisites remain outstanding for eventual final validation.</p>}
@@ -246,9 +340,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                   <label><input type="checkbox" checked readOnly /> Technician/Civilian — Basic, 120 XP, +1 year</label>
                   <label><input type="checkbox" checked readOnly /> Technician/Vehicle — Advanced, 96 XP, +2 years</label>
                   <p><strong>Total: 816 XP · +3 years · expected age 19</strong></p>
-                  <button className="button" type="button" aria-pressed={stageModulePreviewId === TECHNICAL_COLLEGE_ID} onClick={() => setStageModulePreviewId(TECHNICAL_COLLEGE_ID)}>Preview Technical College path</button>
+                  <button className="button" type="button" aria-pressed={stageModulePreviewId === TECHNICAL_COLLEGE_ID} onClick={() => selectStageModule(TECHNICAL_COLLEGE_ID)}>Preview Technical College path</button>
                 </article>
-              </div>{stageModulePreviewId === TECHNICAL_COLLEGE_ID && <div className="life-action"><p className="notice">Previewing Technical College and the displayed Skill Fields. Continue to commit them and open the existing pending-choice flow.</p><button className="button" type="button" onClick={() => operate(() => applySupportedStageModule(character, TECHNICAL_COLLEGE_ID), 'Technical College and selected Skill Fields applied; unresolved awards retained.')}>Continue with Technical College</button></div>}</>
+              </div>{stageModulePreviewId === TECHNICAL_COLLEGE_ID && renderStageChoiceSlots('Higher Education', 'Technical College and choices committed.')}</>
             )}
             {state.phase === 'stage-3-resolution' && <p className="notice">Technical College is selected. Resolve Interest/Any and all flexible XP below.</p>}
             {state.phase === 'stage-3-prerequisite-review' && <p className="notice">All Stage 3 awards are resolved, but one or more Skill Field prerequisites remain outstanding for eventual final validation.</p>}
@@ -260,9 +354,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                   <p>900 XP · Real Life module · +4 years.</p>
                   <p>Includes fixed Attribute, Trait, and Skill awards; three concrete subskill choices; and 125 flexible XP with a 50-XP cap per Attribute.</p>
                   <p><strong>Expected age: 23</strong></p>
-                  <button className="button" type="button" aria-pressed={stageModulePreviewId === AGITATOR_ID} onClick={() => setStageModulePreviewId(AGITATOR_ID)}>Preview Agitator</button>
+                  <button className="button" type="button" aria-pressed={stageModulePreviewId === AGITATOR_ID} onClick={() => selectStageModule(AGITATOR_ID)}>Preview Agitator</button>
                 </article>
-              </div>{stageModulePreviewId === AGITATOR_ID && <div className="life-action"><p className="notice">Previewing Agitator. Continue to commit it and open the existing pending-choice flow.</p><button className="button" type="button" onClick={() => operate(() => applySupportedStageModule(character, AGITATOR_ID), 'Agitator selected; pending awards retained.')}>Continue with Agitator</button></div>}</>
+              </div>{stageModulePreviewId === AGITATOR_ID && renderStageChoiceSlots('Real Life', 'Agitator and choices committed.')}</>
             )}
             {state.phase === 'stage-4-resolution' && <p className="notice">Agitator is selected. Resolve Driving/Any, Prestidigitation/Any, Streetwise/Affiliation, and all flexible XP below.</p>}
             {state.phase === 'stage-4-prerequisite-review' && <div className="life-action"><p className="notice">All Stage 4 awards are resolved, but one or more prerequisites remain outstanding. Enter final review to allocate XP and re-evaluate them.</p><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened with outstanding prerequisites.')}>Enter final review</button></div>}
@@ -277,7 +371,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             />
           </section>
 
-          {(state.phase !== 'stage-0-affiliation' || genericPendingAwards.length > 0) && <section className="life-stage-panel pending-resolution-panel" id="pending-awards">
+          {!stageModulePreviewId && (state.phase !== 'stage-0-affiliation' || genericPendingAwards.length > 0) && <section className="life-stage-panel pending-resolution-panel" id="pending-awards">
             <p className="eyebrow">{stagePresentation?.stage} work</p>
             <h2>{stagePresentation?.title} · pending choices</h2>
             <p>These choices were created by the current module and must be resolved here before its blocking transition.</p>
@@ -518,9 +612,19 @@ function optionDraft(option: PendingAwardOption, xpAmount: number): ResolutionDr
   }
 }
 
-function optionValue(draft: ResolutionDraft): string {
+function optionValue(draft: Pick<StageChoiceSlotValue, 'targetType' | 'targetId' | 'parameter'>): string {
   if (!draft.targetId) return ''
   return draft.targetType === 'skill' ? `${draft.targetId}/${draft.parameter}` : draft.targetId
+}
+
+function stageChoiceSlotLabel(pending: PendingLifeModuleAward, index: number): string {
+  const suffix = pending.remainingGrants > 1 ? ` ${index + 1}` : ''
+  if (pending.kind === 'flexible-xp') return `Flexible XP grant ${index + 1}`
+  if (pending.requiredSkillId === 'skill.career') return `Career choice${suffix}`
+  if (pending.requiredSkillId === 'skill.interest') return `Interest choice${suffix}`
+  if (pending.kind === 'language-choice') return `Language choice${suffix}`
+  if (pending.kind === 'affiliation-skill-choice') return `Affiliation skill choice${suffix}`
+  return `${pending.description}${suffix}`
 }
 
 function moduleName(character: CharacterDefinition, moduleId: string): string {

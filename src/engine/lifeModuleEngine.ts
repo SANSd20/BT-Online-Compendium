@@ -290,7 +290,7 @@ export function resolvePendingLifeModuleAward(
   const duplicate = state.resolvedAwards.some((entry) => entry.moduleId === pending.moduleId && entry.awardId === pending.awardId && resolvedDestinationKey(entry.destination) === destinationKey)
   if (duplicate && !isPool) throw new Error('This destination has already been selected for the pending award.')
   const appliedXp = isPool ? xpAmount : pending.xpPerGrant
-  if (!Number.isInteger(appliedXp) || appliedXp! <= 0) throw new Error('Flexible pool allocations require a positive whole XP amount.')
+  if (isPool && (!Number.isInteger(appliedXp) || appliedXp! <= 0)) throw new Error('Flexible pool allocations require a positive whole XP amount.')
   if (!isPool && xpAmount !== undefined && xpAmount !== pending.xpPerGrant) throw new Error('Fixed grants must use their published XP amount.')
   if (isPool) {
     if (appliedXp! > (pending.remainingXp ?? 0)) throw new Error('Flexible allocation exceeds the remaining award XP.')
