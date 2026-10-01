@@ -185,11 +185,10 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .life-summary-preview-status > span, .life-summary-preview-status p { color: #f8ddb0; font-size: .74rem; }
 .life-summary-preview-status p { margin: 3px 0 0; line-height: 1.45; }
 .life-summary-preview-status ul { padding-top: 3px; }
-.life-summary-preview-status em, .life-summary .preview-row em { flex: none; margin-left: 6px; padding: 2px 5px; border: 1px solid #87642d; color: var(--amber); font-size: .58rem; font-style: normal; letter-spacing: .05em; text-transform: uppercase; }
 .life-summary-xp dd { display: grid; justify-items: end; }
 .life-summary-xp dd small { color: var(--amber); font-size: .58rem; font-weight: 700; text-transform: uppercase; }
 .life-summary .preview-row { color: #f8ddb0; }
-.life-summary .preview-row strong { display: flex; align-items: center; }
+.life-summary .preview-row strong { color: var(--amber); }
 .life-stage-status { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
 .life-stage-status section { padding: 10px 12px; border: 1px solid var(--line); background: #0d151d; }
 .life-stage-status h3 { margin: 0 0 8px; font-size: .9rem; }

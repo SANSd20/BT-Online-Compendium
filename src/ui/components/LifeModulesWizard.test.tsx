@@ -16,7 +16,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · v0.1.0-alpha.41')
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.42')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -116,6 +116,19 @@ describe('Life Modules wizard presentation', () => {
     }
   })
 
+  it('renders Trait TP with XP and Skill XP instead of level-style summary values', () => {
+    const character = createLifeModuleCharacter('XP Summary')
+    const preview = previewStage0Affiliation(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')
+    const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={character} previewCharacter={preview} />)
+    expect(markup).toContain('<span>Exceptional Attribute/EDG</span><strong>1 TP · 100 XP</strong>')
+    expect(markup).toContain('<span>Compulsion/Paranoia</span><strong>-1 TP · -100 XP</strong>')
+    expect(markup).toContain('<span>Language/Mandarin Chinese</span><strong>20 XP</strong>')
+    expect(markup).toContain('<span>Language/Russian</span><strong>10 XP</strong>')
+    expect(markup).toContain('<span>Language/English</span><strong>20 XP</strong>')
+    expect(markup).not.toContain('<strong>—</strong>')
+    expect(markup).not.toContain('<strong>+0</strong>')
+  })
+
   it('integrates the complete Stage 0 preview into the running character summary', () => {
     const character = createLifeModuleCharacter('Preview')
     const preview = previewStage0Affiliation(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')
@@ -125,9 +138,10 @@ describe('Life Modules wizard presentation', () => {
     expect(markup).toContain('Not saved until Continue')
     expect(markup).toContain('After Continue')
     expect(markup).toContain('4,000')
-    expect(markup).toContain('<span>WIL</span><strong>150<em>Preview</em></strong>')
+    expect(markup).toContain('<li class="preview-row"><span>WIL</span><strong>150</strong></li>')
     expect(markup).toContain('Language/Mandarin Chinese')
     expect(markup).toContain('Language/Russian')
+    expect(markup).not.toContain('<em>Preview</em>')
   })
 
   it('shows safe partial Stage 0 selection status without inventing package effects', () => {
