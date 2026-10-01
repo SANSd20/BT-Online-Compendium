@@ -19,6 +19,10 @@ export interface StageChoiceSlotPreview {
   error: string | null
 }
 
+export function stageSlotContinueEnabled(preview: StageChoiceSlotPreview | null, existingPendingAwards: readonly PendingLifeModuleAward[]): boolean {
+  return Boolean(preview?.complete && existingPendingAwards.length === 0)
+}
+
 export function stageChoiceSlotCount(pending: PendingLifeModuleAward, values: StageChoiceSlotValues): number {
   if (pending.allocationMode !== 'pool') return pending.remainingGrants
   return Math.max(1, values[pending.awardId]?.length ?? 0)

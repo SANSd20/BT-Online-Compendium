@@ -319,6 +319,8 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .pending-awards label { display: grid; gap: 6px; color: var(--muted); font-size: .78rem; }
 .pending-awards input, .pending-awards select { width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); color: #fff; background: #091017; }
 .stage-choice-slots { margin-top: 18px; padding: 20px; border: 1px solid var(--amber); background: color-mix(in srgb, var(--surface) 88%, var(--amber)); }
+.existing-pending-choices { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid var(--amber); }
+.existing-pending-choices > h3 { color: var(--amber); }
 .stage-choice-award { display: grid; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
 .stage-choice-slot { display: grid; grid-template-columns: minmax(150px, .7fr) minmax(110px, .45fr) repeat(3, minmax(140px, 1fr)); gap: 12px; align-items: end; padding: 14px; border: 1px solid var(--line); background: #0d151d; }
 .stage-choice-slot label { display: grid; gap: 6px; color: var(--muted); font-size: .78rem; }

@@ -15,7 +15,7 @@ import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../co
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesAffiliationTheme, previewStage0Affiliation } from '../components/stage0PreviewModel'
 import { previewSupportedStageModule, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
-import { emptyStageChoiceSlot, previewStageModuleChoiceSlots, slotValueComplete, stageChoiceSlotCount, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
+import { emptyStageChoiceSlot, previewStageModuleChoiceSlots, slotValueComplete, stageChoiceSlotCount, stageSlotContinueEnabled, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -75,12 +75,14 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     operate(() => createLifeModuleCharacter(name, startingXp), 'Life Module draft created and saved locally.')
   }
 
-  function operate(operation: () => CharacterDefinition, success: string) {
+  function operate(operation: () => CharacterDefinition, success: string, preserveStagePreview = false) {
     try {
       const next = operation()
       setCharacter(next)
-      setStageModulePreviewId('')
-      setStageChoiceSlotValues({})
+      if (!preserveStagePreview) {
+        setStageModulePreviewId('')
+        setStageChoiceSlotValues({})
+      }
       onSave(next)
       setMessage(success)
       return true
@@ -103,7 +105,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       displayName: draft.displayName || destinationDisplayName(draft),
       ...(draft.parameter.trim() ? { parameter: { kind: 'subskill', value: draft.parameter } } : {}),
     }
-    operate(() => resolvePendingLifeModuleAward(character, pending.id, destination, pending.allocationMode === 'pool' ? draft.xpAmount : undefined), 'Award grant resolved and applied.')
+    operate(() => resolvePendingLifeModuleAward(character, pending.id, destination, pending.allocationMode === 'pool' ? draft.xpAmount : undefined), 'Existing pending award resolved and applied.', Boolean(stageModulePreviewId))
   }
 
   const state = character?.creation.lifeModules
@@ -128,6 +130,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     ? stage0PreviewSelections
     : stageModulePreviewId ? [`Selected module: ${stageModulePreview?.character.lifeModuleHistory.at(-1)?.displayName ?? stageModulePreviewId}`] : []
   const previewState = activePreview?.creation.lifeModules
+  const visiblePendingAwards = [...genericPendingAwards, ...(stageModulePreview?.pendingAwards ?? [])]
   const validation = character ? validateCharacter(character) : null
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
   const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
@@ -158,7 +161,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   }
 
   function commitStageModuleChoices(success: string) {
-    if (!stageModulePreview?.complete) {
+    if (!stageModulePreview || !stageSlotContinueEnabled(stageModulePreview, genericPendingAwards)) {
       setMessage(stageModulePreview?.error ?? 'Complete every required choice slot before continuing.')
       return
     }
@@ -168,6 +171,11 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   function renderStageChoiceSlots(stageName: string, success: string) {
     const moduleName = stageModuleBasePreview?.lifeModuleHistory.at(-1)?.displayName ?? stageModulePreviewId
     return <section className="stage-choice-slots" aria-label={`Pending choices from ${moduleName}`}>
+      {genericPendingAwards.length > 0 && <section className="existing-pending-choices" aria-label="Existing pending choices">
+        <h3>Existing pending choices</h3>
+        <p>Resolve these earlier choices as well as the selected module’s slots before continuing.</p>
+        {renderPendingAwardRows(genericPendingAwards)}
+      </section>}
       <h3>Pending choices from {moduleName}</h3>
       <p>Fill every slot below. These selections and the module remain uncommitted until Continue.</p>
       {stageModulePendingAwards.map((pending) => {
@@ -218,9 +226,43 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       {stageModulePreview?.error && <p className="notice">{stageModulePreview.error}</p>}
       <div className="life-action">
         <p className="notice">Previewing this {stageName} module and filled choice slots. Continue commits them together.</p>
-        <button className="button" type="button" disabled={!stageModulePreview?.complete} onClick={() => commitStageModuleChoices(success)}>Continue</button>
+        <button className="button" type="button" disabled={!stageSlotContinueEnabled(stageModulePreview, genericPendingAwards)} onClick={() => commitStageModuleChoices(success)}>Continue</button>
       </div>
     </section>
+  }
+
+  function renderPendingAwardRows(pendingAwards: PendingLifeModuleAward[]) {
+    return <div className="pending-awards">{pendingAwards.map((entry) => {
+      const draft = { ...defaultResolutionDraft(entry), ...resolutionDrafts[entry.id] }
+      const optionEntry = entry.kind === 'flexible-xp' ? { ...entry, allowedTargetTypes: [draft.targetType] } : entry
+      const options = pendingAwardOptions(optionEntry, character!)
+      const unsupported = pendingAwardUnsupportedMessage(optionEntry, options)
+      const selectedOption = optionValue(draft)
+      return (
+        <article key={entry.id} className={entry.kind === 'flexible-xp' ? 'flexible-award' : ''}>
+          <div><strong>{entry.description}</strong><p>{entry.allocationMode === 'pool' ? `${entry.remainingXp} XP remaining` : `${entry.remainingGrants} grant${entry.remainingGrants === 1 ? '' : 's'} remaining · ${signed(entry.xpPerGrant)} XP each`}</p>{entry.kind === 'flexible-xp' && <span className="award-type-badge">Flexible XP</span>}</div>
+          {entry.kind === 'flexible-xp' && (
+            <><label>Target type
+              <select value={draft.targetType} onChange={(event) => updateResolutionDraft(entry, { targetType: event.target.value as ResolutionDraft['targetType'], targetId: '', parameter: '', displayName: '' })}>
+                {entry.allowedTargetTypes.map((type) => <option key={type}>{type}</option>)}
+              </select>
+            </label>{entry.allocationMode === 'pool' && <label>XP to allocate<input type="number" min="1" max={entry.remainingXp} step="1" value={draft.xpAmount} onChange={(event) => updateResolutionDraft(entry, { xpAmount: Number(event.target.value) })} /></label>}</>
+          )}
+          {options.length > 0 && <label>{entry.kind === 'language-choice' ? 'Language' : draft.targetType === 'trait' ? 'Trait' : draft.targetType === 'attribute' ? 'Attribute' : 'Destination'}
+            <select value={selectedOption} onChange={(event) => {
+              const option = options.find((candidate) => candidate.value === event.target.value)
+              if (option) updateResolutionDraft(entry, optionDraft(option, draft.xpAmount))
+              else updateResolutionDraft(entry, { targetId: '', parameter: '', displayName: '' })
+            }}>
+              <option value="">Choose a valid target…</option>
+              {options.map((option) => <option key={option.value} value={option.value}>{option.displayName}</option>)}
+            </select>
+          </label>}
+          {unsupported && <p className="notice">{unsupported}</p>}
+          <button className="button" type="button" disabled={!draft.targetId || Boolean(unsupported)} onClick={() => resolve(entry)}>{entry.allocationMode === 'pool' ? 'Allocate XP' : 'Apply one grant'}</button>
+        </article>
+      )
+    })}</div>
   }
 
   function allocateFinalXp() {
@@ -365,7 +407,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.phase === 'ready-for-final-touches' && !character.creation.finalTouches && <div className="life-action"><p className="notice">This draft passed final review and may enter the Alpha Final Touches/equipment foundation.</p><button className="button" type="button" onClick={() => operate(() => enterFinalTouches(character), 'Final Touches opened with Wealth-derived funds and Equipped-derived limits.')}>Enter Final Touches</button></div>}
             {state.phase === 'ready-for-final-touches' && character.creation.finalTouches && <p className="notice">Final Touches equipment state: {formatPhase(character.creation.finalTouches.equipmentReviewState)}. This is not a finalized or ready-for-play character.</p>}
             <LifeModuleStageStatus
-              pendingAwards={genericPendingAwards}
+              pendingAwards={visiblePendingAwards}
               specializedPendingMessage={state.phase === 'stage-0-affiliation' && state.pendingAwards.length > genericPendingAwards.length ? 'Complete the required language choices in the Affiliation Package above.' : undefined}
               warnings={(previewState ?? state).prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => `${moduleName(activePreview ?? character, entry.moduleId)}: ${entry.description}`)}
             />
@@ -375,39 +417,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <p className="eyebrow">{stagePresentation?.stage} work</p>
             <h2>{stagePresentation?.title} · pending choices</h2>
             <p>These choices were created by the current module and must be resolved here before its blocking transition.</p>
-            {genericPendingAwards.length === 0 ? <p>No unresolved award allocations. Follow the current-stage action above.</p> : (
-              <div className="pending-awards">{genericPendingAwards.map((entry) => {
-                const draft = { ...defaultResolutionDraft(entry), ...resolutionDrafts[entry.id] }
-                const optionEntry = entry.kind === 'flexible-xp' ? { ...entry, allowedTargetTypes: [draft.targetType] } : entry
-                const options = pendingAwardOptions(optionEntry, character)
-                const unsupported = pendingAwardUnsupportedMessage(optionEntry, options)
-                const selectedOption = optionValue(draft)
-                return (
-                  <article key={entry.id} className={entry.kind === 'flexible-xp' ? 'flexible-award' : ''}>
-                    <div><strong>{entry.description}</strong><p>{entry.allocationMode === 'pool' ? `${entry.remainingXp} XP remaining` : `${entry.remainingGrants} grant${entry.remainingGrants === 1 ? '' : 's'} remaining · ${signed(entry.xpPerGrant)} XP each`}</p>{entry.kind === 'flexible-xp' && <span className="award-type-badge">Flexible XP</span>}</div>
-                    {entry.kind === 'flexible-xp' && (
-                      <><label>Target type
-                        <select value={draft.targetType} onChange={(event) => updateResolutionDraft(entry, { targetType: event.target.value as ResolutionDraft['targetType'], targetId: '', parameter: '', displayName: '' })}>
-                          {entry.allowedTargetTypes.map((type) => <option key={type}>{type}</option>)}
-                        </select>
-                      </label>{entry.allocationMode === 'pool' && <label>XP to allocate<input type="number" min="1" max={entry.remainingXp} step="1" value={draft.xpAmount} onChange={(event) => updateResolutionDraft(entry, { xpAmount: Number(event.target.value) })} /></label>}</>
-                    )}
-                    {options.length > 0 && <label>{entry.kind === 'language-choice' ? 'Language' : draft.targetType === 'trait' ? 'Trait' : draft.targetType === 'attribute' ? 'Attribute' : 'Destination'}
-                      <select value={selectedOption} onChange={(event) => {
-                        const option = options.find((candidate) => candidate.value === event.target.value)
-                        if (option) updateResolutionDraft(entry, optionDraft(option, draft.xpAmount))
-                        else updateResolutionDraft(entry, { targetId: '', parameter: '', displayName: '' })
-                      }}>
-                        <option value="">Choose a valid target…</option>
-                        {options.map((option) => <option key={option.value} value={option.value}>{option.displayName}</option>)}
-                      </select>
-                    </label>}
-                    {unsupported && <p className="notice">{unsupported}</p>}
-                    <button className="button" type="button" disabled={!draft.targetId || Boolean(unsupported)} onClick={() => resolve(entry)}>{entry.allocationMode === 'pool' ? 'Allocate XP' : 'Apply one grant'}</button>
-                  </article>
-                )
-              })}</div>
-            )}
+            {genericPendingAwards.length === 0 ? <p>No unresolved award allocations. Follow the current-stage action above.</p> : renderPendingAwardRows(genericPendingAwards)}
           </section>}
           </LifeModuleDashboard>
 

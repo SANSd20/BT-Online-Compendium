@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
-import { createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
+import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
+import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { previewSupportedStageModule } from './stageModulePreviewModel'
-import { previewStageModuleChoiceSlots, stageChoiceSlotCount, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
+import { previewStageModuleChoiceSlots, stageChoiceSlotCount, stageSlotContinueEnabled, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
   const character = createLifeModuleCharacter(`Slots ${phase}`)
@@ -80,5 +80,29 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     expect(result.character.skills.find((entry) => entry.displayName === 'Career/Soldier')?.accumulatedXp).toBe(10)
     expect(result.pendingAwards.some((entry) => entry.awardId === 'blue-collar.career')).toBe(false)
     expect(result.complete).toBe(false)
+  })
+
+  it('keeps an earlier pending choice separate and gates Continue until it is resolved', () => {
+    let character = createLifeModuleCharacter('Existing pending choice')
+    character = applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
+    character = applyCapellanCommonality(character, 'Russian')
+    const existing = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'commonality.language.fedsuns')!
+    const byAward = {
+      'blue-collar.career': [value('skill', 'skill.career', 'Career/Soldier', 10, 'Soldier')],
+      'blue-collar.interests': [value('skill', 'skill.interest', 'Interest/History', 5, 'History'), value('skill', 'skill.interest', 'Interest/Engineering', 5, 'Engineering')],
+      'blue-collar.flexible': [value('attribute', 'STR', 'STR', 10), value('attribute', 'BOD', 'BOD', 10), value('attribute', 'DEX', 'DEX', 10), value('attribute', 'RFL', 'RFL', 10)],
+    }
+    const preview = previewStageModuleChoiceSlots(character, BLUE_COLLAR_ID, keyedValues(character, BLUE_COLLAR_ID, byAward))!
+
+    expect(preview.complete).toBe(true)
+    expect(preview.character.lifeModuleHistory.at(-1)?.moduleId).toBe(BLUE_COLLAR_ID)
+    expect(stageSlotContinueEnabled(preview, [existing])).toBe(false)
+
+    const resolvedCharacter = resolvePendingLifeModuleAward(character, existing.id, {
+      type: 'skill', targetId: 'skill.language', displayName: 'Language/French', parameter: { kind: 'subskill', value: 'French' },
+    })
+    const refreshed = previewStageModuleChoiceSlots(resolvedCharacter, BLUE_COLLAR_ID, keyedValues(resolvedCharacter, BLUE_COLLAR_ID, byAward))!
+    expect(refreshed.character.lifeModuleHistory.at(-1)?.moduleId).toBe(BLUE_COLLAR_ID)
+    expect(stageSlotContinueEnabled(refreshed, [])).toBe(true)
   })
 })

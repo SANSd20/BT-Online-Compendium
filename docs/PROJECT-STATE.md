@@ -257,6 +257,8 @@ Alpha Slice 45 extends the integrated preview pattern to all currently supported
 
 Alpha Slice 46 turns those Stage 1–4 pending awards into same-page choice slots. Fixed multi-grant awards display one labeled slot per grant, while variable flexible pools use explicit destination/amount allocation slots that can be added without committing. Filling a slot replays the existing resolver against the cloned module preview, keeps the selected card active, and updates Character Summary. Normal slot workflow has no per-grant Apply button; Continue remains disabled until the selected module's slots are complete, then commits the fully resolved module clone and advances according to existing progression. The generic pending resolver remains as a compatibility and unsupported-award fallback. Save/export, persisted shape, Stage 0, Capellan theming, module data, award values, and the 84-item equipment catalog remain unchanged.
 
+Alpha Slice 47 fixes the combined-workflow visibility gap from Slice 46. If committed pending awards already exist when a Stage 1–4 module is previewed, they remain visible and resolvable in a separately labeled `Existing pending choices` section above the module's slots. Resolving one of those earlier awards intentionally retains the selected module and every local slot value, while resolving a module slot never hides the earlier section. Continue requires both sets to be complete. Rules, award data, progression, save/export, persisted shape, Stage 0, Capellan theming, and equipment remain unchanged.
+
 ## Current audit checkpoint
 
 The Core + Companion character-system reconciliation has established durable findings for:
