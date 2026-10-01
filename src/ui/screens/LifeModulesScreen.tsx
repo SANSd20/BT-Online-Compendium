@@ -4,7 +4,6 @@ import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID } from '../../domain/lifeModules/catalog'
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
-import { CAPELLAN_COMMONALITY_CONTEXT, getLifeModuleLanguageSelectorOptions } from '../../domain/lifeModules/affiliations'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
@@ -13,7 +12,7 @@ import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, mar
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModuleStageStatus } from '../components/LifeModulesWizard'
-import { Stage0UniversalStep } from '../components/Stage0UniversalStep'
+import { Stage0WizardStep } from '../components/Stage0WizardStep'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -188,27 +187,19 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
 
           <section className="life-stage-panel">
             <p className="eyebrow">Current state</p>
-            <h2>{formatPhase(state.phase)}</h2>
-            {state.phase === 'stage-0-universal' && (
-              <Stage0UniversalStep
+            <h2>{state.phase.startsWith('stage-0') ? 'Stage 0' : formatPhase(state.phase)}</h2>
+            {(state.phase === 'stage-0-universal' || state.phase === 'stage-0-affiliation') && (
+              <Stage0WizardStep
+                phase={state.phase}
                 affiliationContext={stage0AffiliationContext}
                 affiliationLanguage={affiliationLanguage}
+                secondaryLanguage={secondaryLanguage}
                 onContextChange={(value) => { setStage0AffiliationContext(value); setAffiliationLanguage('') }}
                 onLanguageChange={setAffiliationLanguage}
-                onApply={() => operate(() => applyUniversalStage0(character, stage0AffiliationContext, affiliationLanguage), 'Universal Stage 0 package applied with explicit affiliation context.')}
+                onSecondaryLanguageChange={setSecondaryLanguage}
+                onApplyUniversal={() => operate(() => applyUniversalStage0(character, stage0AffiliationContext, affiliationLanguage), 'Universal Stage 0 package applied with explicit affiliation context.')}
+                onApplyAffiliation={() => operate(() => applyCapellanCommonality(character, secondaryLanguage), secondaryLanguage ? 'Capellan affiliation package applied with an explicit secondary language.' : 'Capellan affiliation package applied; secondary-language award left pending.')}
               />
-            )}
-            {state.phase === 'stage-0-affiliation' && (
-              <div className="life-action">
-                <div><h3>Capellan Confederation / Capellan Commonality</h3><p>150 XP · the audited Alpha affiliation and sub-affiliation package.</p></div>
-                <label>Capellan secondary-language award
-                  <select value={secondaryLanguage} onChange={(event) => setSecondaryLanguage(event.target.value)}>
-                    <option value="">Leave pending for explicit resolution…</option>
-                    {getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector).map((language) => <option key={language}>{language}</option>)}
-                  </select>
-                </label>
-                <button className="button" type="button" onClick={() => operate(() => applyCapellanCommonality(character, secondaryLanguage), secondaryLanguage ? 'Capellan affiliation package applied with an explicit secondary language.' : 'Capellan affiliation package applied; secondary-language award left pending.')}>Apply</button>
-              </div>
             )}
             {state.phase === 'stage-1-selection' && (
               <div className="stage-options">

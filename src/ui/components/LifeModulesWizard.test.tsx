@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { BACK_WOODS_ID, CAPELLAN_COMMONALITY_ID } from '../../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { LifeModuleCharacterSummary, LifeModuleProgress, LifeModuleStageStatus } from './LifeModulesWizard'
-import { lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
+import { LIFE_MODULE_WIZARD_STEPS, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
 
 function stage1Draft() {
   let character = createLifeModuleCharacter('Wizard Review')
@@ -15,12 +15,15 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('maps every Life Modules stage to the visible progress tracker', () => {
     expect(lifeModuleWizardStepIndex('stage-0-universal')).toBe(0)
-    expect(lifeModuleWizardStepIndex('stage-0-affiliation')).toBe(1)
-    expect(lifeModuleWizardStepIndex('stage-1-selection')).toBe(2)
-    expect(lifeModuleWizardStepIndex('stage-2-resolution')).toBe(3)
-    expect(lifeModuleWizardStepIndex('stage-3-selection')).toBe(4)
-    expect(lifeModuleWizardStepIndex('stage-4-resolution')).toBe(5)
-    expect(lifeModuleWizardStepIndex('alpha-final-review')).toBe(6)
+    expect(lifeModuleWizardStepIndex('stage-0-affiliation')).toBe(0)
+    expect(lifeModuleWizardStepIndex('stage-1-selection')).toBe(1)
+    expect(lifeModuleWizardStepIndex('stage-2-resolution')).toBe(2)
+    expect(lifeModuleWizardStepIndex('stage-3-selection')).toBe(3)
+    expect(lifeModuleWizardStepIndex('stage-4-resolution')).toBe(4)
+    expect(lifeModuleWizardStepIndex('alpha-final-review')).toBe(5)
+    expect(LIFE_MODULE_WIZARD_STEPS).toHaveLength(6)
+    expect(LIFE_MODULE_WIZARD_STEPS[0]).toMatchObject({ id: 'stage-0', label: 'Stage 0' })
+    expect(LIFE_MODULE_WIZARD_STEPS.some((step) => step.id === 'universal')).toBe(false)
     const markup = renderToStaticMarkup(<LifeModuleProgress phase="stage-2-selection" />)
     expect(markup).toContain('Life Modules progress')
     expect(markup).toContain('aria-current="step"')
