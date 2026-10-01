@@ -2,7 +2,7 @@
 
 Do not invent behavior for these items. A future source clarification or explicit user/project decision is required.
 
-Alpha Slice 43 adds progressive Stage 0 package preview and a context-scoped Capellan visual theme while preserving the Continue commit boundary. Extending preview behavior or faction theming to Stage 1–4 and other affiliation contexts remains future work. Full affiliation-data expansion, broader accessibility and keyboard-navigation review, the post-Beta random name generator, Beta 1, and PDF export remain future work.
+Alpha Slice 44 collapses the shared Public Alpha Notice details by default and removes redundant Life Modules stage labels while preserving accessible disclosure and task-heading structure. Extending preview behavior or faction theming to Stage 1–4 and other affiliation contexts remains future work. Full affiliation-data expansion, broader accessibility and keyboard-navigation review, the post-Beta random name generator, Beta 1, and PDF export remain future work.
 
 ## Unresolved Character Generator rules
 

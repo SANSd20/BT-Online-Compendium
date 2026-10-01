@@ -4,7 +4,7 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 43 is implemented.** Version `0.1.0-alpha.43` starts the Stage 0 preview as soon as an explicit Capellan affiliation context is selected. Deterministic package effects appear immediately, unresolved language-dependent awards remain visible as pending XP rows, and Attributes, Traits, Skills, and Chosen modules open by default. Repeated row/value Preview labels are gone; one summary-level not-saved notice remains. Selecting Capellan Confederation / Commonality also activates a scoped jade, gold, and restrained burgundy Life Modules theme that reverts with the context. Continue remains the only commit point; rules, persistence, accounting, save/export semantics, and catalog data are unchanged.
+**Alpha Slice 44 is implemented.** Version `0.1.0-alpha.44` collapses the shared Public Alpha Notice details by default while keeping its heading, version, concise warning, and accessible disclosure visible. Expanding it preserves the complete notice and desktop two-column list. Life Modules now relies on the progress tracker as the primary stage indicator, removing the duplicate Character Summary stage row and stage-heading kicker while retaining clear task headings. Slice 43 progressive preview and Capellan theming remain intact. Rules, persistence, accounting, save/export semantics, and catalog data are unchanged.
 
 All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit remains the evidence record; Slice 28 governs its conflicts without silently correcting Tanker, Elemental, or Scout values, adding `REF`, renaming stable IDs, or activating back-sheet combat fields. Point Buy, Life Modules, Final Touches, and the 84-item audited Core equipment catalog are unchanged.
 
@@ -71,13 +71,13 @@ npm run preview
 
 The repository's Pages **Source** setting must be **GitHub Actions**. The public site opens through a normal browser URL and requires neither a special platform login nor an application login. Character data still lives only in that browser; JSON export/import is the portability and backup mechanism.
 
-The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.43` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
+The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.44` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
 
-The public notice in the application identifies version `0.1.0-alpha.43`, browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
+The collapsed-by-default public notice identifies version `0.1.0-alpha.44`; its expandable details retain browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
 
 ## Current resume points
 
-Repository bootstrap and Alpha Slices 1–43 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, special platform login, or application account.
+Repository bootstrap and Alpha Slices 1–44 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, special platform login, or application account.
 
 The Core + Companion rules audit is in progress. Its next audit target is **Campaign / Rules Configuration reconciliation**, specifically the boundaries among durable character state, current campaign rules, creation-rules provenance, and per-character GM exceptions.
 

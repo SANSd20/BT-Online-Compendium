@@ -16,7 +16,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · v0.1.0-alpha.43')
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.44')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -75,8 +75,7 @@ describe('Life Modules wizard presentation', () => {
     expect(markup).toContain('Traits')
     expect(markup).toContain('Skills')
     expect(markup).toContain('Capellan Confederation / Capellan Commonality')
-    expect(markup).toContain('Current stage')
-    expect(markup).toContain('Stage 1 · Early Childhood')
+    expect(markup).not.toContain('<dt>Current stage</dt>')
   })
 
   it('renders compact dashboard landmarks with summary, progress, stage action, and draft controls together', () => {
@@ -96,6 +95,7 @@ describe('Life Modules wizard presentation', () => {
     expect(markup).toContain('aria-label="Uncommitted live preview"')
     expect(markup).toContain('aria-label="Life Modules navigation and draft actions"')
     expect(markup).toContain('Choose affiliation details')
+    expect(markup).not.toContain('STAGE 0 · AFFILIATION')
     expect(markup).toContain('Continue')
     expect(markup).toContain('Save draft')
     expect(markup).toContain('Not saved until Continue')

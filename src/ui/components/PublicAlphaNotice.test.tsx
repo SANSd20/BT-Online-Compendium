@@ -5,12 +5,23 @@ import { EQUIPMENT_CATALOG } from '../../domain/equipment/catalog'
 import { PublicAlphaNotice } from './PublicAlphaNotice'
 
 describe('Public Alpha notice', () => {
-  it('renders the version, local-only warning, portability path, and deferred capabilities', () => {
+  it('collapses details by default while keeping the heading, version, and summary visible', () => {
     const markup = renderToStaticMarkup(<PublicAlphaNotice />)
 
-    expect(APP_VERSION).toBe('0.1.0-alpha.43')
+    expect(APP_VERSION).toBe('0.1.0-alpha.44')
+    expect(markup).toContain('<details>')
+    expect(markup).not.toContain('<details open="">')
     expect(markup).toContain('Public Alpha Notice')
     expect(markup).toContain(`v${APP_VERSION}`)
+    expect(markup).toContain('Local-only Alpha · incomplete rules and equipment coverage')
+    expect(markup).toContain('Show details')
+  })
+
+  it('keeps the complete notice content available when expanded', () => {
+    const markup = renderToStaticMarkup(<PublicAlphaNotice defaultExpanded />)
+
+    expect(markup).toContain('<details open="">')
+    expect(markup).toContain('Hide details')
     expect(markup).toContain('normal browser URL')
     expect(markup).toContain('No special platform login is required')
     expect(markup).toContain('stored only in this browser')

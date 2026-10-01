@@ -26,11 +26,21 @@ a { color: inherit; }
 .site-status { display: flex; align-items: center; gap: 10px; }
 .header-version { color: var(--muted); font: 650 .76rem/1 ui-monospace, monospace; }
 .public-alpha-notice { width: min(1320px, 94vw); margin: 28px auto 0; padding: clamp(20px, 3vw, 34px); border: 1px solid #7b622d; background: linear-gradient(145deg, #211b0f, #111922); }
+.public-alpha-notice details > summary { display: grid; grid-template-columns: 1fr auto; gap: 12px 24px; align-items: center; cursor: pointer; list-style: none; }
+.public-alpha-notice details > summary::-webkit-details-marker { display: none; }
 .public-alpha-heading { display: flex; justify-content: space-between; align-items: start; gap: 20px; }
-.public-alpha-heading h2 { margin-bottom: 14px; }
+.public-alpha-heading h2 { margin-bottom: 6px; }
 .version-badge { flex: none; color: var(--amber); border: 1px solid #7b622d; padding: 7px 10px; font: 700 .78rem/1 ui-monospace, monospace; }
-.public-alpha-notice > p { max-width: 850px; }
-.public-alpha-notice ul { columns: 2; column-gap: clamp(28px, 5vw, 64px); margin: 18px 0 0; padding-left: 22px; color: var(--muted); line-height: 1.6; }
+.public-alpha-summary { margin: 0; font-size: .82rem; }
+.public-alpha-toggle { color: var(--amber); font-size: .8rem; font-weight: 800; }
+.public-alpha-toggle::before { content: '＋ '; }
+.public-alpha-notice details[open] .public-alpha-toggle::before { content: '− '; }
+.public-alpha-toggle .when-open { display: none; }
+.public-alpha-notice details[open] .public-alpha-toggle .when-closed { display: none; }
+.public-alpha-notice details[open] .public-alpha-toggle .when-open { display: inline; }
+.public-alpha-details { padding-top: 20px; border-top: 1px solid #7b622d; margin-top: 20px; }
+.public-alpha-details > p { max-width: 850px; }
+.public-alpha-details ul { columns: 2; column-gap: clamp(28px, 5vw, 64px); margin: 18px 0 0; padding-left: 22px; color: var(--muted); line-height: 1.6; }
 .public-alpha-notice li { break-inside: avoid; }
 .public-alpha-notice li + li { margin-top: 8px; }
 .public-alpha-notice strong { color: #e8edf2; }
@@ -318,7 +328,8 @@ tbody th { color: #e8edf2; font-weight: 650; }
 footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
 
 @media (max-width: 760px) {
-  .public-alpha-notice ul { columns: 1; }
+  .public-alpha-details ul { columns: 1; }
+  .public-alpha-notice details > summary { grid-template-columns: 1fr; }
   .site-header, .site-status, .public-alpha-heading { align-items: flex-start; flex-direction: column; }
   .method-grid { grid-template-columns: 1fr; }
   .method-card { min-height: 240px; }

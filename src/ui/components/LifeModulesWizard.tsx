@@ -47,7 +47,6 @@ export function LifeModuleProgress({ phase }: { phase: string }) {
 export function LifeModuleStageHeading({ phase }: { phase: string }) {
   const presentation = lifeModuleStagePresentation(phase)
   return <header className="life-stage-heading">
-    <p className="eyebrow">{presentation.stage}</p>
     <h2>{presentation.title}</h2>
     <p>{presentation.instruction}</p>
   </header>
@@ -66,10 +65,8 @@ export function LifeModuleReviewSummary({ character }: { character: CharacterDef
 }
 
 export function LifeModuleCharacterSummary({ character, previewCharacter, previewSelections = [] }: { character: CharacterDefinition; previewCharacter?: CharacterDefinition | null; previewSelections?: string[] }) {
-  const state = character.creation.lifeModules!
   const effectiveCharacter = previewCharacter ?? character
   const effectiveState = effectiveCharacter.creation.lifeModules!
-  const stage = lifeModuleStagePresentation(state.phase)
   const previewActive = previewSelections.length > 0 || Boolean(previewCharacter)
   const isPreviewAttribute = (attributeId: string, xp: number) => previewCharacter?.attributes.some((entry) => entry.attributeId === attributeId && entry.accumulatedXp === xp) && character.attributes.find((entry) => entry.attributeId === attributeId)?.accumulatedXp !== xp
   const isPreviewTrait = (traitId: string, displayName: string | undefined, xp: number) => Boolean(previewCharacter) && !character.traits.some((entry) => entry.traitId === traitId && entry.displayName === displayName && entry.accumulatedXp === xp)
@@ -88,7 +85,6 @@ export function LifeModuleCharacterSummary({ character, previewCharacter, previe
       {previewCharacter && effectiveState.pendingAwards.length > 0 && <p>Known package effects are shown now; choice-dependent awards remain pending.</p>}
     </section>}
     <dl className="life-summary-xp">
-      <div><dt>Current stage</dt><dd>{stage.stage}</dd></div>
       <div><dt>Module XP left</dt><dd>{effectiveState.moduleXp.remaining.toLocaleString()}</dd></div>
       <div><dt>Net stat XP</dt><dd>{effectiveCharacter.xp.creation.allocated.toLocaleString()}</dd></div>
       <div><dt>Pending choices</dt><dd>{effectiveState.pendingAwards.length}</dd></div>
