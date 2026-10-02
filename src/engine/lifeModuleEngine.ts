@@ -23,7 +23,7 @@ import {
 } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
-import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
 import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
@@ -187,15 +187,7 @@ export function applyStage1Module(character: CharacterDefinition, moduleId: type
   if (state.phase !== 'stage-1-selection') throw new Error('A Stage 1 module is not the current legal action.')
   if (moduleId !== BLUE_COLLAR_ID && moduleId !== BACK_WOODS_ID) throw new Error(`Unknown Alpha Stage 1 module: ${moduleId}`)
   const module = getLifeModule(moduleId)
-  const resolutions: Record<string, LifeModuleDestination> = {}
-  if (moduleId === BACK_WOODS_ID && state.affiliationLanguage) {
-    resolutions['back-woods.language.affiliation'] = {
-      type: 'skill',
-      address: { skillId: 'skill.language', parameter: { kind: 'subskill', value: state.affiliationLanguage } },
-      displayName: `Language/${state.affiliationLanguage}`,
-    }
-  }
-  const next = applyModule(character, module, resolutions)
+  const next = applyModule(character, module, {})
   next.chronology.push({ date: 'age:10', eventId: `${module.id}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })
   return updateLifeModuleProgress(next)
 }
@@ -329,7 +321,7 @@ export function resolvePendingLifeModuleAward(
   if (pendingIndex < 0) throw new Error(`Unknown pending Life Module award: ${pendingAwardId}`)
   const pending = state.pendingAwards[pendingIndex]
   const normalized = normalizeResolvedDestination(destination)
-  validateResolutionDestination(pending, normalized)
+  validateResolutionDestination(next, pending, normalized)
   const destinationKey = resolvedDestinationKey(normalized)
   const isPool = pending.allocationMode === 'pool'
   const duplicate = state.resolvedAwards.some((entry) => entry.moduleId === pending.moduleId && entry.awardId === pending.awardId && resolvedDestinationKey(entry.destination) === destinationKey)
@@ -389,6 +381,7 @@ function applyModule(
       ...(award.kind === 'flexible-xp' && award.allocationMode === 'pool' ? { requiredXp: award.totalXp, allocationMode: 'pool' as const } : {}),
     })
     if (award.kind === 'fixed') applyDestinationAward(next, award.destination, award.xp, provenanceId)
+    else if (award.kind === 'affiliation-bound-skill') applyDestinationAward(next, resolveAffiliationBoundLifeModuleDestination(next, award.skillId, award.displayName), award.xp, provenanceId)
     else if (award.kind === 'language-choice' && resolutions[award.id]) {
       applyDestinationAward(next, resolutions[award.id], award.xp, provenanceId)
       const pendingShape = pendingAwardFrom(module, award)
@@ -447,6 +440,28 @@ function awardGrantCount(award: LifeModuleAward): number | null {
   return null
 }
 
+export function resolveAffiliationBoundLifeModuleDestination(
+  character: CharacterDefinition,
+  skillId: 'skill.language' | 'skill.protocol' | 'skill.streetwise',
+  displayName: string,
+): Extract<LifeModuleDestination, { type: 'skill' }> {
+  const finalAffiliation = [...character.affiliations].reverse().find((entry) => entry.role === 'final')
+  if (!finalAffiliation) throw new Error(`${displayName} requires an established final affiliation.`)
+  const context = getLifeModuleAffiliationContextByAffiliationId(finalAffiliation.affiliationId)
+  if (!context) throw new Error(`${displayName} cannot be resolved for unsupported affiliation ${finalAffiliation.affiliationId}.`)
+  const parameter = skillId === 'skill.language'
+    ? requireLifeModules(character).affiliationLanguage
+    : skillId === 'skill.streetwise'
+      ? context.streetwiseContextLabel
+      : context.protocolContextLabel
+  if (!parameter) throw new Error(`${displayName} requires an established affiliation language.`)
+  return {
+    type: 'skill',
+    address: { skillId, parameter: { kind: 'subskill', value: parameter } },
+    displayName: `${displayName.split('/')[0]}/${parameter}`,
+  }
+}
+
 function applyDestinationAward(character: CharacterDefinition, destination: LifeModuleDestination, xp: number, provenanceId: string): void {
   const sourceAward: XpAward = { id: makeId(undefined, 'award'), xp, provenanceId }
   if (destination.type === 'attribute') {
@@ -486,13 +501,14 @@ function applyDestinationAward(character: CharacterDefinition, destination: Life
 }
 
 function addPendingAward(pending: PendingLifeModuleAward[], module: LifeModuleDefinition, award: Exclude<LifeModuleAward, { kind: 'fixed' }>): void {
+  if (award.kind === 'affiliation-bound-skill') throw new Error('Affiliation-bound awards must resolve automatically from the established final affiliation.')
   if (award.kind === 'choice-package' || award.kind === 'conditional' || award.kind === 'field-grant') {
     throw new Error(`Award type ${award.kind} is modeled but not supported by the Alpha Slice 9 engine.`)
   }
   pending.push(pendingAwardFrom(module, award))
 }
 
-function pendingAwardFrom(module: LifeModuleDefinition, award: Exclude<LifeModuleAward, { kind: 'fixed' | 'choice-package' | 'conditional' | 'field-grant' }>): PendingLifeModuleAward {
+function pendingAwardFrom(module: LifeModuleDefinition, award: Exclude<LifeModuleAward, { kind: 'fixed' | 'affiliation-bound-skill' | 'choice-package' | 'conditional' | 'field-grant' }>): PendingLifeModuleAward {
   const kind = award.kind
   const isPool = kind === 'flexible-xp' && award.allocationMode === 'pool'
   const xpPerGrant = kind === 'flexible-xp' ? (isPool ? 0 : award.xpPerGrant) : award.xp
@@ -580,7 +596,7 @@ function evaluatePrerequisite(
   }
 }
 
-function validateResolutionDestination(pending: PendingLifeModuleAward, destination: ResolvedLifeModuleDestination): void {
+function validateResolutionDestination(character: CharacterDefinition, pending: PendingLifeModuleAward, destination: ResolvedLifeModuleDestination): void {
   if (!pending.allowedTargetTypes.includes(destination.type)) throw new Error(`${destination.type} is not an allowed target for this award.`)
   if (destination.type === 'attribute') {
     if (!ATTRIBUTE_IDS.includes(destination.targetId as (typeof ATTRIBUTE_IDS)[number]) || destination.parameter) throw new Error('Flexible Attribute awards require a valid Attribute ID and no parameter.')
@@ -592,6 +608,13 @@ function validateResolutionDestination(pending: PendingLifeModuleAward, destinat
     throw new Error('A concrete language or subskill choice is required.')
   }
   if (pending.kind === 'language-choice' && destination.targetId !== 'skill.language') throw new Error('Language awards must resolve to a Language subskill.')
+  if (pending.kind === 'affiliation-skill-choice') {
+    if (pending.requiredSkillId !== 'skill.protocol' && pending.requiredSkillId !== 'skill.streetwise') throw new Error('Legacy affiliation-bound award has an unsupported Skill destination.')
+    const expected = resolveAffiliationBoundLifeModuleDestination(character, pending.requiredSkillId, pending.description)
+    if (destination.targetId !== expected.address.skillId || destination.parameter?.value !== expected.address.parameter?.value) {
+      throw new Error('This legacy affiliation-bound award must resolve from the character’s established final affiliation.')
+    }
+  }
   const knownChoices = knownPendingChoiceValues(pending)
   if (knownChoices.length > 0 && !knownChoices.includes(destination.parameter?.value ?? '')) {
     throw new Error('This award must resolve to a safe known choice from the current Alpha data.')

@@ -3,15 +3,17 @@ import {
   AGITATOR_ID,
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
+  CAPELLAN_COMMONALITY_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   TECHNICAL_COLLEGE_ID,
 } from '../../domain/lifeModules/catalog'
-import { createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
+import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { applySupportedStageModule, previewSupportedStageModule, type SupportedStageModuleId } from './stageModulePreviewModel'
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
-  const character = createLifeModuleCharacter(`Preview ${phase}`)
+  let character = createLifeModuleCharacter(`Preview ${phase}`)
+  character = applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian')
   character.creation.lifeModules!.phase = phase
   character.creation.lifeModules!.currentStage = phase === 'stage-1-selection' ? 1 : phase === 'stage-2-selection' ? 2 : phase === 'stage-3-selection' ? 3 : 4
   return character
@@ -21,10 +23,10 @@ describe('supported Stage 1–4 module preview model', () => {
   it.each([
     ['stage-1-selection', BLUE_COLLAR_ID, 'STR', 145, 'blue-collar.career'],
     ['stage-1-selection', BACK_WOODS_ID, 'BOD', 200, 'back-woods.skill.survival'],
-    ['stage-2-selection', STAGE_2_BACK_WOODS_ID, 'WIL', 170, 'stage2.back-woods.flexible'],
+    ['stage-2-selection', STAGE_2_BACK_WOODS_ID, 'WIL', 220, 'stage2.back-woods.flexible'],
     ['stage-2-selection', STAGE_2_HIGH_SCHOOL_ID, 'CHA', 125, 'high-school.interest-40'],
     ['stage-3-selection', TECHNICAL_COLLEGE_ID, 'DEX', 200, 'technical-college.flexible'],
-    ['stage-4-selection', AGITATOR_ID, 'WIL', 175, 'agitator.skill.driving'],
+    ['stage-4-selection', AGITATOR_ID, 'WIL', 225, 'agitator.skill.driving'],
   ] as const)('previews %s module %s without mutating committed state', (phase, moduleId, attributeId, expectedXp, pendingAwardId) => {
     const character = draftAt(phase)
     const committedJson = JSON.stringify(character)

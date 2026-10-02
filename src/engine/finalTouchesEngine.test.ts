@@ -60,8 +60,6 @@ function readyForFinalTouches() {
   character = applyStage2Module(continueToStage2(character), STAGE_2_HIGH_SCHOOL_ID)
   character = resolveByAward(character, 'high-school.interest-40', 'skill.interest', 'Interest/Physics', 'Physics')
   character = resolveByAward(character, 'high-school.interest-35', 'skill.interest', 'Interest/Art', 'Art')
-  character = resolveByAward(character, 'high-school.language-affiliation', 'skill.language', 'Language/English', 'English')
-  character = resolveByAward(character, 'high-school.streetwise-affiliation', 'skill.streetwise', 'Streetwise/Capellan', 'Capellan')
   let flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'high-school.flexible')!
   character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'DEX', displayName: 'DEX' }, 185)
   character = applyTechnicalCollege(continueToStage3(character))
@@ -72,7 +70,6 @@ function readyForFinalTouches() {
   character = applyStage4Module(continueToStage4(character), AGITATOR_ID)
   character = resolveByAward(character, 'agitator.skill.driving', 'skill.driving', 'Driving/Ground Car', 'Ground Car')
   character = resolveByAward(character, 'agitator.skill.prestidigitation', 'skill.prestidigitation', 'Prestidigitation/Sleight of Hand', 'Sleight of Hand')
-  character = resolveByAward(character, 'agitator.skill.streetwise-affiliation', 'skill.streetwise', 'Streetwise/Capellan', 'Capellan')
   flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'agitator.flexible')!
   character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 50)
   character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'skill', targetId: 'skill.acting', displayName: 'Acting' }, 75)

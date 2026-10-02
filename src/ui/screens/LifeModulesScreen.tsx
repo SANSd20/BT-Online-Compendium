@@ -647,10 +647,10 @@ function formatCatalogMetadata(metadata: Record<string, string | number | boolea
 
 function defaultResolutionDraft(pending: PendingLifeModuleAward): ResolutionDraft {
   if (pending.requiredSkillId) {
-    return { targetType: 'skill', targetId: '', parameter: '', displayName: '', xpAmount: Math.min(pending.remainingXp ?? pending.xpPerGrant, 35) }
+    return { targetType: 'skill', targetId: '', parameter: '', displayName: '', xpAmount: pending.remainingXp ?? pending.xpPerGrant }
   }
   const targetType = pending.allowedTargetTypes[0]
-  const targetCap = pending.maxXpPerTarget?.[targetType] ?? (targetType === 'skill' ? 35 : 200)
+  const targetCap = pending.maxXpPerTarget?.[targetType] ?? (pending.remainingXp ?? pending.xpPerGrant)
   return { targetType, targetId: '', parameter: '', displayName: '', xpAmount: Math.min(pending.remainingXp ?? pending.xpPerGrant, targetCap) }
 }
 

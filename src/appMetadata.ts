@@ -1,2 +1,2 @@
-export const APP_VERSION = '0.1.0-alpha.53'
+export const APP_VERSION = '0.1.0-alpha.54'
 export const APP_PHASE = 'Public Alpha'

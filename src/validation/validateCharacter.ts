@@ -842,7 +842,7 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
     const key = `${resolved.moduleId}/${resolved.awardId}/${lifeModuleDestinationKey(resolved.destination)}`
     if (seen.has(key) && !(award?.kind === 'flexible-xp' && award.allocationMode === 'pool')) issues.push(issue('life-modules.resolution.duplicate', `creation.lifeModules.resolvedAwards.${index}`, 'A required choice cannot use the same destination more than once.'))
     seen.add(key)
-    if (!selectedIds.has(resolved.moduleId) || !award || award.kind === 'fixed' || award.kind === 'choice-package' || award.kind === 'conditional' || award.kind === 'field-grant') {
+    if (!selectedIds.has(resolved.moduleId) || !award || award.kind === 'fixed' || award.kind === 'affiliation-bound-skill' || award.kind === 'choice-package' || award.kind === 'conditional' || award.kind === 'field-grant') {
       issues.push(issue('life-modules.resolution.unknown', `creation.lifeModules.resolvedAwards.${index}`, 'Resolved award does not identify a selectable award on a selected module.'))
       return
     }

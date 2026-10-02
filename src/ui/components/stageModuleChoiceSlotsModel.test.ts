@@ -5,7 +5,8 @@ import { previewSupportedStageModule } from './stageModulePreviewModel'
 import { filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
-  const character = createLifeModuleCharacter(`Slots ${phase}`)
+  let character = createLifeModuleCharacter(`Slots ${phase}`)
+  character = applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian')
   character.creation.lifeModules!.phase = phase
   character.creation.lifeModules!.currentStage = phase === 'stage-1-selection' ? 1 : phase === 'stage-2-selection' ? 2 : phase === 'stage-3-selection' ? 3 : 4
   character.creation.lifeModules!.pendingAwards = []
@@ -42,7 +43,6 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
       'blue-collar.flexible': [value('attribute', 'STR', 'STR', 10), value('attribute', 'BOD', 'BOD', 10), value('attribute', 'DEX', 'DEX', 10), value('attribute', 'RFL', 'RFL', 10)],
     }],
     ['stage-2-selection', STAGE_2_BACK_WOODS_ID, {
-      'stage2.back-woods.skill.protocol-affiliation': [value('skill', 'skill.protocol', 'Protocol/Capellan', -15, 'Capellan')],
       'stage2.back-woods.flexible': [value('attribute', 'STR', 'STR', 125)],
     }],
     ['stage-3-selection', TECHNICAL_COLLEGE_ID, {
@@ -52,7 +52,6 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     ['stage-4-selection', AGITATOR_ID, {
       'agitator.skill.driving': [value('skill', 'skill.driving', 'Driving/Ground Car', 65, 'Ground Car')],
       'agitator.skill.prestidigitation': [value('skill', 'skill.prestidigitation', 'Prestidigitation/Sleight of Hand', 100, 'Sleight of Hand')],
-      'agitator.skill.streetwise-affiliation': [value('skill', 'skill.streetwise', 'Streetwise/Capellan', 75, 'Capellan')],
       'agitator.flexible': [value('skill', 'skill.acting', 'Acting', 125)],
     }],
   ] as const)('resolves every %s module choice through existing engine behavior before Continue', (phase, moduleId, byAward) => {
@@ -110,8 +109,6 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     const values = keyedValues(character, STAGE_2_HIGH_SCHOOL_ID, {
       'high-school.interest-40': [value('skill', 'skill.interest', 'Interest/History', 40, 'History')],
       'high-school.interest-35': [value('skill', 'skill.interest', 'Interest/Engineering', 35, 'Engineering')],
-      'high-school.language-affiliation': [value('skill', 'skill.language', 'Language/Russian', 10, 'Russian')],
-      'high-school.streetwise-affiliation': [value('skill', 'skill.streetwise', 'Streetwise/Capellan', 20, 'Capellan')],
       'high-school.flexible': [
         value('attribute', 'STR', 'STR', 50),
         value('attribute', 'BOD', 'BOD', 50),
@@ -131,7 +128,7 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     expect(stageSlotPendingAwards(result)).toEqual([])
     expect(stageSlotContinueEnabled(result)).toBe(true)
     expect(result.character.lifeModuleHistory.at(-1)?.moduleId).toBe(STAGE_2_HIGH_SCHOOL_ID)
-    expect(result.character.creation.lifeModules!.resolvedAwards.filter((entry) => entry.moduleId === STAGE_2_HIGH_SCHOOL_ID)).toHaveLength(8)
+    expect(result.character.creation.lifeModules!.resolvedAwards.filter((entry) => entry.moduleId === STAGE_2_HIGH_SCHOOL_ID)).toHaveLength(6)
     expect(JSON.stringify(character)).toBe(committed)
   })
 
@@ -170,14 +167,11 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     const pending = preview.creation.lifeModules!.pendingAwards.filter((entry) => entry.moduleId === STAGE_2_HIGH_SCHOOL_ID)
     const interest40 = pending.find((entry) => entry.awardId === 'high-school.interest-40')!
     const interest35 = pending.find((entry) => entry.awardId === 'high-school.interest-35')!
-    const unrelatedLanguage = pending.find((entry) => entry.awardId === 'high-school.language-affiliation')!
     const values = {
       [interest40.awardId]: [value('skill', 'skill.interest', 'Interest/History', 40, 'History')],
-      [unrelatedLanguage.awardId]: [value('skill', 'skill.language', 'Language/English', 10, 'English')],
     }
 
     expect(relatedStageChoiceSlotValues(interest35, pending, values)).toEqual(values[interest40.awardId])
-    expect(relatedStageChoiceSlotValues(unrelatedLanguage, pending, values)).toEqual([])
 
     const options = [
       { value: 'skill.interest/History', displayName: 'Interest/History' },

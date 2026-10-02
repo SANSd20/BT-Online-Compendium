@@ -40,8 +40,6 @@ function completeHighSchoolStage2() {
   let character = applyStage2Module(continueToStage2(completeBlueCollarStage1()), STAGE_2_HIGH_SCHOOL_ID)
   character = resolveByAward(character, 'high-school.interest-40', 'skill.interest', 'Interest/Science', 'Science')
   character = resolveByAward(character, 'high-school.interest-35', 'skill.interest', 'Interest/Art', 'Art')
-  character = resolveByAward(character, 'high-school.language-affiliation', 'skill.language', 'Language/English', 'English')
-  character = resolveByAward(character, 'high-school.streetwise-affiliation', 'skill.streetwise', 'Streetwise/Capellan', 'Capellan')
   const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'high-school.flexible')!
   return resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'DEX', displayName: 'DEX' }, 185)
 }
@@ -58,7 +56,6 @@ function completeAgitatorStage4() {
   let character = applyAgitator(continueToStage4(completeTechnicalCollegeStage3()))
   character = resolveByAward(character, 'agitator.skill.driving', 'skill.driving', 'Driving/Ground Car', 'Ground Car')
   character = resolveByAward(character, 'agitator.skill.prestidigitation', 'skill.prestidigitation', 'Prestidigitation/Sleight of Hand', 'Sleight of Hand')
-  character = resolveByAward(character, 'agitator.skill.streetwise-affiliation', 'skill.streetwise', 'Streetwise/Capellan', 'Capellan')
   const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'agitator.flexible')!
   character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 50)
   return resolvePendingLifeModuleAward(character, flexible.id, { type: 'skill', targetId: 'skill.acting', displayName: 'Acting' }, 75)
@@ -302,9 +299,10 @@ describe('Life Module engine', () => {
     expect(character.traits.find((entry) => entry.traitId === 'trait.animal-empathy')?.accumulatedXp).toBe(50)
     expect(character.skills.find((entry) => entry.displayName === 'Survival/Forest')?.accumulatedXp).toBe(25)
     expect(state.pendingAwards).toEqual(expect.arrayContaining([
-      expect.objectContaining({ awardId: 'stage2.back-woods.skill.protocol-affiliation', xpPerGrant: -15 }),
       expect.objectContaining({ awardId: 'stage2.back-woods.flexible', allocationMode: 'pool', remainingXp: 125 }),
     ]))
+    expect(state.pendingAwards.some((entry) => entry.awardId === 'stage2.back-woods.skill.protocol-affiliation')).toBe(false)
+    expect(character.skills.find((entry) => entry.displayName === 'Protocol/Capellan')?.accumulatedXp).toBe(-5)
     expect(character.chronology.at(-1)?.date).toBe('age:16')
   })
 
@@ -315,8 +313,11 @@ describe('Life Module engine', () => {
     expect(state.moduleXp).toEqual({ starting: 5000, spent: 1610, remaining: 3390 })
     expect(state.prerequisiteIssues.every((entry) => entry.status === 'satisfied')).toBe(true)
     expect(state.pendingAwards.map((entry) => entry.awardId)).toEqual(expect.arrayContaining([
-      'high-school.interest-40', 'high-school.interest-35', 'high-school.language-affiliation', 'high-school.streetwise-affiliation', 'high-school.flexible',
+      'high-school.interest-40', 'high-school.interest-35', 'high-school.flexible',
     ]))
+    expect(state.pendingAwards.some((entry) => entry.awardId.includes('affiliation'))).toBe(false)
+    expect(character.skills.find((entry) => entry.displayName === 'Language/Mandarin Chinese')?.accumulatedXp).toBe(30)
+    expect(character.skills.find((entry) => entry.displayName === 'Streetwise/Capellan')?.accumulatedXp).toBe(20)
     expect(() => applyStage2Module(character, STAGE_2_BACK_WOODS_ID)).toThrow('not the current legal action')
   })
 
@@ -328,13 +329,30 @@ describe('Life Module engine', () => {
     expect(character.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'high-school.not-illiterate')?.status).toBe('outstanding')
   })
 
+  it('resolves /Affiliation destinations from each established final affiliation without creating choices', () => {
+    let capellan = completeStage0()
+    capellan.creation.lifeModules!.phase = 'stage-2-selection'
+    capellan.creation.lifeModules!.pendingAwards = []
+    capellan = applyStage2Module(capellan, STAGE_2_BACK_WOODS_ID)
+    expect(capellan.skills.find((entry) => entry.displayName === 'Protocol/Capellan')?.accumulatedXp).toBe(-5)
+    expect(capellan.creation.lifeModules!.pendingAwards.some((entry) => entry.awardId.includes('protocol-affiliation'))).toBe(false)
+
+    let federated = createLifeModuleCharacter('Morgan')
+    federated = applyUniversalStage0(federated, FEDERATED_SUNS_CRUCIS_MARCH_ID, 'English')
+    federated = applyFederatedSunsCrucisMarch(federated, 'Strategy', 'Painting')
+    federated.creation.lifeModules!.phase = 'stage-2-selection'
+    federated.creation.lifeModules!.pendingAwards = []
+    federated = applyStage2Module(federated, STAGE_2_BACK_WOODS_ID)
+    expect(federated.skills.find((entry) => entry.displayName === 'Protocol/FedSuns')?.accumulatedXp).toBe(10)
+    expect(federated.skills.some((entry) => entry.displayName === 'Protocol/Capellan' && entry.accumulatedXp < 0)).toBe(false)
+  })
+
   it('resolves Stage 2 affiliation, /Any, and flexible-pool awards with source caps', () => {
     let character = applyStage2Module(continueToStage2(completeBlueCollarStage1()), STAGE_2_HIGH_SCHOOL_ID)
     character = resolveByAward(character, 'high-school.interest-40', 'skill.interest', 'Interest/Science', 'Science')
     character = resolveByAward(character, 'high-school.interest-35', 'skill.interest', 'Interest/Art', 'Art')
-    character = resolveByAward(character, 'high-school.language-affiliation', 'skill.language', 'Language/English', 'English')
-    character = resolveByAward(character, 'high-school.streetwise-affiliation', 'skill.streetwise', 'Streetwise/Capellan', 'Capellan')
     const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'high-school.flexible')!
+    expect(flexible.maxXpPerTarget).toEqual({ attribute: 200, trait: 200, skill: 35 })
     expect(() => resolvePendingLifeModuleAward(character, flexible.id, { type: 'skill', targetId: 'skill.perception', displayName: 'Perception' }, 36)).toThrow('no more than 35 XP')
     expect(() => resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 201)).toThrow('remaining award XP')
     character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'skill', targetId: 'skill.perception', displayName: 'Perception' }, 35)
@@ -483,7 +501,6 @@ describe('Life Module engine', () => {
     expect(state.pendingAwards.map((entry) => entry.awardId)).toEqual(expect.arrayContaining([
       'agitator.skill.driving',
       'agitator.skill.prestidigitation',
-      'agitator.skill.streetwise-affiliation',
       'agitator.flexible',
     ]))
     expect(state.pendingAwards.find((entry) => entry.awardId === 'agitator.flexible')).toMatchObject({ remainingXp: 125, maxXpPerTarget: { attribute: 50 } })
@@ -495,7 +512,6 @@ describe('Life Module engine', () => {
     let character = applyAgitator(continueToStage4(completeTechnicalCollegeStage3()))
     character = resolveByAward(character, 'agitator.skill.driving', 'skill.driving', 'Driving/Ground Car', 'Ground Car')
     character = resolveByAward(character, 'agitator.skill.prestidigitation', 'skill.prestidigitation', 'Prestidigitation/Sleight of Hand', 'Sleight of Hand')
-    character = resolveByAward(character, 'agitator.skill.streetwise-affiliation', 'skill.streetwise', 'Streetwise/Capellan', 'Capellan')
     const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'agitator.flexible')!
     expect(() => resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 51)).toThrow('no more than 50 XP')
     character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 50)

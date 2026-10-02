@@ -109,6 +109,10 @@ export function resolveLifeModuleAffiliationContext(contextId: string): Affiliat
   return context ? { support: 'supported', context } : { support: 'deferred', contextId }
 }
 
+export function getLifeModuleAffiliationContextByAffiliationId(affiliationId: string): LifeModuleAffiliationContext | undefined {
+  return SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.find((entry) => entry.affiliationId === affiliationId)
+}
+
 export function getLifeModuleLanguageSelectorOptions(groupId: AffiliationLanguageSelectorGroupId): readonly string[] {
   return LIFE_MODULE_LANGUAGE_SELECTOR_GROUPS[groupId]
 }

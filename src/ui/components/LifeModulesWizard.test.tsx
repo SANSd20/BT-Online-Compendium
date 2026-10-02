@@ -17,7 +17,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · v0.1.0-alpha.53')
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.54')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -170,7 +170,8 @@ describe('Life Modules wizard presentation', () => {
   })
 
   it('integrates a later-stage module preview without committing its history or provenance', () => {
-    const character = createLifeModuleCharacter('Later Stage Preview')
+    let character = createLifeModuleCharacter('Later Stage Preview')
+    character = applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian')
     character.creation.lifeModules!.phase = 'stage-1-selection'
     character.creation.lifeModules!.currentStage = 1
     const committedJson = JSON.stringify(character)
@@ -181,7 +182,7 @@ describe('Life Modules wizard presentation', () => {
     expect(markup).toContain('<li class="preview-row">Back Woods</li>')
     expect(markup).toContain('<span>BOD</span><strong>200</strong>')
     expect(markup).toContain('<span>Fit</span><strong>1 TP · 100 XP</strong>')
-    expect(markup).toContain('<span>Martial Arts</span><strong>10 XP</strong>')
+    expect(markup).toContain('<span>Martial Arts</span><strong>15 XP</strong>')
     expect(markup).toContain('Pending preview choices')
     expect(markup).toContain('pending · 50 XP')
     expect(markup).not.toContain('<em>Preview</em>')
