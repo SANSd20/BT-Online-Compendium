@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { previewSupportedStageModule } from './stageModulePreviewModel'
-import { previewStageModuleChoiceSlots, stageChoiceSlotCount, stageSlotContinueEnabled, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
+import { filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
   const character = createLifeModuleCharacter(`Slots ${phase}`)
@@ -80,6 +80,80 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     expect(result.character.skills.find((entry) => entry.displayName === 'Career/Soldier')?.accumulatedXp).toBe(10)
     expect(result.pendingAwards.some((entry) => entry.awardId === 'blue-collar.career')).toBe(false)
     expect(result.complete).toBe(false)
+  })
+
+  it('reports assigned, remaining, and over-limit flexible XP as slot amounts change', () => {
+    const preview = previewSupportedStageModule(draftAt('stage-2-selection'), STAGE_2_HIGH_SCHOOL_ID)!
+    const flexible = preview.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'high-school.flexible')!
+
+    const partial = stageChoicePoolProgress(flexible, [
+      value('trait', 'trait.ambidextrous', 'Ambidextrous', 20),
+      value('attribute', 'STR', 'STR', 50),
+    ])
+    expect(partial).toEqual({ assigned: 70, remaining: 115, overage: 0 })
+    expect(stageChoicePoolProgressLabel(partial)).toBe('70 assigned · 115 remaining')
+
+    const complete = stageChoicePoolProgress(flexible, [value('attribute', 'STR', 'STR', 185)])
+    expect(stageChoicePoolProgressLabel(complete)).toBe('185 assigned · 0 remaining')
+
+    const over = stageChoicePoolProgress(flexible, [
+      value('attribute', 'STR', 'STR', 150),
+      value('attribute', 'BOD', 'BOD', 50),
+    ])
+    expect(over).toEqual({ assigned: 200, remaining: 0, overage: 15 })
+    expect(stageChoicePoolProgressLabel(over)).toBe('200 assigned · 15 XP over limit')
+  })
+
+  it('filters sibling destinations within one award while preserving and restoring the current selection', () => {
+    const options = [
+      { value: 'STR', displayName: 'STR' },
+      { value: 'trait.ambidextrous', displayName: 'Ambidextrous' },
+      { value: 'skill.language/French', displayName: 'Language/French' },
+    ]
+    const values = [
+      value('attribute', 'STR', 'STR', 50),
+      value('trait', 'trait.ambidextrous', 'Ambidextrous', 20),
+      value('skill', 'skill.language', 'Language/French', 35, 'French'),
+    ]
+
+    expect(filterSiblingDestinationOptions(options, values, 0).map((entry) => entry.value)).toEqual(['STR'])
+    expect(filterSiblingDestinationOptions(options, values, 1).map((entry) => entry.value)).toEqual(['trait.ambidextrous'])
+    expect(filterSiblingDestinationOptions(options, values, 2).map((entry) => entry.value)).toEqual(['skill.language/French'])
+
+    const clearedSibling = [values[0], { ...values[1], targetId: '', displayName: '' }, values[2]]
+    expect(filterSiblingDestinationOptions(options, clearedSibling, 0).map((entry) => entry.value)).toEqual(['STR', 'trait.ambidextrous'])
+    expect(filterSiblingDestinationOptions(options, [], 0)).toEqual(options)
+  })
+
+  it('limits duplicate filtering to sibling slots in the same award group', () => {
+    const options = [{ value: 'STR', displayName: 'STR' }, { value: 'BOD', displayName: 'BOD' }]
+    const oneAwardValues = [value('attribute', 'STR', 'STR', 50)]
+
+    expect(filterSiblingDestinationOptions(options, oneAwardValues, 1).map((entry) => entry.value)).toEqual(['BOD'])
+    expect(filterSiblingDestinationOptions(options, [], 0).map((entry) => entry.value)).toEqual(['STR', 'BOD'])
+  })
+
+  it('groups separate same-module Interest awards without crossing unrelated award identities', () => {
+    const character = draftAt('stage-2-selection')
+    const preview = previewSupportedStageModule(character, STAGE_2_HIGH_SCHOOL_ID)!
+    const pending = preview.creation.lifeModules!.pendingAwards.filter((entry) => entry.moduleId === STAGE_2_HIGH_SCHOOL_ID)
+    const interest40 = pending.find((entry) => entry.awardId === 'high-school.interest-40')!
+    const interest35 = pending.find((entry) => entry.awardId === 'high-school.interest-35')!
+    const unrelatedLanguage = pending.find((entry) => entry.awardId === 'high-school.language-affiliation')!
+    const values = {
+      [interest40.awardId]: [value('skill', 'skill.interest', 'Interest/History', 40, 'History')],
+      [unrelatedLanguage.awardId]: [value('skill', 'skill.language', 'Language/English', 10, 'English')],
+    }
+
+    expect(relatedStageChoiceSlotValues(interest35, pending, values)).toEqual(values[interest40.awardId])
+    expect(relatedStageChoiceSlotValues(unrelatedLanguage, pending, values)).toEqual([])
+
+    const options = [
+      { value: 'skill.interest/History', displayName: 'Interest/History' },
+      { value: 'skill.interest/Engineering', displayName: 'Interest/Engineering' },
+    ]
+    const related = relatedStageChoiceSlotValues(interest35, pending, values)
+    expect(filterSiblingDestinationOptions(options, [], 0, related).map((entry) => entry.value)).toEqual(['skill.interest/Engineering'])
   })
 
   it('keeps an earlier pending choice separate and gates Continue until it is resolved', () => {

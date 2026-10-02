@@ -19,6 +19,12 @@ export interface StageChoiceSlotPreview {
   error: string | null
 }
 
+export interface StageChoicePoolProgress {
+  assigned: number
+  remaining: number
+  overage: number
+}
+
 export function stageSlotContinueEnabled(preview: StageChoiceSlotPreview | null, existingPendingAwards: readonly PendingLifeModuleAward[]): boolean {
   return Boolean(preview?.complete && existingPendingAwards.length === 0)
 }
@@ -26,6 +32,47 @@ export function stageSlotContinueEnabled(preview: StageChoiceSlotPreview | null,
 export function stageChoiceSlotCount(pending: PendingLifeModuleAward, values: StageChoiceSlotValues): number {
   if (pending.allocationMode !== 'pool') return pending.remainingGrants
   return Math.max(1, values[pending.awardId]?.length ?? 0)
+}
+
+export function stageChoicePoolProgress(pending: PendingLifeModuleAward, values: readonly StageChoiceSlotValue[]): StageChoicePoolProgress {
+  const assigned = values.filter(slotValueComplete).reduce((total, value) => total + value.xpAmount, 0)
+  const limit = pending.remainingXp ?? 0
+  return {
+    assigned,
+    remaining: Math.max(0, limit - assigned),
+    overage: Math.max(0, assigned - limit),
+  }
+}
+
+export function stageChoicePoolProgressLabel(progress: StageChoicePoolProgress): string {
+  return progress.overage > 0
+    ? `${progress.assigned} assigned · ${progress.overage} XP over limit`
+    : `${progress.assigned} assigned · ${progress.remaining} remaining`
+}
+
+export function filterSiblingDestinationOptions<T extends { value: string }>(
+  options: readonly T[],
+  values: readonly StageChoiceSlotValue[],
+  currentIndex: number,
+  relatedSiblingValues: readonly StageChoiceSlotValue[] = [],
+): T[] {
+  const currentValue = optionValue(values[currentIndex])
+  const siblingValues = new Set([
+    ...values.flatMap((value, index) => index === currentIndex ? [] : [optionValue(value)]),
+    ...relatedSiblingValues.map(optionValue),
+  ].filter(Boolean))
+  return options.filter((option) => option.value === currentValue || !siblingValues.has(option.value))
+}
+
+export function relatedStageChoiceSlotValues(
+  pending: PendingLifeModuleAward,
+  modulePendingAwards: readonly PendingLifeModuleAward[],
+  values: StageChoiceSlotValues,
+): StageChoiceSlotValue[] {
+  if (!pending.requiredSkillId) return []
+  return modulePendingAwards
+    .filter((candidate) => candidate.awardId !== pending.awardId && candidate.requiredSkillId === pending.requiredSkillId)
+    .flatMap((candidate) => values[candidate.awardId] ?? [])
 }
 
 export function previewStageModuleChoiceSlots(
@@ -78,4 +125,9 @@ function toDestination(value: StageChoiceSlotValue): ResolvedLifeModuleDestinati
     displayName: value.displayName,
     ...(value.parameter ? { parameter: { kind: 'subskill', value: value.parameter } } : {}),
   }
+}
+
+function optionValue(value: StageChoiceSlotValue | undefined): string {
+  if (!value?.targetId) return ''
+  return value.targetType === 'skill' ? `${value.targetId}/${value.parameter}` : value.targetId
 }

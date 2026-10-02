@@ -15,7 +15,7 @@ import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../co
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesAffiliationTheme, previewStage0Affiliation } from '../components/stage0PreviewModel'
 import { previewSupportedStageModule, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
-import { emptyStageChoiceSlot, previewStageModuleChoiceSlots, slotValueComplete, stageChoiceSlotCount, stageSlotContinueEnabled, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
+import { emptyStageChoiceSlot, filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -181,15 +181,17 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       {stageModulePendingAwards.map((pending) => {
         const values = stageChoiceSlotValues[pending.awardId] ?? []
         const count = stageChoiceSlotCount(pending, stageChoiceSlotValues)
-        const allocated = values.filter(slotValueComplete).reduce((total, value) => total + value.xpAmount, 0)
+        const poolProgress = pending.allocationMode === 'pool' ? stageChoicePoolProgress(pending, values) : null
         return <div className="stage-choice-award" key={pending.id}>
-          <p><strong>{pending.description}</strong> · {pending.allocationMode === 'pool' ? `${allocated} of ${pending.remainingXp} XP assigned` : `${count} separate slot${count === 1 ? '' : 's'} · ${signed(pending.xpPerGrant)} XP each`}</p>
+          <p><strong>{pending.description}</strong> · {poolProgress ? stageChoicePoolProgressLabel(poolProgress) : `${count} separate slot${count === 1 ? '' : 's'} · ${signed(pending.xpPerGrant)} XP each`}</p>
           {Array.from({ length: count }, (_, index) => {
             const value = { ...emptyStageChoiceSlot(pending), ...values[index] }
             const optionPending = pending.kind === 'flexible-xp' && value.targetType
               ? { ...pending, allowedTargetTypes: [value.targetType] }
               : pending
-            const options = pending.kind === 'flexible-xp' && !value.targetType ? [] : pendingAwardOptions(optionPending, stageModulePreview?.character ?? stageModuleBasePreview ?? character!)
+            const unfilteredOptions = pending.kind === 'flexible-xp' && !value.targetType ? [] : pendingAwardOptions(optionPending, stageModulePreview?.character ?? stageModuleBasePreview ?? character!)
+            const relatedSiblingValues = relatedStageChoiceSlotValues(pending, stageModulePendingAwards, stageChoiceSlotValues)
+            const options = filterSiblingDestinationOptions(unfilteredOptions, values, index, relatedSiblingValues)
             const unsupported = value.targetType ? pendingAwardUnsupportedMessage(optionPending, options) : null
             return <div className="stage-choice-slot" key={`${pending.id}/${index}`}>
               <strong>{stageChoiceSlotLabel(pending, index)}</strong>

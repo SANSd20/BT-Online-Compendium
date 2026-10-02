@@ -259,6 +259,8 @@ Alpha Slice 46 turns those Stage 1–4 pending awards into same-page choice slot
 
 Alpha Slice 47 fixes the combined-workflow visibility gap from Slice 46. If committed pending awards already exist when a Stage 1–4 module is previewed, they remain visible and resolvable in a separately labeled `Existing pending choices` section above the module's slots. Resolving one of those earlier awards intentionally retains the selected module and every local slot value, while resolving a module slot never hides the earlier section. Continue requires both sets to be complete. Rules, award data, progression, save/export, persisted shape, Stage 0, Capellan theming, and equipment remain unchanged.
 
+Alpha Slice 48 improves flexible-XP slot usability without changing rules. Each flexible pool reports assigned and remaining XP live, or its over-limit amount. Known Attribute, Trait, Skill, subskill, and language destinations selected in one slot are filtered from sibling slots in that same award group, remain visible in their own slot, and become available again when changed or cleared. Filtering does not cross award groups. Selected-module preview, existing pending choices, Continue gating and commit behavior, committed-only save/export, Stage 0 progressive preview, Capellan theming, persisted data, and the 84-item equipment catalog remain unchanged; no migration is required.
+
 ## Current audit checkpoint
 
 The Core + Companion character-system reconciliation has established durable findings for:
