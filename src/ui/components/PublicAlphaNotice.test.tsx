@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { APP_VERSION } from '../../appMetadata'
+import { APP_PUBLIC_TITLE, APP_RELEASE_LABEL, APP_VERSION } from '../../appMetadata'
 import { EQUIPMENT_CATALOG } from '../../domain/equipment/catalog'
 import { PublicAlphaNotice } from './PublicAlphaNotice'
 
@@ -8,10 +8,12 @@ describe('Public Alpha notice', () => {
   it('collapses details by default while keeping the heading, version, and summary visible', () => {
     const markup = renderToStaticMarkup(<PublicAlphaNotice />)
 
-    expect(APP_VERSION).toBe('0.1.0-alpha.56')
+    expect(APP_RELEASE_LABEL).toBe('Alpha Slice 57')
+    expect(APP_VERSION).toBe('0.1.0-alpha.57')
     expect(markup).toContain('<details>')
     expect(markup).not.toContain('<details open="">')
     expect(markup).toContain('Public Alpha Notice')
+    expect(markup).toContain(APP_RELEASE_LABEL)
     expect(markup).toContain(`v${APP_VERSION}`)
     expect(markup).toContain('Local-only Alpha · incomplete rules and equipment coverage')
     expect(markup).toContain('Show details')
@@ -31,7 +33,8 @@ describe('Public Alpha notice', () => {
     expect(markup).toContain('no backend or cloud save exists')
     expect(markup).toContain('planned before v1.0')
     expect(markup).toContain('Core <em>A Time of War</em> first')
-    expect(markup).toContain('<em>A Time of War</em> character creator')
+    expect(markup).toContain(`<em>${APP_PUBLIC_TITLE}</em>`)
+    expect(markup).not.toContain('<em>A Time of War</em> character creator')
     expect(markup).toContain('Companion support later')
     expect(markup).toContain('does not guarantee a finalized or play-ready character')
     expect(markup).toContain('PDF export is not yet available')

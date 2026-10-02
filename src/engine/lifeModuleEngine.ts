@@ -159,6 +159,21 @@ export function applyFederatedSunsCrucisMarch(character: CharacterDefinition, na
   const nextState = requireLifeModules(next)
   const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
   if (!provenanceId) throw new Error('Affiliation provenance was not recorded.')
+  const artDestination: ResolvedLifeModuleDestination = {
+    type: 'skill',
+    targetId: 'skill.art',
+    displayName: 'Art/Painting',
+    parameter: { kind: 'subskill', value: art },
+  }
+  nextState.choiceGrantRequirements.push({ moduleId: published.id, awardId: 'crucis.skill.art', requiredGrants: 1 })
+  recordResolvedAward(nextState.resolvedAwards, {
+    moduleId: published.id,
+    awardId: 'crucis.skill.art',
+    kind: 'any-skill-choice',
+    xpPerGrant: 10,
+    source: { ...published.source },
+  }, artDestination, provenanceId, 10)
+  next.creation.resolvedChoiceIds.push(`${published.id}/crucis.skill.art/${resolvedDestinationKey(artDestination)}`)
   next.affiliations.push(
     { affiliationId: FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.affiliationId, role: 'birth', provenanceId },
     { affiliationId: FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.affiliationId, role: 'final', provenanceId },

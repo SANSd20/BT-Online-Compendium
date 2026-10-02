@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { APP_PUBLIC_ALPHA_LABEL } from '../../appMetadata'
 import type { CharacterDefinition } from '../../domain/character/model'
 import {
   POINT_BUY_ATTRIBUTE_MAXIMUMS,
@@ -71,7 +72,7 @@ export function PointBuyScreen({ onSave }: PointBuyScreenProps) {
     <main className="creation-page point-buy-page">
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
-        <p className="eyebrow">Alpha · Slice 3</p>
+        <p className="eyebrow">{APP_PUBLIC_ALPHA_LABEL}</p>
         <h1>Point Buy</h1>
         <p>Spend a creation XP pool on Normal Human Attributes and a focused Core Skill and Trait catalog. Every purchase uses the shared character schema and retains its Core source.</p>
       </section>

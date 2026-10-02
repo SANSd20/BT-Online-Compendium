@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { APP_VERSION } from '../appMetadata'
+import { APP_PUBLIC_TITLE, APP_VERSION } from '../appMetadata'
 import { createCharacterDraft } from '../engine/characterFactory'
 import { createCharacterFromArchetype } from '../engine/archetypeFactory'
-import { BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID } from '../domain/lifeModules/catalog'
-import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../engine/lifeModuleEngine'
+import { BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID } from '../domain/lifeModules/catalog'
+import { applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../engine/lifeModuleEngine'
 import { validateCharacter } from '../validation/validateCharacter'
 import { decodeCharacter, encodeCharacter } from './characterCodec'
 
@@ -19,7 +19,7 @@ describe('character codec', () => {
   it('round-trips a versioned character envelope', () => {
     const source = character()
     const encoded = encodeCharacter(source, '3025-01-02T00:00:00.000Z')
-    expect(JSON.parse(encoded).application).toEqual({ name: 'BT Online Compendium', version: APP_VERSION })
+    expect(JSON.parse(encoded).application).toEqual({ name: APP_PUBLIC_TITLE, version: APP_VERSION })
     const restored = decodeCharacter(encoded)
     expect(restored).toEqual(source)
   })
@@ -32,6 +32,65 @@ describe('character codec', () => {
     ]
     const restored = decodeCharacter(encodeCharacter(source))
     expect(restored.skills.map((skill) => skill.level)).toEqual([null, 0])
+  })
+
+  it('round-trips a committed Federated Suns / Crucis March Stage 0 character without losing Art/Painting metadata', () => {
+    const source = applyFederatedSunsCrucisMarch(
+      applyUniversalStage0(createLifeModuleCharacter('Crucis Round Trip'), FEDERATED_SUNS_CRUCIS_MARCH_ID, 'English'),
+      'Protocol',
+      'Painting',
+    )
+    const before = {
+      affiliationContext: source.creation.lifeModules?.stage0AffiliationContext,
+      affiliationLanguage: source.creation.lifeModules?.affiliationLanguage,
+      affiliations: source.affiliations,
+      art: source.skills.find((entry) => entry.displayName === 'Art/Painting'),
+      naturalAptitude: source.traits.find((entry) => entry.displayName === 'Natural Aptitude/Protocol'),
+      choiceRequirements: source.creation.lifeModules?.choiceGrantRequirements,
+      resolvedAwards: source.creation.lifeModules?.resolvedAwards,
+      pendingAwards: source.creation.lifeModules?.pendingAwards,
+      xp: source.xp,
+    }
+    expect(validateCharacter(source).valid).toBe(true)
+
+    const restored = decodeCharacter(encodeCharacter(source, '3025-01-02T00:00:00.000Z'))
+
+    expect(validateCharacter(restored).valid).toBe(true)
+    expect({
+      affiliationContext: restored.creation.lifeModules?.stage0AffiliationContext,
+      affiliationLanguage: restored.creation.lifeModules?.affiliationLanguage,
+      affiliations: restored.affiliations,
+      art: restored.skills.find((entry) => entry.displayName === 'Art/Painting'),
+      naturalAptitude: restored.traits.find((entry) => entry.displayName === 'Natural Aptitude/Protocol'),
+      choiceRequirements: restored.creation.lifeModules?.choiceGrantRequirements,
+      resolvedAwards: restored.creation.lifeModules?.resolvedAwards,
+      pendingAwards: restored.creation.lifeModules?.pendingAwards,
+      xp: restored.xp,
+    }).toEqual(before)
+    expect(restored.creation.lifeModules?.pendingAwards).toEqual([])
+    expect(restored.creation.lifeModules?.resolvedAwards).toContainEqual(expect.objectContaining({
+      awardId: 'crucis.skill.art',
+      kind: 'any-skill-choice',
+      destination: expect.objectContaining({ displayName: 'Art/Painting' }),
+    }))
+  })
+
+  it('preserves committed Capellan/Commonality awards and intentional pending FedSuns language through round trip', () => {
+    const source = applyCapellanCommonality(
+      applyUniversalStage0(createLifeModuleCharacter('Capellan Round Trip'), CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'),
+      'Russian',
+    )
+    const restored = decodeCharacter(encodeCharacter(source, '3025-01-02T00:00:00.000Z'))
+
+    expect(validateCharacter(restored).valid).toBe(true)
+    expect(restored.affiliations).toEqual(source.affiliations)
+    expect(restored.skills).toEqual(source.skills)
+    expect(restored.traits).toEqual(source.traits)
+    expect(restored.xp).toEqual(source.xp)
+    expect(restored.creation.lifeModules?.pendingAwards).toEqual(source.creation.lifeModules?.pendingAwards)
+    expect(restored.creation.lifeModules?.pendingAwards).toContainEqual(expect.objectContaining({ awardId: 'commonality.language.fedsuns', xpPerGrant: 5 }))
+    expect(restored.skills).toContainEqual(expect.objectContaining({ displayName: 'Protocol/FedSuns', accumulatedXp: 5 }))
+    expect(restored.creation.resolvedChoiceIds).not.toContain(expect.stringContaining('commonality.language.fedsuns'))
   })
 
   it('rejects an unrelated JSON document', () => {

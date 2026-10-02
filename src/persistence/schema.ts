@@ -8,9 +8,8 @@ export interface SavedCharacterEnvelope {
   schemaVersion: typeof CHARACTER_SCHEMA_VERSION
   exportedAt: string
   application: {
-    name: 'BT Online Compendium'
+    name: string
     version: string
   }
   character: CharacterDefinition
 }
-

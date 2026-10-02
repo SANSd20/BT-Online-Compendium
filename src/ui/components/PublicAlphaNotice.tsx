@@ -1,4 +1,4 @@
-import { APP_PHASE, APP_VERSION } from '../../appMetadata'
+import { APP_PHASE, APP_PUBLIC_TITLE, APP_RELEASE_LABEL, APP_VERSION } from '../../appMetadata'
 
 export function PublicAlphaNotice({ defaultExpanded = false }: { defaultExpanded?: boolean }) {
   return (
@@ -7,7 +7,7 @@ export function PublicAlphaNotice({ defaultExpanded = false }: { defaultExpanded
         <summary>
           <div className="public-alpha-heading">
             <div>
-              <p className="eyebrow">{APP_PHASE}</p>
+              <p className="eyebrow">{APP_PHASE} · {APP_RELEASE_LABEL}</p>
               <h2 id="public-alpha-title">Public Alpha Notice</h2>
               <p className="public-alpha-summary">Local-only Alpha · incomplete rules and equipment coverage</p>
             </div>
@@ -17,7 +17,7 @@ export function PublicAlphaNotice({ defaultExpanded = false }: { defaultExpanded
         </summary>
         <div className="public-alpha-details">
           <p>
-            This is an incomplete local-first Alpha version of the <em>A Time of War</em> character creator.
+            This is an incomplete local-first Alpha version of the <em>{APP_PUBLIC_TITLE}</em>.
             Rules coverage, equipment coverage, final validation, and PDF export are not complete.
           </p>
           <ul>

@@ -1,7 +1,7 @@
 import type { CharacterDefinition, CreationMethod } from '../domain/character/model'
-import { APP_VERSION } from '../appMetadata'
+import { APP_PUBLIC_TITLE, APP_VERSION } from '../appMetadata'
 import { getCoreArchetype } from '../domain/archetypes/coreArchetypes'
-import { CAPELLAN_COMMONALITY_ID, getLifeModule, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
+import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, getLifeModule, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { XP_COST_TABLE_SOURCE } from '../domain/pointBuy/catalog'
 import { calculateArchetypeAdjustmentNetXp, evaluateSharedXpAccounting } from '../domain/pointBuy/calculations'
 import { validateCharacter } from '../validation/validateCharacter'
@@ -70,7 +70,7 @@ export function encodeCharacter(character: CharacterDefinition, exportedAt = new
     format: CHARACTER_FILE_FORMAT,
     schemaVersion: CHARACTER_SCHEMA_VERSION,
     exportedAt,
-    application: { name: 'BT Online Compendium', version: APP_VERSION },
+    application: { name: APP_PUBLIC_TITLE, version: APP_VERSION },
     character,
   }
   return JSON.stringify(envelope, null, 2)
@@ -167,4 +167,32 @@ function migrateAlphaLifeModuleState(character: CharacterDefinition): void {
     entry.chronologyYears ??= definition.chronologyYears
     entry.repeatPolicy ??= definition.repeatPolicy ? structuredClone(definition.repeatPolicy) : undefined
   })
+  migrateCrucisArtResolution(character)
+}
+
+function migrateCrucisArtResolution(character: CharacterDefinition): void {
+  const state = character.creation.lifeModules
+  if (!state?.selectedModuleIds.includes(FEDERATED_SUNS_CRUCIS_MARCH_ID)) return
+  if (state.resolvedAwards.some((entry) => entry.moduleId === FEDERATED_SUNS_CRUCIS_MARCH_ID && entry.awardId === 'crucis.skill.art')) return
+  const art = character.skills.find((entry) => entry.address.skillId === 'skill.art' && entry.address.parameter?.value === 'Painting')
+  const history = character.lifeModuleHistory.find((entry) => entry.moduleId === FEDERATED_SUNS_CRUCIS_MARCH_ID)
+  const provenanceId = history?.provenanceIds[0]
+  if (!art || !provenanceId || !art.sourceAwards.some((award) => award.provenanceId === provenanceId && award.xp === 10)) return
+  const source = getLifeModule(FEDERATED_SUNS_CRUCIS_MARCH_ID).source
+  if (!state.choiceGrantRequirements.some((entry) => entry.moduleId === FEDERATED_SUNS_CRUCIS_MARCH_ID && entry.awardId === 'crucis.skill.art')) {
+    state.choiceGrantRequirements.push({ moduleId: FEDERATED_SUNS_CRUCIS_MARCH_ID, awardId: 'crucis.skill.art', requiredGrants: 1 })
+  }
+  state.resolvedAwards.push({
+    id: `migrated-crucis-art-${provenanceId}`,
+    moduleId: FEDERATED_SUNS_CRUCIS_MARCH_ID,
+    awardId: 'crucis.skill.art',
+    kind: 'any-skill-choice',
+    xp: 10,
+    destination: { type: 'skill', targetId: 'skill.art', displayName: 'Art/Painting', parameter: { kind: 'subskill', value: 'Painting' } },
+    provenanceId,
+    resolvedAt: history?.selectedAt ?? character.updatedAt,
+    source: { ...source },
+  })
+  const choiceId = `${FEDERATED_SUNS_CRUCIS_MARCH_ID}/crucis.skill.art/skill/skill.art/subskill/painting/{}`
+  if (!character.creation.resolvedChoiceIds.includes(choiceId)) character.creation.resolvedChoiceIds.push(choiceId)
 }

@@ -22,4 +22,4 @@ Full Great House, Periphery, Clan, ComStar, sub-affiliation, Changing Affiliatio
 
 ## Compatibility
 
-Existing module IDs, affiliation IDs, selector-group strings, award records, and saved JSON fields are unchanged, so no Slice 29 save migration is required. Stage 1–4 behavior, Archetype, Point Buy, Final Touches, and the 84-item equipment catalog are unchanged. The public title remains `A Time of War character creator`, and the deployment target remains `https://sansd20.github.io/BT-Online-Compendium/`.
+Existing module IDs, affiliation IDs, selector-group strings, award records, and saved JSON fields are unchanged, so no Slice 29 save migration is required. Stage 1–4 behavior, Archetype, Point Buy, Final Touches, and the 84-item equipment catalog are unchanged. The public title is `AToW Online Character Creator`, and the deployment target remains `https://sansd20.github.io/BT-Online-Compendium/`.

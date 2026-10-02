@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { CharacterDefinition, CreationMethod } from '../domain/character/model'
 import { LocalStorageCharacterRepository } from '../persistence/characterRepository'
-import { APP_PHASE, APP_VERSION } from '../appMetadata'
+import { APP_PHASE, APP_PUBLIC_ALPHA_LABEL, APP_PUBLIC_TITLE, APP_RELEASE_LABEL, APP_VERSION } from '../appMetadata'
 import { PublicAlphaNotice } from './components/PublicAlphaNotice'
 import { ArchetypeScreen } from './screens/ArchetypeScreen'
 import { HomeScreen } from './screens/HomeScreen'
@@ -33,12 +33,12 @@ export function App() {
   return (
     <div className="app-shell">
       <header className="site-header">
-        <a className="brand" href="#/">
+        <a className="brand" href="#/" aria-label={`${APP_PUBLIC_TITLE} home`}>
           <span className="brand-mark">BT</span>
-          <span>Online Compendium</span>
+          <span>{APP_PUBLIC_TITLE}</span>
         </a>
         <div className="site-status">
-          <span className="local-badge">{APP_PHASE} · Local-first</span>
+          <span className="local-badge">{APP_PUBLIC_ALPHA_LABEL} · Local-first</span>
           <span className="header-version">v{APP_VERSION}</span>
         </div>
       </header>
@@ -54,7 +54,7 @@ export function App() {
       ) : (
         <HomeScreen characters={characters} onImport={save} onDelete={remove} />
       )}
-      <footer>{APP_PHASE} · v{APP_VERSION} · Local browser storage · JSON portability · No account or cloud save</footer>
+      <footer>{APP_RELEASE_LABEL} · {APP_PHASE} · v{APP_VERSION} · Local browser storage · JSON portability · No account or cloud save</footer>
     </div>
   )
 }
