@@ -15,7 +15,7 @@ import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../co
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesAffiliationTheme, previewStage0Affiliation } from '../components/stage0PreviewModel'
 import { previewSupportedStageModule, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
-import { emptyStageChoiceSlot, filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
+import { emptyStageChoiceSlot, filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -138,9 +138,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     ? stage0PreviewSelections
     : stageModulePreviewId ? [`Selected module: ${stageModulePreview?.character.lifeModuleHistory.at(-1)?.displayName ?? stageModulePreviewId}`] : []
   const previewState = activePreview?.creation.lifeModules
-  const visiblePendingAwards = stageModulePreview
-    ? [...stageModulePreview.existingPendingAwards, ...stageModulePreview.pendingAwards]
-    : genericPendingAwards
+  const visiblePendingAwards = stageModulePreview ? stageSlotPendingAwards(stageModulePreview) : genericPendingAwards
   const validation = character ? validateCharacter(character) : null
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
   const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
@@ -171,7 +169,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   }
 
   function commitStageModuleChoices(success: string) {
-    if (!stageModulePreview || !stageSlotContinueEnabled(stageModulePreview, stageExistingFallbackAwards)) {
+    if (!stageModulePreview || !stageSlotContinueEnabled(stageModulePreview)) {
       setMessage(stageModulePreview?.error ?? 'Complete every required choice slot before continuing.')
       return
     }
@@ -197,7 +195,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       {stageModulePreview?.error && <p className="notice">{stageModulePreview.error}</p>}
       <div className="life-action">
         <p className="notice">Previewing this {stageName} module and filled choice slots. Continue commits them together.</p>
-        <button className="button" type="button" aria-label={`Continue with ${moduleName}`} aria-describedby="stage-choice-continue-help" disabled={!stageSlotContinueEnabled(stageModulePreview, stageExistingFallbackAwards)} onClick={() => commitStageModuleChoices(success)}>Continue</button>
+        <button className="button" type="button" aria-label={`Continue with ${moduleName}`} aria-describedby="stage-choice-continue-help" disabled={!stageSlotContinueEnabled(stageModulePreview)} onClick={() => commitStageModuleChoices(success)}>Continue</button>
         <span id="stage-choice-continue-help" className="sr-only">Continue commits the selected module and all completed choice slots.</span>
       </div>
     </section>
@@ -208,7 +206,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     const count = stageChoiceSlotCount(pending, stageChoiceSlotValues)
     const poolProgress = pending.allocationMode === 'pool' ? stageChoicePoolProgress(pending, values) : null
     return <div className="stage-choice-award" key={pending.id}>
-          <p><strong>{pending.description}</strong> · {poolProgress ? stageChoicePoolProgressLabel(poolProgress) : `${count} separate slot${count === 1 ? '' : 's'} · ${signed(pending.xpPerGrant)} XP each`}</p>
+          <p aria-live="polite"><strong>{pending.description}</strong> · {poolProgress ? stageChoicePoolProgressLabel(poolProgress) : `${count} separate slot${count === 1 ? '' : 's'} · ${signed(pending.xpPerGrant)} XP each`}</p>
           {Array.from({ length: count }, (_, index) => {
             const value = { ...emptyStageChoiceSlot(pending), ...values[index] }
             const optionPending = pending.kind === 'flexible-xp' && value.targetType
@@ -243,7 +241,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 </select>
               </label>}
               {unsupported && <p className="notice">{unsupported}</p>}
-              <span className={slotValueComplete(value) ? 'slot-complete' : 'slot-pending'}>{slotValueComplete(value) ? `Selected: ${value.displayName}` : 'Pending'}</span>
+              {!slotValueComplete(value) && <span className="slot-pending">Pending</span>}
             </div>
           })}
           {pending.allocationMode === 'pool' && <div className="row-actions">
@@ -431,6 +429,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <LifeModuleStageStatus
               pendingAwards={visiblePendingAwards}
               specializedPendingMessage={state.phase === 'stage-0-affiliation' && state.pendingAwards.length > genericPendingAwards.length ? 'Complete the required language choices in the Affiliation Package above.' : undefined}
+              showResolutionLink={!stageModulePreviewId || stageExistingFallbackAwards.length > 0}
               warnings={(previewState ?? state).prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => `${moduleName(activePreview ?? character, entry.moduleId)}: ${entry.description}`)}
             />
           </section>

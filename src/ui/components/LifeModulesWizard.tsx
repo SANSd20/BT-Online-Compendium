@@ -97,11 +97,11 @@ export function LifeModuleCharacterSummary({ character, previewCharacter, previe
   </aside>
 }
 
-export function LifeModuleStageStatus({ pendingAwards, warnings, specializedPendingMessage }: { pendingAwards: PendingLifeModuleAward[]; warnings: string[]; specializedPendingMessage?: string }) {
+export function LifeModuleStageStatus({ pendingAwards, warnings, specializedPendingMessage, showResolutionLink = true }: { pendingAwards: PendingLifeModuleAward[]; warnings: string[]; specializedPendingMessage?: string; showResolutionLink?: boolean }) {
   return <div className="life-stage-status" aria-label="Current stage status">
     <section className={pendingAwards.length ? 'stage-blockers has-items' : 'stage-blockers'} aria-labelledby="stage-blockers-heading">
       <h3 id="stage-blockers-heading">Current-stage blockers</h3>
-      {pendingAwards.length === 0 ? <p>{specializedPendingMessage ?? 'No unresolved award blockers.'}</p> : <><p>Continue is blocked until these awards are resolved:</p><ul>{pendingAwards.map((entry) => <li key={entry.id}>{entry.kind === 'flexible-xp' && <strong>Flexible XP · </strong>}{entry.description} ({entry.allocationMode === 'pool' ? `${entry.remainingXp} XP remaining` : `${entry.remainingGrants} grant${entry.remainingGrants === 1 ? '' : 's'} remaining`})</li>)}</ul><a href="#pending-awards">Resolve pending awards</a></>}
+      {pendingAwards.length === 0 ? <p>{specializedPendingMessage ?? 'No unresolved award blockers.'}</p> : <><p>Continue is blocked until these awards are resolved:</p><ul>{pendingAwards.map((entry) => <li key={entry.id}>{entry.kind === 'flexible-xp' && <strong>Flexible XP · </strong>}{entry.description} ({entry.allocationMode === 'pool' ? `${entry.remainingXp} XP remaining` : `${entry.remainingGrants} grant${entry.remainingGrants === 1 ? '' : 's'} remaining`})</li>)}</ul>{showResolutionLink && <a href="#pending-awards">Resolve pending awards</a>}</>}
     </section>
     <section className={warnings.length ? 'stage-warnings has-items' : 'stage-warnings'} aria-labelledby="stage-warnings-heading">
       <h3 id="stage-warnings-heading">Final-validation warnings</h3>

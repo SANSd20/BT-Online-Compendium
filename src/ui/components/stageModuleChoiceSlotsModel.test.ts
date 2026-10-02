@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { previewSupportedStageModule } from './stageModulePreviewModel'
-import { filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
+import { filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
   const character = createLifeModuleCharacter(`Slots ${phase}`)
@@ -104,6 +104,37 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     expect(stageChoicePoolProgressLabel(over)).toBe('200 assigned · 15 XP over limit')
   })
 
+  it('resolves a complete legal High School 185 XP allocation in the integrated preview', () => {
+    const character = draftAt('stage-2-selection')
+    const committed = JSON.stringify(character)
+    const values = keyedValues(character, STAGE_2_HIGH_SCHOOL_ID, {
+      'high-school.interest-40': [value('skill', 'skill.interest', 'Interest/History', 40, 'History')],
+      'high-school.interest-35': [value('skill', 'skill.interest', 'Interest/Engineering', 35, 'Engineering')],
+      'high-school.language-affiliation': [value('skill', 'skill.language', 'Language/Russian', 10, 'Russian')],
+      'high-school.streetwise-affiliation': [value('skill', 'skill.streetwise', 'Streetwise/Capellan', 20, 'Capellan')],
+      'high-school.flexible': [
+        value('attribute', 'STR', 'STR', 50),
+        value('attribute', 'BOD', 'BOD', 50),
+        value('attribute', 'DEX', 'DEX', 50),
+        value('attribute', 'RFL', 'RFL', 35),
+      ],
+    })
+    const result = previewStageModuleChoiceSlots(character, STAGE_2_HIGH_SCHOOL_ID, values)!
+
+    expect(stageChoicePoolProgress(
+      previewSupportedStageModule(character, STAGE_2_HIGH_SCHOOL_ID)!.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'high-school.flexible')!,
+      values['high-school.flexible'],
+    )).toEqual({ assigned: 185, remaining: 0, overage: 0 })
+    expect(result.error).toBeNull()
+    expect(result.pendingAwards).toEqual([])
+    expect(result.complete).toBe(true)
+    expect(stageSlotPendingAwards(result)).toEqual([])
+    expect(stageSlotContinueEnabled(result)).toBe(true)
+    expect(result.character.lifeModuleHistory.at(-1)?.moduleId).toBe(STAGE_2_HIGH_SCHOOL_ID)
+    expect(result.character.creation.lifeModules!.resolvedAwards.filter((entry) => entry.moduleId === STAGE_2_HIGH_SCHOOL_ID)).toHaveLength(8)
+    expect(JSON.stringify(character)).toBe(committed)
+  })
+
   it('filters sibling destinations within one award while preserving and restoring the current selection', () => {
     const options = [
       { value: 'STR', displayName: 'STR' },
@@ -173,7 +204,8 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     expect(preview.complete).toBe(false)
     expect(preview.existingPendingAwards.map((entry) => entry.id)).toContain(existing.id)
     expect(preview.character.lifeModuleHistory.at(-1)?.moduleId).toBe(BLUE_COLLAR_ID)
-    expect(stageSlotContinueEnabled(preview, [existing])).toBe(false)
+    expect(stageSlotPendingAwards(preview).map((entry) => entry.id)).toContain(existing.id)
+    expect(stageSlotContinueEnabled(preview)).toBe(false)
     expect(JSON.stringify(character)).toBe(committed)
 
     const completed = previewStageModuleChoiceSlots(character, BLUE_COLLAR_ID, {
@@ -187,7 +219,7 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
       expect.objectContaining({ awardId: existing.awardId, destination: expect.objectContaining({ displayName: 'Language/French' }) }),
     ]))
     expect(completed.character.lifeModuleHistory.at(-1)?.moduleId).toBe(BLUE_COLLAR_ID)
-    expect(stageSlotContinueEnabled(completed, [])).toBe(true)
+    expect(stageSlotContinueEnabled(completed)).toBe(true)
     expect(JSON.stringify(character)).toBe(committed)
   })
 })

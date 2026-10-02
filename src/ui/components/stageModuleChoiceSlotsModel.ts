@@ -26,8 +26,12 @@ export interface StageChoicePoolProgress {
   overage: number
 }
 
-export function stageSlotContinueEnabled(preview: StageChoiceSlotPreview | null, existingPendingAwards: readonly PendingLifeModuleAward[]): boolean {
-  return Boolean(preview?.complete && existingPendingAwards.length === 0)
+export function stageSlotPendingAwards(preview: StageChoiceSlotPreview | null): PendingLifeModuleAward[] {
+  return preview ? [...preview.existingPendingAwards, ...preview.pendingAwards] : []
+}
+
+export function stageSlotContinueEnabled(preview: StageChoiceSlotPreview | null): boolean {
+  return Boolean(preview && !preview.error && preview.complete && stageSlotPendingAwards(preview).length === 0)
 }
 
 export function stageChoiceSlotCount(pending: PendingLifeModuleAward, values: StageChoiceSlotValues): number {

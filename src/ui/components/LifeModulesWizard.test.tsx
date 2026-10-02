@@ -17,7 +17,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · v0.1.0-alpha.50')
+    expect(markup).toContain('Public Alpha · v0.1.0-alpha.51')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -200,5 +200,15 @@ describe('Life Modules wizard presentation', () => {
     expect(markup).toContain('Final-validation warnings')
     expect(markup).toContain('These do not block Continue at the current stage')
     expect(markup).toContain('STR 4+')
+  })
+
+  it('hides the generic resolver link for integrated slots but preserves it for fallback contexts', () => {
+    const state = stage1Draft().creation.lifeModules!
+    const integrated = renderToStaticMarkup(<LifeModuleStageStatus pendingAwards={state.pendingAwards} warnings={[]} showResolutionLink={false} />)
+    const fallback = renderToStaticMarkup(<LifeModuleStageStatus pendingAwards={state.pendingAwards} warnings={[]} />)
+
+    expect(integrated).not.toContain('Resolve pending awards')
+    expect(fallback).toContain('Resolve pending awards')
+    expect(fallback).toContain('href="#pending-awards"')
   })
 })

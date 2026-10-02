@@ -263,6 +263,8 @@ Alpha Slice 48 improves flexible-XP slot usability without changing rules. Each 
 
 Alpha Slice 49 converts supported existing pending awards displayed inside an active Stage 1–4 module workspace into local slot selections. The old per-grant Apply control is absent from this normal path. The module, earlier choices, and module-local slots are resolved on one clone through existing engine operations and replace committed state only through Continue after all are complete. Save/export therefore remain committed-only. The generic resolver remains available outside the slot transaction and for legacy or unsupported fallback awards. Rules, award values, XP accounting, progression, persistence, Stage 0, Capellan theming, Slice 48 filtering/progress, and the 84-item equipment catalog remain unchanged; no migration is required.
 
+Alpha Slice 51 fixes integrated-slot status synchronization by deriving blocker rows and Continue eligibility from the same current preview result. A complete legal High School allocation of 185 flexible XP now reports zero remaining, removes the flexible blocker, and enables Continue when its other slots are complete. The normal integrated workflow hides `Resolve pending awards`; the generic resolver remains for genuine fallback contexts. Redundant visible `Selected: …` echoes are removed without removing native select labels, descriptions, focus, or selected-option state. Slice 50 accessibility behavior, committed-only save/export, rules, XP accounting, persistence, and the 84-item equipment catalog remain unchanged; no migration is required.
+
 ## Current audit checkpoint
 
 The Core + Companion character-system reconciliation has established durable findings for:
