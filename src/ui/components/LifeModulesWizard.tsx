@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
 import type { CharacterDefinition, PendingLifeModuleAward } from '../../domain/character/model'
 import { APP_VERSION } from '../../appMetadata'
 import { LIFE_MODULE_WIZARD_STEPS, lifeModuleStagePresentation, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
@@ -38,16 +38,17 @@ export function LifeModuleProgress({ phase }: { phase: string }) {
   const current = lifeModuleWizardStepIndex(phase)
   return <nav className="life-progress" aria-label="Life Modules progress">
     <ol>{LIFE_MODULE_WIZARD_STEPS.map((step, index) => <li key={step.id} className={index < current ? 'complete' : index === current ? 'current' : ''} aria-current={index === current ? 'step' : undefined}>
-      <span>{index < current ? '✓' : index + 1}</span>
+      <span aria-hidden="true">{index < current ? '✓' : index + 1}</span>
+      <span className="sr-only">{index < current ? 'Complete: ' : index === current ? 'Current stage: ' : 'Upcoming stage: '}</span>
       <div><strong>{step.label}</strong>{step.detail && <small>{step.detail}</small>}</div>
     </li>)}</ol>
   </nav>
 }
 
-export function LifeModuleStageHeading({ phase }: { phase: string }) {
+export function LifeModuleStageHeading({ phase, headingRef }: { phase: string; headingRef?: Ref<HTMLHeadingElement> }) {
   const presentation = lifeModuleStagePresentation(phase)
   return <header className="life-stage-heading">
-    <h2>{presentation.title}</h2>
+    <h2 id="life-stage-heading" ref={headingRef} tabIndex={-1}>{presentation.title}</h2>
     <p>{presentation.instruction}</p>
   </header>
 }

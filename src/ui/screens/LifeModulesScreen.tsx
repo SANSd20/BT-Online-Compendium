@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
@@ -51,6 +51,7 @@ const EMPTY_EQUIPMENT_DRAFT: EquipmentDraft = {
 const EQUIPMENT_RATINGS: EquipmentRatingCode[] = ['A', 'B', 'C', 'D', 'E', 'F']
 
 export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
+  const stageHeadingRef = useRef<HTMLHeadingElement>(null)
   const [name, setName] = useState('')
   const [startingXp, setStartingXp] = useState(5000)
   const [stage0AffiliationContext, setStage0AffiliationContext] = useState('')
@@ -109,6 +110,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   }
 
   const state = character?.creation.lifeModules
+  useEffect(() => {
+    if (character && state?.phase) stageHeadingRef.current?.focus()
+  }, [character, state?.phase])
   const genericPendingAwards = state ? genericPendingAwardsForPhase(state.phase, state.pendingAwards) : []
   const stageExistingSlotAwards = stageModulePreviewId && character
     ? genericPendingAwards.filter((pending) => pendingAwardSupportsSlot(pending, character))
@@ -176,7 +180,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
 
   function renderStageChoiceSlots(stageName: string, success: string) {
     const moduleName = stageModuleBasePreview?.lifeModuleHistory.at(-1)?.displayName ?? stageModulePreviewId
-    return <section className="stage-choice-slots" aria-label={`Pending choices from ${moduleName}`}>
+    return <section className="stage-choice-slots" aria-label={`Pending choices from ${moduleName}`} aria-describedby="stage-choice-help">
       {stageExistingSlotAwards.length > 0 && <section className="existing-pending-choices" aria-label="Existing pending choices">
         <h3>Existing pending choices</h3>
         <p>Fill these earlier required slots as well as the selected module’s slots. Nothing is committed until Continue.</p>
@@ -188,12 +192,13 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
         {renderPendingAwardRows(stageExistingFallbackAwards)}
       </section>}
       <h3>Pending choices from {moduleName}</h3>
-      <p>Fill every slot below. These selections and the module remain uncommitted until Continue.</p>
+      <p id="stage-choice-help">Fill every slot below. These selections and the module remain uncommitted until Continue.</p>
       {stageModulePendingAwards.map((pending) => renderStageChoiceAward(pending, stageModulePendingAwards, stageModulePreview?.character ?? stageModuleBasePreview ?? character!))}
       {stageModulePreview?.error && <p className="notice">{stageModulePreview.error}</p>}
       <div className="life-action">
         <p className="notice">Previewing this {stageName} module and filled choice slots. Continue commits them together.</p>
-        <button className="button" type="button" disabled={!stageSlotContinueEnabled(stageModulePreview, stageExistingFallbackAwards)} onClick={() => commitStageModuleChoices(success)}>Continue</button>
+        <button className="button" type="button" aria-label={`Continue with ${moduleName}`} aria-describedby="stage-choice-continue-help" disabled={!stageSlotContinueEnabled(stageModulePreview, stageExistingFallbackAwards)} onClick={() => commitStageModuleChoices(success)}>Continue</button>
+        <span id="stage-choice-continue-help" className="sr-only">Continue commits the selected module and all completed choice slots.</span>
       </div>
     </section>
   }
@@ -213,20 +218,22 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             const relatedSiblingValues = relatedStageChoiceSlotValues(pending, siblingAwards, stageChoiceSlotValues)
             const options = filterSiblingDestinationOptions(unfilteredOptions, values, index, relatedSiblingValues)
             const unsupported = value.targetType ? pendingAwardUnsupportedMessage(optionPending, options) : null
+            const slotLabel = stageChoiceSlotLabel(pending, index)
+            const slotId = `${pending.id.replace(/[^a-zA-Z0-9_-]/g, '-')}-${index}`
             return <div className="stage-choice-slot" key={`${pending.id}/${index}`}>
-              <strong>{stageChoiceSlotLabel(pending, index)}</strong>
-              <span>{pending.allocationMode === 'pool' ? 'Choose a legal destination and XP amount.' : `${signed(pending.xpPerGrant)} XP`}</span>
-              {pending.kind === 'flexible-xp' && <label>Target type
-                <select value={value.targetType} onChange={(event) => updateStageChoiceSlot(pending, index, { targetType: event.target.value as StageChoiceSlotValue['targetType'], targetId: '', parameter: '', displayName: '' })}>
+              <strong id={`${slotId}-label`}>{slotLabel}</strong>
+              <span id={`${slotId}-help`}>{pending.allocationMode === 'pool' ? 'Choose a legal destination and XP amount.' : `${signed(pending.xpPerGrant)} XP`}</span>
+              {pending.kind === 'flexible-xp' && <label htmlFor={`${slotId}-type`}>Target type
+                <select id={`${slotId}-type`} aria-describedby={`${slotId}-label ${slotId}-help`} value={value.targetType} onChange={(event) => updateStageChoiceSlot(pending, index, { targetType: event.target.value as StageChoiceSlotValue['targetType'], targetId: '', parameter: '', displayName: '' })}>
                   <option value="">Choose a target type…</option>
                   {pending.allowedTargetTypes.map((type) => <option key={type} value={type}>{type}</option>)}
                 </select>
               </label>}
-              {pending.allocationMode === 'pool' && <label>XP
-                <input type="number" min="1" max={pending.remainingXp} step="1" value={value.xpAmount} onChange={(event) => updateStageChoiceSlot(pending, index, { xpAmount: Number(event.target.value) })} />
+              {pending.allocationMode === 'pool' && <label htmlFor={`${slotId}-xp`}>XP
+                <input id={`${slotId}-xp`} type="number" min="1" max={pending.remainingXp} step="1" aria-describedby={`${slotId}-label ${slotId}-help`} value={value.xpAmount} onChange={(event) => updateStageChoiceSlot(pending, index, { xpAmount: Number(event.target.value) })} />
               </label>}
-              {options.length > 0 && <label>{pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Destination'}
-                <select value={optionValue(value)} onChange={(event) => {
+              {options.length > 0 && <label htmlFor={`${slotId}-destination`}>{pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Destination'}
+                <select id={`${slotId}-destination`} aria-describedby={`${slotId}-label ${slotId}-help`} value={optionValue(value)} onChange={(event) => {
                   const option = options.find((candidate) => candidate.value === event.target.value)
                   if (option) updateStageChoiceSlot(pending, index, optionDraft(option, value.xpAmount))
                   else updateStageChoiceSlot(pending, index, { targetId: '', parameter: '', displayName: '' })
@@ -356,8 +363,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             </>}
           >
 
-          <section className="life-stage-panel">
-            <LifeModuleStageHeading phase={state.phase} />
+          <section className="life-stage-panel" aria-labelledby="life-stage-heading">
+            <LifeModuleStageHeading phase={state.phase} headingRef={stageHeadingRef} />
             {(state.phase === 'stage-0-universal' || state.phase === 'stage-0-affiliation') && (
               <Stage0WizardStep
                 phase={state.phase}
