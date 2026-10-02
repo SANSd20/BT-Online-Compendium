@@ -14,6 +14,7 @@ export type StageChoiceSlotValues = Record<string, StageChoiceSlotValue[]>
 
 export interface StageChoiceSlotPreview {
   character: CharacterDefinition
+  existingPendingAwards: PendingLifeModuleAward[]
   pendingAwards: PendingLifeModuleAward[]
   complete: boolean
   error: string | null
@@ -81,12 +82,29 @@ export function previewStageModuleChoiceSlots(
   values: StageChoiceSlotValues,
 ): StageChoiceSlotPreview | null {
   if (!moduleId) return null
+  const initialExistingAwards = character.creation.lifeModules!.pendingAwards.map((entry) => structuredClone(entry))
+  const existingAwardIds = new Set(initialExistingAwards.map((entry) => entry.id))
   let preview = applySupportedStageModule(character, moduleId)
+  const existingPending = () => preview.creation.lifeModules!.pendingAwards.filter((entry) => existingAwardIds.has(entry.id))
   const modulePending = () => preview.creation.lifeModules!.pendingAwards.filter((entry) => entry.moduleId === moduleId)
-  const initialAwards = modulePending().map((entry) => structuredClone(entry))
 
   try {
-    for (const pending of initialAwards) {
+    for (const pending of initialExistingAwards) {
+      for (const value of values[pending.awardId] ?? []) {
+        if (!slotValueComplete(value)) continue
+        const current = existingPending().find((entry) => entry.id === pending.id)
+        if (!current) throw new Error(`${pending.description} has more filled slots than required.`)
+        preview = resolvePendingLifeModuleAward(
+          preview,
+          current.id,
+          toDestination(value),
+          current.allocationMode === 'pool' ? value.xpAmount : undefined,
+        )
+      }
+    }
+
+    const initialModuleAwards = modulePending().map((entry) => structuredClone(entry))
+    for (const pending of initialModuleAwards) {
       for (const value of values[pending.awardId] ?? []) {
         if (!slotValueComplete(value)) continue
         const current = modulePending().find((entry) => entry.awardId === pending.awardId)
@@ -99,10 +117,17 @@ export function previewStageModuleChoiceSlots(
         )
       }
     }
-    return { character: preview, pendingAwards: modulePending(), complete: modulePending().length === 0, error: null }
+    return {
+      character: preview,
+      existingPendingAwards: existingPending(),
+      pendingAwards: modulePending(),
+      complete: existingPending().length === 0 && modulePending().length === 0,
+      error: null,
+    }
   } catch (error) {
     return {
       character: preview,
+      existingPendingAwards: existingPending(),
       pendingAwards: modulePending(),
       complete: false,
       error: error instanceof Error ? error.message : 'The selected choice slots are invalid.',

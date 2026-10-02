@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
-import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
+import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { previewSupportedStageModule } from './stageModulePreviewModel'
 import { filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
 
@@ -156,7 +156,7 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     expect(filterSiblingDestinationOptions(options, [], 0, related).map((entry) => entry.value)).toEqual(['skill.interest/Engineering'])
   })
 
-  it('keeps an earlier pending choice separate and gates Continue until it is resolved', () => {
+  it('keeps an earlier pending choice local and commits it with the selected module clone', () => {
     let character = createLifeModuleCharacter('Existing pending choice')
     character = applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
     character = applyCapellanCommonality(character, 'Russian')
@@ -166,17 +166,28 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
       'blue-collar.interests': [value('skill', 'skill.interest', 'Interest/History', 5, 'History'), value('skill', 'skill.interest', 'Interest/Engineering', 5, 'Engineering')],
       'blue-collar.flexible': [value('attribute', 'STR', 'STR', 10), value('attribute', 'BOD', 'BOD', 10), value('attribute', 'DEX', 'DEX', 10), value('attribute', 'RFL', 'RFL', 10)],
     }
-    const preview = previewStageModuleChoiceSlots(character, BLUE_COLLAR_ID, keyedValues(character, BLUE_COLLAR_ID, byAward))!
+    const committed = JSON.stringify(character)
+    const moduleValues = keyedValues(character, BLUE_COLLAR_ID, byAward)
+    const preview = previewStageModuleChoiceSlots(character, BLUE_COLLAR_ID, moduleValues)!
 
-    expect(preview.complete).toBe(true)
+    expect(preview.complete).toBe(false)
+    expect(preview.existingPendingAwards.map((entry) => entry.id)).toContain(existing.id)
     expect(preview.character.lifeModuleHistory.at(-1)?.moduleId).toBe(BLUE_COLLAR_ID)
     expect(stageSlotContinueEnabled(preview, [existing])).toBe(false)
+    expect(JSON.stringify(character)).toBe(committed)
 
-    const resolvedCharacter = resolvePendingLifeModuleAward(character, existing.id, {
-      type: 'skill', targetId: 'skill.language', displayName: 'Language/French', parameter: { kind: 'subskill', value: 'French' },
-    })
-    const refreshed = previewStageModuleChoiceSlots(resolvedCharacter, BLUE_COLLAR_ID, keyedValues(resolvedCharacter, BLUE_COLLAR_ID, byAward))!
-    expect(refreshed.character.lifeModuleHistory.at(-1)?.moduleId).toBe(BLUE_COLLAR_ID)
-    expect(stageSlotContinueEnabled(refreshed, [])).toBe(true)
+    const completed = previewStageModuleChoiceSlots(character, BLUE_COLLAR_ID, {
+      ...moduleValues,
+      [existing.awardId]: [value('skill', 'skill.language', 'Language/French', 5, 'French')],
+    })!
+    expect(completed.existingPendingAwards).toEqual([])
+    expect(completed.pendingAwards).toEqual([])
+    expect(completed.complete).toBe(true)
+    expect(completed.character.creation.lifeModules!.resolvedAwards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ awardId: existing.awardId, destination: expect.objectContaining({ displayName: 'Language/French' }) }),
+    ]))
+    expect(completed.character.lifeModuleHistory.at(-1)?.moduleId).toBe(BLUE_COLLAR_ID)
+    expect(stageSlotContinueEnabled(completed, [])).toBe(true)
+    expect(JSON.stringify(character)).toBe(committed)
   })
 })

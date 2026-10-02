@@ -261,6 +261,8 @@ Alpha Slice 47 fixes the combined-workflow visibility gap from Slice 46. If comm
 
 Alpha Slice 48 improves flexible-XP slot usability without changing rules. Each flexible pool reports assigned and remaining XP live, or its over-limit amount. Known Attribute, Trait, Skill, subskill, and language destinations selected in one slot are filtered from sibling slots in that same award group, remain visible in their own slot, and become available again when changed or cleared. Filtering does not cross award groups. Selected-module preview, existing pending choices, Continue gating and commit behavior, committed-only save/export, Stage 0 progressive preview, Capellan theming, persisted data, and the 84-item equipment catalog remain unchanged; no migration is required.
 
+Alpha Slice 49 converts supported existing pending awards displayed inside an active Stage 1–4 module workspace into local slot selections. The old per-grant Apply control is absent from this normal path. The module, earlier choices, and module-local slots are resolved on one clone through existing engine operations and replace committed state only through Continue after all are complete. Save/export therefore remain committed-only. The generic resolver remains available outside the slot transaction and for legacy or unsupported fallback awards. Rules, award values, XP accounting, progression, persistence, Stage 0, Capellan theming, Slice 48 filtering/progress, and the 84-item equipment catalog remain unchanged; no migration is required.
+
 ## Current audit checkpoint
 
 The Core + Companion character-system reconciliation has established durable findings for:

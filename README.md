@@ -4,7 +4,7 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 48 is implemented.** Version `0.1.0-alpha.48` makes flexible-XP slots show assigned and remaining XP live, with explicit over-limit wording when allocations exceed the pool. A destination selected in one slot is filtered from sibling slots in that award group, remains visible in its own slot, and returns when the original slot changes or clears. The selected-module preview, existing pending choices, disabled-until-complete Continue gate, and committed-only save/export behavior remain intact. No award values, XP accounting, rules, progression, persistence shape, or catalog data changed.
+**Alpha Slice 49 is implemented.** Version `0.1.0-alpha.49` converts supported existing pending choices inside an active Stage 1–4 module workspace into local required slots. Their selections remain uncommitted alongside the selected module’s slots, and the single Continue action commits the module and both choice sets together. The old per-grant Apply action remains only in the generic fallback resolver outside the normal slot transaction. Slice 48 flexible-XP progress and sibling filtering remain intact. No award values, XP accounting, rules, progression, persistence shape, or catalog data changed.
 
 All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit remains the evidence record; Slice 28 governs its conflicts without silently correcting Tanker, Elemental, or Scout values, adding `REF`, renaming stable IDs, or activating back-sheet combat fields. Point Buy, Life Modules, Final Touches, and the 84-item audited Core equipment catalog are unchanged.
 
@@ -71,13 +71,13 @@ npm run preview
 
 The repository's Pages **Source** setting must be **GitHub Actions**. The public site opens through a normal browser URL and requires neither a special platform login nor an application login. Character data still lives only in that browser; JSON export/import is the portability and backup mechanism.
 
-The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.48` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
+The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.49` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
 
-The collapsed-by-default public notice identifies version `0.1.0-alpha.48`; its expandable details retain browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
+The collapsed-by-default public notice identifies version `0.1.0-alpha.49`; its expandable details retain browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
 
 ## Current resume points
 
-Repository bootstrap and Alpha Slices 1–48 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, special platform login, or application account.
+Repository bootstrap and Alpha Slices 1–49 are complete. The implemented app is a static, local-first Public Alpha and requires no server, database, special platform login, or application account.
 
 The Core + Companion rules audit is in progress. Its next audit target is **Campaign / Rules Configuration reconciliation**, specifically the boundaries among durable character state, current campaign rules, creation-rules provenance, and per-character GM exceptions.
 

@@ -110,6 +110,10 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
 
   const state = character?.creation.lifeModules
   const genericPendingAwards = state ? genericPendingAwardsForPhase(state.phase, state.pendingAwards) : []
+  const stageExistingSlotAwards = stageModulePreviewId && character
+    ? genericPendingAwards.filter((pending) => pendingAwardSupportsSlot(pending, character))
+    : []
+  const stageExistingFallbackAwards = genericPendingAwards.filter((pending) => !stageExistingSlotAwards.some((candidate) => candidate.id === pending.id))
   const stagePresentation = state ? lifeModuleStagePresentation(state.phase) : null
   const stage0Preview = useMemo(() => character && state?.phase === 'stage-0-affiliation'
     ? previewStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage)
@@ -130,7 +134,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     ? stage0PreviewSelections
     : stageModulePreviewId ? [`Selected module: ${stageModulePreview?.character.lifeModuleHistory.at(-1)?.displayName ?? stageModulePreviewId}`] : []
   const previewState = activePreview?.creation.lifeModules
-  const visiblePendingAwards = [...genericPendingAwards, ...(stageModulePreview?.pendingAwards ?? [])]
+  const visiblePendingAwards = stageModulePreview
+    ? [...stageModulePreview.existingPendingAwards, ...stageModulePreview.pendingAwards]
+    : genericPendingAwards
   const validation = character ? validateCharacter(character) : null
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
   const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
@@ -161,7 +167,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   }
 
   function commitStageModuleChoices(success: string) {
-    if (!stageModulePreview || !stageSlotContinueEnabled(stageModulePreview, genericPendingAwards)) {
+    if (!stageModulePreview || !stageSlotContinueEnabled(stageModulePreview, stageExistingFallbackAwards)) {
       setMessage(stageModulePreview?.error ?? 'Complete every required choice slot before continuing.')
       return
     }
@@ -171,26 +177,40 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   function renderStageChoiceSlots(stageName: string, success: string) {
     const moduleName = stageModuleBasePreview?.lifeModuleHistory.at(-1)?.displayName ?? stageModulePreviewId
     return <section className="stage-choice-slots" aria-label={`Pending choices from ${moduleName}`}>
-      {genericPendingAwards.length > 0 && <section className="existing-pending-choices" aria-label="Existing pending choices">
+      {stageExistingSlotAwards.length > 0 && <section className="existing-pending-choices" aria-label="Existing pending choices">
         <h3>Existing pending choices</h3>
-        <p>Resolve these earlier choices as well as the selected module’s slots before continuing.</p>
-        {renderPendingAwardRows(genericPendingAwards)}
+        <p>Fill these earlier required slots as well as the selected module’s slots. Nothing is committed until Continue.</p>
+        {stageExistingSlotAwards.map((pending) => renderStageChoiceAward(pending, stageExistingSlotAwards, character!))}
+      </section>}
+      {stageExistingFallbackAwards.length > 0 && <section className="existing-pending-choices" aria-label="Fallback pending choices">
+        <h3>Fallback pending choices</h3>
+        <p>These legacy or unsupported awards cannot safely join the slot transaction and retain the generic resolver.</p>
+        {renderPendingAwardRows(stageExistingFallbackAwards)}
       </section>}
       <h3>Pending choices from {moduleName}</h3>
       <p>Fill every slot below. These selections and the module remain uncommitted until Continue.</p>
-      {stageModulePendingAwards.map((pending) => {
-        const values = stageChoiceSlotValues[pending.awardId] ?? []
-        const count = stageChoiceSlotCount(pending, stageChoiceSlotValues)
-        const poolProgress = pending.allocationMode === 'pool' ? stageChoicePoolProgress(pending, values) : null
-        return <div className="stage-choice-award" key={pending.id}>
+      {stageModulePendingAwards.map((pending) => renderStageChoiceAward(pending, stageModulePendingAwards, stageModulePreview?.character ?? stageModuleBasePreview ?? character!))}
+      {stageModulePreview?.error && <p className="notice">{stageModulePreview.error}</p>}
+      <div className="life-action">
+        <p className="notice">Previewing this {stageName} module and filled choice slots. Continue commits them together.</p>
+        <button className="button" type="button" disabled={!stageSlotContinueEnabled(stageModulePreview, stageExistingFallbackAwards)} onClick={() => commitStageModuleChoices(success)}>Continue</button>
+      </div>
+    </section>
+  }
+
+  function renderStageChoiceAward(pending: PendingLifeModuleAward, siblingAwards: PendingLifeModuleAward[], optionCharacter: CharacterDefinition) {
+    const values = stageChoiceSlotValues[pending.awardId] ?? []
+    const count = stageChoiceSlotCount(pending, stageChoiceSlotValues)
+    const poolProgress = pending.allocationMode === 'pool' ? stageChoicePoolProgress(pending, values) : null
+    return <div className="stage-choice-award" key={pending.id}>
           <p><strong>{pending.description}</strong> · {poolProgress ? stageChoicePoolProgressLabel(poolProgress) : `${count} separate slot${count === 1 ? '' : 's'} · ${signed(pending.xpPerGrant)} XP each`}</p>
           {Array.from({ length: count }, (_, index) => {
             const value = { ...emptyStageChoiceSlot(pending), ...values[index] }
             const optionPending = pending.kind === 'flexible-xp' && value.targetType
               ? { ...pending, allowedTargetTypes: [value.targetType] }
               : pending
-            const unfilteredOptions = pending.kind === 'flexible-xp' && !value.targetType ? [] : pendingAwardOptions(optionPending, stageModulePreview?.character ?? stageModuleBasePreview ?? character!)
-            const relatedSiblingValues = relatedStageChoiceSlotValues(pending, stageModulePendingAwards, stageChoiceSlotValues)
+            const unfilteredOptions = pending.kind === 'flexible-xp' && !value.targetType ? [] : pendingAwardOptions(optionPending, optionCharacter)
+            const relatedSiblingValues = relatedStageChoiceSlotValues(pending, siblingAwards, stageChoiceSlotValues)
             const options = filterSiblingDestinationOptions(unfilteredOptions, values, index, relatedSiblingValues)
             const unsupported = value.targetType ? pendingAwardUnsupportedMessage(optionPending, options) : null
             return <div className="stage-choice-slot" key={`${pending.id}/${index}`}>
@@ -224,13 +244,6 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {values.length > 1 && <button className="button secondary" type="button" onClick={() => setStageChoiceSlotValues((current) => ({ ...current, [pending.awardId]: current[pending.awardId].slice(0, -1) }))}>Remove last slot</button>}
           </div>}
         </div>
-      })}
-      {stageModulePreview?.error && <p className="notice">{stageModulePreview.error}</p>}
-      <div className="life-action">
-        <p className="notice">Previewing this {stageName} module and filled choice slots. Continue commits them together.</p>
-        <button className="button" type="button" disabled={!stageSlotContinueEnabled(stageModulePreview, genericPendingAwards)} onClick={() => commitStageModuleChoices(success)}>Continue</button>
-      </div>
-    </section>
   }
 
   function renderPendingAwardRows(pendingAwards: PendingLifeModuleAward[]) {
@@ -627,6 +640,11 @@ function optionDraft(option: PendingAwardOption, xpAmount: number): ResolutionDr
 function optionValue(draft: Pick<StageChoiceSlotValue, 'targetType' | 'targetId' | 'parameter'>): string {
   if (!draft.targetId) return ''
   return draft.targetType === 'skill' ? `${draft.targetId}/${draft.parameter}` : draft.targetId
+}
+
+function pendingAwardSupportsSlot(pending: PendingLifeModuleAward, character: CharacterDefinition): boolean {
+  if (pending.kind !== 'flexible-xp') return pendingAwardOptions(pending, character).length > 0
+  return pending.allowedTargetTypes.some((targetType) => pendingAwardOptions({ ...pending, allowedTargetTypes: [targetType] }, character).length > 0)
 }
 
 function stageChoiceSlotLabel(pending: PendingLifeModuleAward, index: number): string {
