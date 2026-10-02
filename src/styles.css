@@ -191,6 +191,42 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .life-modules-page.capellan-theme .stage0-secondary-action select { border-color: #4c9b7a; background: #0b3a2b; }
 .life-modules-page.capellan-theme .stage0-requirements { border-left-color: #713445; background: #4a202d; }
 .life-modules-page.capellan-theme .stage0-requirements.ready { border-left-color: #00a86b; color: #9ae3bb; background: #0b3a2b; }
+.life-modules-page.davion-theme {
+  --panel: #202b22;
+  --panel-light: #2b3829;
+  --line: #687962;
+  --muted: #a7c979;
+  --amber: #d7b66a;
+  --amber-dark: #202b22;
+  --success: #a7c979;
+}
+.life-modules-page.davion-theme .life-dashboard { padding: 12px; border: 1px solid #687962; background: linear-gradient(145deg, #202b22, #2b3829); }
+.life-modules-page.davion-theme .life-progress,
+.life-modules-page.davion-theme .life-summary-xp,
+.life-modules-page.davion-theme .life-review-summary { background: #687962; }
+.life-modules-page.davion-theme .life-progress li,
+.life-modules-page.davion-theme .life-summary,
+.life-modules-page.davion-theme .life-stage-panel,
+.life-modules-page.davion-theme .life-dashboard-details { border-color: #687962; background: #202b22; }
+.life-modules-page.davion-theme .life-progress li.complete,
+.life-modules-page.davion-theme .life-summary-xp div,
+.life-modules-page.davion-theme .life-stage-status section,
+.life-modules-page.davion-theme .life-review-summary > div,
+.life-modules-page.davion-theme .life-review-summary li,
+.life-modules-page.davion-theme .stage0-package-section { background: #2b3829; }
+.life-modules-page.davion-theme .life-progress li.current { color: #fff; background: #202b22; box-shadow: inset 0 -3px 0 #d7b66a; }
+.life-modules-page.davion-theme .life-summary-preview-status,
+.life-modules-page.davion-theme .stage0-package-section.current { border-color: #d7b66a; background: #2b3829; }
+.life-modules-page.davion-theme .life-summary .preview-row,
+.life-modules-page.davion-theme .stage0-requirements.ready { color: #a7c979; }
+.life-modules-page.davion-theme .life-summary .preview-row strong,
+.life-modules-page.davion-theme .life-summary-preview-status > strong { color: #d7b66a; }
+.life-modules-page.davion-theme .stage0-choice-grid select,
+.life-modules-page.davion-theme .stage0-secondary-action select { border-color: #687962; background: #202b22; }
+.goal-contributions { padding: 9px 12px; border-left: 3px solid var(--amber); color: var(--muted); background: color-mix(in srgb, var(--panel) 84%, var(--amber)); font-size: .78rem; }
+.goal-review { margin: 18px 0; padding: 14px; border: 1px solid var(--amber); background: color-mix(in srgb, var(--panel) 88%, var(--amber)); }
+.goal-satisfied strong { color: var(--success); }
+.goal-unmet strong { color: var(--amber); }
 .life-modules-page > .hero.compact { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 4px 24px; padding-block: 18px; }
 .life-modules-page > .hero.compact h1 { margin: 0; }
 .life-modules-page > .hero.compact > p:last-child { grid-column: 1 / -1; max-width: 100ch; margin: 4px 0 0; font-size: .82rem; }

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { CAPELLAN_COMMONALITY_ID, UNIVERSAL_STAGE_0_ID } from './catalog'
+import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './catalog'
 import {
   CAPELLAN_COMMONALITY_CONTEXT,
+  FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT,
   getLifeModuleLanguageSelectorOptions,
   resolveLifeModuleAffiliationContext,
   SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS,
@@ -14,8 +15,8 @@ describe('Life Module affiliation framework', () => {
     expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.map((entry) => entry.id)).not.toContain(UNIVERSAL_STAGE_0_ID)
   })
 
-  it('centralizes only the current Capellan/Commonality context', () => {
-    expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS).toEqual([CAPELLAN_COMMONALITY_CONTEXT])
+  it('centralizes the supported Capellan and Federated Suns contexts', () => {
+    expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS).toEqual([CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT])
     expect(CAPELLAN_COMMONALITY_CONTEXT).toMatchObject({
       id: CAPELLAN_COMMONALITY_ID,
       affiliationId: 'affiliation.capellan-confederation',
@@ -31,6 +32,8 @@ describe('Life Module affiliation framework', () => {
     expect(getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector)).toEqual([
       'Russian', 'Cantonese', 'Vietnamese', 'English',
     ])
+    expect(FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT).toMatchObject({ id: FEDERATED_SUNS_CRUCIS_MARCH_ID, affiliationId: 'affiliation.federated-suns', subAffiliationName: 'Crucis March' })
+    expect(getLifeModuleLanguageSelectorOptions(FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.affiliationLanguageSelector)).toEqual(['English', 'French', 'German', 'Hindi', 'Russian'])
   })
 
   it('marks unknown affiliation contexts deferred instead of inventing choices', () => {

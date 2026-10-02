@@ -1,8 +1,8 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
-import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
 
-export { CAPELLAN_COMMONALITY_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
+export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
 
 export const LIFE_MODULE_RULES_SOURCE: SourceCitation = {
   sourceId: 'atow-core-corrected-third',
@@ -86,6 +86,31 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       'Civilian Job Stage 4 may replace Stage 2 and advances the character immediately to age 18.',
       'Military School Stage 2 and all Stage 3 modules require Citizenship.',
     ],
+  },
+  {
+    id: FEDERATED_SUNS_CRUCIS_MARCH_ID,
+    displayName: 'Federated Suns / Crucis March',
+    stage: 0,
+    kind: 'affiliation',
+    source: FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.source,
+    costXp: 150,
+    primaryLanguage: FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.primaryLanguage,
+    secondaryLanguages: [...FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.secondaryLanguages],
+    prerequisites: [{ id: 'fedsuns.natural-aptitude.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'Federated Suns Natural Aptitude choice: INT 4+' }],
+    awards: [
+      { id: 'fedsuns.trait.natural-aptitude', kind: 'choice-package', description: 'Choose Natural Aptitude/Protocol or Natural Aptitude/Strategy.', options: [
+        [trait('trait.natural-aptitude', 'Natural Aptitude/Protocol', { skill: 'Protocol' })],
+        [trait('trait.natural-aptitude', 'Natural Aptitude/Strategy', { skill: 'Strategy' })],
+      ] },
+      fixed('fedsuns.skill.protocol', 10, skill('skill.protocol', 'Protocol/FedSuns', 'FedSuns')),
+      fixed('crucis.attribute.wil', 50, attribute('WIL')),
+      fixed('crucis.attribute.edg', -50, attribute('EDG')),
+      { id: 'crucis.skill.art', kind: 'any-skill-choice', xp: 10, skillId: 'skill.art', displayName: 'Art/Any', count: 1 },
+      fixed('crucis.skill.interest-history', 15, skill('skill.interest', 'Interest/FedSuns History', 'FedSuns History')),
+      fixed('crucis.skill.protocol', 15, skill('skill.protocol', 'Protocol/FedSuns', 'FedSuns')),
+    ],
+    notes: ['Natural Aptitude requires INT 4 at final validation.'],
+    deferredRules: [],
   },
   {
     id: BLUE_COLLAR_ID,

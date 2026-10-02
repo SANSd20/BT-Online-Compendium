@@ -1,6 +1,7 @@
 import type { ReactNode, Ref } from 'react'
 import type { CharacterDefinition, PendingLifeModuleAward } from '../../domain/character/model'
 import { APP_VERSION } from '../../appMetadata'
+import { masterSkillFieldGoalStatus } from '../../domain/skillFields/goals'
 import { LIFE_MODULE_WIZARD_STEPS, lifeModuleStagePresentation, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
 
 export function LifeModulesVersionBadge() {
@@ -76,6 +77,7 @@ export function LifeModuleCharacterSummary({ character, previewCharacter, previe
   const previewPendingAwards = previewCharacter
     ? effectiveState.pendingAwards
     : []
+  const goalStatus = masterSkillFieldGoalStatus(effectiveCharacter)
   return <aside className="life-summary" aria-label="Current character summary">
     <p className="eyebrow">Character summary</p>
     <h2>{character.displayName || 'Unnamed character'}</h2>
@@ -90,6 +92,7 @@ export function LifeModuleCharacterSummary({ character, previewCharacter, previe
       <div><dt>Net stat XP</dt><dd>{effectiveCharacter.xp.creation.allocated.toLocaleString()}</dd></div>
       <div><dt>Pending choices</dt><dd>{effectiveState.pendingAwards.length}</dd></div>
     </dl>
+    {goalStatus && <details open className="life-summary-goal"><summary>{goalStatus.displayName} goal · {goalStatus.satisfied} / {goalStatus.total}</summary><ul>{goalStatus.requirements.map((entry) => <li key={entry.id} className={entry.satisfied ? 'goal-satisfied' : 'goal-unmet'}><span>{entry.label}</span><strong>{entry.satisfied ? 'Satisfied' : entry.current}</strong></li>)}</ul><p className="scope-note">Guidance only. The selected Field is not acquired until a legal Stage 3 purchase grants it.</p></details>}
     <details open className="life-summary-attributes"><summary>Attributes</summary><ul>{effectiveCharacter.attributes.map((entry) => <li key={entry.attributeId} className={isPreviewAttribute(entry.attributeId, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.attributeId}</span><strong>{entry.accumulatedXp.toLocaleString()}</strong></li>)}</ul></details>
     <details open><summary>Traits ({effectiveCharacter.traits.length})</summary><ul>{effectiveCharacter.traits.map((entry, index) => <li key={`${entry.traitId}-${index}`} className={isPreviewTrait(entry.traitId, entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.traitId}</span><strong>{entry.active ? `${entry.attainedTp ?? 0} TP · ${entry.accumulatedXp.toLocaleString()} XP` : entry.accumulatedXp !== 0 ? `pending · ${entry.accumulatedXp.toLocaleString()} XP` : 'pending'}</strong></li>)}</ul></details>
     <details open><summary>Skills ({effectiveCharacter.skills.length})</summary><ul>{effectiveCharacter.skills.map((entry, index) => <li key={`${entry.address.skillId}-${index}`} className={isPreviewSkill(entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.address.skillId}</span><strong>{entry.accumulatedXp.toLocaleString()} XP</strong></li>)}</ul></details>

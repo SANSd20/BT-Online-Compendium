@@ -16,8 +16,27 @@ const skill = (skillId: string, displayName: string, parameter?: string): Extrac
 
 export const TECHNICIAN_CIVILIAN_FIELD_ID = 'field.technician-civilian'
 export const TECHNICIAN_VEHICLE_FIELD_ID = 'field.technician-vehicle'
+export const BASIC_TRAINING_FIELD_ID = 'field.basic-training'
 
 export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
+  {
+    id: BASIC_TRAINING_FIELD_ID,
+    displayName: 'Basic Training',
+    category: 'basic',
+    source: { ...source('skill-field-basic-training'), page: 94 },
+    prerequisites: [
+      { id: 'basic-training.rank', kind: 'trait', traitId: 'trait.rank', description: 'Rank Trait' },
+      { id: 'basic-training.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 3, description: 'INT 3+' },
+      { id: 'basic-training.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 3, description: 'WIL 3+' },
+    ],
+    componentSkills: [
+      skill('skill.career', 'Career/Soldier', 'Soldier'),
+      skill('skill.martial-arts', 'Martial Arts'),
+      skill('skill.medtech', 'MedTech/General', 'General'),
+      skill('skill.navigation', 'Navigation/Ground', 'Ground'),
+      skill('skill.small-arms', 'Small Arms'),
+    ],
+  },
   {
     id: TECHNICIAN_CIVILIAN_FIELD_ID,
     displayName: 'Technician/Civilian',

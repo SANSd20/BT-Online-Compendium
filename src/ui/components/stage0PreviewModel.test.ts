@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CAPELLAN_COMMONALITY_ID } from '../../domain/lifeModules/catalog'
+import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID } from '../../domain/lifeModules/catalog'
 import { createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { lifeModulesAffiliationTheme, previewStage0Affiliation } from './stage0PreviewModel'
 
@@ -30,6 +30,16 @@ describe('Stage 0 preview model', () => {
     expect(lifeModulesAffiliationTheme(CAPELLAN_COMMONALITY_ID)).toBe('capellan-theme')
     expect(lifeModulesAffiliationTheme('')).toBe('')
     expect(lifeModulesAffiliationTheme('stage0.some-future-context')).toBe('')
+  })
+
+  it('activates and previews the source-backed Davion context without leaking the Capellan theme', () => {
+    const character = createLifeModuleCharacter('Davion preview')
+    const preview = previewStage0Affiliation(character, FEDERATED_SUNS_CRUCIS_MARCH_ID, '', '')
+    expect(lifeModulesAffiliationTheme(FEDERATED_SUNS_CRUCIS_MARCH_ID)).toBe('davion-theme')
+    expect(lifeModulesAffiliationTheme(CAPELLAN_COMMONALITY_ID)).toBe('capellan-theme')
+    expect(preview?.attributes.find((entry) => entry.attributeId === 'WIL')?.accumulatedXp).toBe(150)
+    expect(preview?.skills.find((entry) => entry.displayName === 'Protocol/FedSuns')?.accumulatedXp).toBe(25)
+    expect(preview?.creation.lifeModules?.pendingAwards.map((entry) => entry.awardId)).toEqual(expect.arrayContaining(['fedsuns.trait.natural-aptitude', 'crucis.skill.art']))
   })
 
   it('previews through the existing engine without mutating the committed character', () => {

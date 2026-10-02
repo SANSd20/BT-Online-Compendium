@@ -13,6 +13,7 @@ import {
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
   CAPELLAN_COMMONALITY_ID,
+  FEDERATED_SUNS_CRUCIS_MARCH_ID,
   getLifeModule,
   LIFE_MODULE_RULES_SOURCE,
   STAGE_2_BACK_WOODS_ID,
@@ -22,7 +23,7 @@ import {
 } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
-import { CAPELLAN_COMMONALITY_CONTEXT, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
 import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
@@ -78,7 +79,7 @@ export function applyUniversalStage0(
   }
   const language = affiliationLanguage.trim()
   if (!getLifeModuleLanguageSelectorOptions(resolution.context.affiliationLanguageSelector).includes(language)) {
-    throw new Error('Universal affiliation language must be a Capellan primary or secondary language in this Alpha catalog.')
+    throw new Error('Universal affiliation language must be a listed primary or secondary language for the selected affiliation context.')
   }
   const destination: ResolvedLifeModuleDestination = {
     type: 'skill', targetId: 'skill.language', displayName: `Language/${language}`,
@@ -101,11 +102,13 @@ export function applyStage0Affiliation(
   affiliationContextModuleId: string,
   affiliationLanguage: string,
   capellanSecondaryLanguage?: string,
+  davionNaturalAptitude?: 'Protocol' | 'Strategy',
+  davionArt?: string,
 ): CharacterDefinition {
-  return applyCapellanCommonality(
-    applyUniversalStage0(character, affiliationContextModuleId, affiliationLanguage),
-    capellanSecondaryLanguage,
-  )
+  const withUniversal = applyUniversalStage0(character, affiliationContextModuleId, affiliationLanguage)
+  return affiliationContextModuleId === FEDERATED_SUNS_CRUCIS_MARCH_ID
+    ? applyFederatedSunsCrucisMarch(withUniversal, davionNaturalAptitude, davionArt)
+    : applyCapellanCommonality(withUniversal, capellanSecondaryLanguage)
 }
 
 export function applyCapellanCommonality(character: CharacterDefinition, capellanSecondaryLanguage?: string): CharacterDefinition {
@@ -134,6 +137,48 @@ export function applyCapellanCommonality(character: CharacterDefinition, capella
   )
   nextState.phase = 'stage-1-selection'
   nextState.currentStage = 1
+  return next
+}
+
+export function applyFederatedSunsCrucisMarch(character: CharacterDefinition, naturalAptitude?: 'Protocol' | 'Strategy', art?: string): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-0-affiliation') throw new Error('The Stage 0 affiliation is not the current legal action.')
+  if (state.stage0AffiliationContext !== FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.id) throw new Error('The selected Stage 0 affiliation package must match the explicit Universal affiliation context.')
+  if (naturalAptitude !== 'Protocol' && naturalAptitude !== 'Strategy') throw new Error('Choose the published Federated Suns Natural Aptitude option.')
+  if (art !== 'Painting') throw new Error('Choose a supported Crucis March Art subskill.')
+  const published = getLifeModule(FEDERATED_SUNS_CRUCIS_MARCH_ID)
+  const module: LifeModuleDefinition = {
+    ...published,
+    awards: published.awards.flatMap((award): LifeModuleAward[] => {
+      if (award.id === 'fedsuns.trait.natural-aptitude') return [{ id: award.id, kind: 'fixed', xp: 100, destination: { type: 'trait', traitId: 'trait.natural-aptitude', displayName: `Natural Aptitude/${naturalAptitude}`, parameters: { skill: naturalAptitude } } }]
+      if (award.id === 'crucis.skill.art') return [{ id: award.id, kind: 'fixed', xp: 10, destination: { type: 'skill', address: { skillId: 'skill.art', parameter: { kind: 'subskill', value: art } }, displayName: `Art/${art}` } }]
+      return [award]
+    }),
+  }
+  const next = applyModule(character, module, {})
+  const nextState = requireLifeModules(next)
+  const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
+  if (!provenanceId) throw new Error('Affiliation provenance was not recorded.')
+  next.affiliations.push(
+    { affiliationId: FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.affiliationId, role: 'birth', provenanceId },
+    { affiliationId: FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.affiliationId, role: 'final', provenanceId },
+  )
+  nextState.phase = 'stage-1-selection'
+  nextState.currentStage = 1
+  return next
+}
+
+export function previewFederatedSunsCrucisMarch(character: CharacterDefinition): CharacterDefinition {
+  const preview = structuredClone(character)
+  requireLifeModules(preview).stage0AffiliationContext = FEDERATED_SUNS_CRUCIS_MARCH_ID
+  const published = getLifeModule(FEDERATED_SUNS_CRUCIS_MARCH_ID)
+  const fixedOnly = { ...published, awards: published.awards.filter((award) => award.kind === 'fixed') }
+  const next = applyModule(preview, fixedOnly, {})
+  const state = requireLifeModules(next)
+  state.pendingAwards.push(
+    { id: 'preview-fedsuns-natural-aptitude', moduleId: published.id, awardId: 'fedsuns.trait.natural-aptitude', kind: 'flexible-xp', description: 'Choose Natural Aptitude/Protocol or Natural Aptitude/Strategy.', xpPerGrant: 100, remainingGrants: 1, allocationMode: 'fixed-grants', allowedTargetTypes: ['trait'], source: { ...published.source } },
+    { id: 'preview-crucis-art', moduleId: published.id, awardId: 'crucis.skill.art', kind: 'any-skill-choice', description: 'Art/Any: choose 1 concrete subskill.', xpPerGrant: 10, remainingGrants: 1, allocationMode: 'fixed-grants', allowedTargetTypes: ['skill'], requiredSkillId: 'skill.art', source: { ...published.source } },
+  )
   return next
 }
 

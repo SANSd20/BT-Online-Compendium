@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
 import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
-import { applyAgitator, applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
+import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from './lifeModuleFinalReview'
 import { createPointBuyCharacter } from './pointBuyEngine'
 
@@ -85,7 +85,7 @@ describe('Life Module engine', () => {
     expect(character.creation.lifeModules?.affiliationLanguage).toBeUndefined()
     expect(character.skills.some((entry) => entry.displayName === 'Language/Mandarin Chinese')).toBe(false)
     expect(() => applyUniversalStage0(character, '', 'Mandarin Chinese')).toThrow('explicit Stage 0 affiliation context')
-    expect(() => applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, '')).toThrow('Capellan primary or secondary language')
+    expect(() => applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, '')).toThrow('listed primary or secondary language')
   })
 
   it('records Mandarin Chinese only after an explicit Capellan context choice', () => {
@@ -109,6 +109,18 @@ describe('Life Module engine', () => {
     expect(character.traits.find((entry) => entry.displayName === 'Compulsion/Paranoia')).toMatchObject({ accumulatedXp: -100, attainedTp: -1, active: true })
     expect(state.pendingAwards).toEqual(expect.arrayContaining([expect.objectContaining({ awardId: 'commonality.language.fedsuns', xpPerGrant: 5 })]))
     expect(character.affiliations.map((entry) => entry.role)).toEqual(['birth', 'final'])
+  })
+
+  it('applies Federated Suns / Crucis March only after explicit source-backed choices', () => {
+    const base = createLifeModuleCharacter('Davion')
+    const withUniversal = applyUniversalStage0(base, FEDERATED_SUNS_CRUCIS_MARCH_ID, 'English')
+    expect(() => applyFederatedSunsCrucisMarch(withUniversal)).toThrow('Natural Aptitude')
+    const character = applyFederatedSunsCrucisMarch(withUniversal, 'Strategy', 'Painting')
+    expect(character.creation.lifeModules).toMatchObject({ phase: 'stage-1-selection', moduleXp: { spent: 1000, remaining: 4000 } })
+    expect(character.affiliations).toEqual(expect.arrayContaining([expect.objectContaining({ affiliationId: 'affiliation.federated-suns', role: 'birth' })]))
+    expect(character.traits).toContainEqual(expect.objectContaining({ displayName: 'Natural Aptitude/Strategy', accumulatedXp: 100 }))
+    expect(character.skills).toContainEqual(expect.objectContaining({ displayName: 'Art/Painting', accumulatedXp: 10 }))
+    expect(character.skills).toContainEqual(expect.objectContaining({ displayName: 'Protocol/FedSuns', accumulatedXp: 25 }))
   })
 
   it('applies Blue Collar fixed awards and retains every unresolved choice', () => {

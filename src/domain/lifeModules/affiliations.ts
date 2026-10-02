@@ -2,11 +2,13 @@ import type { SourceCitation } from '../rules/model'
 
 export const UNIVERSAL_STAGE_0_ID = 'stage0.universal-fixed-xp'
 export const CAPELLAN_COMMONALITY_ID = 'stage0.capellan-confederation.capellan-commonality'
+export const FEDERATED_SUNS_CRUCIS_MARCH_ID = 'stage0.federated-suns.crucis-march'
 
 export type AffiliationLanguageSelectorGroupId =
   | 'affiliation-languages'
   | 'capellan-secondary'
   | 'federated-suns-languages'
+  | 'federated-suns-affiliation-languages'
 
 export type AffiliationContextSupport = 'supported' | 'deferred'
 
@@ -48,6 +50,7 @@ export const LIFE_MODULE_LANGUAGE_SELECTOR_GROUPS: Readonly<Record<AffiliationLa
   'affiliation-languages': ['Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English'],
   'capellan-secondary': ['Russian', 'Cantonese', 'Vietnamese', 'English'],
   'federated-suns-languages': ['English', 'French'],
+  'federated-suns-affiliation-languages': ['English', 'French', 'German', 'Hindi', 'Russian'],
 }
 
 export const UNIVERSAL_LIFE_MODULE_CONTEXT: UniversalLifeModuleContext = {
@@ -77,7 +80,25 @@ export const CAPELLAN_COMMONALITY_CONTEXT: LifeModuleAffiliationContext = {
   source: source(64, 'capellan-confederation-capellan-commonality'),
 }
 
-export const SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [CAPELLAN_COMMONALITY_CONTEXT]
+export const FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT: LifeModuleAffiliationContext = {
+  id: FEDERATED_SUNS_CRUCIS_MARCH_ID,
+  kind: 'affiliation',
+  displayName: 'Federated Suns / Crucis March',
+  isAffiliation: true,
+  support: 'supported',
+  affiliationId: 'affiliation.federated-suns',
+  affiliationName: 'Federated Suns',
+  subAffiliationName: 'Crucis March',
+  primaryLanguage: 'English',
+  secondaryLanguages: ['French', 'German', 'Hindi', 'Russian'],
+  affiliationLanguageSelector: 'federated-suns-affiliation-languages',
+  secondaryLanguageSelector: 'federated-suns-languages',
+  protocolContextLabel: 'FedSuns',
+  streetwiseContextLabel: 'FedSuns',
+  source: source(65, 'federated-suns-crucis-march'),
+}
+
+export const SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT]
 
 export type AffiliationContextResolution =
   | { support: 'supported'; context: LifeModuleAffiliationContext }

@@ -22,7 +22,7 @@ import type { ValidationIssue, ValidationResult } from './model'
 import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
-import { CAPELLAN_COMMONALITY_CONTEXT, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
+import { getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
 import {
   deriveAttributeLevel,
@@ -527,6 +527,10 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     issues.push(issue('life-modules.skill-fields.state.malformed', 'creation.lifeModules.selectedSkillFields', 'Durable Skill Field records are required.'))
     return
   }
+  if (state.masterSkillFieldGoalId) {
+    try { getSkillField(state.masterSkillFieldGoalId) }
+    catch { issues.push(issue('life-modules.skill-field-goal.unknown', 'creation.lifeModules.masterSkillFieldGoalId', 'Master Skill Field goal must reference a supported source-backed Field.')) }
+  }
   if (!Number.isInteger(starting) || starting <= 0 || !Number.isInteger(spent) || spent < 0 || !Number.isInteger(remaining) || remaining < 0) {
     issues.push(issue('life-modules.xp.valid', 'creation.lifeModules.moduleXp', 'Life Module XP values must be non-negative whole numbers with a positive starting pool.'))
   }
@@ -567,7 +571,8 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     issues.push(issue('life-modules.selection.balance', 'creation.lifeModules.selectedModuleIds', 'Selected module state does not match module history.'))
   }
   const hasUniversal = selectedIds.has('stage0.universal-fixed-xp')
-  const hasAffiliation = selectedIds.has(CAPELLAN_COMMONALITY_CONTEXT.id)
+  const affiliationModuleIds = character.lifeModuleHistory.filter((entry) => entry.stage === 0 && entry.moduleId !== 'stage0.universal-fixed-xp').map((entry) => entry.moduleId)
+  const hasAffiliation = affiliationModuleIds.length === 1
   const universalAffiliationResolution = state.resolvedAwards?.find((entry) => entry.moduleId === 'stage0.universal-fixed-xp' && entry.awardId === 'universal.language.affiliation')
   const universalAffiliationPending = state.pendingAwards?.some((entry) => entry.moduleId === 'stage0.universal-fixed-xp' && entry.awardId === 'universal.language.affiliation')
   const stage1Count = character.lifeModuleHistory.filter((entry) => entry.stage === 1).length
@@ -585,7 +590,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   )) {
     issues.push(issue('life-modules.stage-0.affiliation-context.required', 'creation.lifeModules.stage0AffiliationContext', 'Stage 0 Universal requires an explicit affiliation context and matching affiliation-language resolution.'))
   }
-  if (hasAffiliation && state.stage0AffiliationContext !== CAPELLAN_COMMONALITY_CONTEXT.id) {
+  if (hasAffiliation && state.stage0AffiliationContext !== affiliationModuleIds[0]) {
     issues.push(issue('life-modules.stage-0.affiliation-context.mismatch', 'creation.lifeModules.stage0AffiliationContext', 'The selected Stage 0 affiliation must match the explicit Universal affiliation context.'))
   }
   if (stage1Count !== 1) issues.push(issue('life-modules.stage-1.outstanding', 'lifeModuleHistory', 'Exactly one Stage 1 module is required.', { severity: stage1Count === 0 ? 'warning' : 'error' }))

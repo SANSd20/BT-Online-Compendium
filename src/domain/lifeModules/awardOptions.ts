@@ -12,6 +12,7 @@ const KNOWN_SUBSKILLS: Readonly<Record<string, readonly string[]>> = {
   'skill.survival': ['Badlands', 'Desert', 'Forest'],
   'skill.driving': ['Ground', 'Ground Car'],
   'skill.prestidigitation': ['Sleight of Hand'],
+  'skill.art': ['Painting'],
 }
 
 export function knownPendingChoiceValues(pending: Pick<PendingLifeModuleAward, 'choiceSource' | 'kind' | 'requiredSkillId'>): readonly string[] {

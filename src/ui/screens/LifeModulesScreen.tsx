@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, getLifeModule, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
+import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { applyStage0Affiliation, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
@@ -54,9 +55,12 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const stageHeadingRef = useRef<HTMLHeadingElement>(null)
   const [name, setName] = useState('')
   const [startingXp, setStartingXp] = useState(5000)
+  const [masterSkillFieldGoalId, setMasterSkillFieldGoalId] = useState('')
   const [stage0AffiliationContext, setStage0AffiliationContext] = useState('')
   const [affiliationLanguage, setAffiliationLanguage] = useState('')
   const [secondaryLanguage, setSecondaryLanguage] = useState('')
+  const [davionNaturalAptitude, setDavionNaturalAptitude] = useState('')
+  const [davionArt, setDavionArt] = useState('')
   const [stageModulePreviewId, setStageModulePreviewId] = useState<SupportedStageModuleId | ''>('')
   const [stageChoiceSlotValues, setStageChoiceSlotValues] = useState<StageChoiceSlotValues>({})
   const [character, setCharacter] = useState<CharacterDefinition | null>(null)
@@ -73,7 +77,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
 
   function start(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    operate(() => createLifeModuleCharacter(name, startingXp), 'Life Module draft created and saved locally.')
+    operate(() => setMasterSkillFieldGoal(createLifeModuleCharacter(name, startingXp), masterSkillFieldGoalId || null), 'Life Module draft created and saved locally.')
   }
 
   function operate(operation: () => CharacterDefinition, success: string, preserveStagePreview = false) {
@@ -120,8 +124,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const stageExistingFallbackAwards = genericPendingAwards.filter((pending) => !stageExistingSlotAwards.some((candidate) => candidate.id === pending.id))
   const stagePresentation = state ? lifeModuleStagePresentation(state.phase) : null
   const stage0Preview = useMemo(() => character && state?.phase === 'stage-0-affiliation'
-    ? previewStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage)
-    : null, [character, state?.phase, stage0AffiliationContext, affiliationLanguage, secondaryLanguage])
+    ? previewStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude, davionArt)
+    : null, [character, state?.phase, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude, davionArt])
   const stage0PreviewSelections = state?.phase === 'stage-0-affiliation' ? [
     ...(stage0AffiliationContext ? ['Affiliation context selected'] : []),
     ...(affiliationLanguage ? [`Affiliation language: ${affiliationLanguage}`] : []),
@@ -141,6 +145,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const visiblePendingAwards = stageModulePreview ? stageSlotPendingAwards(stageModulePreview) : genericPendingAwards
   const validation = character ? validateCharacter(character) : null
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
+  const goalStatus = character ? masterSkillFieldGoalStatus(character) : null
   const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
   const catalogItems = filterEquipmentCatalog({ search: catalogSearch, category: catalogCategory, sourceStatus: catalogSourceStatus })
   const accessProfile = character?.creation.finalTouches?.equipmentAccessProfile ?? { enabled: false, affiliationCategory: 'inner-sphere' as const, nativeAffiliationCode: '' }
@@ -327,6 +332,12 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     operate(() => setEquipmentAccessProfile(character, { ...accessProfile, ...patch }), 'Equipment affiliation access profile updated.')
   }
 
+  function goalGuidance(moduleId: string) {
+    if (!character || !goalStatus) return null
+    const contributions = lifeModuleGoalContributions(character, getLifeModule(moduleId))
+    return contributions.length > 0 ? <ul className="goal-contributions" aria-label={`${goalStatus.displayName} goal contributions`}>{contributions.map((entry) => <li key={entry}>{entry}</li>)}</ul> : null
+  }
+
   return (
     <main className={`creation-page life-modules-page ${lifeModulesAffiliationTheme(stage0AffiliationContext)}`.trim()}>
       <a className="back-link" href="#/">← Character Creator</a>
@@ -344,9 +355,14 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <input id="life-module-name" value={name} onChange={(event) => setName(event.target.value)} required />
             <label htmlFor="life-module-starting-xp">Starting XP</label>
             <input id="life-module-starting-xp" type="number" min="1" step="1" value={startingXp} onChange={(event) => setStartingXp(Number(event.target.value))} required />
+            <label htmlFor="life-module-field-goal">Master Skill Field goal</label>
+            <select id="life-module-field-goal" value={masterSkillFieldGoalId} onChange={(event) => setMasterSkillFieldGoalId(event.target.value)}>
+              <option value="">No goal</option>
+              {SUPPORTED_MASTER_SKILL_FIELD_GOALS.map((field) => <option key={field.id} value={field.id}>{field.displayName}</option>)}
+            </select>
             <button className="button" type="submit">Create Life Module draft</button>
           </form>
-          <p className="scope-note">The Core default is 5,000 XP. Any other positive whole-number allotment is recorded as GM-adjusted.</p>
+          <p className="scope-note">The Core default is 5,000 XP. The optional Field goal is guidance only: it grants no Field, awards, XP, or Stage 3 discount.</p>
         </section>
       ) : state ? (
         <>
@@ -369,17 +385,21 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 affiliationContext={stage0AffiliationContext}
                 affiliationLanguage={affiliationLanguage}
                 secondaryLanguage={secondaryLanguage}
-                onContextChange={(value) => { setStage0AffiliationContext(value); setAffiliationLanguage(''); setSecondaryLanguage('') }}
+                davionNaturalAptitude={davionNaturalAptitude}
+                davionArt={davionArt}
+                onContextChange={(value) => { setStage0AffiliationContext(value); setAffiliationLanguage(''); setSecondaryLanguage(''); setDavionNaturalAptitude(''); setDavionArt('') }}
                 onLanguageChange={setAffiliationLanguage}
                 onSecondaryLanguageChange={setSecondaryLanguage}
+                onDavionNaturalAptitudeChange={setDavionNaturalAptitude}
+                onDavionArtChange={setDavionArt}
                 onApplyUniversal={() => operate(() => applyUniversalStage0(character, stage0AffiliationContext, affiliationLanguage), 'Universal Stage 0 package applied with explicit affiliation context.')}
-                onApplyAffiliation={() => operate(() => applyStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage), secondaryLanguage ? 'Stage 0 affiliation package applied with explicit language choices.' : 'Stage 0 affiliation package applied; secondary-language award left pending.')}
+                onApplyAffiliation={() => operate(() => applyStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude ? davionNaturalAptitude as 'Protocol' | 'Strategy' : undefined, davionArt || undefined), 'Stage 0 affiliation package applied with explicit choices.')}
               />
             )}
             {state.phase === 'stage-1-selection' && (
               <><div className="stage-options">
-                <article className={stageModulePreviewId === BLUE_COLLAR_ID ? 'preview-selected' : ''}><h3>Blue Collar</h3><p>210 XP · fixed Attribute awards plus unresolved Career, Interest, and flexible awards.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === BLUE_COLLAR_ID} onClick={() => selectStageModule(BLUE_COLLAR_ID)}>Preview Blue Collar</button></article>
-                <article className={stageModulePreviewId === BACK_WOODS_ID ? 'preview-selected' : ''}><h3>Back Woods</h3><p>290 XP · fixed Attribute, Trait, and Skill awards; STR 4+ and BOD 5+ are checked for final validation.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === BACK_WOODS_ID} onClick={() => selectStageModule(BACK_WOODS_ID)}>Preview Back Woods</button></article>
+                <article className={stageModulePreviewId === BLUE_COLLAR_ID ? 'preview-selected' : ''}><h3>Blue Collar</h3><p>210 XP · fixed Attribute awards plus unresolved Career, Interest, and flexible awards.</p>{goalGuidance(BLUE_COLLAR_ID)}<button className="button" type="button" aria-pressed={stageModulePreviewId === BLUE_COLLAR_ID} onClick={() => selectStageModule(BLUE_COLLAR_ID)}>Preview Blue Collar</button></article>
+                <article className={stageModulePreviewId === BACK_WOODS_ID ? 'preview-selected' : ''}><h3>Back Woods</h3><p>290 XP · fixed Attribute, Trait, and Skill awards; STR 4+ and BOD 5+ are checked for final validation.</p>{goalGuidance(BACK_WOODS_ID)}<button className="button" type="button" aria-pressed={stageModulePreviewId === BACK_WOODS_ID} onClick={() => selectStageModule(BACK_WOODS_ID)}>Preview Back Woods</button></article>
               </div>{stageModulePreviewId && renderStageChoiceSlots('Early Childhood', 'Stage 1 module and choices committed.')}</>
             )}
             {state.phase === 'stage-1-resolution' && <p className="notice">Stage 1 is selected. Resolve every source-bound choice and flexible grant below before reaching an Alpha partial stop.</p>}
@@ -387,8 +407,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.phase === 'alpha-partial-stop' && <div className="life-action"><p className="notice">Stage 0 and Stage 1 are complete. This is a valid Alpha partial stop—not a finalized Beta 1 character.</p><button className="button" type="button" onClick={() => operate(() => continueToStage2(character), 'Stage 2 continuation opened.')}>Continue to Stage 2</button></div>}
             {state.phase === 'stage-2-selection' && (
               <><div className="stage-options">
-                <article className={stageModulePreviewId === STAGE_2_BACK_WOODS_ID ? 'preview-selected' : ''}><h3>Back Woods</h3><p>500 XP · fixed awards, Protocol/Affiliation, and a 125 XP flexible pool.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === STAGE_2_BACK_WOODS_ID} onClick={() => selectStageModule(STAGE_2_BACK_WOODS_ID)}>Preview Back Woods</button></article>
-                <article className={stageModulePreviewId === STAGE_2_HIGH_SCHOOL_ID ? 'preview-selected' : ''}><h3>High School</h3><p>400 XP · requires a non-Clan affiliation and no active Illiterate Trait; includes Interest, affiliation, and 185 flexible XP awards.</p><button className="button" type="button" aria-pressed={stageModulePreviewId === STAGE_2_HIGH_SCHOOL_ID} onClick={() => selectStageModule(STAGE_2_HIGH_SCHOOL_ID)}>Preview High School</button></article>
+                <article className={stageModulePreviewId === STAGE_2_BACK_WOODS_ID ? 'preview-selected' : ''}><h3>Back Woods</h3><p>500 XP · fixed awards, Protocol/Affiliation, and a 125 XP flexible pool.</p>{goalGuidance(STAGE_2_BACK_WOODS_ID)}<button className="button" type="button" aria-pressed={stageModulePreviewId === STAGE_2_BACK_WOODS_ID} onClick={() => selectStageModule(STAGE_2_BACK_WOODS_ID)}>Preview Back Woods</button></article>
+                <article className={stageModulePreviewId === STAGE_2_HIGH_SCHOOL_ID ? 'preview-selected' : ''}><h3>High School</h3><p>400 XP · requires a non-Clan affiliation and no active Illiterate Trait; includes Interest, affiliation, and 185 flexible XP awards.</p>{goalGuidance(STAGE_2_HIGH_SCHOOL_ID)}<button className="button" type="button" aria-pressed={stageModulePreviewId === STAGE_2_HIGH_SCHOOL_ID} onClick={() => selectStageModule(STAGE_2_HIGH_SCHOOL_ID)}>Preview High School</button></article>
               </div>{stageModulePreviewId && renderStageChoiceSlots('Late Childhood', 'Stage 2 module and choices committed.')}</>
             )}
             {state.phase === 'stage-2-resolution' && <p className="notice">Stage 2 is selected. Resolve all Stage 2 source-bound choices and flexible XP below.</p>}
@@ -550,6 +570,11 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <label>XP<input type="number" min="1" max={state.finalReview.allocationPool.remaining} step="1" value={finalAllocationXp} onChange={(event) => setFinalAllocationXp(Number(event.target.value))} /></label>
               <button className="button" type="button" disabled={state.finalReview.allocationPool.remaining === 0} onClick={allocateFinalXp}>Allocate XP</button>
             </div>
+            {goalStatus && <section className="goal-review" aria-labelledby="goal-review-heading">
+              <h3 id="goal-review-heading">{goalStatus.displayName} goal gaps</h3>
+              <p>{goalStatus.satisfied} / {goalStatus.total} guidance requirements satisfied. Goal gaps are shown before ordinary Optimization; selecting a goal never grants the Field.</p>
+              {goalStatus.requirements.every((entry) => entry.satisfied) ? <p>All tracked guidance requirements are satisfied.</p> : <ul className="module-history">{goalStatus.requirements.filter((entry) => !entry.satisfied).map((entry) => <li key={entry.id}><div><strong>{entry.label}</strong><span>Current: {entry.current}{entry.xpRequired !== null ? ` · ${entry.xpRequired} XP required` : ' · structural requirement'}</span></div>{entry.destination && entry.xpRequired && entry.xpRequired <= state.finalReview!.allocationPool.remaining ? <button className="button secondary" type="button" onClick={() => operate(() => allocateFinalReviewXp(character, entry.destination!, entry.xpRequired!), `${entry.label} goal gap funded through final allocation.`)}>Apply required XP</button> : null}</li>)}</ul>}
+            </section>}
             <h3>Optimization preview</h3>
             {optimizationPreview.length === 0 ? <p>No supported Optimization opportunities remain.</p> : <ul className="module-history">{optimizationPreview.map((entry) => <li key={entry.id}><div><strong>{entry.destination.displayName}</strong><span>{signed(entry.beforeXp)} → {signed(entry.afterXp)} XP · return {entry.returnedXp} XP · {entry.reason}</span></div><button className="button secondary" type="button" onClick={() => operate(() => applyLifeModuleOptimization(character, entry.id), 'Optimization applied and returned XP to final allocation.')}>Apply</button></li>)}</ul>}
             <h3>Review blockers</h3>

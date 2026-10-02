@@ -4,6 +4,7 @@ import {
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
   CAPELLAN_COMMONALITY_ID,
+  FEDERATED_SUNS_CRUCIS_MARCH_ID,
   LIFE_MODULE_CATALOG,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
@@ -13,10 +14,11 @@ import {
 } from './catalog'
 
 describe('Life Module Alpha catalog', () => {
-  it('contains the eight audited Core entries through the minimal Stage 4 branch', () => {
+  it('contains the nine audited Core entries through the minimal Stage 4 branch', () => {
     expect(LIFE_MODULE_CATALOG.map((entry) => entry.id)).toEqual([
       UNIVERSAL_STAGE_0_ID,
       CAPELLAN_COMMONALITY_ID,
+      FEDERATED_SUNS_CRUCIS_MARCH_ID,
       BLUE_COLLAR_ID,
       BACK_WOODS_ID,
       STAGE_2_BACK_WOODS_ID,
