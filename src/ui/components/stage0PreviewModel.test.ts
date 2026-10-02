@@ -1,7 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID } from '../../domain/lifeModules/catalog'
-import { createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
+import { applyStage0Affiliation, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
+import { encodeCharacter } from '../../persistence/characterCodec'
 import { lifeModulesAffiliationTheme, previewStage0Affiliation } from './stage0PreviewModel'
+
+type Stage0Character = ReturnType<typeof createLifeModuleCharacter>
+
+function stage0Signature(character: Stage0Character) {
+  const state = character.creation.lifeModules!
+  return {
+    attributes: character.attributes.map(({ attributeId, accumulatedXp }) => [attributeId, accumulatedXp]),
+    traits: character.traits.map(({ displayName, accumulatedXp }) => [displayName, accumulatedXp]).sort(),
+    skills: character.skills.map(({ displayName, accumulatedXp }) => [displayName, accumulatedXp]).sort(),
+    pendingAwards: state.pendingAwards.map(({ moduleId, awardId, xpPerGrant, remainingGrants, choiceSource }) => ({ moduleId, awardId, xpPerGrant, remainingGrants, choiceSource })).sort((left, right) => left.awardId.localeCompare(right.awardId)),
+    selectedModuleIds: [...state.selectedModuleIds],
+    moduleXp: { ...state.moduleXp },
+    affiliationContext: state.stage0AffiliationContext,
+    affiliationLanguage: state.affiliationLanguage,
+    affiliations: character.affiliations.map(({ affiliationId, role }) => ({ affiliationId, role })),
+  }
+}
 
 describe('Stage 0 preview model', () => {
   it('waits for an explicit context before building a preview', () => {
@@ -53,5 +71,94 @@ describe('Stage 0 preview model', () => {
     expect(JSON.stringify(character)).toBe(committedJson)
     expect(character.creation.lifeModules?.phase).toBe('stage-0-affiliation')
     expect(character.affiliations).toHaveLength(0)
+  })
+
+  it('matches the source-backed clean Capellan/Commonality and Federated Suns/Crucis signatures', () => {
+    const capellan = previewStage0Affiliation(createLifeModuleCharacter('Capellan baseline'), CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')!
+    expect(stage0Signature(capellan)).toMatchObject({
+      moduleXp: { spent: 1000, remaining: 4000 },
+      affiliationContext: CAPELLAN_COMMONALITY_ID,
+      affiliationLanguage: 'Mandarin Chinese',
+      affiliations: [
+        { affiliationId: 'affiliation.capellan-confederation', role: 'birth' },
+        { affiliationId: 'affiliation.capellan-confederation', role: 'final' },
+      ],
+    })
+    expect(capellan.attributes.find((entry) => entry.attributeId === 'WIL')?.accumulatedXp).toBe(150)
+    expect(capellan.attributes.find((entry) => entry.attributeId === 'EDG')?.accumulatedXp).toBe(150)
+    expect(capellan.traits.map(({ displayName, accumulatedXp }) => [displayName, accumulatedXp])).toEqual(expect.arrayContaining([
+      ['Exceptional Attribute/EDG', 100], ['Compulsion/Paranoia', -100], ['Wealth', 15],
+    ]))
+    expect(capellan.skills.map(({ displayName, accumulatedXp }) => [displayName, accumulatedXp])).toEqual(expect.arrayContaining([
+      ['Language/Mandarin Chinese', 20], ['Language/Russian', 10], ['Protocol/Capellan', 10], ['Protocol/FedSuns', 5], ['Martial Arts', 5],
+    ]))
+    expect(capellan.creation.lifeModules!.pendingAwards).toContainEqual(expect.objectContaining({
+      awardId: 'commonality.language.fedsuns', xpPerGrant: 5, choiceSource: 'federated-suns-languages', description: 'Choose any Federated Suns language.',
+    }))
+    expect(capellan.creation.lifeModules!.pendingAwards.map((entry) => entry.awardId)).not.toEqual(expect.arrayContaining(['fedsuns.trait.natural-aptitude', 'crucis.skill.art']))
+
+    const davion = previewStage0Affiliation(createLifeModuleCharacter('Davion baseline'), FEDERATED_SUNS_CRUCIS_MARCH_ID, 'English', '', 'Strategy', 'Painting')!
+    expect(stage0Signature(davion)).toMatchObject({
+      moduleXp: { spent: 1000, remaining: 4000 },
+      affiliationContext: FEDERATED_SUNS_CRUCIS_MARCH_ID,
+      affiliationLanguage: 'English',
+      affiliations: [
+        { affiliationId: 'affiliation.federated-suns', role: 'birth' },
+        { affiliationId: 'affiliation.federated-suns', role: 'final' },
+      ],
+    })
+    expect(davion.attributes.find((entry) => entry.attributeId === 'WIL')?.accumulatedXp).toBe(150)
+    expect(davion.attributes.find((entry) => entry.attributeId === 'EDG')?.accumulatedXp).toBe(50)
+    expect(davion.traits).toContainEqual(expect.objectContaining({ displayName: 'Natural Aptitude/Strategy', accumulatedXp: 100 }))
+    expect(davion.skills.map(({ displayName, accumulatedXp }) => [displayName, accumulatedXp])).toEqual(expect.arrayContaining([
+      ['Language/English', 40], ['Protocol/FedSuns', 25], ['Art/Painting', 10], ['Interest/FedSuns History', 15],
+    ]))
+    expect(davion.creation.lifeModules!.pendingAwards).toHaveLength(0)
+    expect(davion.skills.some((entry) => entry.displayName === 'Protocol/Capellan')).toBe(false)
+  })
+
+  it('rebuilds both switch directions and repeated switches from the committed draft without abandoned state', () => {
+    const committed = createLifeModuleCharacter('Switch isolation')
+    const committedJson = JSON.stringify(committed)
+    const cleanCapellan = previewStage0Affiliation(committed, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')!
+    const cleanDavion = previewStage0Affiliation(committed, FEDERATED_SUNS_CRUCIS_MARCH_ID, 'English', '', 'Protocol', 'Painting')!
+
+    previewStage0Affiliation(committed, FEDERATED_SUNS_CRUCIS_MARCH_ID, 'English', '', 'Strategy', 'Painting')
+    const afterDavionToCapellan = previewStage0Affiliation(committed, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')!
+    expect(stage0Signature(afterDavionToCapellan)).toEqual(stage0Signature(cleanCapellan))
+    expect(afterDavionToCapellan.traits.some((entry) => entry.displayName?.startsWith('Natural Aptitude/'))).toBe(false)
+    expect(afterDavionToCapellan.skills.some((entry) => entry.displayName === 'Art/Painting')).toBe(false)
+
+    previewStage0Affiliation(committed, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')
+    const afterCapellanToDavion = previewStage0Affiliation(committed, FEDERATED_SUNS_CRUCIS_MARCH_ID, 'English', '', 'Protocol', 'Painting')!
+    expect(stage0Signature(afterCapellanToDavion)).toEqual(stage0Signature(cleanDavion))
+    expect(afterCapellanToDavion.creation.lifeModules!.pendingAwards.some((entry) => entry.awardId === 'commonality.language.fedsuns')).toBe(false)
+    expect(afterCapellanToDavion.skills.some((entry) => entry.displayName === 'Protocol/Capellan')).toBe(false)
+
+    const repeatedCapellan = previewStage0Affiliation(committed, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')!
+    const repeatedDavion = previewStage0Affiliation(committed, FEDERATED_SUNS_CRUCIS_MARCH_ID, 'English', '', 'Protocol', 'Painting')!
+    expect(stage0Signature(repeatedCapellan)).toEqual(stage0Signature(cleanCapellan))
+    expect(stage0Signature(repeatedDavion)).toEqual(stage0Signature(cleanDavion))
+    expect(new Set(repeatedCapellan.creation.lifeModules!.pendingAwards.map((entry) => entry.awardId)).size).toBe(repeatedCapellan.creation.lifeModules!.pendingAwards.length)
+    expect(JSON.stringify(committed)).toBe(committedJson)
+  })
+
+  it('rejects an abandoned Universal language and exports only the final committed affiliation', () => {
+    const committed = createLifeModuleCharacter('Committed boundary')
+    expect(previewStage0Affiliation(committed, CAPELLAN_COMMONALITY_ID, 'German', 'Russian')).toBeNull()
+    expect(previewStage0Affiliation(committed, FEDERATED_SUNS_CRUCIS_MARCH_ID, 'Mandarin Chinese', '', 'Protocol', 'Painting')).toBeNull()
+
+    const capellanPreview = previewStage0Affiliation(committed, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')!
+    expect(encodeCharacter(committed)).not.toContain(CAPELLAN_COMMONALITY_ID)
+    expect(JSON.stringify(committed)).not.toContain('Language/Mandarin Chinese')
+
+    const finalCommitted = applyStage0Affiliation(committed, FEDERATED_SUNS_CRUCIS_MARCH_ID, 'English', undefined, 'Protocol', 'Painting')
+    const exported = encodeCharacter(finalCommitted, '2026-10-02T00:00:00.000Z')
+    expect(exported).toContain(FEDERATED_SUNS_CRUCIS_MARCH_ID)
+    expect(exported).toContain('Natural Aptitude/Protocol')
+    expect(exported).not.toContain(CAPELLAN_COMMONALITY_ID)
+    expect(exported).not.toContain('Protocol/Capellan')
+    expect(exported).not.toContain('Language/Mandarin Chinese')
+    expect(stage0Signature(capellanPreview)).not.toEqual(stage0Signature(finalCommitted))
   })
 })

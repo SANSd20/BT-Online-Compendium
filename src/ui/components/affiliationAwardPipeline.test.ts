@@ -115,6 +115,16 @@ describe('automatic /Affiliation award application pipeline', () => {
     expect(preview.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'high-school.flexible')?.maxXpPerTarget).toEqual({ attribute: 200, trait: 200, skill: 35 })
   })
 
+  it('keeps Commonality Protocol/FedSuns distinct from later Protocol/Affiliation resolution', () => {
+    const committedBefore = stage2Ready('capellan')
+    expect(skillXp(committedBefore, 'Protocol/FedSuns')).toBe(5)
+    expect(skillXp(committedBefore, 'Protocol/Capellan')).toBe(10)
+
+    const committedAfter = completeBackWoodsPreview(committedBefore)
+    expect(skillXp(committedAfter, 'Protocol/FedSuns')).toBe(5)
+    expect(skillXp(committedAfter, 'Protocol/Capellan')).toBe(-5)
+  })
+
   it('applies the positive Agitator Streetwise/Affiliation award to the established faction only', () => {
     const committed = stage2Ready('federated-suns')
     committed.creation.lifeModules!.phase = 'stage-4-selection'
