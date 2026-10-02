@@ -4,17 +4,26 @@ import { BLUE_COLLAR_ID, getLifeModule } from '../lifeModules/catalog'
 import { allocateFinalReviewXp } from '../../engine/lifeModuleFinalReview'
 import { createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { LifeModuleCharacterSummary } from '../../ui/components/LifeModulesWizard'
-import { BASIC_TRAINING_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from './catalog'
+import { LifeModulesScreen } from '../../ui/screens/LifeModulesScreen'
+import { BASIC_TRAINING_FIELD_ID, getSkillField, TECHNICIAN_VEHICLE_FIELD_ID } from './catalog'
+import { MASTER_SKILL_FIELD_GOAL_CATALOG, MECHWARRIOR_GOAL_ID } from './goalCatalog'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from './goals'
 
 describe('Master Skill Field goal guidance', () => {
+  it('renders No goal and the broad reference catalog, including MechWarrior, in initial setup', () => {
+    const markup = renderToStaticMarkup(<LifeModulesScreen onSave={() => undefined} />)
+    expect(markup).toContain('<option value="" selected="">No goal</option>')
+    expect(markup).toContain('MechWarrior')
+    expect(markup).toContain('Clan ProtoMech Warrior')
+  })
+
   it('supports No goal and stores a supported goal without granting rules effects', () => {
     const character = createLifeModuleCharacter('Goal test')
     const before = structuredClone(character)
     const noGoal = setMasterSkillFieldGoal(character, null)
     const withGoal = setMasterSkillFieldGoal(character, BASIC_TRAINING_FIELD_ID)
 
-    expect(SUPPORTED_MASTER_SKILL_FIELD_GOALS).toHaveLength(3)
+    expect(SUPPORTED_MASTER_SKILL_FIELD_GOALS).toHaveLength(56)
     expect(masterSkillFieldGoalStatus(noGoal)).toBeNull()
     expect(withGoal.creation.lifeModules?.masterSkillFieldGoalId).toBe(BASIC_TRAINING_FIELD_ID)
     expect(withGoal.creation.lifeModules?.selectedSkillFields).toEqual([])
@@ -23,6 +32,27 @@ describe('Master Skill Field goal guidance', () => {
     expect(withGoal.skills).toEqual(before.skills)
     expect(withGoal.xp).toEqual(before.xp)
     expect(withGoal.creation.lifeModules?.moduleXp).toEqual(before.creation.lifeModules?.moduleXp)
+  })
+
+  it('stores MechWarrior from the reference catalog without granting its Field, Skills, XP, or discount', () => {
+    const base = createLifeModuleCharacter('MechWarrior goal')
+    base.skills.push(...getSkillField(BASIC_TRAINING_FIELD_ID).componentSkills.map((entry) => ({ address: structuredClone(entry.address), displayName: entry.displayName, accumulatedXp: 20, level: 0, sourceAwards: [] })))
+    const before = structuredClone(base)
+    const character = setMasterSkillFieldGoal(base, MECHWARRIOR_GOAL_ID)
+    const status = masterSkillFieldGoalStatus(character)!
+
+    expect(MASTER_SKILL_FIELD_GOAL_CATALOG.some((entry) => entry.displayName === 'MechWarrior')).toBe(true)
+    expect(character.creation.lifeModules?.masterSkillFieldGoalId).toBe(MECHWARRIOR_GOAL_ID)
+    expect(character.creation.lifeModules?.selectedSkillFields).toEqual([])
+    expect(character.skills).toEqual(before.skills)
+    expect(character.xp).toEqual(before.xp)
+    expect(character.creation.lifeModules?.moduleXp).toEqual(before.creation.lifeModules?.moduleXp)
+    expect(status.requirements.filter((entry) => entry.section === 'prerequisite').map((entry) => entry.label)).toEqual(['Basic Training Field', 'DEX 4+', 'RFL 4+'])
+    expect(status.requirements.filter((entry) => entry.section === 'field-skill').map((entry) => entry.label)).toEqual(['Gunnery/Mech', 'Piloting/Mech', 'Sensor Operations', 'Tactics/Land', 'Technician/Any'])
+    expect(status.requirements.find((entry) => entry.label === 'Basic Training Field')).toMatchObject({ satisfied: false, xpRequired: null })
+    const technicianAny = status.requirements.find((entry) => entry.label === 'Technician/Any')!
+    expect(technicianAny).toMatchObject({ kind: 'variable-skill', xpRequired: null })
+    expect(technicianAny.destination).toBeUndefined()
   })
 
   it('distinguishes Attribute, Trait, Skill, and prerequisite-Field progress', () => {
@@ -60,6 +90,8 @@ describe('Master Skill Field goal guidance', () => {
     }
     const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={character} />)
     expect(markup).toContain('Basic Training goal · 0 / 8')
+    expect(markup).toContain('Prerequisites')
+    expect(markup).toContain('Field Skills')
     expect(markup).toContain('Guidance only')
 
     const intGap = masterSkillFieldGoalStatus(character)!.requirements.find((entry) => entry.label === 'INT 3+')!

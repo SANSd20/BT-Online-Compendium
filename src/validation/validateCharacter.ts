@@ -24,6 +24,7 @@ import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } fr
 import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
 import { getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
+import { getMasterSkillFieldGoal } from '../domain/skillFields/goalCatalog'
 import {
   deriveAttributeLevel,
   deriveStandardSkillLevel,
@@ -528,7 +529,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     return
   }
   if (state.masterSkillFieldGoalId) {
-    try { getSkillField(state.masterSkillFieldGoalId) }
+    try { getMasterSkillFieldGoal(state.masterSkillFieldGoalId) }
     catch { issues.push(issue('life-modules.skill-field-goal.unknown', 'creation.lifeModules.masterSkillFieldGoalId', 'Master Skill Field goal must reference a supported source-backed Field.')) }
   }
   if (!Number.isInteger(starting) || starting <= 0 || !Number.isInteger(spent) || spent < 0 || !Number.isInteger(remaining) || remaining < 0) {

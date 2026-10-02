@@ -6,6 +6,7 @@ import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, getLifeModule, STAGE_2_BACK
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
+import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
 import { applyStage0Affiliation, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
@@ -358,7 +359,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <label htmlFor="life-module-field-goal">Master Skill Field goal</label>
             <select id="life-module-field-goal" value={masterSkillFieldGoalId} onChange={(event) => setMasterSkillFieldGoalId(event.target.value)}>
               <option value="">No goal</option>
-              {SUPPORTED_MASTER_SKILL_FIELD_GOALS.map((field) => <option key={field.id} value={field.id}>{field.displayName}</option>)}
+              {(Object.keys(MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS) as MasterSkillFieldGoalCategory[]).map((category) => <optgroup key={category} label={MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS[category]}>{SUPPORTED_MASTER_SKILL_FIELD_GOALS.filter((field) => field.category === category).map((field) => <option key={field.id} value={field.id}>{field.displayName}</option>)}</optgroup>)}
             </select>
             <button className="button" type="submit">Create Life Module draft</button>
           </form>
