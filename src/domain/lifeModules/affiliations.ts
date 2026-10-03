@@ -1,4 +1,5 @@
 import type { SourceCitation } from '../rules/model'
+import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
 
 export const UNIVERSAL_STAGE_0_ID = 'stage0.universal-fixed-xp'
 export const CAPELLAN_COMMONALITY_ID = 'stage0.capellan-confederation.capellan-commonality'
@@ -47,10 +48,14 @@ const source = (page: number, ruleId: string): SourceCitation => ({
 })
 
 export const LIFE_MODULE_LANGUAGE_SELECTOR_GROUPS: Readonly<Record<AffiliationLanguageSelectorGroupId, readonly string[]>> = {
-  'affiliation-languages': ['Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English'],
-  'capellan-secondary': ['Russian', 'Cantonese', 'Vietnamese', 'English'],
-  'federated-suns-languages': ['English', 'French'],
-  'federated-suns-affiliation-languages': ['English', 'French', 'German', 'Hindi', 'Russian'],
+  'affiliation-languages': modeledLanguages('Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English'),
+  'capellan-secondary': modeledLanguages('Russian', 'Cantonese', 'Vietnamese', 'English'),
+  'federated-suns-languages': modeledLanguages('English', 'French'),
+  'federated-suns-affiliation-languages': modeledLanguages('English', 'French', 'German', 'Hindi', 'Russian'),
+}
+
+function modeledLanguages(...languages: Array<(typeof MODELED_LANGUAGE_SUBSKILLS)[number]>): readonly string[] {
+  return languages
 }
 
 export const UNIVERSAL_LIFE_MODULE_CONTEXT: UniversalLifeModuleContext = {

@@ -372,7 +372,7 @@ const scout: ArchetypeDefinition = {
     skill('skill.disguise', 'Disguise', 1, 30),
     skill('skill.interrogation', 'Interrogation', 1, 30),
     skill('skill.language', 'Language/English', 2, 50, { subskill: 'English' }),
-    skill('skill.language', 'Language/Mandarin', 2, 50, { subskill: 'Mandarin' }),
+    skill('skill.language', 'Language/Mandarin Chinese', 2, 50, { subskill: 'Mandarin Chinese' }),
     skill('skill.language', 'Language/Russian', 1, 30, { subskill: 'Russian' }),
     skill('skill.leadership', 'Leadership', 0, 20),
     skill('skill.martial-arts', 'Martial Arts', 3, 80),

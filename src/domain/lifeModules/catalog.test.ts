@@ -14,7 +14,7 @@ import {
   UNIVERSAL_STAGE_0_ID,
   validateLifeModuleCatalog,
 } from './catalog'
-import { BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, MARINE_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID } from '../skillFields/catalog'
+import { BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, MARINE_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID } from '../skillFields/catalog'
 
 describe('Life Module Alpha catalog', () => {
   it('contains the eleven audited Core entries through the minimal Stage 4 branch', () => {
@@ -44,6 +44,7 @@ describe('Life Module Alpha catalog', () => {
       expect.objectContaining({ fieldId: CAVALRY_FIELD_ID, category: 'advanced', chronologyYears: 1 }),
       expect.objectContaining({ fieldId: MARINE_FIELD_ID, category: 'advanced', chronologyYears: 1 }),
       expect.objectContaining({ fieldId: SHIPS_CREW_FIELD_ID, category: 'advanced', chronologyYears: 1 }),
+      expect.objectContaining({ fieldId: SCOUT_FIELD_ID, category: 'advanced', chronologyYears: 1 }),
     ]))
     expect(academyOffers.some((entry) => entry.fieldId === TECHNICIAN_MILITARY_FIELD_ID)).toBe(false)
     expect(enlistmentOffers).toEqual(expect.arrayContaining([
@@ -52,10 +53,11 @@ describe('Life Module Alpha catalog', () => {
       expect.objectContaining({ fieldId: MARINE_FIELD_ID, category: 'advanced', chronologyYears: 1.5 }),
       expect.objectContaining({ fieldId: SHIPS_CREW_FIELD_ID, category: 'advanced', chronologyYears: 1.5 }),
       expect.objectContaining({ fieldId: TECHNICIAN_MILITARY_FIELD_ID, category: 'advanced', chronologyYears: 1.5 }),
+      expect.objectContaining({ fieldId: SCOUT_FIELD_ID, category: 'advanced', chronologyYears: 1.5 }),
     ]))
     expect([academyOffers, enlistmentOffers].every((offers) => new Set(offers.map((entry) => entry.fieldId)).size === offers.length)).toBe(true)
     expect([MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID].every((id) => LIFE_MODULE_CATALOG.find((entry) => entry.id === id)?.skillFieldSelection?.referenceOnlyOffers?.some((entry) => entry.displayName === 'Cavalry') === false)).toBe(true)
-    expect([MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID].every((id) => LIFE_MODULE_CATALOG.find((entry) => entry.id === id)?.skillFieldSelection?.referenceOnlyOffers?.find((entry) => entry.displayName === 'Scout')?.reason.includes('Language/Any'))).toBe(true)
+    expect([MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID].every((id) => LIFE_MODULE_CATALOG.find((entry) => entry.id === id)?.skillFieldSelection?.referenceOnlyOffers?.some((entry) => entry.displayName === 'Scout') === false)).toBe(true)
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === AGITATOR_ID)).toMatchObject({
       stage: 4,
       costXp: 900,

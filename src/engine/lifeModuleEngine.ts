@@ -310,7 +310,7 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
         moduleId: school.id,
         awardId: `skill-field/${field.id}/${component.id}`,
         kind: 'any-skill-choice',
-        description: `${component.displayName}: choose one source-listed subskill.`,
+        description: `${component.displayName}: choose one governed subskill.`,
         xpPerGrant: offer.awardedXpPerSkill,
         remainingGrants: 1,
         allocationMode: 'fixed-grants',

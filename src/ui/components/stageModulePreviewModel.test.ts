@@ -11,7 +11,7 @@ import {
   TECHNICAL_COLLEGE_ID,
 } from '../../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
-import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, MARINE_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, MARINE_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, SCOUT_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applySupportedStageModule, previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from './stageModulePreviewModel'
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
@@ -109,6 +109,22 @@ describe('supported Stage 1–4 module preview model', () => {
     expect(replacement.creation.lifeModules!.selectedSkillFields.some((entry) => entry.fieldId === CAVALRY_FIELD_ID)).toBe(false)
     expect(replacement.skills.some((entry) => entry.displayName === 'Artillery')).toBe(false)
     expect(replacement.provenance.some((entry) => entry.description === 'Cavalry Skill Field grant')).toBe(false)
+    expect(JSON.stringify(character)).toBe(before)
+  })
+
+  it('removes every Scout preview effect and all four choice slots when the Field is deselected', () => {
+    const character = draftAt('stage-3-selection')
+    const before = JSON.stringify(character)
+    const scout = previewSupportedStageModule(character, MILITARY_ENLISTMENT_ID, [BASIC_TRAINING_FIELD_ID, SCOUT_FIELD_ID])!
+    expect(scout.creation.lifeModules!.pendingAwards.filter((entry) => entry.skillFieldChoice?.fieldId === SCOUT_FIELD_ID)).toHaveLength(4)
+    expect(scout.skills.some((entry) => entry.displayName === 'Comms/Conventional')).toBe(true)
+    expect(scout.lifeModuleHistory.at(-1)).toMatchObject({ fieldCostXp: 288 })
+
+    const replacement = previewSupportedStageModule(character, MILITARY_ENLISTMENT_ID, [BASIC_TRAINING_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID])!
+    expect(replacement.creation.lifeModules!.pendingAwards.some((entry) => entry.skillFieldChoice?.fieldId === SCOUT_FIELD_ID)).toBe(false)
+    expect(replacement.creation.lifeModules!.selectedSkillFields.some((entry) => entry.fieldId === SCOUT_FIELD_ID)).toBe(false)
+    expect(replacement.skills.some((entry) => entry.displayName === 'Comms/Conventional')).toBe(false)
+    expect(replacement.provenance.some((entry) => entry.description === 'Scout Skill Field grant')).toBe(false)
     expect(JSON.stringify(character)).toBe(before)
   })
 

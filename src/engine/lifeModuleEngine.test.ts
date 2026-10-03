@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
-import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, INFANTRY_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, INFANTRY_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
@@ -520,7 +520,7 @@ describe('Life Module engine', () => {
     expect(JSON.stringify(selecting)).toBe(before)
   })
 
-  it('requires actual Basic Training for Cavalry and keeps Scout reference-only for unrestricted Language/Any', () => {
+  it('requires actual Basic Training for Cavalry rather than its component Skills', () => {
     const selecting = continueToStage3(completeHighSchoolStage2())
     const withFields = applyMilitaryAcademy(selecting, [BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID])
     expect(withFields.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'cavalry.field')?.status).toBe('satisfied')
@@ -529,7 +529,55 @@ describe('Life Module engine', () => {
     componentSkillsOnly.creation.lifeModules!.selectedSkillFields.push({ ...structuredClone(withFields.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === CAVALRY_FIELD_ID)!), id: 'component-only-cavalry' })
     reevaluateLifeModulePrerequisites(componentSkillsOnly)
     expect(componentSkillsOnly.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'cavalry.field')?.status).toBe('outstanding')
-    expect(() => applyMilitaryAcademy(selecting, [BASIC_TRAINING_FIELD_ID, 'field.scout'])).toThrow('not offered')
+  })
+
+  it('acquires Scout through both military schools with four no-default governed choices and durable persistence', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const before = JSON.stringify(selecting)
+    let academy = applyMilitaryAcademy(selecting, [BASIC_TRAINING_FIELD_ID, SCOUT_FIELD_ID])
+    const scoutPending = () => academy.creation.lifeModules!.pendingAwards.filter((entry) => entry.skillFieldChoice?.fieldId === SCOUT_FIELD_ID)
+    expect(academy.lifeModuleHistory.at(-1)).toMatchObject({ fieldCostXp: 288, costXp: 1118 })
+    expect(academy.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === SCOUT_FIELD_ID)).toMatchObject({
+      purchaseCostXp: 168, xpPerSkill: 30, chronologyYears: 1, variableSkillChoices: [],
+    })
+    expect(scoutPending().map((entry) => [entry.requiredSkillId, entry.xpPerGrant])).toEqual([
+      ['skill.language', 30], ['skill.security-systems', 30], ['skill.streetwise', 30], ['skill.tracking', 30],
+    ])
+    expect(academy.skills.find((entry) => entry.displayName === 'Comms/Conventional')?.sourceAwards.some((award) => award.xp === 30)).toBe(true)
+    expect(academy.skills.find((entry) => entry.displayName === 'Disguise')?.sourceAwards.some((award) => award.xp === 30)).toBe(true)
+    expect(academy.skills.find((entry) => entry.displayName === 'Stealth')?.sourceAwards.some((award) => award.xp === 30)).toBe(true)
+    expect(academy.skills.some((entry) => ['skill.language', 'skill.security-systems', 'skill.streetwise', 'skill.tracking'].includes(entry.address.skillId) && entry.sourceAwards.some((award) => award.xp === 30))).toBe(false)
+    const language = scoutPending().find((entry) => entry.requiredSkillId === 'skill.language')!
+    expect(() => resolvePendingLifeModuleAward(academy, language.id, {
+      type: 'skill', targetId: 'skill.language', displayName: 'Language/Klingon', parameter: { kind: 'subskill', value: 'Klingon' },
+    })).toThrow('safe known choice')
+
+    const frenchBefore = academy.skills.find((entry) => entry.displayName === 'Language/French')!.accumulatedXp
+    const choices = [
+      ['skill.language', 'Language/French', 'French'],
+      ['skill.security-systems', 'Security Systems/Electronic', 'Electronic'],
+      ['skill.streetwise', 'Streetwise/Capellan', 'Capellan'],
+      ['skill.tracking', 'Tracking/Wilds', 'Wilds'],
+    ] as const
+    for (const [skillId, displayName, parameter] of choices) {
+      const pending = scoutPending().find((entry) => entry.requiredSkillId === skillId)!
+      academy = resolvePendingLifeModuleAward(academy, pending.id, { type: 'skill', targetId: skillId, displayName, parameter: { kind: 'subskill', value: parameter } })
+    }
+    expect(academy.skills.filter((entry) => entry.displayName === 'Language/French')).toHaveLength(1)
+    expect(academy.skills.find((entry) => entry.displayName === 'Language/French')?.accumulatedXp).toBe(frenchBefore + 30)
+    expect(scoutPending()).toEqual([])
+    expect(academy.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === SCOUT_FIELD_ID)?.variableSkillChoices).toHaveLength(4)
+
+    const decoded = decodeCharacter(encodeCharacter(academy, '2026-10-03T00:00:00.000Z'))
+    expect(decoded).toEqual(academy)
+    expect(decoded.creation.lifeModules!.selectedSkillFields.filter((entry) => entry.fieldId === SCOUT_FIELD_ID)).toHaveLength(1)
+    expect(decoded.skills.filter((entry) => entry.displayName === 'Language/French')).toHaveLength(1)
+    expect(decoded.creation.lifeModules!.pendingAwards.some((entry) => entry.skillFieldChoice?.fieldId === SCOUT_FIELD_ID)).toBe(false)
+    expect(validateCharacter(decoded).valid).toBe(true)
+
+    const enlistment = applyMilitaryEnlistment(selecting, [BASIC_TRAINING_FIELD_ID, SCOUT_FIELD_ID])
+    expect(enlistment.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === SCOUT_FIELD_ID)).toMatchObject({ purchaseCostXp: 168, chronologyYears: 1.5 })
+    expect(JSON.stringify(selecting)).toBe(before)
   })
 
   it('acquires Ship’s Crew through both authorized schools and preserves its Technician choice through JSON', () => {

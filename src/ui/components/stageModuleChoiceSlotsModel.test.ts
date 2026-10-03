@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, MILITARY_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
-import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, MECHWARRIOR_FIELD_ID } from '../../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, MECHWARRIOR_FIELD_ID, SCOUT_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { previewSupportedStageModule } from './stageModulePreviewModel'
 import { filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
@@ -122,6 +122,28 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     expect(sea.character.skills.find((entry) => entry.displayName === 'Driving/Sea Vehicles')?.sourceAwards).toHaveLength(1)
     expect(sea.complete).toBe(false)
     expect(stageSlotContinueEnabled(sea)).toBe(false)
+    expect(JSON.stringify(character)).toBe(committed)
+  })
+
+  it('replaces the Scout language preview without stale XP or provenance and never mutates committed state', () => {
+    const character = draftAt('stage-3-selection')
+    const committed = JSON.stringify(character)
+    const fields = [BASIC_TRAINING_FIELD_ID, SCOUT_FIELD_ID]
+    const base = previewSupportedStageModule(character, MILITARY_ACADEMY_ID, fields)!
+    const pending = base.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.componentId === 'scout.language-any')!
+    const english = previewStageModuleChoiceSlots(character, MILITARY_ACADEMY_ID, {
+      [pending.awardId]: [value('skill', 'skill.language', 'Language/English', 30, 'English')],
+    }, fields)!
+    const french = previewStageModuleChoiceSlots(character, MILITARY_ACADEMY_ID, {
+      [pending.awardId]: [value('skill', 'skill.language', 'Language/French', 30, 'French')],
+    }, fields)!
+    expect(english.character.skills.find((entry) => entry.displayName === 'Language/English')?.sourceAwards.some((award) => award.xp === 30)).toBe(true)
+    expect(french.character.skills.find((entry) => entry.displayName === 'Language/English')?.sourceAwards.some((award) => award.xp === 30)).toBe(false)
+    expect(french.character.skills.filter((entry) => entry.displayName === 'Language/French')).toHaveLength(1)
+    expect(french.character.skills.find((entry) => entry.displayName === 'Language/French')?.sourceAwards.filter((award) => award.xp === 30)).toHaveLength(1)
+    expect(french.character.creation.lifeModules!.resolvedAwards.some((entry) => entry.destination.displayName === 'Language/English' && entry.xp === 30)).toBe(false)
+    expect(french.complete).toBe(false)
+    expect(stageSlotContinueEnabled(french)).toBe(false)
     expect(JSON.stringify(character)).toBe(committed)
   })
 

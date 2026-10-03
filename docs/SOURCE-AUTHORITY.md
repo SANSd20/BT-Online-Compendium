@@ -107,3 +107,9 @@ Do not silently substitute Sarna or another secondary source for upstream data, 
 MegaMek Data identifies itself as CC BY-NC-SA 4.0 and includes BattleTech/Microsoft notices. Every imported snapshot must preserve upstream attribution and license metadata.
 
 Public redistribution and deployment licensing remain a later review item; the present research does not claim to resolve every legal question.
+
+## Alpha Slice 64 — Language/Any and Scout
+
+Corrected Third Printing p. 148 defines Language subskills as “any specific language”: each Language subskill identifies one language in the character’s repertoire. It describes a wide variety of languages and dialects but supplies no exhaustive catalog and no rule limiting Scout’s Language/Any choice to the character’s affiliation. The finite application list is therefore identified only as the currently modeled, source-backed character-creation subset; it is not represented as every legal BattleTech language. Affiliation-bound Language awards retain their separate automatic or constrained semantics. The v4.0 errata contains no Language or Scout correction.
+
+The Scout entry on corrected-printing p. 94 requires Basic Training, INT 4+, WIL 3+, and no Illiterate Trait. Its seven Skills are Comms/Conventional, Disguise, Language/Any, Security Systems/Any, Stealth, Streetwise/Any, and Tracking/Any. Security Systems resolves to Electronic or Mechanical; Streetwise subskills are by affiliation and the current supported contexts are Capellan and FedSuns; Tracking resolves to Urban or Wilds. Corrected-printing p. 83 offers the same Scout Field as Advanced training through Military Academy for one year and Military Enlistment for 1.5 years. At 24 XP per seven Field Skills, Scout costs 168 XP and awards +30 XP to each Skill.

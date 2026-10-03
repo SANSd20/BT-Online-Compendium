@@ -1,6 +1,7 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleDestination } from '../lifeModules/model'
 import type { SkillFieldCatalogValidationIssue, SkillFieldDefinition } from './model'
+import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
 
 const source = (ruleId: string): SourceCitation => ({
   sourceId: 'atow-core-corrected-third',
@@ -29,12 +30,15 @@ export const MARINE_FIELD_ID = 'field.marine'
 export const SHIPS_CREW_FIELD_ID = 'field.ships-crew'
 export const TECHNICIAN_MILITARY_FIELD_ID = 'field.technician-military'
 export const CAVALRY_FIELD_ID = 'field.cavalry'
+export const SCOUT_FIELD_ID = 'field.scout'
 
 export const SECURITY_SYSTEMS_SUBSKILLS = ['Electronic', 'Mechanical'] as const
 export const NAVAL_CAREER_SUBSKILLS = ['Pilot', 'Ship’s Crew'] as const
 export const DRIVING_SUBSKILLS = ['Ground Vehicles', 'Rail Vehicles', 'Sea Vehicles'] as const
 export const VEHICLE_GUNNERY_SUBSKILLS = ['Air Vehicle', 'Ground Vehicle', 'Sea Vehicle'] as const
 export const CAVALRY_TACTICS_SUBSKILLS = ['Land', 'Sea'] as const
+export const SCOUT_STREETWISE_SUBSKILLS = ['Capellan', 'FedSuns'] as const
+export const TRACKING_SUBSKILLS = ['Urban', 'Wilds'] as const
 
 export const TECHNICIAN_SUBSKILLS = [
   'Aeronautics', 'Cybernetics', 'Electronic', 'Jets', 'Mechanics', 'Myomer', 'Nuclear', 'Weapons',
@@ -274,6 +278,49 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       skillId: 'skill.technician',
       legalSubskills: [...TECHNICIAN_SUBSKILLS],
     }],
+  },
+  {
+    id: SCOUT_FIELD_ID,
+    displayName: 'Scout',
+    category: 'advanced',
+    source: { ...source('skill-field-scout'), page: 94 },
+    prerequisites: [
+      { id: 'scout.field', kind: 'skill-field', fieldIds: [BASIC_TRAINING_FIELD_ID], description: 'Basic Training Field' },
+      { id: 'scout.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' },
+      { id: 'scout.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 3, description: 'WIL 3+' },
+      { id: 'scout.illiterate', kind: 'trait-absent', traitId: 'trait.illiterate', description: 'Cannot have Illiterate Trait' },
+    ],
+    componentSkills: [
+      skill('skill.communications', 'Comms/Conventional', 'Conventional'),
+      skill('skill.disguise', 'Disguise'),
+      skill('skill.stealth', 'Stealth'),
+    ],
+    variableComponentSkills: [
+      {
+        id: 'scout.language-any',
+        displayName: 'Language (currently modeled choices)',
+        skillId: 'skill.language',
+        legalSubskills: [...MODELED_LANGUAGE_SUBSKILLS],
+      },
+      {
+        id: 'scout.security-systems-any',
+        displayName: 'Security Systems subskill',
+        skillId: 'skill.security-systems',
+        legalSubskills: [...SECURITY_SYSTEMS_SUBSKILLS],
+      },
+      {
+        id: 'scout.streetwise-any',
+        displayName: 'Streetwise affiliation',
+        skillId: 'skill.streetwise',
+        legalSubskills: [...SCOUT_STREETWISE_SUBSKILLS],
+      },
+      {
+        id: 'scout.tracking-any',
+        displayName: 'Tracking subskill',
+        skillId: 'skill.tracking',
+        legalSubskills: [...TRACKING_SUBSKILLS],
+      },
+    ],
   },
   {
     id: MARINE_FIELD_ID,
