@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
-import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, OFFICER_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
@@ -723,6 +723,61 @@ describe('Life Module engine', () => {
     const flexible = intelligence.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'intelligence-operative.flexible')!
     intelligence = resolvePendingLifeModuleAward(intelligence, flexible.id, { type: 'attribute', targetId: 'WIL', displayName: 'WIL' }, 150)
     expect(() => applyStage3School(continueStage3Schooling(intelligence), POLICE_ACADEMY_ID, [POLICE_OFFICER_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID])).toThrow('Another Intelligence/Police Stage 3 school has already been completed.')
+  })
+
+  it('applies Officer Candidate School as an optional secondary school without consuming a normal family', () => {
+    let military = applyMilitaryAcademy(continueToStage3(completeHighSchoolStage2(10000)), [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID])
+    const militaryFlexible = military.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'military-academy.flexible')!
+    military = resolvePendingLifeModuleAward(military, militaryFlexible.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 100)
+    const committedBefore = structuredClone(military)
+
+    let officer = applyStage3School(continueStage3Schooling(military), OFFICER_TRAINING_SCHOOL_ID, [OFFICER_FIELD_ID])
+    expect(military).toEqual(committedBefore)
+    expect(officer.lifeModuleHistory.at(-1)).toMatchObject({ moduleId: OFFICER_TRAINING_SCHOOL_ID, displayName: 'Officer Candidate School', baseCostXp: 550, fieldCostXp: 120, costXp: 670 })
+    expect(officer.creation.lifeModules!.selectedSkillFields.at(-1)).toMatchObject({ fieldId: OFFICER_FIELD_ID, purchaseCostXp: 120, chronologyYears: 1 })
+    expect(officer.creation.lifeModules!.pendingAwards).toContainEqual(expect.objectContaining({ awardId: 'officer-candidate-school.flexible', remainingXp: 115 }))
+    expect(officer.traits.find((entry) => entry.traitId === 'trait.rank')).toMatchObject({ accumulatedXp: 450, attainedTp: 4 })
+    expect(officer.attributes.find((entry) => entry.attributeId === 'CHA')!.accumulatedXp - military.attributes.find((entry) => entry.attributeId === 'CHA')!.accumulatedXp).toBe(100)
+    expect(officer.attributes.find((entry) => entry.attributeId === 'EDG')!.accumulatedXp - military.attributes.find((entry) => entry.attributeId === 'EDG')!.accumulatedXp).toBe(-200)
+    const expectedOfficerSkills = ['Administration', 'Leadership', 'Melee Weapons', 'Protocol/Capellan', 'Training']
+    expect(expectedOfficerSkills.every((name) => officer.skills.some((entry) => entry.displayName === name))).toBe(true)
+    expect(officer.creation.lifeModules!.prerequisiteIssues.filter((entry) => entry.moduleId === OFFICER_FIELD_ID).every((entry) => entry.status === 'satisfied')).toBe(true)
+    expect(officer.chronology.find((entry) => entry.eventId === `${OFFICER_TRAINING_SCHOOL_ID}.complete`)?.date).toBe('age:19')
+
+    const officerFlexible = officer.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'officer-candidate-school.flexible')!
+    officer = resolvePendingLifeModuleAward(officer, officerFlexible.id, { type: 'attribute', targetId: 'WIL', displayName: 'WIL' }, 115)
+    expect(officer.creation.lifeModules!.phase).toBe('alpha-stage-3-stop')
+    const selecting = continueStage3Schooling(officer)
+    expect(() => applyMilitaryEnlistment(selecting)).toThrow('Another Military Stage 3 school has already been completed.')
+    expect(applyStage3School(selecting, TECHNICAL_COLLEGE_ID, [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID]).lifeModuleHistory.at(-1)?.moduleId).toBe(TECHNICAL_COLLEGE_ID)
+    expect(continueToStage4(officer).creation.lifeModules!.phase).toBe('stage-4-selection')
+
+    const decoded = decodeCharacter(encodeCharacter(officer, '2026-10-03T00:00:00.000Z'))
+    expect(decoded).toEqual(officer)
+    expect(decoded.creation.lifeModules!.selectedSkillFields.filter((entry) => entry.fieldId === OFFICER_FIELD_ID)).toHaveLength(1)
+    expect(validateCharacter(decoded).valid).toBe(true)
+  })
+
+  it('enforces Officer Candidate School entry while supporting the Intelligence/Police route', () => {
+    const initial = continueToStage3(completeHighSchoolStage2(10000))
+    expect(() => applyStage3School(initial, OFFICER_TRAINING_SCHOOL_ID, [OFFICER_FIELD_ID])).toThrow('requires prior Intelligence/Police or Military schooling')
+    expect(() => applyStage3School(continueStage3Schooling(completeTechnicalCollegeStage3(10000)), OFFICER_TRAINING_SCHOOL_ID, [OFFICER_FIELD_ID])).toThrow('only Intelligence/Police or Military')
+
+    let intelligence = applyStage3School(initial, INTELLIGENCE_OPERATIVE_TRAINING_ID, [BASIC_TRAINING_FIELD_ID, POLICE_OFFICER_FIELD_ID])
+    intelligence = resolveByAward(intelligence, 'intelligence-operative.attribute.any', 'DEX', 'DEX')
+    const driving = intelligence.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.fieldId === POLICE_OFFICER_FIELD_ID)!
+    intelligence = resolvePendingLifeModuleAward(intelligence, driving.id, { type: 'skill', targetId: 'skill.driving', displayName: 'Driving/Ground Vehicles', parameter: { kind: 'subskill', value: 'Ground Vehicles' } })
+    const intelligenceFlexible = intelligence.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'intelligence-operative.flexible')!
+    intelligence = resolvePendingLifeModuleAward(intelligence, intelligenceFlexible.id, { type: 'attribute', targetId: 'WIL', displayName: 'WIL' }, 150)
+
+    let officer = applyStage3School(continueStage3Schooling(intelligence), OFFICER_TRAINING_SCHOOL_ID, [OFFICER_FIELD_ID])
+    expect(officer.creation.lifeModules!.prerequisiteIssues.filter((entry) => entry.moduleId === OFFICER_FIELD_ID).every((entry) => entry.status === 'satisfied')).toBe(true)
+    expect(officer.traits.find((entry) => entry.traitId === 'trait.rank')).toMatchObject({ accumulatedXp: 500, attainedTp: 5 })
+    const officerFlexible = officer.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'officer-candidate-school.flexible')!
+    officer = resolvePendingLifeModuleAward(officer, officerFlexible.id, { type: 'attribute', targetId: 'CHA', displayName: 'CHA' }, 115)
+    const selecting = continueStage3Schooling(officer)
+    expect(() => applyStage3School(selecting, POLICE_ACADEMY_ID, [POLICE_OFFICER_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID])).toThrow('Another Intelligence/Police Stage 3 school has already been completed.')
+    expect(() => applyStage3School(selecting, OFFICER_TRAINING_SCHOOL_ID, [OFFICER_FIELD_ID])).toThrow('Officer Candidate School has already been completed.')
   })
 
   it('represents all three general Stage 3 families cumulatively and exhausts normal family choices', () => {

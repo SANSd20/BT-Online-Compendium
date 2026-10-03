@@ -19,6 +19,7 @@ import {
   LIFE_MODULE_RULES_SOURCE,
   MILITARY_ACADEMY_ID,
   MILITARY_ENLISTMENT_ID,
+  OFFICER_TRAINING_SCHOOL_ID,
   POLICE_ACADEMY_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
@@ -277,7 +278,11 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
   if (state.phase !== 'stage-3-selection') throw new Error('A Stage 3 school is not the current legal action.')
   const publishedSchool = getLifeModule(moduleId)
   if (publishedSchool.stage !== 3 || !publishedSchool.skillFieldSelection) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
-  const eligibility = stage3SchoolEligibility(character.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId), moduleId)
+  const eligibility = stage3SchoolEligibility(
+    character.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId),
+    moduleId,
+    { completedFieldCategories: state.selectedSkillFields.map((grant) => grant.category) },
+  )
   if (!eligibility.eligible) throw new Error(eligibility.reason)
   const conditional = publishedSchool.conditionalPriorModuleAwards
   const conditionalApplies = Boolean(conditional && conditional.absentModuleIds.every((id) => !character.lifeModuleHistory.some((entry) => entry.moduleId === id)))
@@ -335,7 +340,7 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
 }
 
 export function applyStage3School(character: CharacterDefinition, moduleId: string, fieldIds: string[]): CharacterDefinition {
-  if (![TECHNICAL_COLLEGE_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
+  if (![TECHNICAL_COLLEGE_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
   return applyStage3SchoolDefinition(character, moduleId, fieldIds)
 }
 
@@ -346,8 +351,9 @@ export function continueStage3Schooling(character: CharacterDefinition): Charact
     throw new Error('Additional Stage 3 schooling requires a resolved, prerequisite-satisfied Stage 3 Alpha stop.')
   }
   const completed = next.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId)
-  const implementedSchools = [TECHNICAL_COLLEGE_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID]
-  if (!implementedSchools.some((moduleId) => stage3SchoolEligibility(completed, moduleId).eligible)) {
+  const implementedSchools = [TECHNICAL_COLLEGE_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID]
+  const completedFieldCategories = state.selectedSkillFields.map((grant) => grant.category)
+  if (!implementedSchools.some((moduleId) => stage3SchoolEligibility(completed, moduleId, { completedFieldCategories }).eligible)) {
     throw new Error('No additional implemented Stage 3 school family is available.')
   }
   state.phase = 'stage-3-selection'

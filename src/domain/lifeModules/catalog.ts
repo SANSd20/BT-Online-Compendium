@@ -1,10 +1,11 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
-import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
-import { stage3SchoolClassification } from './stage3Schooling'
+import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, OFFICER_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
+import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 
 export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
+export { OFFICER_TRAINING_SCHOOL_ID } from './stage3Schooling'
 
 export const LIFE_MODULE_RULES_SOURCE: SourceCitation = {
   sourceId: 'atow-core-corrected-third',
@@ -312,7 +313,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'police-academy.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 140, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
     notes: ['Intelligence/Police Stage 3 school. Base cost is 680 XP plus selected Skill Field costs.'],
-    deferredRules: ['Officer Candidate School and source-listed reference-only Fields remain deferred.'],
+    deferredRules: ['Source-listed reference-only Fields remain deferred.'],
   },
   {
     id: INTELLIGENCE_OPERATIVE_TRAINING_ID,
@@ -360,7 +361,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'intelligence-operative.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 150, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
     notes: ['Intelligence/Police Stage 3 school. Base cost is 760 XP plus selected Skill Field costs.'],
-    deferredRules: ['Officer Candidate School and source-listed reference-only Fields remain deferred.'],
+    deferredRules: ['Source-listed reference-only Fields remain deferred.'],
   },
   {
     id: MILITARY_ACADEMY_ID,
@@ -415,7 +416,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'military-academy.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 100, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
     notes: ['Military Stage 3 school. Base cost is 830 XP plus selected Skill Field costs.'],
-    deferredRules: ['Officer Candidate School and reference-only Fields remain deferred.'],
+    deferredRules: ['Reference-only Fields remain deferred.'],
   },
   {
     id: MILITARY_ENLISTMENT_ID,
@@ -457,7 +458,42 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'military-enlistment.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 200, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
     notes: ['Military Stage 3 school. Base cost is 720 XP plus selected Skill Field costs.'],
-    deferredRules: ['Officer Candidate School and reference-only Fields remain deferred.'],
+    deferredRules: ['Reference-only Fields remain deferred.'],
+  },
+  {
+    id: OFFICER_TRAINING_SCHOOL_ID,
+    displayName: 'Officer Candidate School',
+    stage: 3,
+    kind: 'higher-education',
+    stage3School: stage3SchoolClassification(OFFICER_TRAINING_SCHOOL_ID),
+    source: source(83, 'stage-3-officer-candidate-school'),
+    costXp: 550,
+    prerequisites: [],
+    skillFieldSelection: {
+      offers: [
+        { fieldId: OFFICER_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+      ],
+      exactlyBasic: 1,
+      minimumAdvanced: 0,
+      maximumTotal: 1,
+    },
+    awards: [
+      fixed('officer-candidate-school.attribute.cha', 100, attribute('CHA')),
+      fixed('officer-candidate-school.attribute.edg', -200, attribute('EDG')),
+      fixed('officer-candidate-school.trait.connections', 50, trait('trait.connections', 'Connections')),
+      fixed('officer-candidate-school.trait.equipped', 50, trait('trait.equipped', 'Equipped')),
+      fixed('officer-candidate-school.trait.rank', 250, trait('trait.rank', 'Rank')),
+      fixed('officer-candidate-school.trait.reputation', 50, trait('trait.reputation', 'Reputation')),
+      fixed('officer-candidate-school.trait.wealth', 100, trait('trait.wealth', 'Wealth')),
+      fixed('officer-candidate-school.skill.leadership', 10, skill('skill.leadership', 'Leadership')),
+      { id: 'officer-candidate-school.skill.protocol-affiliation', kind: 'affiliation-bound-skill', xp: 25, skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' },
+      { id: 'officer-candidate-school.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 115, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: [
+      'Secondary Stage 3 school available only after qualifying Intelligence/Police or Military schooling with at least one Basic and one Advanced Field.',
+      'Officer Candidate School provides the Officer Field and access to officer-grade ranks without consuming a normal Stage 3 family.',
+    ],
+    deferredRules: [],
   },
   {
     id: AGITATOR_ID,
@@ -533,7 +569,8 @@ export function validateLifeModuleCatalog(catalog: readonly LifeModuleDefinition
         fieldIds.add(offer.fieldId)
       }
       const policy = module.skillFieldSelection
-      if (policy.exactlyBasic !== 1 || policy.minimumAdvanced < 1 || policy.maximumTotal < policy.exactlyBasic + policy.minimumAdvanced) {
+      const secondary = module.stage3School?.classification === 'secondary'
+      if (policy.exactlyBasic !== 1 || policy.minimumAdvanced < (secondary ? 0 : 1) || policy.maximumTotal < policy.exactlyBasic + policy.minimumAdvanced) {
         issues.push({ moduleId: module.id, message: 'Skill Field selection constraints are malformed.' })
       }
     }

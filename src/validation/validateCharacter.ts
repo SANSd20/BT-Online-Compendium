@@ -23,7 +23,7 @@ import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
 import { getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
-import { stage3SchoolClassification, usedStage3SchoolFamilies } from '../domain/lifeModules/stage3Schooling'
+import { stage3SchoolClassification, stage3SchoolEligibility, usedStage3SchoolFamilies } from '../domain/lifeModules/stage3Schooling'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
 import { getMasterSkillFieldGoal } from '../domain/skillFields/goalCatalog'
 import {
@@ -606,6 +606,15 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   if (governedStage3Families.length !== usedStage3SchoolFamilies(stage3Entries.map((entry) => entry.moduleId)).size) {
     issues.push(issue('life-modules.stage-3.family-reused', 'lifeModuleHistory', 'Stage 3 schooling may not reuse a Civilian, Intelligence/Police, or Military general school family.'))
   }
+  stage3Entries.forEach((entry, index) => {
+    if (stage3SchoolClassification(entry.moduleId)?.classification !== 'secondary') return
+    const priorEntries = stage3Entries.slice(0, index)
+    const priorIds = new Set(priorEntries.map((prior) => prior.moduleId))
+    const eligibility = stage3SchoolEligibility(priorEntries.map((prior) => prior.moduleId), entry.moduleId, {
+      completedFieldCategories: state.selectedSkillFields.filter((grant) => priorIds.has(grant.schoolModuleId)).map((grant) => grant.category),
+    })
+    if (!eligibility.eligible) issues.push(issue('life-modules.stage-3.secondary.ineligible', `lifeModuleHistory.${index}`, eligibility.reason ?? 'Secondary Stage 3 school eligibility is not satisfied.'))
+  })
   if (state.currentStage === 3 && stage3Count === 0) issues.push(issue('life-modules.stage-3.outstanding', 'lifeModuleHistory', 'A Stage 3 school has not yet been selected for this continuation.', { severity: 'warning' }))
   validateSkillFieldGrants(character, issues, provenanceIds)
   if (stage4Count > 1) issues.push(issue('life-modules.stage-4.multiple', 'lifeModuleHistory', 'Multiple Stage 4 modules are not supported in Alpha Slice 9.'))

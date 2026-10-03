@@ -8,14 +8,17 @@ describe('Stage 3 general schooling type audit', () => {
       'intelligence-police': ['Police Academy', 'Intelligence Operative Training'],
       military: ['Military Academy', 'Military Enlistment', 'Family Training'],
     })
-    expect(stage3SchoolClassification(OFFICER_TRAINING_SCHOOL_ID)).toMatchObject({ classification: 'secondary' })
+    expect(stage3SchoolClassification(OFFICER_TRAINING_SCHOOL_ID)).toMatchObject({ displayName: 'Officer Candidate School', classification: 'secondary' })
   })
 
   it('uses stable module IDs and allows only unused general families', () => {
     expect(sourceAllowsStage3Repeat(['stage3.military-academy'], 'stage3.military-enlistment')).toBe(false)
     expect(sourceAllowsStage3Repeat(['stage3.military-academy'], 'stage3.technical-college')).toBe(true)
     expect(sourceAllowsStage3Repeat(['stage3.police-academy'], 'stage3.intelligence-operative-training')).toBe(false)
-    expect(sourceAllowsStage3Repeat(['stage3.military-academy'], OFFICER_TRAINING_SCHOOL_ID)).toBe(true)
+    expect(stage3SchoolEligibility(['stage3.military-academy'], OFFICER_TRAINING_SCHOOL_ID, { completedFieldCategories: ['basic', 'advanced'] })).toEqual({ eligible: true })
+    expect(stage3SchoolEligibility([], OFFICER_TRAINING_SCHOOL_ID)).toEqual({ eligible: false, reason: 'Officer Candidate School requires prior Intelligence/Police or Military schooling.' })
+    expect(stage3SchoolEligibility(['stage3.technical-college'], OFFICER_TRAINING_SCHOOL_ID, { completedFieldCategories: ['basic', 'advanced'] })).toEqual({ eligible: false, reason: 'Officer Candidate School requires the character to have used only Intelligence/Police or Military Stage 3 schools.' })
+    expect(stage3SchoolEligibility(['stage3.police-academy'], OFFICER_TRAINING_SCHOOL_ID, { completedFieldCategories: ['basic'] })).toEqual({ eligible: false, reason: 'Officer Candidate School requires at least one previously acquired Basic Field and one Advanced Field.' })
     expect(sourceAllowsStage3Repeat(['stage3.unknown'], 'stage3.technical-college')).toBe(true)
     expect(sourceAllowsStage3Repeat([], 'stage3.unknown')).toBe(false)
   })

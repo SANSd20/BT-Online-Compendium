@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
@@ -25,7 +25,7 @@ interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
 }
 
-const STAGE_3_SCHOOL_IDS = [TECHNICAL_COLLEGE_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID] as const
+const STAGE_3_SCHOOL_IDS = [TECHNICAL_COLLEGE_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID] as const
 type Stage3SchoolId = (typeof STAGE_3_SCHOOL_IDS)[number]
 
 interface ResolutionDraft {
@@ -160,7 +160,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const effectiveOwnedLimits = character?.creation.finalTouches ? adjustedOwnedEquipmentLimits(character.creation.finalTouches.equippedTpUsed, accessProfile.affiliationCategory) : null
   const stageModulePendingAwards = stageModuleBasePreview?.creation.lifeModules?.pendingAwards.filter((entry) => entry.moduleId === stageModulePreviewId) ?? []
   const completedStage3ModuleIds = character?.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId) ?? []
-  const additionalStage3Available = STAGE_3_SCHOOL_IDS.some((moduleId) => stage3SchoolEligibility(completedStage3ModuleIds, moduleId).eligible)
+  const completedStage3FieldCategories = state?.selectedSkillFields.map((grant) => grant.category) ?? []
+  const additionalStage3Available = STAGE_3_SCHOOL_IDS.some((moduleId) => stage3SchoolEligibility(completedStage3ModuleIds, moduleId, { completedFieldCategories: completedStage3FieldCategories }).eligible)
 
   function selectStageModule(moduleId: SupportedStageModuleId) {
     if (STAGE_3_SCHOOL_IDS.includes(moduleId as Stage3SchoolId)) {
@@ -231,7 +232,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
 
   function renderStage3School(schoolId: Stage3SchoolId) {
     const school = getLifeModule(schoolId)
-    const schoolEligibility = stage3SchoolEligibility(completedStage3ModuleIds, schoolId)
+    const schoolEligibility = stage3SchoolEligibility(completedStage3ModuleIds, schoolId, { completedFieldCategories: completedStage3FieldCategories })
     const availabilityId = `${schoolId}-availability`
     const offers = school.skillFieldSelection!.offers
     const isSelected = stageModulePreviewId === schoolId
@@ -244,7 +245,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     const cost = selectedOffers.reduce((total, offer) => total + skillFieldCost(getSkillField(offer.fieldId), offer.costXpPerSkill), school.costXp)
     return <article key={schoolId} className={isSelected ? 'preview-selected' : ''} aria-disabled={!schoolEligibility.eligible}>
       <h3>{school.displayName}</h3>
-      <p>{school.costXp} XP base cost · choose exactly one Basic Field, at least one Advanced Field, and no more than three Fields total. Special Fields require an Advanced Field. Each Field Skill receives +30 XP at a cost of 24 XP.</p>
+      <p>{school.stage3School?.classification === 'secondary'
+        ? `${school.costXp} XP base cost · includes the required Officer Field. Each of its five Skills receives +30 XP at a cost of 24 XP.`
+        : `${school.costXp} XP base cost · choose exactly one Basic Field, at least one Advanced Field, and no more than three Fields total. Special Fields require an Advanced Field. Each Field Skill receives +30 XP at a cost of 24 XP.`}</p>
       {school.conditionalPriorModuleAwards && <p><strong>Conditional entry adjustment:</strong> {school.conditionalPriorModuleAwards.description}</p>}
       <fieldset><legend>Basic Field</legend>
         {offers.filter((offer) => offer.category === 'basic').map((offer) => {
@@ -254,7 +257,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           return <label key={field.id}><input type="radio" name={`${schoolId}-basic`} checked={isSelected && stage3FieldIds.includes(field.id)} disabled={!isSelected || availability.state === 'unavailable'} onChange={() => selectStage3BasicField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
         })}
       </fieldset>
-      <fieldset><legend>Advanced Fields</legend>
+      {offers.some((offer) => offer.category === 'advanced') && <fieldset><legend>Advanced Fields</legend>
         {offers.filter((offer) => offer.category === 'advanced').map((offer) => {
           const field = getSkillField(offer.fieldId)
           const selected = isSelected && stage3FieldIds.includes(field.id)
@@ -262,7 +265,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
           return <label key={field.id}><input type="checkbox" checked={selected} disabled={!isSelected || (selected ? advancedCount <= 1 : availability.state === 'unavailable' || selectedFieldCount >= 3)} onChange={() => toggleStage3AdvancedField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
         })}
-      </fieldset>
+      </fieldset>}
       {offers.some((offer) => offer.category === 'special') && <fieldset><legend>Special Fields</legend>
         {offers.filter((offer) => offer.category === 'special').map((offer) => {
           const field = getSkillField(offer.fieldId)

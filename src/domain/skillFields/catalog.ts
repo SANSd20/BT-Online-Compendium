@@ -34,6 +34,7 @@ export const SCOUT_FIELD_ID = 'field.scout'
 export const POLICE_OFFICER_FIELD_ID = 'field.police-officer'
 export const DETECTIVE_FIELD_ID = 'field.detective'
 export const INTELLIGENCE_FIELD_ID = 'field.intelligence'
+export const OFFICER_FIELD_ID = 'field.officer'
 
 export const SECURITY_SYSTEMS_SUBSKILLS = ['Electronic', 'Mechanical'] as const
 export const NAVAL_CAREER_SUBSKILLS = ['Pilot', 'Ship’s Crew'] as const
@@ -186,6 +187,23 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       skill('skill.technician', 'Technician/Mechanical', 'Mechanical'),
       skill('skill.technician', 'Technician/Nuclear', 'Nuclear'),
     ],
+  },
+  {
+    id: OFFICER_FIELD_ID,
+    displayName: 'Officer',
+    category: 'basic',
+    source: { ...source('skill-field-officer'), page: 94 },
+    prerequisites: [
+      { id: 'officer.basic-training', kind: 'skill-field', fieldIds: [BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID], description: 'Basic Training or Basic Training (Naval) Field' },
+      { id: 'officer.rank', kind: 'trait-minimum', traitId: 'trait.rank', minimum: 4, description: 'Rank O1 (+4 TP) or higher' },
+    ],
+    componentSkills: [
+      skill('skill.administration', 'Administration'),
+      skill('skill.leadership', 'Leadership'),
+      skill('skill.melee-weapons', 'Melee Weapons'),
+      skill('skill.training', 'Training'),
+    ],
+    affiliationBoundComponentSkills: [{ skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' }],
   },
   {
     id: TECHNICIAN_VEHICLE_FIELD_ID,

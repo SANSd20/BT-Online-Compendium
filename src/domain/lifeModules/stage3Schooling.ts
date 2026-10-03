@@ -13,6 +13,10 @@ export interface Stage3SecondarySchoolClassification {
   classification: 'secondary'
 }
 
+export interface Stage3SchoolEligibilityContext {
+  completedFieldCategories?: readonly ('basic' | 'advanced' | 'special')[]
+}
+
 export type Stage3SchoolClassification = Stage3GeneralSchoolClassification | Stage3SecondarySchoolClassification
 
 /** Canonical corrected-printing Stage 3 school classification. */
@@ -26,7 +30,7 @@ export const STAGE3_SCHOOLS: readonly Stage3SchoolClassification[] = [
   { moduleId: 'stage3.military-academy', displayName: 'Military Academy', classification: 'general', family: 'military' },
   { moduleId: 'stage3.military-enlistment', displayName: 'Military Enlistment', classification: 'general', family: 'military' },
   { moduleId: 'stage3.family-training', displayName: 'Family Training', classification: 'general', family: 'military' },
-  { moduleId: 'stage3.officer-training', displayName: 'Officer Training', classification: 'secondary' },
+  { moduleId: 'stage3.officer-training', displayName: 'Officer Candidate School', classification: 'secondary' },
 ]
 
 export const OFFICER_TRAINING_SCHOOL_ID = 'stage3.officer-training'
@@ -48,11 +52,20 @@ export function usedStage3SchoolFamilies(moduleIds: readonly string[]): Set<Stag
   }))
 }
 
-export function stage3SchoolEligibility(completedModuleIds: readonly string[], candidateModuleId: string): { eligible: boolean; reason?: string } {
+export function stage3SchoolEligibility(completedModuleIds: readonly string[], candidateModuleId: string, context: Stage3SchoolEligibilityContext = {}): { eligible: boolean; reason?: string } {
   const candidate = stage3SchoolClassification(candidateModuleId)
   if (!candidate) return { eligible: false, reason: 'This Stage 3 school has no governed school-family classification.' }
   if (completedModuleIds.includes(candidateModuleId)) return { eligible: false, reason: `${candidate.displayName} has already been completed.` }
-  if (candidate.classification === 'secondary') return { eligible: true }
+  if (candidate.classification === 'secondary') {
+    const priorGeneralSchools = completedModuleIds.map(stage3SchoolClassification).filter((school): school is Stage3GeneralSchoolClassification => school?.classification === 'general')
+    if (priorGeneralSchools.length === 0) return { eligible: false, reason: 'Officer Candidate School requires prior Intelligence/Police or Military schooling.' }
+    if (priorGeneralSchools.some((school) => school.family === 'civilian')) return { eligible: false, reason: 'Officer Candidate School requires the character to have used only Intelligence/Police or Military Stage 3 schools.' }
+    const categories = context.completedFieldCategories ?? []
+    if (!categories.includes('basic') || !categories.includes('advanced')) {
+      return { eligible: false, reason: 'Officer Candidate School requires at least one previously acquired Basic Field and one Advanced Field.' }
+    }
+    return { eligible: true }
+  }
   if (!usedStage3SchoolFamilies(completedModuleIds).has(candidate.family)) return { eligible: true }
   const familyLabel = candidate.family === 'intelligence-police' ? 'Intelligence/Police' : candidate.family[0].toUpperCase() + candidate.family.slice(1)
   return { eligible: false, reason: `Another ${familyLabel} Stage 3 school has already been completed.` }
