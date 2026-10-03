@@ -2,7 +2,7 @@ import type { CharacterDefinition, PendingLifeModuleAward, ResolvedLifeModuleDes
 import { resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { applySupportedStageModule, type SupportedStageModuleId } from './stageModulePreviewModel'
 import { pendingOpenSubject } from '../../domain/lifeModules/awardOptions'
-import { openSkillSubjectDestination, validateOpenSkillSubject } from '../../domain/skillFields/openSkillSubjects'
+import { isOpenSubjectSkillId, openSkillSubjectDestination, validateOpenSkillSubject } from '../../domain/skillFields/openSkillSubjects'
 
 export interface StageChoiceSlotValue {
   targetType: '' | ResolvedLifeModuleDestination['type']
@@ -11,6 +11,7 @@ export interface StageChoiceSlotValue {
   displayName: string
   xpAmount: number
   subjectInput?: string
+  choiceOptionValue?: string
 }
 
 export type StageChoiceSlotValues = Record<string, StageChoiceSlotValue[]>
@@ -144,7 +145,15 @@ export function previewStageModuleChoiceSlots(
 }
 
 export function slotValueComplete(value: StageChoiceSlotValue | undefined): value is StageChoiceSlotValue {
-  return Boolean(value?.targetType && value.targetId && Number.isInteger(value.xpAmount))
+  return Boolean(value?.targetType && value.targetId && value.displayName && Number.isInteger(value.xpAmount))
+}
+
+export function modeledOpenSubjectStageChoiceSlot(pending: PendingLifeModuleAward, skillId: string, optionValue: string, input: string): { value: StageChoiceSlotValue; error: string | null } {
+  if (pending.kind !== 'modeled-skill-choice' || !isOpenSubjectSkillId(skillId)) throw new Error('Pending award is not a modeled open-subject choice.')
+  const checked = validateOpenSkillSubject(input)
+  if (checked.error) return { value: { ...emptyStageChoiceSlot(pending), choiceOptionValue: optionValue, subjectInput: input, parameter: checked.subject }, error: checked.error }
+  const destination = openSkillSubjectDestination(skillId, input)
+  return { value: { targetType: 'skill', targetId: skillId, parameter: destination.parameter!.value, displayName: destination.displayName, xpAmount: pending.xpPerGrant, choiceOptionValue: optionValue, subjectInput: input }, error: null }
 }
 
 export function emptyStageChoiceSlot(pending: PendingLifeModuleAward): StageChoiceSlotValue {
@@ -176,6 +185,7 @@ function toDestination(value: StageChoiceSlotValue): ResolvedLifeModuleDestinati
 }
 
 function optionValue(value: StageChoiceSlotValue | undefined): string {
+  if (value?.choiceOptionValue) return value.choiceOptionValue
   if (!value?.targetId) return ''
   return value.targetType === 'skill' ? `${value.targetId}/${value.parameter}` : value.targetId
 }

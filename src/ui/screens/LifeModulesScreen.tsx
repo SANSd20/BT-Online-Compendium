@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
@@ -19,13 +19,13 @@ import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../co
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesAffiliationTheme, previewStage0Affiliation } from '../components/stage0PreviewModel'
 import { defaultStage3FieldIds, previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
-import { emptyStageChoiceSlot, filterSiblingDestinationOptions, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
+import { emptyStageChoiceSlot, filterSiblingDestinationOptions, modeledOpenSubjectStageChoiceSlot, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
 }
 
-const STAGE_3_SCHOOL_IDS = [TECHNICAL_COLLEGE_ID, UNIVERSITY_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID] as const
+const STAGE_3_SCHOOL_IDS = [TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID] as const
 type Stage3SchoolId = (typeof STAGE_3_SCHOOL_IDS)[number]
 
 interface ResolutionDraft {
@@ -34,6 +34,7 @@ interface ResolutionDraft {
   parameter: string
   displayName: string
   xpAmount: number
+  choiceOptionValue?: string
 }
 
 interface EquipmentDraft {
@@ -298,6 +299,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             const options = filterSiblingDestinationOptions(unfilteredOptions, values, index, relatedSiblingValues)
             const openSubject = pendingOpenSubject(pending)
             const openSubjectResult = openSubject ? openSubjectStageChoiceSlot(pending, value.subjectInput ?? '') : null
+            const modeledOpenOption = pending.kind === 'modeled-skill-choice' ? unfilteredOptions.find((option) => option.value === value.choiceOptionValue && option.inputMode === 'open-subject') : undefined
+            const modeledOpenResult = modeledOpenOption ? modeledOpenSubjectStageChoiceSlot(pending, modeledOpenOption.targetId, modeledOpenOption.value, value.subjectInput ?? '') : null
             const unsupported = value.targetType ? pendingAwardUnsupportedMessage(optionPending, options) : null
             const slotLabel = stageChoiceSlotLabel(pending, index)
             const slotId = `${pending.id.replace(/[^a-zA-Z0-9_-]/g, '-')}-${index}`
@@ -321,10 +324,16 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 <span id={`${slotId}-subject-help`}>{openSubject.description} Examples are illustrative, not a closed list.</span>
               </label>}
               {openSubjectResult?.error && <p className="notice" role="alert">{openSubjectResult.error}</p>}
+              {modeledOpenOption && <label htmlFor={`${slotId}-modeled-subject`}>{modeledOpenOption.displayName.replace('/Other…', '')} subject
+                <input id={`${slotId}-modeled-subject`} type="text" value={value.subjectInput ?? ''} maxLength={60} aria-describedby={`${slotId}-label ${slotId}-help ${slotId}-modeled-subject-help`} onChange={(event) => updateStageChoiceSlot(pending, index, modeledOpenSubjectStageChoiceSlot(pending, modeledOpenOption.targetId, modeledOpenOption.value, event.target.value).value)} />
+                <span id={`${slotId}-modeled-subject-help`}>{modeledOpenOption.description} Examples are illustrative, not a closed list.</span>
+              </label>}
+              {modeledOpenResult?.error && <p className="notice" role="alert">{modeledOpenResult.error}</p>}
               {options.length > 0 && <label htmlFor={`${slotId}-destination`}>{pending.kind === 'related-skill-prerequisite' ? 'Related existing Skill' : pending.skillFieldChoice ? 'Field Skill subskill' : pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Destination'}
                 <select id={`${slotId}-destination`} aria-describedby={`${slotId}-label ${slotId}-help`} value={optionValue(value)} onChange={(event) => {
                   const option = options.find((candidate) => candidate.value === event.target.value)
-                  if (option) updateStageChoiceSlot(pending, index, optionDraft(option, value.xpAmount))
+                  if (option?.inputMode === 'open-subject') updateStageChoiceSlot(pending, index, { ...emptyStageChoiceSlot(pending), choiceOptionValue: option.value })
+                  else if (option) updateStageChoiceSlot(pending, index, optionDraft(option, value.xpAmount))
                   else updateStageChoiceSlot(pending, index, { targetId: '', parameter: '', displayName: '' })
                 }}>
                   <option value="">Choose a valid target…</option>
@@ -744,10 +753,12 @@ function optionDraft(option: PendingAwardOption, xpAmount: number): ResolutionDr
     parameter: option.parameter?.value ?? '',
     displayName: option.displayName,
     xpAmount,
+    ...(option.inputMode ? { choiceOptionValue: option.value } : {}),
   }
 }
 
-function optionValue(draft: Pick<StageChoiceSlotValue, 'targetType' | 'targetId' | 'parameter'>): string {
+function optionValue(draft: Pick<StageChoiceSlotValue, 'targetType' | 'targetId' | 'parameter' | 'choiceOptionValue'>): string {
+  if (draft.choiceOptionValue) return draft.choiceOptionValue
   if (!draft.targetId) return ''
   return draft.targetType === 'skill' ? `${draft.targetId}/${draft.parameter}` : draft.targetId
 }
@@ -762,6 +773,7 @@ function stageChoiceSlotLabel(pending: PendingLifeModuleAward, index: number): s
   const suffix = pending.remainingGrants > 1 ? ` ${index + 1}` : ''
   if (pending.kind === 'flexible-xp') return `Flexible XP grant ${index + 1}`
   if (pending.kind === 'related-skill-prerequisite') return 'Related existing Skill prerequisite'
+  if (pending.kind === 'modeled-skill-choice') return `Trade School Skill award ${index + 1}`
   if (pending.requiredSkillId === 'skill.career') return `Career choice${suffix}`
   if (pending.requiredSkillId === 'skill.interest') return `Interest choice${suffix}`
   if (pending.kind === 'language-choice') return `Language choice${suffix}`

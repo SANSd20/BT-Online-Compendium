@@ -151,3 +151,7 @@ Corrected-printing p. 82 defines University as a 710-XP Civilian school requirin
 ## Alpha Slice 71 — General Studies prerequisite semantics
 
 Corrected-printing p. 92 requires General Studies to have INT 3 and at least one other Skill related to its listed Field Skills. It supplies no closed relationship list or minimum level, so the relationship remains a GM judgment. The implementation records a player-selected concrete Skill already possessed before the University preview, labels the choice as subject to GM approval, and grants no prerequisite XP. The same page defines Anthropologist, Archaeologist, and Lawyer and their dependency on the actually acquired General Studies Field. The v4.0 errata contains no correction to these entries. See `docs/GENERAL-STUDIES-PREREQUISITE-AUDIT.md`.
+
+## Alpha Slice 72 — Trade School and any-three-Skills semantics
+
+Corrected-printing p. 82 defines Trade School as a 560-XP Civilian school with no prerequisite, INT +50, any one other Attribute +100, Connections +50, Equipped +100, any three Skills +20 XP each, and 200 flexible XP. “Other” excludes INT, the Attribute already named by the package. The three plural Skill awards are distinct concrete Skill destinations; the source does not require them to pre-exist or impose a category or Stage 2 cap. Parameterized Skills still require canonical subskills or governed open subjects. Corrected-printing p. 92 defines Merchant and Journalist and the p. 82 table establishes their Trade School categories and durations. The v4.0 errata contains no applicable correction.

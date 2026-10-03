@@ -14,6 +14,9 @@ describe('Stage 3 general schooling type audit', () => {
   it('uses stable module IDs and allows only unused general families', () => {
     expect(sourceAllowsStage3Repeat(['stage3.military-academy'], 'stage3.military-enlistment')).toBe(false)
     expect(sourceAllowsStage3Repeat(['stage3.military-academy'], 'stage3.technical-college')).toBe(true)
+    expect(sourceAllowsStage3Repeat(['stage3.military-academy'], 'stage3.trade-school')).toBe(true)
+    expect(sourceAllowsStage3Repeat(['stage3.police-academy'], 'stage3.trade-school')).toBe(true)
+    expect(sourceAllowsStage3Repeat(['stage3.university'], 'stage3.trade-school')).toBe(false)
     expect(sourceAllowsStage3Repeat(['stage3.police-academy'], 'stage3.intelligence-operative-training')).toBe(false)
     expect(stage3SchoolEligibility(['stage3.military-academy'], OFFICER_TRAINING_SCHOOL_ID, { completedFieldCategories: ['basic', 'advanced'] })).toEqual({ eligible: true })
     expect(stage3SchoolEligibility([], OFFICER_TRAINING_SCHOOL_ID)).toEqual({ eligible: false, reason: 'Officer Candidate School requires prior Intelligence/Police or Military schooling.' })

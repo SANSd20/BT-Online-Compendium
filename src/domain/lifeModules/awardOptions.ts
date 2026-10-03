@@ -2,10 +2,14 @@ import type { CharacterDefinition, PendingLifeModuleAward, ResolvedLifeModuleDes
 import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../pointBuy/catalog'
 import { getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions } from './affiliations'
 import { getSkillField, TECHNICIAN_SUBSKILLS } from '../skillFields/catalog'
-import { getVariableSkillDomain } from '../skillFields/variableSkillDomains'
+import { MASTER_SKILL_FIELD_GOAL_CATALOG } from '../skillFields/goalCatalog'
+import { openSkillSubjectLabel } from '../skillFields/openSkillSubjects'
+import { getVariableSkillDomain, VARIABLE_SKILL_DOMAIN_CATALOG } from '../skillFields/variableSkillDomains'
 
 export interface PendingAwardOption extends ResolvedLifeModuleDestination {
   value: string
+  inputMode?: 'open-subject'
+  description?: string
 }
 
 export interface PendingOpenSubject {
@@ -84,6 +88,7 @@ export function pendingAwardOptions(pending: PendingLifeModuleAward, character: 
     const label = pending.requiredSkillId === 'skill.streetwise' ? context.streetwiseContextLabel : context.protocolContextLabel
     return [skillOption(pending.requiredSkillId, skillName(pending.requiredSkillId), label)]
   }
+  if (pending.kind === 'modeled-skill-choice') return modeledSkillChoiceOptions(character)
   if (pending.requiredSkillId) {
     return knownPendingChoiceValues(pending).map((parameter) => skillOption(pending.requiredSkillId!, skillName(pending.requiredSkillId!), parameter))
   }
@@ -100,7 +105,7 @@ export function pendingAwardUnsupportedMessage(pending: PendingLifeModuleAward, 
 
 function flexibleTargetOptions(pending: PendingLifeModuleAward, character: CharacterDefinition): PendingAwardOption[] {
   const type = pending.allowedTargetTypes[0]
-  if (type === 'attribute') return character.attributes.map((entry) => ({ value: entry.attributeId, type, targetId: entry.attributeId, displayName: entry.attributeId }))
+  if (type === 'attribute') return character.attributes.filter((entry) => !pending.excludedTargetIds?.includes(entry.attributeId)).map((entry) => ({ value: entry.attributeId, type, targetId: entry.attributeId, displayName: entry.attributeId }))
   if (type === 'trait') {
     const candidates = [
       ...character.traits.map((entry) => ({ targetId: entry.traitId, displayName: entry.displayName ?? entry.traitId, parameters: entry.parameters })),
@@ -113,6 +118,39 @@ function flexibleTargetOptions(pending: PendingLifeModuleAward, character: Chara
     ...POINT_BUY_SKILLS.filter((entry) => !entry.parameter).map((entry) => ({ targetId: entry.id, displayName: entry.displayName, parameter: undefined })),
   ]
   return uniqueOptions(candidates.map((entry) => ({ value: `${entry.targetId}/${entry.parameter?.value ?? ''}`, type, ...entry })))
+}
+
+export function modeledSkillChoiceOptions(character: CharacterDefinition): PendingAwardOption[] {
+  const existing = character.skills.map((entry) => ({
+    value: `${entry.address.skillId}/${entry.address.parameter?.value ?? ''}`,
+    type: 'skill' as const,
+    targetId: entry.address.skillId,
+    displayName: entry.displayName ?? entry.address.skillId,
+    parameter: entry.address.parameter,
+  }))
+  const fixedFieldSkills = MASTER_SKILL_FIELD_GOAL_CATALOG.flatMap((field) => field.fieldSkills)
+    .filter((entry) => !entry.variable)
+    .map((entry) => ({
+      value: `${entry.skillId}/${entry.parameter ?? ''}`,
+      type: 'skill' as const,
+      targetId: entry.skillId,
+      displayName: entry.displayName,
+      ...(entry.parameter ? { parameter: { kind: 'subskill', value: entry.parameter } } : {}),
+    }))
+  const governed = VARIABLE_SKILL_DOMAIN_CATALOG.flatMap((domain): PendingAwardOption[] => {
+    if (domain.inputMode === 'open-subject') {
+      const label = openSkillSubjectLabel(domain.skillId)
+      return label ? [{
+        value: `${domain.skillId}/__open__`, type: 'skill', targetId: domain.skillId,
+        displayName: `${label}/Other…`, inputMode: 'open-subject', description: domain.description,
+      }] : []
+    }
+    return domain.options.map((parameter) => skillOption(domain.skillId, skillName(domain.skillId), parameter))
+  })
+  const basic = POINT_BUY_SKILLS.filter((entry) => !entry.parameter).map((entry) => ({
+    value: `${entry.id}/`, type: 'skill' as const, targetId: entry.id, displayName: entry.displayName,
+  }))
+  return uniqueOptions([...existing, ...fixedFieldSkills, ...governed, ...basic])
 }
 
 function uniqueOptions(options: PendingAwardOption[]): PendingAwardOption[] {

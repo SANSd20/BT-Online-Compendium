@@ -55,6 +55,8 @@ export const GENERAL_STUDIES_FIELD_ID = 'field.general-studies'
 export const ANTHROPOLOGIST_FIELD_ID = 'field.anthropologist'
 export const ARCHAEOLOGIST_FIELD_ID = 'field.archaeologist'
 export const LAWYER_FIELD_ID = 'field.lawyer'
+export const MERCHANT_FIELD_ID = 'field.merchant'
+export const JOURNALIST_FIELD_ID = 'field.journalist'
 
 export const SECURITY_SYSTEMS_SUBSKILLS = VARIABLE_SKILL_DOMAINS.securitySystems.options
 export const NAVAL_CAREER_SUBSKILLS = VARIABLE_SKILL_DOMAINS.navalCareer.options
@@ -633,6 +635,27 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
     ],
     componentSkills: [skill('skill.acting', 'Acting'), skill('skill.career', 'Career/Politician', 'Politician'), skill('skill.leadership', 'Leadership'), skill('skill.negotiation', 'Negotiation')],
     affiliationBoundComponentSkills: [{ skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' }],
+  },
+  {
+    id: MERCHANT_FIELD_ID, displayName: 'Merchant', category: 'basic', source: { ...source('skill-field-merchant'), page: 92 },
+    prerequisites: [
+      { id: 'merchant.cha', kind: 'attribute-minimum', attributeId: 'CHA', minimum: 3, description: 'CHA 3+' },
+      { id: 'merchant.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 3, description: 'WIL 3+' },
+    ],
+    componentSkills: [skill('skill.administration', 'Administration'), skill('skill.appraisal', 'Appraisal'), skill('skill.career', 'Career/Merchant', 'Merchant'), skill('skill.negotiation', 'Negotiation')],
+    variableComponentSkills: [
+      variableSkill('merchant.protocol-any', 'Protocol affiliation', VARIABLE_SKILL_DOMAINS.protocolAffiliations),
+      variableSkill('merchant.streetwise-any', 'Streetwise affiliation', VARIABLE_SKILL_DOMAINS.streetwiseAffiliations),
+    ],
+  },
+  {
+    id: JOURNALIST_FIELD_ID, displayName: 'Journalist', category: 'advanced', source: { ...source('skill-field-journalist'), page: 92 },
+    prerequisites: [
+      { id: 'journalist.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 3, description: 'INT 3+' },
+      { id: 'journalist.cha', kind: 'attribute-minimum', attributeId: 'CHA', minimum: 4, description: 'CHA 4+' },
+      { id: 'journalist.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 4, description: 'WIL 4+' },
+    ],
+    componentSkills: [skill('skill.acting', 'Acting'), skill('skill.art', 'Art/Writing', 'Writing'), skill('skill.career', 'Career/Journalist', 'Journalist'), skill('skill.computers', 'Computers'), skill('skill.investigation', 'Investigation'), skill('skill.perception', 'Perception')],
   },
   {
     id: GENERAL_STUDIES_FIELD_ID, displayName: 'General Studies', category: 'basic', source: { ...source('skill-field-general-studies'), page: 92 },

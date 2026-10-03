@@ -38,3 +38,7 @@ export function openSkillSubjectDestination(skillId: string, input: string): Res
 export function isOpenSubjectSkillId(skillId: string): boolean {
   return OPEN_SUBJECT_SKILLS.has(skillId)
 }
+
+export function openSkillSubjectLabel(skillId: string): string | null {
+  return OPEN_SUBJECT_SKILLS.get(skillId) ?? null
+}

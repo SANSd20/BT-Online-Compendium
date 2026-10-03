@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, MILITARY_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, MILITARY_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
 import { pendingAwardOptions } from '../../domain/lifeModules/awardOptions'
-import { ANTHROPOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, GENERAL_STUDIES_FIELD_ID, MECHWARRIOR_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID } from '../../domain/skillFields/catalog'
+import { ANTHROPOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, GENERAL_STUDIES_FIELD_ID, JOURNALIST_FIELD_ID, MECHWARRIOR_FIELD_ID, MERCHANT_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { previewSupportedStageModule } from './stageModulePreviewModel'
-import { filterSiblingDestinationOptions, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
+import { filterSiblingDestinationOptions, modeledOpenSubjectStageChoiceSlot, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
   let character = createLifeModuleCharacter(`Slots ${phase}`)
@@ -25,6 +25,25 @@ function keyedValues(character: ReturnType<typeof draftAt>, moduleId: Parameters
 }
 
 describe('Stage 1–4 choice slot preview and commit model', () => {
+  it('previews, replaces, and clears Trade School governed Skill slots without mutating committed state', () => {
+    const character = draftAt('stage-3-selection')
+    const committed = JSON.stringify(character)
+    const fields = [MERCHANT_FIELD_ID, JOURNALIST_FIELD_ID]
+    const base = previewSupportedStageModule(character, TRADE_SCHOOL_ID, fields)!
+    const pending = base.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'trade-school.skills.any-three')!
+    const open = modeledOpenSubjectStageChoiceSlot(pending, 'skill.interest', 'skill.interest/__open__', 'History')
+    expect(open.error).toBeNull()
+    const first = previewStageModuleChoiceSlots(character, TRADE_SCHOOL_ID, { [pending.awardId]: [open.value] }, fields)!
+    expect(first.character.skills.find((entry) => entry.displayName === 'Interest/History')?.accumulatedXp).toBe(20)
+    const replacement = previewStageModuleChoiceSlots(character, TRADE_SCHOOL_ID, { [pending.awardId]: [value('skill', 'skill.acting', 'Acting', 20)] }, fields)!
+    expect(replacement.character.skills.some((entry) => entry.displayName === 'Interest/History')).toBe(false)
+    expect(replacement.character.skills.find((entry) => entry.displayName === 'Acting')?.accumulatedXp).toBe(50)
+    const cleared = previewStageModuleChoiceSlots(character, TRADE_SCHOOL_ID, {}, fields)!
+    expect(cleared.character.skills.some((entry) => entry.displayName === 'Interest/History')).toBe(false)
+    expect(cleared.pendingAwards.find((entry) => entry.awardId === pending.awardId)?.remainingGrants).toBe(3)
+    expect(JSON.stringify(character)).toBe(committed)
+  })
+
   it('replaces and removes General Studies related-Skill preview provenance without changing Skill XP', () => {
     const character = draftAt('stage-3-selection')
     const fields = [GENERAL_STUDIES_FIELD_ID, ANTHROPOLOGIST_FIELD_ID]

@@ -21,8 +21,8 @@ import {
 import type { ValidationIssue, ValidationResult } from './model'
 import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
-import { knownPendingChoiceValues, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
-import { openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
+import { knownPendingChoiceValues, modeledSkillChoiceOptions, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
+import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
 import { getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { stage3SchoolClassification, stage3SchoolEligibility, usedStage3SchoolFamilies } from '../domain/lifeModules/stage3Schooling'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
@@ -659,7 +659,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     const poolAward = catalogAward?.kind === 'flexible-xp' && catalogAward.allocationMode === 'pool' ? catalogAward : undefined
     const isPool = poolAward !== undefined
     const expectedXp = catalogAward?.kind === 'flexible-xp' ? (catalogAward.allocationMode === 'pool' ? 0 : catalogAward.xpPerGrant) : catalogAward && 'xp' in catalogAward ? catalogAward.xp : undefined
-    const expectedTypes = catalogAward?.kind === 'flexible-xp' ? catalogAward.allowedTargetTypes : catalogAward && ['language-choice', 'affiliation-skill-choice', 'any-skill-choice', 'multi-skill-choice'].includes(catalogAward.kind) ? ['skill'] : []
+    const expectedTypes = catalogAward?.kind === 'flexible-xp' ? catalogAward.allowedTargetTypes : catalogAward && ['language-choice', 'affiliation-skill-choice', 'any-skill-choice', 'multi-skill-choice', 'modeled-skill-choice'].includes(catalogAward.kind) ? ['skill'] : []
     const expectedSkill = catalogAward?.kind === 'language-choice' ? 'skill.language' : catalogAward?.kind === 'affiliation-skill-choice' || catalogAward?.kind === 'any-skill-choice' || catalogAward?.kind === 'multi-skill-choice' ? catalogAward.skillId : undefined
     if (
       !selectedIds.has(award.moduleId) ||
@@ -675,6 +675,8 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
       expectedTypes.length !== award.allowedTargetTypes.length ||
       expectedTypes.some((type) => !award.allowedTargetTypes.includes(type as 'attribute' | 'trait' | 'skill')) ||
       expectedSkill !== award.requiredSkillId ||
+      (catalogAward?.kind === 'modeled-skill-choice' && award.distinctDestinations !== catalogAward.distinct) ||
+      (catalogAward?.kind === 'flexible-xp' && catalogAward.allocationMode !== 'pool' && JSON.stringify(award.excludedTargetIds ?? []) !== JSON.stringify(catalogAward.excludedTargetIds ?? [])) ||
       (isPool && (award.allocationMode !== 'pool' || JSON.stringify(award.maxXpPerTarget ?? {}) !== JSON.stringify(poolAward.maxXpPerTarget ?? {})))
     ) {
       issues.push(issue('life-modules.pending-award.malformed', `creation.lifeModules.pendingAwards.${index}`, 'Pending Life Module award state is malformed.'))
@@ -916,6 +918,17 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
         openSubjectValid = false
       }
     }
+    let modeledSkillValid = true
+    if (award.kind === 'modeled-skill-choice') {
+      const value = `${resolved.destination.targetId}/${resolved.destination.parameter?.value ?? ''}`
+      const options = modeledSkillChoiceOptions(character)
+      modeledSkillValid = options.some((option) => option.value === value && option.displayName === resolved.destination.displayName)
+      if (!modeledSkillValid && isOpenSubjectSkillId(resolved.destination.targetId) && options.some((option) => option.value === `${resolved.destination.targetId}/__open__`)) {
+        try {
+          modeledSkillValid = JSON.stringify(openSkillSubjectDestination(resolved.destination.targetId, resolved.destination.parameter?.value ?? '')) === JSON.stringify(resolved.destination)
+        } catch { modeledSkillValid = false }
+      }
+    }
     if (
       resolved.kind !== award.kind ||
       (expectedXp === null ? !Number.isInteger(resolved.xp) || resolved.xp <= 0 : resolved.xp !== expectedXp) ||
@@ -926,6 +939,7 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
       !languageValid ||
       !knownChoiceValid ||
       !openSubjectValid ||
+      !modeledSkillValid ||
       !resolved.source.sourceId ||
       !provenanceIds.has(resolved.provenanceId)
     ) {
@@ -1124,7 +1138,7 @@ function validateChoiceGrantBalance(character: CharacterDefinition, issues: Vali
 
 function lifeModuleAwardGrantCount(award: LifeModuleAward): number | null {
   if (award.kind === 'language-choice' || award.kind === 'affiliation-skill-choice') return 1
-  if (award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') return award.count
+  if (award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' || award.kind === 'modeled-skill-choice') return award.count
   if (award.kind === 'flexible-xp') return award.allocationMode === 'pool' ? 0 : award.count
   return null
 }

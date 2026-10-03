@@ -19,7 +19,8 @@ export type LifeModuleAward =
   | { id: string; kind: 'affiliation-skill-choice'; xp: number; skillId: string; displayName: string; description: string }
   | { id: string; kind: 'any-skill-choice'; xp: number; skillId: string; displayName: string; count: number }
   | { id: string; kind: 'multi-skill-choice'; xp: number; skillId: string; displayName: string; count: number }
-  | { id: string; kind: 'flexible-xp'; xpPerGrant: number; count: number; allowedTargetTypes: AwardTargetType[]; allocationMode?: 'fixed-grants' }
+  | { id: string; kind: 'modeled-skill-choice'; xp: number; count: number; displayName: string; distinct: true }
+  | { id: string; kind: 'flexible-xp'; xpPerGrant: number; count: number; allowedTargetTypes: AwardTargetType[]; allocationMode?: 'fixed-grants'; excludedTargetIds?: string[] }
   | { id: string; kind: 'flexible-xp'; totalXp: number; allowedTargetTypes: AwardTargetType[]; allocationMode: 'pool'; maxXpPerTarget?: Partial<Record<AwardTargetType, number>> }
   | { id: string; kind: 'choice-package'; description: string; options: LifeModuleDestination[][] }
   | { id: string; kind: 'conditional'; description: string; awards: LifeModuleAward[] }

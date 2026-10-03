@@ -228,7 +228,7 @@ export interface PendingLifeModuleAward {
   id: string
   moduleId: string
   awardId: string
-  kind: 'language-choice' | 'affiliation-skill-choice' | 'any-skill-choice' | 'multi-skill-choice' | 'flexible-xp' | 'related-skill-prerequisite'
+  kind: 'language-choice' | 'affiliation-skill-choice' | 'any-skill-choice' | 'multi-skill-choice' | 'modeled-skill-choice' | 'flexible-xp' | 'related-skill-prerequisite'
   description: string
   xpPerGrant: number
   remainingGrants: number
@@ -236,6 +236,8 @@ export interface PendingLifeModuleAward {
   remainingXp?: number
   maxXpPerTarget?: Partial<Record<'attribute' | 'trait' | 'skill', number>>
   allowedTargetTypes: Array<'attribute' | 'trait' | 'skill'>
+  excludedTargetIds?: string[]
+  distinctDestinations?: boolean
   choiceSource?: AffiliationLanguageSelectorGroupId
   requiredSkillId?: string
   skillFieldChoice?: {

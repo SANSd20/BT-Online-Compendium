@@ -1,7 +1,7 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
-import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INTELLIGENCE_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
+import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 
 export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
@@ -43,6 +43,7 @@ export const STAGE_2_BACK_WOODS_ID = 'stage2.back-woods'
 export const STAGE_2_HIGH_SCHOOL_ID = 'stage2.high-school'
 export const TECHNICAL_COLLEGE_ID = 'stage3.technical-college'
 export const UNIVERSITY_ID = 'stage3.university'
+export const TRADE_SCHOOL_ID = 'stage3.trade-school'
 export const POLICE_ACADEMY_ID = 'stage3.police-academy'
 export const INTELLIGENCE_OPERATIVE_TRAINING_ID = 'stage3.intelligence-operative-training'
 export const MILITARY_ACADEMY_ID = 'stage3.military-academy'
@@ -274,6 +275,43 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'technical-college.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 200, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
     notes: ['Civilian Stage 3 school. Base cost is 600 XP plus selected Skill Field costs.', 'Alpha Slice 59 exposes only source-audited Fields whose requirements can be represented without unresolved /Any choices.'],
+    deferredRules: [],
+  },
+  {
+    id: TRADE_SCHOOL_ID,
+    displayName: 'Trade School',
+    stage: 3,
+    kind: 'higher-education',
+    stage3School: stage3SchoolClassification(TRADE_SCHOOL_ID),
+    source: source(82, 'stage-3-trade-school'),
+    costXp: 560,
+    prerequisites: [],
+    skillFieldSelection: {
+      offers: [
+        { fieldId: GENERAL_STUDIES_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: MERCHANT_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: ANALYSIS_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: ANTHROPOLOGIST_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: ARCHAEOLOGIST_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: CARTOGRAPHER_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: COMMUNICATIONS_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: JOURNALIST_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: MANAGER_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: MEDICAL_ASSISTANT_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: MERCHANT_MARINE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+      ],
+      exactlyBasic: 1, minimumAdvanced: 1, maximumTotal: 3,
+      referenceOnlyOffers: [{ displayName: 'HPG Technician', category: 'advanced', chronologyYears: 2, reason: 'Restricted to affiliations not represented by the implemented Stage 0 contexts.' }],
+    },
+    awards: [
+      fixed('trade-school.attribute.int', 50, attribute('INT')),
+      { id: 'trade-school.attribute.other', kind: 'flexible-xp', xpPerGrant: 100, count: 1, allowedTargetTypes: ['attribute'], excludedTargetIds: ['INT'] },
+      fixed('trade-school.trait.connections', 50, trait('trait.connections', 'Connections')),
+      fixed('trade-school.trait.equipped', 100, trait('trait.equipped', 'Equipped')),
+      { id: 'trade-school.skills.any-three', kind: 'modeled-skill-choice', xp: 20, count: 3, displayName: 'Any three Skills', distinct: true },
+      { id: 'trade-school.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 200, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: ['Civilian Stage 3 school. Base cost is 560 XP plus selected Skill Field costs.', 'Any three Skills are limited to currently modeled governed Skill destinations; this is not the setting-wide Skill universe.'],
     deferredRules: [],
   },
   {
@@ -680,7 +718,7 @@ export function validateLifeModuleCatalog(catalog: readonly LifeModuleDefinition
             : award.destination.address.skillId
         if (!destinationId) issues.push({ moduleId: module.id, message: `Fixed award ${award.id} has no destination ID.` })
       }
-      if ((award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' || (award.kind === 'flexible-xp' && award.allocationMode !== 'pool')) && (!Number.isInteger(award.count) || award.count <= 0)) {
+      if ((award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' || award.kind === 'modeled-skill-choice' || (award.kind === 'flexible-xp' && award.allocationMode !== 'pool')) && (!Number.isInteger(award.count) || award.count <= 0)) {
         issues.push({ moduleId: module.id, message: `Choice award ${award.id} requires a positive whole grant count.` })
       }
       if (award.kind === 'flexible-xp' && award.allowedTargetTypes.length === 0) issues.push({ moduleId: module.id, message: `Flexible award ${award.id} requires allowed target types.` })

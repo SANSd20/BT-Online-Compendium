@@ -24,11 +24,11 @@ Alpha Slice 68 audits every entry that was reference-only at the Alpha Slice 67 
 | Engineer | Civilian | Technical advanced | Technician prerequisite is implemented; Technician/Any is closed | Mechanical |
 | General Studies | Civilian | University basic | Career/Any and Interest/Any are governed; cross-Skill structural prerequisite remains unsupported | Reference-only: blocked |
 | HPG Technician | Civilian | University advanced | Communications is supported, but the ComStar/Word of Blake/Clan affiliation restriction cannot be met | Reference-only: blocked |
-| Journalist | Civilian | None | Fixed data is representable, but no implemented school offers it | Reference-only: ready, not offered |
+| Journalist | Civilian | Trade School advanced | Fixed Skills and prerequisites are representable | Mechanical in Slice 72 |
 | Lawyer | Civilian | University special | General Studies prerequisite remains unsupported | Reference-only: blocked |
 | Manager | Civilian | University basic | Fixed and affiliation-bound Skills are representable | Mechanical in Slice 70 |
 | Medical Assistant | Civilian | Military Enlistment advanced | MedTech/Any is closed | Mechanical |
-| Merchant | Civilian | None | Protocol/Any and Streetwise/Any are modeled, but no implemented school offers it | Reference-only: ready, not offered |
+| Merchant | Civilian | Trade School basic | Protocol/Any and Streetwise/Any reuse affiliation-constrained governance | Mechanical in Slice 72 |
 | Merchant Marine | Civilian | Technical advanced | Protocol/Any modeled; Technician/Any closed | Mechanical |
 | Pilot - Aerospace (Civilian) | Civilian | Technical basic | Fixed data is representable; excluded from this dependency-driven promotion | Reference-only: ready |
 | Pilot - Aircraft (Civilian) | Civilian | Technical basic | Source names Air Vehicle or VTOL as a finite choice | Mechanical |
@@ -55,3 +55,5 @@ Alpha Slice 68 audits every entry that was reference-only at the Alpha Slice 67 
 | Clan ProtoMech Warrior | Clan | None | Clan affiliation, phenotype, and implant systems not implemented | Reference-only: blocked |
 
 The independent reference catalog remains 56 entries. Slice 68 promoted ten Fields, Slice 69 promoted Scientist and Special Forces, and Slice 70 promoted Manager, Planetary Surveyor, and Politician through University, bringing the mechanical catalog to 35. Slice 71 resolves the GM-arbitrated General Studies related-Skill prerequisite and promotes General Studies, Anthropologist, Archaeologist, and Lawyer, bringing the mechanical catalog to 39. No existing stable IDs, equipment data, affiliation defaults, persistence boundary, XP rule, or OCS behavior changed.
+
+Slice 72 implements Trade School and promotes its dependency-ready Merchant and Journalist offers. Merchant requires CHA 3 and WIL 3 and carries Administration, Appraisal, Career/Merchant, Negotiation, Protocol/Any, and Streetwise/Any. Journalist requires INT 3, CHA 4, and WIL 4 and carries Acting, Art/Writing, Career/Journalist, Computers, Investigation, and Perception. Each has six Skills, costs 144 XP, and awards +30 XP per Skill. The mechanical catalog is now 41; the reference catalog remains 56 and equipment remains 84.

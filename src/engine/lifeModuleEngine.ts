@@ -24,12 +24,13 @@ import {
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   TECHNICAL_COLLEGE_ID,
+  TRADE_SCHOOL_ID,
   UNIVERSITY_ID,
   UNIVERSAL_STAGE_0_ID,
 } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
-import { knownPendingChoiceValues, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
-import { openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
+import { knownPendingChoiceValues, modeledSkillChoiceOptions, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
+import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
 import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
@@ -363,7 +364,7 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
 }
 
 export function applyStage3School(character: CharacterDefinition, moduleId: string, fieldIds: string[]): CharacterDefinition {
-  if (![TECHNICAL_COLLEGE_ID, UNIVERSITY_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
+  if (![TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
   return applyStage3SchoolDefinition(character, moduleId, fieldIds)
 }
 
@@ -374,7 +375,7 @@ export function continueStage3Schooling(character: CharacterDefinition): Charact
     throw new Error('Additional Stage 3 schooling requires a resolved, prerequisite-satisfied Stage 3 Alpha stop.')
   }
   const completed = next.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId)
-  const implementedSchools = [TECHNICAL_COLLEGE_ID, UNIVERSITY_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID]
+  const implementedSchools = [TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID]
   const completedFieldCategories = state.selectedSkillFields.map((grant) => grant.category)
   if (!implementedSchools.some((moduleId) => stage3SchoolEligibility(completed, moduleId, { completedFieldCategories }).eligible)) {
     throw new Error('No additional implemented Stage 3 school family is available.')
@@ -576,7 +577,7 @@ function validateSchoolFieldSelection(character: CharacterDefinition, school: Li
 
 function awardGrantCount(award: LifeModuleAward): number | null {
   if (award.kind === 'language-choice' || award.kind === 'affiliation-skill-choice') return 1
-  if (award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') return award.count
+  if (award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' || award.kind === 'modeled-skill-choice') return award.count
   if (award.kind === 'flexible-xp') return award.allocationMode === 'pool' ? 0 : award.count
   return null
 }
@@ -662,6 +663,8 @@ function pendingAwardFrom(module: LifeModuleDefinition, award: Exclude<LifeModul
     remainingGrants,
     ...(isPool ? { allocationMode: 'pool' as const, remainingXp: award.totalXp, ...(award.maxXpPerTarget ? { maxXpPerTarget: { ...award.maxXpPerTarget } } : {}) } : { allocationMode: 'fixed-grants' as const }),
     allowedTargetTypes: [...allowedTargetTypes],
+    ...(kind === 'flexible-xp' && !isPool && award.excludedTargetIds ? { excludedTargetIds: [...award.excludedTargetIds] } : {}),
+    ...(kind === 'modeled-skill-choice' ? { distinctDestinations: award.distinct } : {}),
     ...(kind === 'language-choice' ? { choiceSource: award.choicesFrom, requiredSkillId: 'skill.language' } : {}),
     ...(kind === 'affiliation-skill-choice' || kind === 'any-skill-choice' || kind === 'multi-skill-choice' ? { requiredSkillId: award.skillId } : {}),
     source: { ...module.source },
@@ -768,6 +771,7 @@ function prerequisiteSatisfied(character: CharacterDefinition, prerequisite: Exc
 
 function validateResolutionDestination(character: CharacterDefinition, pending: PendingLifeModuleAward, destination: ResolvedLifeModuleDestination): void {
   if (!pending.allowedTargetTypes.includes(destination.type)) throw new Error(`${destination.type} is not an allowed target for this award.`)
+  if (pending.excludedTargetIds?.includes(destination.targetId)) throw new Error(`${destination.targetId} is not a legal destination for this award.`)
   if (destination.type === 'attribute') {
     if (!ATTRIBUTE_IDS.includes(destination.targetId as (typeof ATTRIBUTE_IDS)[number]) || destination.parameter) throw new Error('Flexible Attribute awards require a valid Attribute ID and no parameter.')
     return
@@ -781,6 +785,17 @@ function validateResolutionDestination(character: CharacterDefinition, pending: 
     return
   }
   if (destination.type === 'skill' && pending.requiredSkillId && destination.targetId !== pending.requiredSkillId) throw new Error(`This award must resolve to ${pending.requiredSkillId}.`)
+  if (pending.kind === 'modeled-skill-choice') {
+    if (destination.type !== 'skill') throw new Error('This award must resolve to a Skill.')
+    const available = modeledSkillChoiceOptions(character)
+    const key = `${destination.targetId}/${destination.parameter?.value ?? ''}`
+    const exact = available.some((option) => option.value === key && option.displayName === destination.displayName)
+    const open = isOpenSubjectSkillId(destination.targetId) && available.some((option) => option.value === `${destination.targetId}/__open__`)
+    if (open) {
+      const canonical = openSkillSubjectDestination(destination.targetId, destination.parameter?.value ?? '')
+      if (canonical.displayName !== destination.displayName || canonical.parameter?.value !== destination.parameter?.value) throw new Error('Open subject destination must use its canonical parent Skill identity.')
+    } else if (!exact) throw new Error('This Skill is not currently represented by the governed Alpha catalog.')
+  }
   if ((pending.kind === 'language-choice' || pending.kind === 'affiliation-skill-choice' || pending.kind === 'any-skill-choice' || pending.kind === 'multi-skill-choice') && !destination.parameter?.value) {
     throw new Error('A concrete language or subskill choice is required.')
   }
