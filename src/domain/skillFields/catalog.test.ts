@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { BASIC_TRAINING_FIELD_ID, CARTOGRAPHER_FIELD_ID, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, SKILL_FIELD_CATALOG, skillFieldCost, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID, validateSkillFieldCatalog } from './catalog'
+import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, INFANTRY_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, NAVAL_CAREER_SUBSKILLS, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, SECURITY_SYSTEMS_SUBSKILLS, SHIPS_CREW_FIELD_ID, SKILL_FIELD_CATALOG, skillFieldCost, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID, validateSkillFieldCatalog } from './catalog'
 
 describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
-  it('contains the ten source-audited Fields with calculated reduced costs', () => {
+  it('contains the fourteen source-audited Fields with calculated reduced costs', () => {
     expect(SKILL_FIELD_CATALOG.map((entry) => entry.id)).toEqual([
       BASIC_TRAINING_FIELD_ID,
+      BASIC_TRAINING_NAVAL_FIELD_ID,
       TECHNICIAN_CIVILIAN_FIELD_ID,
       TECHNICIAN_VEHICLE_FIELD_ID,
       PILOT_EXOSKELETON_FIELD_ID,
@@ -14,8 +15,12 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       TECHNICIAN_MECH_FIELD_ID,
       INFANTRY_FIELD_ID,
       MECHWARRIOR_FIELD_ID,
+      MARINE_FIELD_ID,
+      SHIPS_CREW_FIELD_ID,
+      TECHNICIAN_MILITARY_FIELD_ID,
     ])
     expect(Object.fromEntries(SKILL_FIELD_CATALOG.slice(1).map((field) => [field.id, skillFieldCost(field, 24)]))).toEqual({
+      [BASIC_TRAINING_NAVAL_FIELD_ID]: 144,
       [TECHNICIAN_CIVILIAN_FIELD_ID]: 120,
       [TECHNICIAN_VEHICLE_FIELD_ID]: 96,
       [PILOT_EXOSKELETON_FIELD_ID]: 120,
@@ -25,6 +30,9 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       [TECHNICIAN_MECH_FIELD_ID]: 120,
       [INFANTRY_FIELD_ID]: 144,
       [MECHWARRIOR_FIELD_ID]: 120,
+      [MARINE_FIELD_ID]: 120,
+      [SHIPS_CREW_FIELD_ID]: 120,
+      [TECHNICIAN_MILITARY_FIELD_ID]: 144,
     })
     expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === TECHNICIAN_AEROSPACE_FIELD_ID)?.prerequisites).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'skill-field', fieldIds: [TECHNICIAN_CIVILIAN_FIELD_ID, 'field.technician-military'] }),
@@ -52,6 +60,36 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       ],
       variableComponentSkills: [expect.objectContaining({ skillId: 'skill.technician', legalSubskills: [...TECHNICIAN_SUBSKILLS] })],
     })
+    expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === BASIC_TRAINING_NAVAL_FIELD_ID)).toMatchObject({
+      category: 'basic',
+      prerequisites: expect.arrayContaining([
+        expect.objectContaining({ kind: 'trait', traitId: 'trait.rank' }),
+        expect.objectContaining({ kind: 'attribute-minimum', attributeId: 'INT', minimum: 4 }),
+        expect.objectContaining({ kind: 'attribute-minimum', attributeId: 'RFL', minimum: 3 }),
+        expect.objectContaining({ kind: 'trait-absent', traitId: 'trait.tds' }),
+      ]),
+      variableComponentSkills: [expect.objectContaining({ skillId: 'skill.career', legalSubskills: [...NAVAL_CAREER_SUBSKILLS] })],
+    })
+    expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === MARINE_FIELD_ID)).toMatchObject({
+      category: 'advanced',
+      prerequisites: expect.arrayContaining([
+        expect.objectContaining({ kind: 'skill-field', fieldIds: [BASIC_TRAINING_NAVAL_FIELD_ID] }),
+        expect.objectContaining({ kind: 'trait-absent', traitId: 'trait.tds' }),
+      ]),
+      variableComponentSkills: [expect.objectContaining({ skillId: 'skill.security-systems', legalSubskills: [...SECURITY_SYSTEMS_SUBSKILLS] })],
+    })
+    expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === SHIPS_CREW_FIELD_ID)).toMatchObject({
+      category: 'advanced',
+      prerequisites: expect.arrayContaining([
+        expect.objectContaining({ kind: 'skill-field', fieldIds: [BASIC_TRAINING_NAVAL_FIELD_ID] }),
+        expect.objectContaining({ kind: 'attribute-minimum', attributeId: 'RFL', minimum: 3 }),
+        expect.objectContaining({ kind: 'trait-absent', traitId: 'trait.tds' }),
+      ]),
+      variableComponentSkills: [expect.objectContaining({ skillId: 'skill.technician', legalSubskills: [...TECHNICIAN_SUBSKILLS] })],
+    })
+    expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === TECHNICIAN_MILITARY_FIELD_ID)?.componentSkills.map((entry) => entry.displayName)).toEqual([
+      'Appraisal', 'Career/Technician', 'Technician/Electronic', 'Technician/Mechanical', 'Technician/Nuclear', 'Technician/Weapons',
+    ])
   })
 
   it('detects duplicate Field IDs', () => {

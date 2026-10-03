@@ -291,7 +291,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               {pending.allocationMode === 'pool' && <label htmlFor={`${slotId}-xp`}>XP
                 <input id={`${slotId}-xp`} type="number" min="1" max={pending.remainingXp} step="1" aria-describedby={`${slotId}-label ${slotId}-help`} value={value.xpAmount} onChange={(event) => updateStageChoiceSlot(pending, index, { xpAmount: Number(event.target.value) })} />
               </label>}
-              {options.length > 0 && <label htmlFor={`${slotId}-destination`}>{pending.skillFieldChoice ? 'Technician subskill' : pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Destination'}
+              {options.length > 0 && <label htmlFor={`${slotId}-destination`}>{pending.skillFieldChoice ? 'Field Skill subskill' : pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Destination'}
                 <select id={`${slotId}-destination`} aria-describedby={`${slotId}-label ${slotId}-help`} value={optionValue(value)} onChange={(event) => {
                   const option = options.find((candidate) => candidate.value === event.target.value)
                   if (option) updateStageChoiceSlot(pending, index, optionDraft(option, value.xpAmount))

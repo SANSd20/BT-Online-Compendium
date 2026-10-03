@@ -56,7 +56,7 @@ export function createLifeModuleCharacter(
     prerequisiteIssues: [],
     stopState: 'not-eligible',
     limitations: [
-      'Alpha Slice 61 includes the Stage 0/1/2 bounded catalog, Technical College, Military Academy, Military Enlistment, ten source-audited mechanically acquirable Skill Fields, bounded variable Field-Skill choices, Agitator at Stage 4, and final-review/Optimization foundations.',
+      'Alpha Slice 62 includes the Stage 0/1/2 bounded catalog, Technical College, Military Academy, Military Enlistment, fourteen source-audited mechanically acquirable Skill Fields, bounded variable Field-Skill choices, Agitator at Stage 4, and final-review/Optimization foundations.',
       'The current minimal catalog can resolve language, /Affiliation, /Any, multi-choice, and flexible awards.',
       'Broad Stage 3/4 and Skill Field catalogs, repeated schooling and Stage 4 execution, Changing Affiliations, Life Events, equipment, PDF export, and true finalization are deferred.',
     ],
@@ -272,7 +272,7 @@ export function applyMilitaryEnlistment(
 function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: string, fieldIds: string[]): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-3-selection') throw new Error('A Stage 3 school is not the current legal action.')
-  if (character.lifeModuleHistory.some((entry) => entry.stage === 3)) throw new Error('Repeated Stage 3 schooling is not supported in Alpha Slice 61.')
+  if (character.lifeModuleHistory.some((entry) => entry.stage === 3)) throw new Error('Repeated Stage 3 schooling is not supported in Alpha Slice 62.')
   const publishedSchool = getLifeModule(moduleId)
   if (publishedSchool.stage !== 3 || !publishedSchool.skillFieldSelection) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
   const conditional = publishedSchool.conditionalPriorModuleAwards
@@ -310,7 +310,7 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
         moduleId: school.id,
         awardId: `skill-field/${field.id}/${component.id}`,
         kind: 'any-skill-choice',
-        description: `${component.displayName}: choose one Technician subskill.`,
+        description: `${component.displayName}: choose one source-listed subskill.`,
         xpPerGrant: offer.awardedXpPerSkill,
         remainingGrants: 1,
         allocationMode: 'fixed-grants',

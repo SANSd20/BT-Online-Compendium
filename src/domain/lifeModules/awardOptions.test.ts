@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { BACK_WOODS_ID, CAPELLAN_COMMONALITY_ID } from './catalog'
 import { pendingAwardOptions } from './awardOptions'
+import { MARINE_FIELD_ID, SECURITY_SYSTEMS_SUBSKILLS } from '../skillFields/catalog'
 
 function backWoodsDraft() {
   let character = createLifeModuleCharacter('Selector Test')
@@ -11,6 +12,23 @@ function backWoodsDraft() {
 }
 
 describe('Life Module pending award options', () => {
+  it('uses the selected Field component’s bounded source-backed options', () => {
+    const character = createLifeModuleCharacter('Marine options')
+    const options = pendingAwardOptions({
+      id: 'pending-marine',
+      moduleId: 'stage3.military-academy',
+      awardId: 'skill-field/field.marine/marine.security-systems-any',
+      kind: 'any-skill-choice',
+      description: 'Security Systems subskill',
+      xpPerGrant: 30,
+      remainingGrants: 1,
+      allowedTargetTypes: ['skill'],
+      requiredSkillId: 'skill.security-systems',
+      skillFieldChoice: { fieldId: MARINE_FIELD_ID, componentId: 'marine.security-systems-any' },
+      source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 94 },
+    }, character)
+    expect(options.map((entry) => entry.parameter?.value)).toEqual([...SECURITY_SYSTEMS_SUBSKILLS])
+  })
   it('offers known Federated Suns languages without raw text entry', () => {
     const character = backWoodsDraft()
     const pending = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'commonality.language.fedsuns')!

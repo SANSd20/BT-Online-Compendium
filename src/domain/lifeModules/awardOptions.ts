@@ -1,7 +1,7 @@
 import type { CharacterDefinition, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../character/model'
 import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../pointBuy/catalog'
 import { getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions } from './affiliations'
-import { TECHNICIAN_SUBSKILLS } from '../skillFields/catalog'
+import { getSkillField, TECHNICIAN_SUBSKILLS } from '../skillFields/catalog'
 
 export interface PendingAwardOption extends ResolvedLifeModuleDestination {
   value: string
@@ -17,8 +17,12 @@ const KNOWN_SUBSKILLS: Readonly<Record<string, readonly string[]>> = {
   'skill.technician': TECHNICIAN_SUBSKILLS,
 }
 
-export function knownPendingChoiceValues(pending: Pick<PendingLifeModuleAward, 'choiceSource' | 'kind' | 'requiredSkillId'>): readonly string[] {
+export function knownPendingChoiceValues(pending: Pick<PendingLifeModuleAward, 'choiceSource' | 'kind' | 'requiredSkillId' | 'skillFieldChoice'>): readonly string[] {
   if (pending.choiceSource) return getLifeModuleLanguageSelectorOptions(pending.choiceSource)
+  if (pending.skillFieldChoice) {
+    return getSkillField(pending.skillFieldChoice.fieldId).variableComponentSkills
+      ?.find((entry) => entry.id === pending.skillFieldChoice?.componentId)?.legalSubskills ?? []
+  }
   if (pending.kind === 'affiliation-skill-choice') {
     return []
   }

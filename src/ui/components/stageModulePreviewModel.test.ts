@@ -11,7 +11,7 @@ import {
   TECHNICAL_COLLEGE_ID,
 } from '../../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
-import { CARTOGRAPHER_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, MARINE_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applySupportedStageModule, previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from './stageModulePreviewModel'
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
@@ -79,6 +79,21 @@ describe('supported Stage 1–4 module preview model', () => {
     expect(stage3FieldSelectionStatus(character, TECHNICAL_COLLEGE_ID, TECHNICIAN_AEROSPACE_FIELD_ID, [PILOT_EXOSKELETON_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID])).toMatchObject({
       state: 'unavailable', reasons: expect.arrayContaining(['Technician/Civilian or Technician/Military Field']),
     })
+  })
+
+  it('rebuilds changed military Field previews without stale costs, awards, choices, or provenance', () => {
+    const character = draftAt('stage-3-selection')
+    const before = JSON.stringify(character)
+    const marine = previewSupportedStageModule(character, MILITARY_ENLISTMENT_ID, [BASIC_TRAINING_NAVAL_FIELD_ID, MARINE_FIELD_ID])!
+    expect(marine.creation.lifeModules!.pendingAwards.some((entry) => entry.skillFieldChoice?.fieldId === MARINE_FIELD_ID)).toBe(true)
+    expect(marine.skills.some((entry) => entry.displayName === 'Gunnery/Spacecraft')).toBe(true)
+
+    const technician = previewSupportedStageModule(character, MILITARY_ENLISTMENT_ID, [BASIC_TRAINING_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID])!
+    expect(technician.creation.lifeModules!.pendingAwards.some((entry) => entry.skillFieldChoice?.fieldId === MARINE_FIELD_ID)).toBe(false)
+    expect(technician.creation.lifeModules!.selectedSkillFields.map((entry) => entry.fieldId)).toEqual([BASIC_TRAINING_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID])
+    expect(technician.skills.some((entry) => entry.displayName === 'Gunnery/Spacecraft')).toBe(false)
+    expect(technician.skills.find((entry) => entry.displayName === 'Technician/Weapons')?.accumulatedXp).toBe(30)
+    expect(JSON.stringify(character)).toBe(before)
   })
 
   it('does not invent a module preview before explicit selection', () => {

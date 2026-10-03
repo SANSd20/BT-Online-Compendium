@@ -17,6 +17,7 @@ const skill = (skillId: string, displayName: string, parameter?: string): Extrac
 export const TECHNICIAN_CIVILIAN_FIELD_ID = 'field.technician-civilian'
 export const TECHNICIAN_VEHICLE_FIELD_ID = 'field.technician-vehicle'
 export const BASIC_TRAINING_FIELD_ID = 'field.basic-training'
+export const BASIC_TRAINING_NAVAL_FIELD_ID = 'field.basic-training-naval'
 export const PILOT_EXOSKELETON_FIELD_ID = 'field.pilot-exoskeleton'
 export const CARTOGRAPHER_FIELD_ID = 'field.cartographer'
 export const PILOT_INDUSTRIALMECH_FIELD_ID = 'field.pilot-industrialmech'
@@ -24,6 +25,12 @@ export const TECHNICIAN_AEROSPACE_FIELD_ID = 'field.technician-aerospace'
 export const TECHNICIAN_MECH_FIELD_ID = 'field.technician-mech'
 export const INFANTRY_FIELD_ID = 'field.infantry'
 export const MECHWARRIOR_FIELD_ID = 'field.mechwarrior'
+export const MARINE_FIELD_ID = 'field.marine'
+export const SHIPS_CREW_FIELD_ID = 'field.ships-crew'
+export const TECHNICIAN_MILITARY_FIELD_ID = 'field.technician-military'
+
+export const SECURITY_SYSTEMS_SUBSKILLS = ['Electronic', 'Mechanical'] as const
+export const NAVAL_CAREER_SUBSKILLS = ['Pilot', 'Ship’s Crew'] as const
 
 export const TECHNICIAN_SUBSKILLS = [
   'Aeronautics', 'Cybernetics', 'Electronic', 'Jets', 'Mechanics', 'Myomer', 'Nuclear', 'Weapons',
@@ -47,6 +54,31 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       skill('skill.navigation', 'Navigation/Ground', 'Ground'),
       skill('skill.small-arms', 'Small Arms'),
     ],
+  },
+  {
+    id: BASIC_TRAINING_NAVAL_FIELD_ID,
+    displayName: 'Basic Training (Naval)',
+    category: 'basic',
+    source: { ...source('skill-field-basic-training-naval'), page: 94 },
+    prerequisites: [
+      { id: 'basic-training-naval.rank', kind: 'trait', traitId: 'trait.rank', description: 'Rank Trait' },
+      { id: 'basic-training-naval.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' },
+      { id: 'basic-training-naval.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 3, description: 'RFL 3+' },
+      { id: 'basic-training-naval.tds', kind: 'trait-absent', traitId: 'trait.tds', description: 'Cannot have TDS Trait' },
+    ],
+    componentSkills: [
+      skill('skill.martial-arts', 'Martial Arts'),
+      skill('skill.medtech', 'MedTech/General', 'General'),
+      skill('skill.navigation', 'Navigation/Space', 'Space'),
+      skill('skill.small-arms', 'Small Arms'),
+      skill('skill.zero-g-operations', 'Zero-G Operations'),
+    ],
+    variableComponentSkills: [{
+      id: 'basic-training-naval.career',
+      displayName: 'Naval Career subskill',
+      skillId: 'skill.career',
+      legalSubskills: [...NAVAL_CAREER_SUBSKILLS],
+    }],
   },
   {
     id: TECHNICIAN_CIVILIAN_FIELD_ID,
@@ -203,6 +235,69 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       skillId: 'skill.technician',
       legalSubskills: [...TECHNICIAN_SUBSKILLS],
     }],
+  },
+  {
+    id: MARINE_FIELD_ID,
+    displayName: 'Marine',
+    category: 'advanced',
+    source: { ...source('skill-field-marine'), page: 94 },
+    prerequisites: [
+      { id: 'marine.field', kind: 'skill-field', fieldIds: [BASIC_TRAINING_NAVAL_FIELD_ID], description: 'Basic Training (Naval) Field' },
+      { id: 'marine.tds', kind: 'trait-absent', traitId: 'trait.tds', description: 'Cannot have TDS Trait' },
+    ],
+    componentSkills: [
+      skill('skill.acrobatics', 'Acrobatics/Free-Fall', 'Free-Fall'),
+      skill('skill.demolitions', 'Demolitions'),
+      skill('skill.gunnery', 'Gunnery/Spacecraft', 'Spacecraft'),
+      skill('skill.zero-g-operations', 'Zero-G Operations'),
+    ],
+    variableComponentSkills: [{
+      id: 'marine.security-systems-any',
+      displayName: 'Security Systems subskill',
+      skillId: 'skill.security-systems',
+      legalSubskills: [...SECURITY_SYSTEMS_SUBSKILLS],
+    }],
+  },
+  {
+    id: SHIPS_CREW_FIELD_ID,
+    displayName: 'Ship’s Crew',
+    category: 'advanced',
+    source: { ...source('skill-field-ships-crew'), page: 94 },
+    prerequisites: [
+      { id: 'ships-crew.field', kind: 'skill-field', fieldIds: [BASIC_TRAINING_NAVAL_FIELD_ID], description: 'Basic Training (Naval) Field' },
+      { id: 'ships-crew.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 3, description: 'RFL 3+' },
+      { id: 'ships-crew.tds', kind: 'trait-absent', traitId: 'trait.tds', description: 'Cannot have TDS Trait' },
+    ],
+    componentSkills: [
+      skill('skill.career', 'Career/Ship’s Crew', 'Ship’s Crew'),
+      skill('skill.computers', 'Computers'),
+      skill('skill.gunnery', 'Gunnery/Spacecraft', 'Spacecraft'),
+      skill('skill.zero-g-operations', 'Zero-G Operations'),
+    ],
+    variableComponentSkills: [{
+      id: 'ships-crew.technician-any',
+      displayName: 'Technician subskill',
+      skillId: 'skill.technician',
+      legalSubskills: [...TECHNICIAN_SUBSKILLS],
+    }],
+  },
+  {
+    id: TECHNICIAN_MILITARY_FIELD_ID,
+    displayName: 'Technician/Military',
+    category: 'advanced',
+    source: { ...source('skill-field-technician-military'), page: 94 },
+    prerequisites: [
+      { id: 'technician-military.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 3, description: 'INT 3+' },
+      { id: 'technician-military.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 3, description: 'DEX 3+' },
+    ],
+    componentSkills: [
+      skill('skill.appraisal', 'Appraisal'),
+      skill('skill.career', 'Career/Technician', 'Technician'),
+      skill('skill.technician', 'Technician/Electronic', 'Electronic'),
+      skill('skill.technician', 'Technician/Mechanical', 'Mechanical'),
+      skill('skill.technician', 'Technician/Nuclear', 'Nuclear'),
+      skill('skill.technician', 'Technician/Weapons', 'Weapons'),
+    ],
   },
 ]
 

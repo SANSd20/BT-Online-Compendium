@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
-import { BASIC_TRAINING_FIELD_ID, CARTOGRAPHER_FIELD_ID, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, INFANTRY_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
@@ -450,6 +450,80 @@ describe('Life Module engine', () => {
     expect(character.skills.find((entry) => entry.displayName === 'Swimming')?.sourceAwards.some((award) => award.xp === 20)).toBe(true)
     expect(character.creation.lifeModules!.pendingAwards).toContainEqual(expect.objectContaining({ awardId: 'military-enlistment.flexible', remainingXp: 200 }))
     expect(character.chronology.at(-1)?.date).toBe('age:18')
+  })
+
+  it('acquires Marine through both authorized schools with one canonical Field and a bounded Security Systems choice', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const before = JSON.stringify(selecting)
+    let academy = applyMilitaryAcademy(selecting, [BASIC_TRAINING_NAVAL_FIELD_ID, MARINE_FIELD_ID])
+    const academyPending = academy.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.fieldId === MARINE_FIELD_ID)!
+    expect(academy.lifeModuleHistory.at(-1)).toMatchObject({ fieldCostXp: 264, costXp: 1094 })
+    expect(academy.creation.lifeModules!.selectedSkillFields.map((entry) => [entry.fieldId, entry.purchaseCostXp, entry.chronologyYears])).toEqual([
+      [BASIC_TRAINING_NAVAL_FIELD_ID, 144, 1],
+      [MARINE_FIELD_ID, 120, 1],
+    ])
+    expect(academyPending).toMatchObject({ requiredSkillId: 'skill.security-systems', xpPerGrant: 30 })
+    expect(() => resolvePendingLifeModuleAward(academy, academyPending.id, {
+      type: 'skill', targetId: 'skill.security-systems', displayName: 'Security Systems/Software', parameter: { kind: 'subskill', value: 'Software' },
+    })).toThrow('safe known choice')
+    academy = resolvePendingLifeModuleAward(academy, academyPending.id, {
+      type: 'skill', targetId: 'skill.security-systems', displayName: 'Security Systems/Electronic', parameter: { kind: 'subskill', value: 'Electronic' },
+    })
+    expect(academy.skills.find((entry) => entry.displayName === 'Security Systems/Electronic')?.accumulatedXp).toBe(30)
+
+    const enlistment = applyMilitaryEnlistment(selecting, [BASIC_TRAINING_NAVAL_FIELD_ID, MARINE_FIELD_ID])
+    expect(enlistment.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === MARINE_FIELD_ID)).toMatchObject({ chronologyYears: 1.5 })
+    expect(JSON.stringify(selecting)).toBe(before)
+  })
+
+  it('acquires Ship’s Crew through both authorized schools and preserves its Technician choice through JSON', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    let character = applyMilitaryEnlistment(selecting, [BASIC_TRAINING_NAVAL_FIELD_ID, SHIPS_CREW_FIELD_ID])
+    const pending = character.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.fieldId === SHIPS_CREW_FIELD_ID)!
+    expect(character.lifeModuleHistory.at(-1)).toMatchObject({ fieldCostXp: 264, costXp: 984 })
+    expect(character.creation.lifeModules!.selectedSkillFields.map((entry) => [entry.fieldId, entry.purchaseCostXp, entry.chronologyYears])).toEqual([
+      [BASIC_TRAINING_NAVAL_FIELD_ID, 144, 0.5],
+      [SHIPS_CREW_FIELD_ID, 120, 1.5],
+    ])
+    character = resolvePendingLifeModuleAward(character, pending.id, {
+      type: 'skill', targetId: 'skill.technician', displayName: 'Technician/Weapons', parameter: { kind: 'subskill', value: 'Weapons' },
+    })
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-10-02T00:00:00.000Z'))
+    expect(decoded).toEqual(character)
+    expect(decoded.skills.filter((entry) => entry.displayName === 'Technician/Weapons')).toHaveLength(1)
+    expect(decoded.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === SHIPS_CREW_FIELD_ID)?.variableSkillChoices).toHaveLength(1)
+    expect(validateCharacter(decoded).valid).toBe(true)
+
+    const academy = applyMilitaryAcademy(selecting, [BASIC_TRAINING_NAVAL_FIELD_ID, SHIPS_CREW_FIELD_ID])
+    expect(academy.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === SHIPS_CREW_FIELD_ID)).toMatchObject({ chronologyYears: 1 })
+  })
+
+  it('offers Technician/Military only through Military Enlistment with exact fixed awards', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const character = applyMilitaryEnlistment(selecting, [BASIC_TRAINING_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID])
+    expect(character.lifeModuleHistory.at(-1)).toMatchObject({ fieldCostXp: 264, costXp: 984 })
+    expect(character.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === TECHNICIAN_MILITARY_FIELD_ID)).toMatchObject({ purchaseCostXp: 144, chronologyYears: 1.5 })
+    expect(character.skills.find((entry) => entry.displayName === 'Technician/Weapons')?.sourceAwards.some((entry) => entry.xp === 30)).toBe(true)
+    expect(character.skills.find((entry) => entry.displayName === 'Career/Technician')?.sourceAwards.some((entry) => entry.xp === 30)).toBe(true)
+    expect(() => applyMilitaryAcademy(selecting, [BASIC_TRAINING_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID])).toThrow('not offered')
+  })
+
+  it('requires the actual Naval Field for Marine rather than its component Skills or goal guidance', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const withFields = applyMilitaryAcademy(selecting, [BASIC_TRAINING_NAVAL_FIELD_ID, MARINE_FIELD_ID])
+    const componentSkillsOnly = structuredClone(selecting)
+    componentSkillsOnly.skills.push(...withFields.skills.filter((entry) => ['Martial Arts', 'MedTech/General', 'Navigation/Space', 'Small Arms', 'Zero-G Operations'].includes(entry.displayName ?? '')).map((entry) => structuredClone(entry)))
+    componentSkillsOnly.creation.lifeModules!.masterSkillFieldGoalId = MARINE_FIELD_ID
+    componentSkillsOnly.creation.lifeModules!.selectedSkillFields.push({ ...structuredClone(withFields.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === MARINE_FIELD_ID)!), id: 'component-only-marine' })
+    reevaluateLifeModulePrerequisites(componentSkillsOnly)
+    expect(componentSkillsOnly.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'marine.field')?.status).toBe('outstanding')
+  })
+
+  it('keeps Stage 3 repeat execution deferred, preventing both same-type and otherwise legal cross-type repeats', () => {
+    const military = applyMilitaryAcademy(continueToStage3(completeHighSchoolStage2()))
+    military.creation.lifeModules!.phase = 'stage-3-selection'
+    expect(() => applyStage3School(military, MILITARY_ENLISTMENT_ID, [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID])).toThrow('Repeated Stage 3 schooling is not supported')
+    expect(() => applyStage3School(military, TECHNICAL_COLLEGE_ID, [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID])).toThrow('Repeated Stage 3 schooling is not supported')
   })
 
   it('requires actual Basic Training for Infantry and does not accept component Skills alone', () => {
