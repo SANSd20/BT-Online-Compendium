@@ -63,6 +63,12 @@ describe('Life Module pending award options', () => {
     expect(pendingOpenSubject(pending)).toMatchObject({ skillId: 'skill.survival', parentLabel: 'Survival' })
   })
 
+  it('uses the same open subject entry for multi-grant Interest awards', () => {
+    expect(pendingOpenSubject({ kind: 'multi-skill-choice', requiredSkillId: 'skill.interest' })).toMatchObject({
+      skillId: 'skill.interest', parentLabel: 'Interest',
+    })
+  })
+
   it('shows readable Trait choices while retaining stable IDs internally', () => {
     const character = backWoodsDraft()
     const pending = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'back-woods.flexible')!

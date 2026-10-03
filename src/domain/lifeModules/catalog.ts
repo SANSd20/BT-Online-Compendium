@@ -1,7 +1,7 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
-import { ANALYSIS_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
+import { ANALYSIS_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, INTELLIGENCE_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 
 export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
@@ -42,6 +42,7 @@ export const BACK_WOODS_ID = 'stage1.back-woods'
 export const STAGE_2_BACK_WOODS_ID = 'stage2.back-woods'
 export const STAGE_2_HIGH_SCHOOL_ID = 'stage2.high-school'
 export const TECHNICAL_COLLEGE_ID = 'stage3.technical-college'
+export const UNIVERSITY_ID = 'stage3.university'
 export const POLICE_ACADEMY_ID = 'stage3.police-academy'
 export const INTELLIGENCE_OPERATIVE_TRAINING_ID = 'stage3.intelligence-operative-training'
 export const MILITARY_ACADEMY_ID = 'stage3.military-academy'
@@ -274,6 +275,77 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     ],
     notes: ['Civilian Stage 3 school. Base cost is 600 XP plus selected Skill Field costs.', 'Alpha Slice 59 exposes only source-audited Fields whose requirements can be represented without unresolved /Any choices.'],
     deferredRules: [],
+  },
+  {
+    id: UNIVERSITY_ID,
+    displayName: 'University',
+    stage: 3,
+    kind: 'higher-education',
+    stage3School: stage3SchoolClassification(UNIVERSITY_ID),
+    source: source(82, 'stage-3-university'),
+    costXp: 710,
+    prerequisites: [
+      { id: 'university.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' },
+    ],
+    conditionalPriorModuleAwards: {
+      absentModuleIds: ['stage2.preparatory-school', 'stage1.nobility', 'stage1.white-collar'],
+      description: 'Applies when the character did not take Preparatory School in Stage 2 or Nobility or White Collar in Stage 1.',
+      awards: [
+        fixed('university.entry.wil', 100, attribute('WIL')),
+        fixed('university.entry.edg', -100, attribute('EDG')),
+        fixed('university.entry.connections', 200, trait('trait.connections', 'Connections')),
+        fixed('university.entry.reputation', -100, trait('trait.reputation', 'Reputation')),
+        fixed('university.entry.wealth', -100, trait('trait.wealth', 'Wealth')),
+      ],
+    },
+    skillFieldSelection: {
+      offers: [
+        { fieldId: CARTOGRAPHER_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: COMMUNICATIONS_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: MANAGER_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: SCIENTIST_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: TECHNICIAN_CIVILIAN_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: ANALYSIS_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: DETECTIVE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: ENGINEER_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: PLANETARY_SURVEYOR_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: MEDICAL_ASSISTANT_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: POLITICIAN_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: TECHNICIAN_AEROSPACE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: TECHNICIAN_VEHICLE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: DOCTOR_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: MILITARY_SCIENTIST_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: TECHNICIAN_MECH_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: TECHNICIAN_MILITARY_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+      ],
+      exactlyBasic: 1,
+      minimumAdvanced: 1,
+      maximumTotal: 3,
+      referenceOnlyOffers: [
+        { displayName: 'General Studies', category: 'basic', chronologyYears: 1, reason: 'Its source prerequisite requires at least one other Skill related to its Field Skills, which is not yet mechanically governed.' },
+        ...['Anthropologist', 'Archaeologist'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 2, reason: 'Requires the reference-only General Studies Field.' })),
+        { displayName: 'HPG Technician', category: 'advanced', chronologyYears: 2, reason: 'Restricted to ComStar, Word of Blake, or Clan affiliations, none of which is an implemented Stage 0 context.' },
+        { displayName: 'Lawyer', category: 'special', chronologyYears: 2, reason: 'Requires the reference-only General Studies Field.' },
+      ],
+    },
+    awards: [
+      fixed('university.attribute.int', 150, attribute('INT')),
+      fixed('university.attribute.wil', 75, attribute('WIL')),
+      fixed('university.attribute.cha', 25, attribute('CHA')),
+      fixed('university.attribute.edg', 25, attribute('EDG')),
+      fixed('university.trait.connections', 200, trait('trait.connections', 'Connections')),
+      fixed('university.trait.equipped', 50, trait('trait.equipped', 'Equipped')),
+      fixed('university.trait.reputation', 75, trait('trait.reputation', 'Reputation')),
+      fixed('university.trait.wealth', -200, trait('trait.wealth', 'Wealth')),
+      fixed('university.skill.computers', 25, skill('skill.computers', 'Computers')),
+      { id: 'university.skill.interest', kind: 'any-skill-choice', xp: 20, skillId: 'skill.interest', displayName: 'Interest/Any', count: 1 },
+      fixed('university.skill.perception', 25, skill('skill.perception', 'Perception')),
+      { id: 'university.skill.protocol-affiliation', kind: 'affiliation-bound-skill', xp: 20, skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' },
+      { id: 'university.attribute.any', kind: 'flexible-xp', xpPerGrant: 50, count: 1, allowedTargetTypes: ['attribute'] },
+      { id: 'university.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 220, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: ['Civilian Stage 3 school. Base cost is 710 XP plus selected Skill Field costs.'],
+    deferredRules: ['General Studies, Anthropologist, Archaeologist, HPG Technician, and Lawyer remain reference-only with explicit blockers.'],
   },
   {
     id: POLICE_ACADEMY_ID,

@@ -17,16 +17,16 @@ Alpha Slice 68 audits every entry that was reference-only at the Alpha Slice 67 
 
 | Field | Category | Implemented school offer(s) | Dependency assessment | Slice 68 result |
 |---|---|---|---|---|
-| Anthropologist | Civilian | None | General Studies prerequisite; Interest/History culture and Protocol/Any include open/unimplemented dependencies | Reference-only: blocked |
-| Archaeologist | Civilian | None | General Studies prerequisite; Interest/History culture is open | Reference-only: blocked |
+| Anthropologist | Civilian | University advanced | General Studies prerequisite remains unsupported | Reference-only: blocked |
+| Archaeologist | Civilian | University advanced | General Studies prerequisite remains unsupported | Reference-only: blocked |
 | Communications | Civilian | Technical basic; Police advanced | Protocol/Any is affiliation-constrained and modeled | Mechanical |
 | Doctor | Civilian | Military Academy special | Medical Assistant dependency is promoted; MedTech and Surgery are closed; Protocol/Affiliation is automatic | Mechanical |
 | Engineer | Civilian | Technical advanced | Technician prerequisite is implemented; Technician/Any is closed | Mechanical |
-| General Studies | Civilian | None | Career/Any and Interest/Any are open; cross-field structural requirement | Reference-only: blocked |
-| HPG Technician | Civilian | None | Communications dependency becomes available, but school offer is not implemented | Reference-only: blocked |
+| General Studies | Civilian | University basic | Career/Any and Interest/Any are governed; cross-Skill structural prerequisite remains unsupported | Reference-only: blocked |
+| HPG Technician | Civilian | University advanced | Communications is supported, but the ComStar/Word of Blake/Clan affiliation restriction cannot be met | Reference-only: blocked |
 | Journalist | Civilian | None | Fixed data is representable, but no implemented school offers it | Reference-only: ready, not offered |
-| Lawyer | Civilian | None | General Studies prerequisite and Protocol/Any | Reference-only: blocked |
-| Manager | Civilian | None | Fixed data is representable, but no implemented school offers it | Reference-only: ready, not offered |
+| Lawyer | Civilian | University special | General Studies prerequisite remains unsupported | Reference-only: blocked |
+| Manager | Civilian | University basic | Fixed and affiliation-bound Skills are representable | Mechanical in Slice 70 |
 | Medical Assistant | Civilian | Military Enlistment advanced | MedTech/Any is closed | Mechanical |
 | Merchant | Civilian | None | Protocol/Any and Streetwise/Any are modeled, but no implemented school offers it | Reference-only: ready, not offered |
 | Merchant Marine | Civilian | Technical advanced | Protocol/Any modeled; Technician/Any closed | Mechanical |
@@ -34,8 +34,8 @@ Alpha Slice 68 audits every entry that was reference-only at the Alpha Slice 67 
 | Pilot - Aircraft (Civilian) | Civilian | Technical basic | Source names Air Vehicle or VTOL as a finite choice | Mechanical |
 | Pilot - DropShip | Civilian | Technical basic; Military Academy advanced | Fixed data is representable; excluded from this dependency-driven promotion | Reference-only: ready |
 | Pilot - JumpShip | Civilian | Military Academy special | Requires Pilot - DropShip, which remains reference-only | Reference-only: blocked |
-| Planetary Surveyor | Civilian | None | Scientist and Survival are representable, but no implemented school offers it | Reference-only: ready, not offered |
-| Politician | Civilian | None | Manager prerequisite; no implemented school offer | Reference-only: blocked |
+| Planetary Surveyor | Civilian | University advanced | Scientist, Driving/Any, and Survival/Any are represented | Mechanical in Slice 70 |
+| Politician | Civilian | University advanced | Manager is promoted; fixed and affiliation-bound Skills are represented | Mechanical in Slice 70 |
 | Scientist | Civilian | Military Academy advanced | Interest/Any and Science/Any use validated open subjects | Mechanical in Slice 69 |
 | Analysis | Intelligence/Police | Police advanced; Intelligence advanced; Military Academy advanced | Two distinct modeled Language choices plus closed Tactics choice | Mechanical |
 | Covert Operations | Intelligence/Police | Police special; Intelligence advanced | Modeled Language, Protocol and Streetwise choices; Tracking closed | Mechanical |
@@ -54,4 +54,4 @@ Alpha Slice 68 audits every entry that was reference-only at the Alpha Slice 67 
 | Clan MechWarrior | Clan | None | Clan affiliation and phenotype systems not implemented | Reference-only: blocked |
 | Clan ProtoMech Warrior | Clan | None | Clan affiliation, phenotype, and implant systems not implemented | Reference-only: blocked |
 
-The independent reference catalog remains 56 entries. Slice 68 promoted ten Fields; Slice 69 promotes Scientist and Special Forces, bringing the mechanical catalog to 32. No existing stable IDs, equipment data, affiliation defaults, persistence boundary, XP rule, or OCS behavior changed.
+The independent reference catalog remains 56 entries. Slice 68 promoted ten Fields, Slice 69 promoted Scientist and Special Forces, and Slice 70 promotes Manager, Planetary Surveyor, and Politician through University, bringing the mechanical catalog to 35. No existing stable IDs, equipment data, affiliation defaults, persistence boundary, XP rule, or OCS behavior changed.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSITY_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
-import { ANALYSIS_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, OFFICER_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { ANALYSIS_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
@@ -716,6 +716,62 @@ describe('Life Module engine', () => {
     expect(() => applyStage3School(selecting, MILITARY_ENLISTMENT_ID, [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID])).toThrow('Another Military Stage 3 school has already been completed.')
     expect(() => applyStage3School(selecting, MILITARY_ACADEMY_ID, [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID])).toThrow('Military Academy has already been completed.')
     expect(applyStage3School(selecting, TECHNICAL_COLLEGE_ID, [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID]).lifeModuleHistory.at(-1)?.moduleId).toBe(TECHNICAL_COLLEGE_ID)
+  })
+
+  it('implements University with exact awards, Planetary Surveyor choices, transactionality, persistence, and family behavior', () => {
+    let stage2 = applyStage2Module(continueToStage2(completeBlueCollarStage1(10000)), STAGE_2_HIGH_SCHOOL_ID)
+    stage2 = resolveByAward(stage2, 'high-school.interest-40', 'skill.interest', 'Interest/Science', 'Science')
+    stage2 = resolveByAward(stage2, 'high-school.interest-35', 'skill.interest', 'Interest/Art', 'Art')
+    const stage2Flexible = stage2.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'high-school.flexible')!
+    stage2 = resolvePendingLifeModuleAward(stage2, stage2Flexible.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 185)
+    const selecting = continueToStage3(stage2)
+    const before = structuredClone(selecting)
+    let university = applyStage3School(selecting, UNIVERSITY_ID, [SCIENTIST_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID])
+
+    expect(selecting).toEqual(before)
+    expect(university.lifeModuleHistory.at(-1)).toMatchObject({ moduleId: UNIVERSITY_ID, baseCostXp: 710, fieldCostXp: 288, costXp: 998 })
+    expect(university.creation.lifeModules!.selectedSkillFields.map((entry) => [entry.fieldId, entry.category, entry.purchaseCostXp, entry.chronologyYears])).toEqual([
+      [SCIENTIST_FIELD_ID, 'basic', 168, 1],
+      [PLANETARY_SURVEYOR_FIELD_ID, 'advanced', 120, 2],
+    ])
+    expect(university.attributes.find((entry) => entry.attributeId === 'INT')?.sourceAwards.some((entry) => entry.xp === 150)).toBe(true)
+    expect(university.attributes.find((entry) => entry.attributeId === 'WIL')?.sourceAwards.some((entry) => entry.xp === 100)).toBe(true)
+    expect(university.skills.find((entry) => entry.displayName === 'Protocol/Capellan')?.sourceAwards.some((entry) => entry.xp === 20)).toBe(true)
+    expect(university.creation.lifeModules!.pendingAwards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ awardId: 'university.skill.interest', requiredSkillId: 'skill.interest' }),
+      expect.objectContaining({ awardId: 'university.attribute.any', xpPerGrant: 50 }),
+      expect.objectContaining({ awardId: 'university.flexible', remainingXp: 220 }),
+      expect.objectContaining({ skillFieldChoice: { fieldId: SCIENTIST_FIELD_ID, componentId: 'scientist.interest-any' } }),
+      expect.objectContaining({ skillFieldChoice: { fieldId: PLANETARY_SURVEYOR_FIELD_ID, componentId: 'planetary-surveyor.driving-any' } }),
+      expect.objectContaining({ skillFieldChoice: { fieldId: PLANETARY_SURVEYOR_FIELD_ID, componentId: 'planetary-surveyor.survival-any' } }),
+    ]))
+
+    university = resolveByAward(university, 'university.skill.interest', 'skill.interest', 'Interest/History', 'History')
+    university = resolveByAward(university, 'university.attribute.any', 'INT', 'INT')
+    for (const [componentId, skillId, displayName, value] of [
+      ['scientist.interest-any', 'skill.interest', 'Interest/Astronomy', 'Astronomy'],
+      ['scientist.science-any', 'skill.science', 'Science/Astronomy', 'Astronomy'],
+      ['planetary-surveyor.driving-any', 'skill.driving', 'Driving/Ground Vehicles', 'Ground Vehicles'],
+      ['planetary-surveyor.survival-any', 'skill.survival', 'Survival/Tundra', 'Tundra'],
+    ] as const) {
+      const pending = university.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.componentId === componentId)!
+      university = resolvePendingLifeModuleAward(university, pending.id, { type: 'skill', targetId: skillId, displayName, parameter: { kind: 'subskill', value } })
+    }
+    const universityFlexible = university.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'university.flexible')!
+    university = resolvePendingLifeModuleAward(university, universityFlexible.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 220)
+
+    expect(university.creation.lifeModules!.phase).toBe('alpha-stage-3-stop')
+    expect(university.skills.find((entry) => entry.displayName === 'Survival/Tundra')?.sourceAwards.some((entry) => entry.xp === 30)).toBe(true)
+    expect(university.skills.filter((entry) => entry.displayName === 'Science/Astronomy')).toHaveLength(1)
+    expect(university.chronology.find((entry) => entry.eventId === `${UNIVERSITY_ID}.complete`)?.date).toBe('age:19')
+
+    const decoded = decodeCharacter(encodeCharacter(university, '2026-10-03T00:00:00.000Z'))
+    expect(decoded).toEqual(university)
+    expect(validateCharacter(decoded).valid).toBe(true)
+    const nextSchool = continueStage3Schooling(decoded)
+    expect(() => applyStage3School(nextSchool, TECHNICAL_COLLEGE_ID, [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID])).toThrow('Another Civilian Stage 3 school has already been completed.')
+    expect(applyMilitaryAcademy(nextSchool).lifeModuleHistory.at(-1)?.moduleId).toBe(MILITARY_ACADEMY_ID)
+    expect(continueToStage4(decoded).creation.lifeModules!.phase).toBe('stage-4-selection')
   })
 
   it('blocks both Intelligence/Police same-family directions while preserving unused-family routes', () => {

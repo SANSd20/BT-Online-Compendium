@@ -25,7 +25,7 @@ export function pendingOpenSubject(pending: Pick<PendingLifeModuleAward, 'kind' 
     if (domain.inputMode !== 'open-subject') return null
     skillId = component.skillId
     description = domain.description
-  } else if (pending.kind === 'any-skill-choice' && pending.requiredSkillId) {
+  } else if ((pending.kind === 'any-skill-choice' || pending.kind === 'multi-skill-choice') && pending.requiredSkillId) {
     const domain = VARIABLE_OPEN_DOMAINS.find((entry) => entry.skillId === pending.requiredSkillId)
     if (!domain) return null
     skillId = domain.skillId

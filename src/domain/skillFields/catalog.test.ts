@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, CAVALRY_TACTICS_SUBSKILLS, DETECTIVE_FIELD_ID, DRIVING_SUBSKILLS, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, NAVAL_CAREER_SUBSKILLS, OFFICER_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SCOUT_STREETWISE_SUBSKILLS, SECURITY_SYSTEMS_SUBSKILLS, SHIPS_CREW_FIELD_ID, SKILL_FIELD_CATALOG, skillFieldCost, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID, TRACKING_SUBSKILLS, validateSkillFieldCatalog, VEHICLE_GUNNERY_SUBSKILLS } from './catalog'
+import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, CAVALRY_TACTICS_SUBSKILLS, DETECTIVE_FIELD_ID, DRIVING_SUBSKILLS, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, NAVAL_CAREER_SUBSKILLS, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCOUT_FIELD_ID, SCOUT_STREETWISE_SUBSKILLS, SECURITY_SYSTEMS_SUBSKILLS, SHIPS_CREW_FIELD_ID, SKILL_FIELD_CATALOG, skillFieldCost, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID, TRACKING_SUBSKILLS, validateSkillFieldCatalog, VEHICLE_GUNNERY_SUBSKILLS } from './catalog'
 import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
 
 describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
-  it('contains the thirty-two source-audited Fields with calculated reduced costs', () => {
+  it('contains the thirty-five source-audited Fields with calculated reduced costs', () => {
     expect(SKILL_FIELD_CATALOG.map((entry) => entry.id)).toEqual([
       BASIC_TRAINING_FIELD_ID,
       BASIC_TRAINING_NAVAL_FIELD_ID,
@@ -37,6 +37,9 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       'field.military-scientist',
       'field.scientist',
       'field.special-forces',
+      MANAGER_FIELD_ID,
+      PLANETARY_SURVEYOR_FIELD_ID,
+      POLITICIAN_FIELD_ID,
     ])
     expect(Object.fromEntries(SKILL_FIELD_CATALOG.slice(1).map((field) => [field.id, skillFieldCost(field, 24)]))).toEqual({
       [BASIC_TRAINING_NAVAL_FIELD_ID]: 144,
@@ -70,6 +73,9 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       'field.military-scientist': 144,
       'field.scientist': 168,
       'field.special-forces': 144,
+      [MANAGER_FIELD_ID]: 144,
+      [PLANETARY_SURVEYOR_FIELD_ID]: 120,
+      [POLITICIAN_FIELD_ID]: 120,
     })
     expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === TECHNICIAN_AEROSPACE_FIELD_ID)?.prerequisites).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'skill-field', fieldIds: [TECHNICIAN_CIVILIAN_FIELD_ID, 'field.technician-military'] }),

@@ -11,6 +11,7 @@ import {
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   TECHNICAL_COLLEGE_ID,
+  UNIVERSITY_ID,
 } from '../../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, MARINE_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
@@ -31,6 +32,7 @@ describe('supported Stage 1–4 module preview model', () => {
     ['stage-2-selection', STAGE_2_BACK_WOODS_ID, 'WIL', 220, 'stage2.back-woods.flexible'],
     ['stage-2-selection', STAGE_2_HIGH_SCHOOL_ID, 'CHA', 125, 'high-school.interest-40'],
     ['stage-3-selection', TECHNICAL_COLLEGE_ID, 'DEX', 200, 'technical-college.flexible'],
+    ['stage-3-selection', UNIVERSITY_ID, 'INT', 250, 'university.skill.interest'],
     ['stage-3-selection', POLICE_ACADEMY_ID, 'RFL', 200, 'police-academy.flexible'],
     ['stage-3-selection', INTELLIGENCE_OPERATIVE_TRAINING_ID, 'INT', 200, 'intelligence-operative.flexible'],
     ['stage-3-selection', MILITARY_ACADEMY_ID, 'WIL', 350, 'military-academy.flexible'],

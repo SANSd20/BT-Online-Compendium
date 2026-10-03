@@ -48,6 +48,9 @@ export const POLICE_TACTICAL_OFFICER_FIELD_ID = 'field.police-tactical-officer'
 export const MILITARY_SCIENTIST_FIELD_ID = 'field.military-scientist'
 export const SCIENTIST_FIELD_ID = 'field.scientist'
 export const SPECIAL_FORCES_FIELD_ID = 'field.special-forces'
+export const MANAGER_FIELD_ID = 'field.manager'
+export const PLANETARY_SURVEYOR_FIELD_ID = 'field.planetary-surveyor'
+export const POLITICIAN_FIELD_ID = 'field.politician'
 
 export const SECURITY_SYSTEMS_SUBSKILLS = VARIABLE_SKILL_DOMAINS.securitySystems.options
 export const NAVAL_CAREER_SUBSKILLS = VARIABLE_SKILL_DOMAINS.navalCareer.options
@@ -596,6 +599,36 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       variableSkill('special-forces.survival-any', 'Survival environment', VARIABLE_SKILL_DOMAINS.survivalOpen),
       variableSkill('special-forces.tracking-any', 'Tracking subskill', VARIABLE_SKILL_DOMAINS.tracking),
     ],
+  },
+  {
+    id: MANAGER_FIELD_ID, displayName: 'Manager', category: 'basic', source: { ...source('skill-field-manager'), page: 92 },
+    prerequisites: [
+      { id: 'manager.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 5, description: 'INT 5+' },
+      { id: 'manager.cha', kind: 'attribute-minimum', attributeId: 'CHA', minimum: 5, description: 'CHA 5+' },
+    ],
+    componentSkills: [skill('skill.administration', 'Administration'), skill('skill.career', 'Career/Management', 'Management'), skill('skill.leadership', 'Leadership'), skill('skill.negotiation', 'Negotiation'), skill('skill.training', 'Training')],
+    affiliationBoundComponentSkills: [{ skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' }],
+  },
+  {
+    id: PLANETARY_SURVEYOR_FIELD_ID, displayName: 'Planetary Surveyor', category: 'advanced', source: { ...source('skill-field-planetary-surveyor'), page: 93 },
+    prerequisites: [
+      { id: 'planetary-surveyor.field', kind: 'skill-field', fieldIds: [SCIENTIST_FIELD_ID], description: 'Scientist Field' },
+      { id: 'planetary-surveyor.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 6, description: 'INT 6+' },
+    ],
+    componentSkills: [skill('skill.appraisal', 'Appraisal'), skill('skill.navigation', 'Navigation/Ground', 'Ground'), skill('skill.tracking', 'Tracking/Wilds', 'Wilds')],
+    variableComponentSkills: [
+      variableSkill('planetary-surveyor.driving-any', 'Driving subskill', VARIABLE_SKILL_DOMAINS.driving),
+      variableSkill('planetary-surveyor.survival-any', 'Survival environment', VARIABLE_SKILL_DOMAINS.survivalOpen),
+    ],
+  },
+  {
+    id: POLITICIAN_FIELD_ID, displayName: 'Politician', category: 'advanced', source: { ...source('skill-field-politician'), page: 93 },
+    prerequisites: [
+      { id: 'politician.field', kind: 'skill-field', fieldIds: [MANAGER_FIELD_ID], description: 'Manager Field' },
+      { id: 'politician.cha', kind: 'attribute-minimum', attributeId: 'CHA', minimum: 4, description: 'CHA 4+' },
+    ],
+    componentSkills: [skill('skill.acting', 'Acting'), skill('skill.career', 'Career/Politician', 'Politician'), skill('skill.leadership', 'Leadership'), skill('skill.negotiation', 'Negotiation')],
+    affiliationBoundComponentSkills: [{ skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' }],
   },
 ]
 
