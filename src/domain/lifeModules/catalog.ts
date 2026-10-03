@@ -2,6 +2,7 @@ import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
 import { BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, MARINE_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID } from '../skillFields/catalog'
+import { stage3SchoolClassification } from './stage3Schooling'
 
 export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
 
@@ -238,6 +239,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     displayName: 'Technical College',
     stage: 3,
     kind: 'higher-education',
+    stage3School: stage3SchoolClassification(TECHNICAL_COLLEGE_ID),
     source: sourceWithoutPage('stage-3-technical-college'),
     costXp: 600,
     prerequisites: [],
@@ -264,13 +266,14 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'technical-college.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 200, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
     notes: ['Civilian Stage 3 school. Base cost is 600 XP plus selected Skill Field costs.', 'Alpha Slice 59 exposes only source-audited Fields whose requirements can be represented without unresolved /Any choices.'],
-    deferredRules: ['Repeated Stage 3 schooling is not supported in Alpha Slice 9.'],
+    deferredRules: [],
   },
   {
     id: MILITARY_ACADEMY_ID,
     displayName: 'Military Academy',
     stage: 3,
     kind: 'higher-education',
+    stage3School: stage3SchoolClassification(MILITARY_ACADEMY_ID),
     source: source(83, 'stage-3-military-academy'),
     costXp: 830,
     prerequisites: [],
@@ -318,13 +321,14 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'military-academy.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 100, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
     notes: ['Military Stage 3 school. Base cost is 830 XP plus selected Skill Field costs.'],
-    deferredRules: ['Repeated Military schooling, Officer Candidate School, and reference-only Fields remain deferred.'],
+    deferredRules: ['Officer Candidate School and reference-only Fields remain deferred.'],
   },
   {
     id: MILITARY_ENLISTMENT_ID,
     displayName: 'Military Enlistment',
     stage: 3,
     kind: 'higher-education',
+    stage3School: stage3SchoolClassification(MILITARY_ENLISTMENT_ID),
     source: source(83, 'stage-3-military-enlistment'),
     costXp: 720,
     prerequisites: [],
@@ -359,7 +363,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'military-enlistment.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 200, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
     notes: ['Military Stage 3 school. Base cost is 720 XP plus selected Skill Field costs.'],
-    deferredRules: ['Repeated Military schooling, Officer Candidate School, and reference-only Fields remain deferred.'],
+    deferredRules: ['Officer Candidate School and reference-only Fields remain deferred.'],
   },
   {
     id: AGITATOR_ID,
@@ -420,6 +424,11 @@ export function validateLifeModuleCatalog(catalog: readonly LifeModuleDefinition
       issues.push({ moduleId: module.id, message: 'Module name, non-negative whole cost, and source are required.' })
     }
     if (![0, 1, 2, 3, 4].includes(module.stage)) issues.push({ moduleId: module.id, message: 'Module stage is invalid.' })
+    const canonicalStage3School = stage3SchoolClassification(module.id)
+    if (module.stage === 3 && (!module.stage3School || JSON.stringify(module.stage3School) !== JSON.stringify(canonicalStage3School))) {
+      issues.push({ moduleId: module.id, message: 'Stage 3 school requires its canonical stable-ID family classification.' })
+    }
+    if (module.stage !== 3 && module.stage3School) issues.push({ moduleId: module.id, message: 'Only Stage 3 schools may carry school-family classification.' })
     if (module.awards.length === 0) issues.push({ moduleId: module.id, message: 'At least one structured award is required.' })
     if (module.skillFieldSelection) {
       const fieldIds = new Set<string>()

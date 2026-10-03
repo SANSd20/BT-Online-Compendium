@@ -4,11 +4,12 @@ import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, getLifeModule, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
+import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
 import { BASIC_TRAINING_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
-import { applyStage0Affiliation, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
+import { applyStage0Affiliation, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
@@ -158,6 +159,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const accessProfile = character?.creation.finalTouches?.equipmentAccessProfile ?? { enabled: false, affiliationCategory: 'inner-sphere' as const, nativeAffiliationCode: '' }
   const effectiveOwnedLimits = character?.creation.finalTouches ? adjustedOwnedEquipmentLimits(character.creation.finalTouches.equippedTpUsed, accessProfile.affiliationCategory) : null
   const stageModulePendingAwards = stageModuleBasePreview?.creation.lifeModules?.pendingAwards.filter((entry) => entry.moduleId === stageModulePreviewId) ?? []
+  const completedStage3ModuleIds = character?.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId) ?? []
+  const additionalStage3Available = STAGE_3_SCHOOL_IDS.some((moduleId) => stage3SchoolEligibility(completedStage3ModuleIds, moduleId).eligible)
 
   function selectStageModule(moduleId: SupportedStageModuleId) {
     if (STAGE_3_SCHOOL_IDS.includes(moduleId as Stage3SchoolId)) {
@@ -227,6 +230,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
 
   function renderStage3School(schoolId: Stage3SchoolId) {
     const school = getLifeModule(schoolId)
+    const schoolEligibility = stage3SchoolEligibility(completedStage3ModuleIds, schoolId)
+    const availabilityId = `${schoolId}-availability`
     const offers = school.skillFieldSelection!.offers
     const isSelected = stageModulePreviewId === schoolId
     const defaultFieldIds = schoolId === TECHNICAL_COLLEGE_ID ? [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID] : [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID]
@@ -235,7 +240,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     const advancedCount = selectedOffers.filter((entry) => entry.category === 'advanced').length
     const years = selectedOffers.reduce((total, offer) => total + offer.chronologyYears, 0)
     const cost = selectedOffers.reduce((total, offer) => total + skillFieldCost(getSkillField(offer.fieldId), offer.costXpPerSkill), school.costXp)
-    return <article key={schoolId} className={isSelected ? 'preview-selected' : ''}>
+    return <article key={schoolId} className={isSelected ? 'preview-selected' : ''} aria-disabled={!schoolEligibility.eligible}>
       <h3>{school.displayName}</h3>
       <p>{school.costXp} XP base cost · choose exactly one Basic Field and one or two Advanced Fields. Each Field Skill receives +30 XP at a cost of 24 XP.</p>
       {school.conditionalPriorModuleAwards && <p><strong>Conditional entry adjustment:</strong> {school.conditionalPriorModuleAwards.description}</p>}
@@ -256,9 +261,10 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           return <label key={field.id}><input type="checkbox" checked={selected} disabled={!isSelected || (selected ? advancedCount <= 1 : availability.state === 'unavailable' || advancedCount >= 2)} onChange={() => toggleStage3AdvancedField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
         })}
       </fieldset>
-      {isSelected && <p><strong>Total: {cost} XP · +{years} years · expected age {16 + years}</strong></p>}
+      {isSelected && <p><strong>Total: {cost} XP · +{years} years · expected age {(currentAge(character!) ?? 16) + years}</strong></p>}
       {school.skillFieldSelection!.referenceOnlyOffers && <details><summary>Source-offered reference-only Fields</summary><ul>{school.skillFieldSelection!.referenceOnlyOffers!.map((offer) => <li key={`${offer.category}/${offer.displayName}`}><strong>{offer.displayName}</strong> ({offer.category}, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'}): {offer.reason}</li>)}</ul></details>}
-      <button className="button" type="button" aria-pressed={isSelected} onClick={() => selectStageModule(schoolId)}>Preview {school.displayName} path</button>
+      {!schoolEligibility.eligible && <p className="notice" id={availabilityId}>{schoolEligibility.reason}</p>}
+      <button className="button" type="button" aria-pressed={isSelected} aria-describedby={!schoolEligibility.eligible ? availabilityId : undefined} disabled={!schoolEligibility.eligible} onClick={() => selectStageModule(schoolId)}>Preview {school.displayName} path</button>
     </article>
   }
 
@@ -477,14 +483,14 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             )}
             {state.phase === 'stage-3-resolution' && <p className="notice">A Stage 3 school is selected. Resolve all source-bound choices and flexible XP below.</p>}
             {state.phase === 'stage-3-prerequisite-review' && <p className="notice">All Stage 3 awards are resolved, but one or more Skill Field prerequisites remain outstanding for eventual final validation.</p>}
-            {state.phase === 'alpha-stage-3-stop' && <div className="life-action"><p className="notice">The selected Stage 3 school is complete. This is an Alpha partial stop—not a finalized character.</p><button className="button" type="button" onClick={() => operate(() => continueToStage4(character), 'Stage 4 continuation opened.')}>Continue to Stage 4</button></div>}
+            {state.phase === 'alpha-stage-3-stop' && <div className="life-action"><p className="notice">The selected Stage 3 schooling is complete. You may continue to Stage 4 or choose another implemented school from an unused general family.</p>{additionalStage3Available && <button className="button secondary" type="button" onClick={() => operate(() => continueStage3Schooling(character), 'Additional Stage 3 schooling opened.')}>Choose another Stage 3 school</button>}<button className="button" type="button" onClick={() => operate(() => continueToStage4(character), 'Stage 4 continuation opened.')}>Continue to Stage 4</button></div>}
             {state.phase === 'stage-4-selection' && (
               <><div className="stage-options">
                 <article>
                   <h3>Agitator</h3>
                   <p>900 XP · Real Life module · +4 years.</p>
                   <p>Includes fixed Attribute, Trait, and Skill awards; three concrete subskill choices; and 125 flexible XP with a 50-XP cap per Attribute.</p>
-                  <p><strong>Expected age: 23</strong></p>
+                  <p><strong>Expected age: {(currentAge(character) ?? 16) + 4}</strong></p>
                   <button className="button" type="button" aria-pressed={stageModulePreviewId === AGITATOR_ID} onClick={() => selectStageModule(AGITATOR_ID)}>Preview Agitator</button>
                 </article>
               </div>{stageModulePreviewId === AGITATOR_ID && renderStageChoiceSlots('Real Life', 'Agitator and choices committed.')}</>

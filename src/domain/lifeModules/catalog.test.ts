@@ -32,8 +32,9 @@ describe('Life Module Alpha catalog', () => {
       AGITATOR_ID,
     ])
     expect(validateLifeModuleCatalog()).toEqual([])
-    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ACADEMY_ID)).toMatchObject({ costXp: 830, skillFieldSelection: { exactlyBasic: 1, minimumAdvanced: 1, maximumTotal: 3 } })
-    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ENLISTMENT_ID)).toMatchObject({ costXp: 720, skillFieldSelection: { exactlyBasic: 1, minimumAdvanced: 1, maximumTotal: 3 } })
+    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === TECHNICAL_COLLEGE_ID)).toMatchObject({ stage3School: { classification: 'general', family: 'civilian' } })
+    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ACADEMY_ID)).toMatchObject({ costXp: 830, stage3School: { classification: 'general', family: 'military' }, skillFieldSelection: { exactlyBasic: 1, minimumAdvanced: 1, maximumTotal: 3 } })
+    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ENLISTMENT_ID)).toMatchObject({ costXp: 720, stage3School: { classification: 'general', family: 'military' }, skillFieldSelection: { exactlyBasic: 1, minimumAdvanced: 1, maximumTotal: 3 } })
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ACADEMY_ID)?.skillFieldSelection?.offers).toContainEqual(expect.objectContaining({ fieldId: 'field.mechwarrior', category: 'advanced', awardedXpPerSkill: 30, costXpPerSkill: 24, chronologyYears: 1 }))
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ACADEMY_ID)?.skillFieldSelection?.referenceOnlyOffers?.some((entry) => entry.displayName === 'MechWarrior')).toBe(false)
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ENLISTMENT_ID)?.skillFieldSelection?.offers.some((entry) => entry.fieldId === 'field.mechwarrior')).toBe(false)

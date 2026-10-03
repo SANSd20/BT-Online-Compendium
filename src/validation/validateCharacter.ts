@@ -23,6 +23,7 @@ import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
 import { getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
+import { stage3SchoolClassification, usedStage3SchoolFamilies } from '../domain/lifeModules/stage3Schooling'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
 import { getMasterSkillFieldGoal } from '../domain/skillFields/goalCatalog'
 import {
@@ -578,7 +579,8 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const universalAffiliationPending = state.pendingAwards?.some((entry) => entry.moduleId === 'stage0.universal-fixed-xp' && entry.awardId === 'universal.language.affiliation')
   const stage1Count = character.lifeModuleHistory.filter((entry) => entry.stage === 1).length
   const stage2Count = character.lifeModuleHistory.filter((entry) => entry.stage === 2).length
-  const stage3Count = character.lifeModuleHistory.filter((entry) => entry.stage === 3).length
+  const stage3Entries = character.lifeModuleHistory.filter((entry) => entry.stage === 3)
+  const stage3Count = stage3Entries.length
   const stage4Entries = character.lifeModuleHistory.filter((entry) => entry.stage === 4)
   const stage4Count = stage4Entries.length
   if (!hasUniversal) issues.push(issue('life-modules.universal.outstanding', 'lifeModuleHistory', 'The universal Stage 0 package is still required.', { severity: 'warning' }))
@@ -597,9 +599,15 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   if (stage1Count !== 1) issues.push(issue('life-modules.stage-1.outstanding', 'lifeModuleHistory', 'Exactly one Stage 1 module is required.', { severity: stage1Count === 0 ? 'warning' : 'error' }))
   if (stage2Count > 1) issues.push(issue('life-modules.stage-2.multiple', 'lifeModuleHistory', 'No more than one Stage 2 module may be selected.'))
   if (state.currentStage === 2 && stage2Count === 0 && state.phase !== 'stage-2-selection') issues.push(issue('life-modules.stage-2.outstanding', 'lifeModuleHistory', 'Stage 2 has not been selected for this continuation.', { severity: 'warning' }))
-  if (stage3Count > 1) issues.push(issue('life-modules.stage-3.multiple', 'lifeModuleHistory', 'Repeated Stage 3 schooling is not supported.'))
+  const governedStage3Families = stage3Entries.flatMap((entry) => {
+    const school = stage3SchoolClassification(entry.moduleId)
+    return school?.classification === 'general' ? [school.family] : []
+  })
+  if (governedStage3Families.length !== usedStage3SchoolFamilies(stage3Entries.map((entry) => entry.moduleId)).size) {
+    issues.push(issue('life-modules.stage-3.family-reused', 'lifeModuleHistory', 'Stage 3 schooling may not reuse a Civilian, Intelligence/Police, or Military general school family.'))
+  }
   if (state.currentStage === 3 && stage3Count === 0) issues.push(issue('life-modules.stage-3.outstanding', 'lifeModuleHistory', 'A Stage 3 school has not yet been selected for this continuation.', { severity: 'warning' }))
-  validateSkillFieldGrants(character, issues, provenanceIds, stage3Count)
+  validateSkillFieldGrants(character, issues, provenanceIds)
   if (stage4Count > 1) issues.push(issue('life-modules.stage-4.multiple', 'lifeModuleHistory', 'Multiple Stage 4 modules are not supported in Alpha Slice 9.'))
   if (new Set(stage4Entries.map((entry) => entry.moduleId)).size !== stage4Count) issues.push(issue('life-modules.stage-4.repeat.unsupported', 'lifeModuleHistory', 'Repeated Stage 4 execution is not supported in Alpha Slice 9.'))
   if (state.currentStage === 4 && stage4Count === 0 && state.phase !== 'stage-4-selection') issues.push(issue('life-modules.stage-4.outstanding', 'lifeModuleHistory', 'A Stage 4 module has not yet been selected for this continuation.', { severity: 'warning' }))
@@ -659,15 +667,15 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   if (stage1Count === 1) {
     const expectedPhase = state.finalReview
       ? getFinalReviewBlockers(character).length === 0 ? 'ready-for-final-touches' : 'alpha-final-review'
-      : state.phase === 'stage-4-selection' && stage4Count === 0 && stage3Count === 1 && state.pendingAwards.length === 0
+      : state.phase === 'stage-4-selection' && stage4Count === 0 && stage3Count > 0 && state.pendingAwards.length === 0
       ? 'stage-4-selection'
       : stage4Count === 1
         ? state.pendingAwards.length > 0
           ? 'stage-4-resolution'
           : 'alpha-stage-4-stop'
-      : state.phase === 'stage-3-selection' && stage3Count === 0 && stage2Count === 1 && state.pendingAwards.length === 0
+      : state.phase === 'stage-3-selection' && stage2Count === 1 && stage4Count === 0 && state.pendingAwards.length === 0
       ? 'stage-3-selection'
-      : stage3Count === 1
+      : stage3Count > 0
         ? state.pendingAwards.length > 0
           ? 'stage-3-resolution'
           : 'alpha-stage-3-stop'
@@ -902,7 +910,7 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
   }
 }
 
-function validateSkillFieldGrants(character: CharacterDefinition, issues: ValidationIssue[], provenanceIds: Set<string>, stage3Count: number): void {
+function validateSkillFieldGrants(character: CharacterDefinition, issues: ValidationIssue[], provenanceIds: Set<string>): void {
   const state = character.creation.lifeModules!
   const seen = new Set<string>()
   for (const [index, grant] of state.selectedSkillFields.entries()) {
@@ -957,29 +965,30 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
     }
   }
 
-  const stage3 = character.lifeModuleHistory.find((entry) => entry.stage === 3)
-  if (!stage3) {
+  const stage3Entries = character.lifeModuleHistory.filter((entry) => entry.stage === 3)
+  if (stage3Entries.length === 0) {
     if (state.selectedSkillFields.length > 0) issues.push(issue('life-modules.skill-field.without-school', 'creation.lifeModules.selectedSkillFields', 'Skill Fields require a selected Stage 3 school.'))
     return
   }
-  let school: LifeModuleDefinition | undefined
-  try { school = getLifeModule(stage3.moduleId) } catch { return }
-  const policy = school.skillFieldSelection
-  if (!policy) {
-    issues.push(issue('life-modules.skill-field.policy.missing', 'lifeModuleHistory', 'Selected Stage 3 school has no Skill Field policy.'))
-    return
-  }
-  const grants = state.selectedSkillFields.filter((grant) => grant.schoolModuleId === stage3.moduleId)
-  const basicCount = grants.filter((grant) => grant.category === 'basic').length
-  const advancedCount = grants.filter((grant) => grant.category === 'advanced').length
-  if (basicCount !== policy.exactlyBasic) issues.push(issue('life-modules.skill-field.basic.required', 'creation.lifeModules.selectedSkillFields', `${school.displayName} requires exactly one Basic Skill Field.`))
-  if (advancedCount < policy.minimumAdvanced) issues.push(issue('life-modules.skill-field.advanced.required', 'creation.lifeModules.selectedSkillFields', `${school.displayName} requires at least one Advanced Skill Field.`))
-  if (grants.length > policy.maximumTotal) issues.push(issue('life-modules.skill-field.maximum', 'creation.lifeModules.selectedSkillFields', `${school.displayName} permits no more than ${policy.maximumTotal} Skill Fields.`))
-  if (stage3Count === 1) {
-    const expectedAge = 16 + grants.reduce((total, grant) => total + grant.chronologyYears, 0)
+  let expectedAge = 16
+  for (const stage3 of stage3Entries) {
+    let school: LifeModuleDefinition | undefined
+    try { school = getLifeModule(stage3.moduleId) } catch { continue }
+    const policy = school.skillFieldSelection
+    if (!policy) {
+      issues.push(issue('life-modules.skill-field.policy.missing', 'lifeModuleHistory', `${school.displayName} has no Skill Field policy.`))
+      continue
+    }
+    const grants = state.selectedSkillFields.filter((grant) => grant.schoolModuleId === stage3.moduleId)
+    const basicCount = grants.filter((grant) => grant.category === 'basic').length
+    const advancedCount = grants.filter((grant) => grant.category === 'advanced').length
+    if (basicCount !== policy.exactlyBasic) issues.push(issue('life-modules.skill-field.basic.required', 'creation.lifeModules.selectedSkillFields', `${school.displayName} requires exactly one Basic Skill Field.`))
+    if (advancedCount < policy.minimumAdvanced) issues.push(issue('life-modules.skill-field.advanced.required', 'creation.lifeModules.selectedSkillFields', `${school.displayName} requires at least one Advanced Skill Field.`))
+    if (grants.length > policy.maximumTotal) issues.push(issue('life-modules.skill-field.maximum', 'creation.lifeModules.selectedSkillFields', `${school.displayName} permits no more than ${policy.maximumTotal} Skill Fields.`))
+    expectedAge += grants.reduce((total, grant) => total + grant.chronologyYears, 0)
     const chronology = character.chronology.find((entry) => entry.eventId === `${stage3.moduleId}.complete`)
     if (!chronology || chronology.date !== `age:${expectedAge}` || !provenanceIds.has(chronology.provenanceId)) {
-      issues.push(issue('life-modules.stage-3.age.malformed', 'chronology', 'Stage 3 chronology must equal age 16 plus the selected Skill Field time and retain valid provenance.'))
+      issues.push(issue('life-modules.stage-3.age.malformed', 'chronology', 'Each Stage 3 chronology entry must accumulate all previously committed Skill Field time and retain valid provenance.'))
     }
   }
 }

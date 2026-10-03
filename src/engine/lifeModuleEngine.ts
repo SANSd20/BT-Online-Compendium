@@ -26,6 +26,7 @@ import {
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
 import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
+import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
 import { BASIC_TRAINING_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
@@ -272,15 +273,16 @@ export function applyMilitaryEnlistment(
 function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: string, fieldIds: string[]): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-3-selection') throw new Error('A Stage 3 school is not the current legal action.')
-  if (character.lifeModuleHistory.some((entry) => entry.stage === 3)) throw new Error('Repeated Stage 3 schooling is not supported in Alpha Slice 63.')
   const publishedSchool = getLifeModule(moduleId)
   if (publishedSchool.stage !== 3 || !publishedSchool.skillFieldSelection) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
+  const eligibility = stage3SchoolEligibility(character.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId), moduleId)
+  if (!eligibility.eligible) throw new Error(eligibility.reason)
   const conditional = publishedSchool.conditionalPriorModuleAwards
   const conditionalApplies = Boolean(conditional && conditional.absentModuleIds.every((id) => !character.lifeModuleHistory.some((entry) => entry.moduleId === id)))
   const school: LifeModuleDefinition = conditionalApplies
     ? { ...publishedSchool, awards: [...conditional!.awards, ...publishedSchool.awards], notes: [...publishedSchool.notes, conditional!.description] }
     : publishedSchool
-  validateSchoolFieldSelection(school, fieldIds)
+  validateSchoolFieldSelection(character, school, fieldIds)
   const selections = fieldIds.map((fieldId) => ({ field: getSkillField(fieldId), offer: school.skillFieldSelection!.offers.find((entry) => entry.fieldId === fieldId)! }))
   const fieldCostXp = selections.reduce((total, selection) => total + skillFieldCost(selection.field, selection.offer.costXpPerSkill), 0)
   const totalCostXp = school.costXp + fieldCostXp
@@ -322,7 +324,7 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
     }
   }
   next.xp.creation.allocated = calculateLedgerXp(next)
-  const age = 16 + selections.reduce((total, selection) => total + selection.offer.chronologyYears, 0)
+  const age = 16 + requireLifeModules(next).selectedSkillFields.reduce((total, grant) => total + grant.chronologyYears, 0)
   next.chronology.push({ date: `age:${age}`, eventId: `${school.id}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })
   return updateLifeModuleProgress(next)
 }
@@ -330,6 +332,24 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
 export function applyStage3School(character: CharacterDefinition, moduleId: string, fieldIds: string[]): CharacterDefinition {
   if (![TECHNICAL_COLLEGE_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
   return applyStage3SchoolDefinition(character, moduleId, fieldIds)
+}
+
+export function continueStage3Schooling(character: CharacterDefinition): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  if (state.phase !== 'alpha-stage-3-stop' || state.stopState !== 'alpha-stage-3-stop') {
+    throw new Error('Additional Stage 3 schooling requires a resolved, prerequisite-satisfied Stage 3 Alpha stop.')
+  }
+  const completed = next.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId)
+  const implementedSchools = [TECHNICAL_COLLEGE_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID]
+  if (!implementedSchools.some((moduleId) => stage3SchoolEligibility(completed, moduleId).eligible)) {
+    throw new Error('No additional implemented Stage 3 school family is available.')
+  }
+  state.phase = 'stage-3-selection'
+  state.currentStage = 3
+  state.stopState = 'not-eligible'
+  next.updatedAt = new Date().toISOString()
+  return next
 }
 
 export function continueToStage4(character: CharacterDefinition): CharacterDefinition {
@@ -481,10 +501,13 @@ function applyModule(
   return next
 }
 
-function validateSchoolFieldSelection(school: LifeModuleDefinition, fieldIds: string[]): void {
+function validateSchoolFieldSelection(character: CharacterDefinition, school: LifeModuleDefinition, fieldIds: string[]): void {
   const policy = school.skillFieldSelection
   if (!policy) throw new Error(`${school.displayName} has no Skill Field selection policy.`)
   if (new Set(fieldIds).size !== fieldIds.length) throw new Error('Skill Fields may not be selected more than once.')
+  const acquiredFieldIds = new Set(requireLifeModules(character).selectedSkillFields.map((grant) => grant.fieldId))
+  const repeatedFieldId = fieldIds.find((fieldId) => acquiredFieldIds.has(fieldId))
+  if (repeatedFieldId) throw new Error(`Skill Field ${repeatedFieldId} has already been acquired.`)
   const offered = new Map(policy.offers.map((entry) => [entry.fieldId, entry]))
   const selections = fieldIds.map((fieldId) => {
     const offer = offered.get(fieldId)

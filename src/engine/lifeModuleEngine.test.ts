@@ -4,7 +4,7 @@ import { getOptimizationPreview as getDomainOptimizationPreview } from '../domai
 import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, INFANTRY_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
-import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
+import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from './lifeModuleFinalReview'
 import { createPointBuyCharacter } from './pointBuyEngine'
 
@@ -623,11 +623,53 @@ describe('Life Module engine', () => {
     expect(componentSkillsOnly.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'marine.field')?.status).toBe('outstanding')
   })
 
-  it('keeps Stage 3 repeat execution deferred, preventing both same-type and otherwise legal cross-type repeats', () => {
-    const military = applyMilitaryAcademy(continueToStage3(completeHighSchoolStage2()))
-    military.creation.lifeModules!.phase = 'stage-3-selection'
-    expect(() => applyStage3School(military, MILITARY_ENLISTMENT_ID, [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID])).toThrow('Repeated Stage 3 schooling is not supported')
-    expect(() => applyStage3School(military, TECHNICAL_COLLEGE_ID, [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID])).toThrow('Repeated Stage 3 schooling is not supported')
+  it('blocks the same Military family while allowing an unused Civilian family', () => {
+    let military = applyMilitaryAcademy(continueToStage3(completeHighSchoolStage2()))
+    const flexible = military.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'military-academy.flexible')!
+    military = resolvePendingLifeModuleAward(military, flexible.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 100)
+    const selecting = continueStage3Schooling(military)
+
+    expect(() => applyStage3School(selecting, MILITARY_ENLISTMENT_ID, [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID])).toThrow('Another Military Stage 3 school has already been completed.')
+    expect(() => applyStage3School(selecting, MILITARY_ACADEMY_ID, [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID])).toThrow('Military Academy has already been completed.')
+    expect(applyStage3School(selecting, TECHNICAL_COLLEGE_ID, [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID]).lifeModuleHistory.at(-1)?.moduleId).toBe(TECHNICAL_COLLEGE_ID)
+  })
+
+  it('commits legal cross-family Stage 3 schooling cumulatively and round-trips without drift', () => {
+    const first = completeTechnicalCollegeStage3()
+    const beforeSecond = structuredClone(first)
+    let character = applyMilitaryAcademy(continueStage3Schooling(first), [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID])
+
+    expect(first).toEqual(beforeSecond)
+    expect(character.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId)).toEqual([TECHNICAL_COLLEGE_ID, MILITARY_ACADEMY_ID])
+    expect(character.creation.lifeModules!.selectedSkillFields.map((entry) => entry.fieldId)).toEqual([
+      TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID, BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID,
+    ])
+    expect(character.chronology.find((entry) => entry.eventId === `${TECHNICAL_COLLEGE_ID}.complete`)?.date).toBe('age:19')
+    expect(character.chronology.find((entry) => entry.eventId === `${MILITARY_ACADEMY_ID}.complete`)?.date).toBe('age:21')
+    expect(character.creation.lifeModules!.moduleXp).toEqual({ starting: 5000, spent: 3520, remaining: 1480 })
+
+    const technicalAwardsBefore = character.skills.flatMap((entry) => entry.sourceAwards).filter((award) => beforeSecond.provenance.some((entry) => entry.id === award.provenanceId)).length
+    const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'military-academy.flexible')!
+    character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 100)
+    expect(character.creation.lifeModules!.phase).toBe('alpha-stage-3-stop')
+    expect(character.skills.flatMap((entry) => entry.sourceAwards).filter((award) => beforeSecond.provenance.some((entry) => entry.id === award.provenanceId))).toHaveLength(technicalAwardsBefore)
+
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-10-02T00:00:00.000Z'))
+    expect(decoded).toEqual(character)
+    expect(validateCharacter(decoded).valid).toBe(true)
+    expect(decoded.creation.lifeModules!.moduleXp).toEqual(character.creation.lifeModules!.moduleXp)
+    expect(decoded.creation.lifeModules!.selectedSkillFields).toHaveLength(4)
+    expect(decoded.creation.lifeModules!.pendingAwards).toHaveLength(0)
+    expect(continueToStage4(decoded).creation.lifeModules!.phase).toBe('stage-4-selection')
+  })
+
+  it('keeps repetition optional and preserves the reverse same-family rejection', () => {
+    expect(continueToStage4(completeTechnicalCollegeStage3()).creation.lifeModules!.phase).toBe('stage-4-selection')
+    let enlistment = applyMilitaryEnlistment(continueToStage3(completeHighSchoolStage2()))
+    const flexible = enlistment.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'military-enlistment.flexible')!
+    enlistment = resolvePendingLifeModuleAward(enlistment, flexible.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 200)
+    const selecting = continueStage3Schooling(enlistment)
+    expect(() => applyMilitaryAcademy(selecting)).toThrow('Another Military Stage 3 school has already been completed.')
   })
 
   it('requires actual Basic Training for Infantry and does not accept component Skills alone', () => {

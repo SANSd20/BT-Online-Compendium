@@ -1,6 +1,7 @@
 import type { SkillAddress } from '../character/model'
 import type { SourceCitation } from '../rules/model'
 import type { AffiliationLanguageSelectorGroupId } from './affiliations'
+import type { Stage3SchoolClassification } from './stage3Schooling'
 
 export type LifeModuleStage = 0 | 1 | 2 | 3 | 4
 export type LifeModuleKind = 'universal' | 'affiliation' | 'early-childhood' | 'late-childhood' | 'higher-education' | 'real-life'
@@ -37,6 +38,7 @@ export interface LifeModuleDefinition {
   displayName: string
   stage: LifeModuleStage
   kind: LifeModuleKind
+  stage3School?: Stage3SchoolClassification
   source: SourceCitation
   costXp: number
   chronologyYears?: number
