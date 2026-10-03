@@ -628,6 +628,19 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     return
   }
   state.pendingAwards.forEach((award, index) => {
+    if (award.skillFieldPrerequisiteChoice) {
+      let field
+      try { field = getSkillField(award.skillFieldPrerequisiteChoice.fieldId) } catch { /* malformed below */ }
+      const prerequisite = field?.relatedSkillPrerequisite
+      const grant = state.selectedSkillFields.find((entry) => entry.schoolModuleId === award.moduleId && entry.fieldId === award.skillFieldPrerequisiteChoice?.fieldId)
+      if (
+        !selectedIds.has(award.moduleId) || !grant || !prerequisite || prerequisite.id !== award.skillFieldPrerequisiteChoice.prerequisiteId ||
+        award.kind !== 'related-skill-prerequisite' || award.xpPerGrant !== 0 || award.remainingGrants !== 1 ||
+        award.allocationMode !== 'fixed-grants' || award.allowedTargetTypes.length !== 1 || award.allowedTargetTypes[0] !== 'skill' ||
+        !Array.isArray(award.skillFieldPrerequisiteChoice.eligibleSkillKeys) || !award.source.sourceId
+      ) issues.push(issue('life-modules.pending-field-prerequisite.malformed', `creation.lifeModules.pendingAwards.${index}`, 'Pending related-Skill prerequisite choice is malformed.'))
+      return
+    }
     if (award.skillFieldChoice) {
       let field
       try { field = getSkillField(award.skillFieldChoice.fieldId) } catch { /* malformed below */ }
@@ -952,6 +965,8 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
     const variableChoices = grant.variableSkillChoices ?? []
     const variableComponents = field.variableComponentSkills ?? []
     const pendingVariableChoices = state.pendingAwards.filter((entry) => entry.skillFieldChoice?.fieldId === field.id && entry.moduleId === grant.schoolModuleId)
+    const prerequisiteChoices = grant.prerequisiteSkillChoices ?? []
+    const pendingPrerequisiteChoices = state.pendingAwards.filter((entry) => entry.skillFieldPrerequisiteChoice?.fieldId === field.id && entry.moduleId === grant.schoolModuleId)
     if (
       !grant.id ||
       !school ||
@@ -968,6 +983,24 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
       new Set(variableChoices.map((entry) => entry.componentId)).size !== variableChoices.length
     ) {
       issues.push(issue('life-modules.skill-field.malformed', `creation.lifeModules.selectedSkillFields.${index}`, 'Durable Skill Field record does not match its catalog definition, school, cost, chronology, or provenance.'))
+    }
+    if (field.relatedSkillPrerequisite) {
+      if (prerequisiteChoices.length + pendingPrerequisiteChoices.length !== 1) {
+        issues.push(issue('life-modules.skill-field.related-skill.malformed', `creation.lifeModules.selectedSkillFields.${index}.prerequisiteSkillChoices`, `${field.displayName} must retain exactly one resolved or pending related-Skill prerequisite choice.`))
+      }
+      for (const choice of prerequisiteChoices) {
+        const key = choice.destination.type === 'skill'
+          ? `${choice.destination.targetId}/${choice.destination.parameter?.kind ?? ''}/${choice.destination.parameter?.value.toLowerCase() ?? ''}`
+          : ''
+        const ledger = character.skills.find((entry) => `${entry.address.skillId}/${entry.address.parameter?.kind ?? ''}/${entry.address.parameter?.value.toLowerCase() ?? ''}` === key)
+        if (choice.prerequisiteId !== field.relatedSkillPrerequisite.id || choice.destination.type !== 'skill' || choice.gmApprovalRequired !== true || ledger?.level === null || !ledger) {
+          issues.push(issue('life-modules.skill-field.related-skill.choice.malformed', `creation.lifeModules.selectedSkillFields.${index}.prerequisiteSkillChoices`, `${field.displayName} related-Skill prerequisite provenance is malformed or does not identify a possessed concrete Skill.`))
+        }
+      }
+      const tracked = state.prerequisiteIssues.find((entry) => entry.moduleId === field.id && entry.prerequisiteId === field.relatedSkillPrerequisite?.id)
+      if (!tracked) issues.push(issue('life-modules.skill-field.related-skill.prerequisite.missing', 'creation.lifeModules.prerequisiteIssues', `${field.displayName} related-Skill prerequisite is not tracked durably.`))
+    } else if (prerequisiteChoices.length > 0 || pendingPrerequisiteChoices.length > 0) {
+      issues.push(issue('life-modules.skill-field.related-skill.unexpected', `creation.lifeModules.selectedSkillFields.${index}.prerequisiteSkillChoices`, `${field.displayName} has unexpected related-Skill prerequisite state.`))
     }
     for (const choice of variableChoices) {
       const component = variableComponents.find((entry) => entry.id === choice.componentId)

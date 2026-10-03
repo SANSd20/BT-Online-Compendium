@@ -9,6 +9,11 @@ export interface SkillFieldDefinition {
   category: SkillFieldCategory
   source: SourceCitation
   prerequisites: LifeModulePrerequisite[]
+  relatedSkillPrerequisite?: {
+    id: string
+    description: string
+    gmApprovalRequired: true
+  }
   componentSkills: Array<Extract<LifeModuleDestination, { type: 'skill' }>>
   variableComponentSkills?: Array<{
     id: string

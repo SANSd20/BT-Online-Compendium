@@ -126,6 +126,10 @@ function prerequisiteStatus(character: CharacterDefinition, prerequisite: Master
     const satisfied = prerequisite.options.some((option) => option.every((entry) => prerequisiteSatisfied(character, entry)))
     return { id: prerequisite.id, kind: 'structural', section: 'prerequisite', label: prerequisite.label, satisfied, current: satisfied ? 'Satisfied' : 'Alternative prerequisite path not satisfied', xpRequired: null }
   }
+  if (prerequisite.kind === 'structural' && prerequisite.id === 'general-studies.related-skill') {
+    const selected = generalStudiesRelatedSkill(character)
+    return { id: prerequisite.id, kind: 'structural', section: 'prerequisite', label: prerequisite.label, satisfied: Boolean(selected), current: selected ? `${selected.displayName} recorded · GM approval required` : 'Choose an already possessed concrete Skill', xpRequired: null }
+  }
   const satisfied = prerequisite.kind === 'affiliation'
     ? character.affiliations.some((entry) => !prerequisite.affiliationIds || prerequisite.affiliationIds.includes(entry.affiliationId))
     : prerequisite.kind === 'trait-absent'
@@ -142,7 +146,8 @@ function fieldRequirementsStatus(character: CharacterDefinition, field: ReturnTy
 }
 
 function fieldSkillStatus(character: CharacterDefinition, fieldId: string, entry: ReturnType<typeof getMasterSkillFieldGoal>['fieldSkills'][number]): MasterSkillFieldGoalRequirementStatus {
-  const skill = character.skills.find((candidate) => entry.variable ? candidate.address.skillId === entry.skillId : skillKey(candidate.address) === skillKey({ skillId: entry.skillId, ...(entry.parameter ? { parameter: { value: entry.parameter } } : {}) }))
+  const matchingSkills = character.skills.filter((candidate) => entry.variable ? candidate.address.skillId === entry.skillId : skillKey(candidate.address) === skillKey({ skillId: entry.skillId, ...(entry.parameter ? { parameter: { value: entry.parameter } } : {}) }))
+  const skill = matchingSkills.find((candidate) => (candidate.level ?? deriveStandardSkillLevel(candidate.accumulatedXp)) !== null) ?? matchingSkills[0]
   const currentLevel = skill?.level ?? deriveStandardSkillLevel(skill?.accumulatedXp ?? 0)
   const satisfied = currentLevel !== null
   const currentXp = skill?.accumulatedXp ?? 0
@@ -178,7 +183,17 @@ function prerequisiteSatisfied(character: CharacterDefinition, prerequisite: Mas
   if (prerequisite.kind === 'skill-field') return Boolean(character.creation.lifeModules?.selectedSkillFields.some((entry) => prerequisite.fieldIds.includes(entry.fieldId)))
   if (prerequisite.kind === 'affiliation') return character.affiliations.some((entry) => !prerequisite.affiliationIds || prerequisite.affiliationIds.includes(entry.affiliationId))
   if (prerequisite.kind === 'alternative') return prerequisite.options.some((option) => option.every((entry) => prerequisiteSatisfied(character, entry)))
+  if (prerequisite.kind === 'structural' && prerequisite.id === 'general-studies.related-skill') return Boolean(generalStudiesRelatedSkill(character))
   return false
+}
+
+function generalStudiesRelatedSkill(character: CharacterDefinition): ResolvedLifeModuleDestination | null {
+  const choice = character.creation.lifeModules?.selectedSkillFields
+    .find((entry) => entry.fieldId === 'field.general-studies')
+    ?.prerequisiteSkillChoices?.find((entry) => entry.prerequisiteId === 'general-studies.related-skill')
+  if (!choice || choice.destination.type !== 'skill') return null
+  const key = `${choice.destination.targetId}/${choice.destination.parameter?.value.toLowerCase() ?? ''}`
+  return character.skills.some((entry) => entry.level !== null && skillKey(entry.address) === key) ? choice.destination : null
 }
 
 function skillKey(address: { skillId: string; parameter?: { value: string } }): string {

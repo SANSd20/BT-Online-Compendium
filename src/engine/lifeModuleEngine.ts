@@ -317,7 +317,26 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
       provenanceId,
       source: { ...field.source },
       variableSkillChoices: [],
+      prerequisiteSkillChoices: [],
     })
+    if (field.relatedSkillPrerequisite) {
+      const eligibleSkillKeys = character.skills
+        .filter((entry) => entry.level !== null && !entry.displayName?.includes('/Any'))
+        .map((entry) => skillKey(entry.address))
+      requireLifeModules(next).pendingAwards.push({
+        id: makeId(undefined, 'pending-field-prerequisite'),
+        moduleId: school.id,
+        awardId: `skill-field-prerequisite/${field.id}/${field.relatedSkillPrerequisite.id}`,
+        kind: 'related-skill-prerequisite',
+        description: `${field.relatedSkillPrerequisite.description}. Select an already possessed concrete Skill; this selection grants no XP.`,
+        xpPerGrant: 0,
+        remainingGrants: 1,
+        allocationMode: 'fixed-grants',
+        allowedTargetTypes: ['skill'],
+        skillFieldPrerequisiteChoice: { fieldId: field.id, prerequisiteId: field.relatedSkillPrerequisite.id, eligibleSkillKeys },
+        source: { ...field.source },
+      })
+    }
     for (const component of field.variableComponentSkills ?? []) {
       requireLifeModules(next).pendingAwards.push({
         id: makeId(undefined, 'pending-field-skill'),
@@ -436,6 +455,8 @@ export function resolvePendingLifeModuleAward(
   const moduleHistory = next.lifeModuleHistory.find((entry) => entry.moduleId === pending.moduleId)
   const fieldGrant = pending.skillFieldChoice
     ? state.selectedSkillFields.find((entry) => entry.schoolModuleId === pending.moduleId && entry.fieldId === pending.skillFieldChoice!.fieldId)
+    : pending.skillFieldPrerequisiteChoice
+      ? state.selectedSkillFields.find((entry) => entry.schoolModuleId === pending.moduleId && entry.fieldId === pending.skillFieldPrerequisiteChoice!.fieldId)
     : undefined
   if (pending.skillFieldChoice && fieldGrant?.variableSkillChoices?.some((choice) => resolvedDestinationKey(choice.destination) === destinationKey)) {
     throw new Error('Each variable component in a Skill Field must use a distinct concrete destination.')
@@ -443,8 +464,17 @@ export function resolvePendingLifeModuleAward(
   const provenanceId = fieldGrant?.provenanceId ?? moduleHistory?.provenanceIds[0]
   if (!provenanceId) throw new Error('Pending award module provenance is missing.')
   const ledgerDestination = toLifeModuleDestination(normalized)
-  applyDestinationAward(next, ledgerDestination, appliedXp!, provenanceId)
-  if (pending.skillFieldChoice) {
+  if (pending.kind !== 'related-skill-prerequisite') applyDestinationAward(next, ledgerDestination, appliedXp!, provenanceId)
+  if (pending.skillFieldPrerequisiteChoice) {
+    if (!fieldGrant) throw new Error('Pending Field prerequisite choice has no matching durable Field grant.')
+    fieldGrant.prerequisiteSkillChoices ??= []
+    fieldGrant.prerequisiteSkillChoices = fieldGrant.prerequisiteSkillChoices.filter((entry) => entry.prerequisiteId !== pending.skillFieldPrerequisiteChoice!.prerequisiteId)
+    fieldGrant.prerequisiteSkillChoices.push({
+      prerequisiteId: pending.skillFieldPrerequisiteChoice.prerequisiteId,
+      destination: structuredClone(normalized),
+      gmApprovalRequired: true,
+    })
+  } else if (pending.skillFieldChoice) {
     if (!fieldGrant) throw new Error('Pending Field-Skill choice has no matching durable Field grant.')
     fieldGrant.variableSkillChoices ??= []
     fieldGrant.variableSkillChoices.push({ componentId: pending.skillFieldChoice.componentId, destination: structuredClone(normalized) })
@@ -671,7 +701,24 @@ export function reevaluateLifeModulePrerequisites(character: CharacterDefinition
   state.prerequisiteIssues = state.selectedModuleIds.flatMap((moduleId) => {
     const module = getLifeModule(moduleId)
     return module.prerequisites.map((entry) => evaluatePrerequisite(character, moduleId, entry, state.prerequisiteIssues))
-  }).concat(state.selectedSkillFields.flatMap((grant) => getSkillField(grant.fieldId).prerequisites.map((entry) => evaluatePrerequisite(character, grant.fieldId, entry, state.prerequisiteIssues))))
+  }).concat(state.selectedSkillFields.flatMap((grant) => {
+    const field = getSkillField(grant.fieldId)
+    const ordinary = field.prerequisites.map((entry) => evaluatePrerequisite(character, grant.fieldId, entry, state.prerequisiteIssues))
+    if (!field.relatedSkillPrerequisite) return ordinary
+    const selected = grant.prerequisiteSkillChoices?.find((entry) => entry.prerequisiteId === field.relatedSkillPrerequisite?.id)
+    const selectedSkillKey = selected?.destination.type === 'skill'
+      ? `${selected.destination.targetId}/${selected.destination.parameter?.kind ?? ''}/${selected.destination.parameter?.value.toLowerCase() ?? ''}`
+      : null
+    const satisfied = Boolean(selectedSkillKey && character.skills.some((entry) => entry.level !== null && skillKey(entry.address) === selectedSkillKey))
+    return [...ordinary, {
+      id: `${grant.fieldId}/${field.relatedSkillPrerequisite.id}`,
+      moduleId: grant.fieldId,
+      prerequisiteId: field.relatedSkillPrerequisite.id,
+      description: selected ? `${field.relatedSkillPrerequisite.description}: ${selected.destination.displayName}` : field.relatedSkillPrerequisite.description,
+      status: satisfied ? 'satisfied' as const : 'outstanding' as const,
+      finalValidationRequired: true,
+    }]
+  }))
   return character
 }
 
@@ -726,6 +773,13 @@ function validateResolutionDestination(character: CharacterDefinition, pending: 
     return
   }
   if (!destination.targetId.startsWith(destination.type === 'trait' ? 'trait.' : 'skill.')) throw new Error(`A stable ${destination.type} rule ID is required.`)
+  if (pending.kind === 'related-skill-prerequisite') {
+    if (destination.type !== 'skill') throw new Error('A related-Skill prerequisite must identify a Skill.')
+    const key = `${destination.targetId}/${destination.parameter?.kind ?? ''}/${destination.parameter?.value.toLowerCase() ?? ''}`
+    if (!pending.skillFieldPrerequisiteChoice?.eligibleSkillKeys.includes(key)) throw new Error('The related-Skill prerequisite must use a concrete Skill the character already possesses.')
+    if (!character.skills.some((entry) => entry.level !== null && skillKey(entry.address) === key)) throw new Error('The selected related Skill is no longer possessed.')
+    return
+  }
   if (destination.type === 'skill' && pending.requiredSkillId && destination.targetId !== pending.requiredSkillId) throw new Error(`This award must resolve to ${pending.requiredSkillId}.`)
   if ((pending.kind === 'language-choice' || pending.kind === 'affiliation-skill-choice' || pending.kind === 'any-skill-choice' || pending.kind === 'multi-skill-choice') && !destination.parameter?.value) {
     throw new Error('A concrete language or subskill choice is required.')

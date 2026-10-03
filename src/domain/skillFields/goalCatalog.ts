@@ -55,7 +55,7 @@ const SKILL_IDS: Record<string, string> = {
 function goalSkill(displayName: string): MasterSkillFieldGoalSkill {
   const [base, ...rest] = displayName.split('/')
   const parameter = rest.join('/') || undefined
-  const variable = /\bAny\b|any one| or |Land, Sea, or Air Vehicle/i.test(parameter ?? '')
+  const variable = /\bAny\b|any one|Affiliation| or |Land, Sea, or Air Vehicle/i.test(parameter ?? '')
   return { id: `goal-skill.${slug(displayName)}`, displayName, skillId: SKILL_IDS[base] ?? `skill.${slug(base)}`, ...(parameter ? { parameter } : {}), variable }
 }
 
@@ -81,7 +81,7 @@ export const MASTER_SKILL_FIELD_GOAL_CATALOG: readonly MasterSkillFieldGoalDefin
   f('Communications', civ, 92, [attr('communications.int', 'INT', 4)], ['Acting', 'Career/Communications', 'Comms/Conventional', 'Computers', 'Protocol/Any', 'Sensor Operations']),
   f('Doctor', civ, 92, [fields('doctor.field', ['Medical Assistant', 'Scientist'], 'Medical Assistant or Scientist Field'), attr('doctor.dex', 'DEX', 4), attr('doctor.int', 'INT', 5), attr('doctor.wil', 'WIL', 3)], ['Administration', 'Career/Doctor', 'MedTech/Any', 'Protocol/Affiliation', 'Surgery/Any']),
   f('Engineer', civ, 92, [fields('engineer.field', ['Technician - Civilian', 'Technician - Military'], 'Technician - Civilian or Military Field'), attr('engineer.int', 'INT', 4)], ['Appraisal', 'Career/Engineer', 'Perception', 'Technician/Nuclear', 'Technician/Any']),
-  f('General Studies', civ, 92, [attr('general-studies.int', 'INT', 3), structural('general-studies.related-skill', 'At least one other Skill related to the listed Field Skills')], ['Career/Any', 'Computers', 'Interest/Any', 'Perception', 'Protocol/Affiliation']),
+  f('General Studies', civ, 92, [attr('general-studies.int', 'INT', 3), structural('general-studies.related-skill', 'At least one other Skill related to the listed Field Skills (subject to GM approval)')], ['Career/Any', 'Computers', 'Interest/Any', 'Perception', 'Protocol/Affiliation']),
   f('HPG Technician', civ, 92, [affiliation('hpg.affiliation', 'ComStar, Word of Blake, or Clan Affiliation'), fields('hpg.field', ['Communications'], 'Communications Field')], ['Administration', 'Comms/Conventional', 'Comms/HPG', 'Computers', 'Cryptography']),
   f('Journalist', civ, 92, [attr('journalist.int', 'INT', 3), attr('journalist.cha', 'CHA', 4), attr('journalist.wil', 'WIL', 4)], ['Acting', 'Art/Writing', 'Career/Journalist', 'Computers', 'Investigation', 'Perception']),
   f('Lawyer', civ, 92, [fields('lawyer.field', ['General Studies'], 'General Studies Field'), attr('lawyer.int', 'INT', 4), attr('lawyer.cha', 'CHA', 4), attr('lawyer.wil', 'WIL', 5)], ['Acting', 'Administration', 'Career/Lawyer', 'Interest/Law', 'Negotiation', 'Protocol/Any']),

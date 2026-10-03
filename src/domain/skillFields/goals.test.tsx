@@ -146,6 +146,22 @@ describe('Master Skill Field goal guidance', () => {
     expect(status.prerequisiteFields[0].requirements).toContainEqual(expect.objectContaining({ label: 'Career/Any', kind: 'variable-skill', xpRequired: null }))
   })
 
+  it('credits trained concrete /Any and /Affiliation Skills in General Studies guidance', () => {
+    const generalStudiesId = MASTER_SKILL_FIELD_GOAL_CATALOG.find((entry) => entry.displayName === 'General Studies')!.id
+    const character = setMasterSkillFieldGoal(createLifeModuleCharacter('General Studies choices'), generalStudiesId)
+    character.skills.push(
+      { address: { skillId: 'skill.career', parameter: { kind: 'subskill', value: 'Scholar' } }, displayName: 'Career/Scholar', accumulatedXp: 5, level: null, sourceAwards: [] },
+      { address: { skillId: 'skill.career', parameter: { kind: 'subskill', value: 'Historian' } }, displayName: 'Career/Historian', accumulatedXp: 30, level: 0, sourceAwards: [] },
+      { address: { skillId: 'skill.interest', parameter: { kind: 'subskill', value: 'History' } }, displayName: 'Interest/History', accumulatedXp: 30, level: 0, sourceAwards: [] },
+      { address: { skillId: 'skill.protocol', parameter: { kind: 'subskill', value: 'Capellan' } }, displayName: 'Protocol/Capellan', accumulatedXp: 30, level: 0, sourceAwards: [] },
+    )
+
+    const skills = masterSkillFieldGoalStatus(character)!.requirements.filter((entry) => entry.section === 'field-skill')
+    expect(skills.find((entry) => entry.label === 'Career/Any')).toMatchObject({ satisfied: true, current: expect.stringContaining('Career/Historian') })
+    expect(skills.find((entry) => entry.label === 'Interest/Any')).toMatchObject({ satisfied: true, current: expect.stringContaining('Interest/History') })
+    expect(skills.find((entry) => entry.label === 'Protocol/Affiliation')).toMatchObject({ satisfied: true, current: expect.stringContaining('Protocol/Capellan') })
+  })
+
   it('stops recursive Field expansion when an ancestor would repeat', () => {
     const cycle = masterSkillFieldReferenceStatus(createLifeModuleCharacter('Cycle guard'), 'field.infantry', ['field.infantry'])
     expect(cycle).toMatchObject({ displayName: 'Infantry', cycle: true, requirements: [], prerequisiteFields: [] })

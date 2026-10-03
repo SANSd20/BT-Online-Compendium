@@ -62,6 +62,18 @@ export function knownPendingChoiceValues(pending: Pick<PendingLifeModuleAward, '
 }
 
 export function pendingAwardOptions(pending: PendingLifeModuleAward, character: CharacterDefinition): PendingAwardOption[] {
+  if (pending.kind === 'related-skill-prerequisite') {
+    const legalKeys = new Set(pending.skillFieldPrerequisiteChoice?.eligibleSkillKeys ?? [])
+    return uniqueOptions(character.skills
+      .filter((entry) => entry.level !== null && legalKeys.has(`${entry.address.skillId}/${entry.address.parameter?.kind ?? ''}/${entry.address.parameter?.value.toLowerCase() ?? ''}`))
+      .map((entry) => ({
+        value: `${entry.address.skillId}/${entry.address.parameter?.value ?? ''}`,
+        type: 'skill' as const,
+        targetId: entry.address.skillId,
+        displayName: entry.displayName ?? entry.address.skillId,
+        parameter: entry.address.parameter,
+      })))
+  }
   if (pending.choiceSource) {
     return knownPendingChoiceValues(pending).map((language) => skillOption('skill.language', 'Language', language))
   }
@@ -81,6 +93,7 @@ export function pendingAwardOptions(pending: PendingLifeModuleAward, character: 
 export function pendingAwardUnsupportedMessage(pending: PendingLifeModuleAward, options: PendingAwardOption[]): string | null {
   if (pendingOpenSubject(pending)) return null
   if (options.length > 0) return null
+  if (pending.kind === 'related-skill-prerequisite') return 'No already possessed concrete Skill is available. General Studies remains blocked until the character possesses one and the GM approves its relationship.'
   if (pending.requiredSkillId) return `No source-backed ${skillName(pending.requiredSkillId)} choices are available in the current Alpha data. This award remains pending.`
   return 'No safe existing destination is available for this target type. Choose another target type or leave this award pending.'
 }

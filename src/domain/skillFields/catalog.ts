@@ -51,6 +51,10 @@ export const SPECIAL_FORCES_FIELD_ID = 'field.special-forces'
 export const MANAGER_FIELD_ID = 'field.manager'
 export const PLANETARY_SURVEYOR_FIELD_ID = 'field.planetary-surveyor'
 export const POLITICIAN_FIELD_ID = 'field.politician'
+export const GENERAL_STUDIES_FIELD_ID = 'field.general-studies'
+export const ANTHROPOLOGIST_FIELD_ID = 'field.anthropologist'
+export const ARCHAEOLOGIST_FIELD_ID = 'field.archaeologist'
+export const LAWYER_FIELD_ID = 'field.lawyer'
 
 export const SECURITY_SYSTEMS_SUBSKILLS = VARIABLE_SKILL_DOMAINS.securitySystems.options
 export const NAVAL_CAREER_SUBSKILLS = VARIABLE_SKILL_DOMAINS.navalCareer.options
@@ -629,6 +633,61 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
     ],
     componentSkills: [skill('skill.acting', 'Acting'), skill('skill.career', 'Career/Politician', 'Politician'), skill('skill.leadership', 'Leadership'), skill('skill.negotiation', 'Negotiation')],
     affiliationBoundComponentSkills: [{ skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' }],
+  },
+  {
+    id: GENERAL_STUDIES_FIELD_ID, displayName: 'General Studies', category: 'basic', source: { ...source('skill-field-general-studies'), page: 92 },
+    prerequisites: [{ id: 'general-studies.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 3, description: 'INT 3+' }],
+    relatedSkillPrerequisite: {
+      id: 'general-studies.related-skill',
+      description: 'At least one other Skill related to the General Studies Field Skills (subject to GM approval)',
+      gmApprovalRequired: true,
+    },
+    componentSkills: [skill('skill.computers', 'Computers'), skill('skill.perception', 'Perception')],
+    variableComponentSkills: [
+      variableSkill('general-studies.career-any', 'Career subject', VARIABLE_SKILL_DOMAINS.careerOpen),
+      variableSkill('general-studies.interest-any', 'Interest subject', VARIABLE_SKILL_DOMAINS.interestOpen),
+      variableSkill('general-studies.protocol-affiliation', 'Protocol affiliation', VARIABLE_SKILL_DOMAINS.protocolAffiliations),
+    ],
+  },
+  {
+    id: ANTHROPOLOGIST_FIELD_ID, displayName: 'Anthropologist', category: 'advanced', source: { ...source('skill-field-anthropologist'), page: 92 },
+    prerequisites: [
+      { id: 'anthropologist.field', kind: 'skill-field', fieldIds: [GENERAL_STUDIES_FIELD_ID], description: 'General Studies Field' },
+      { id: 'anthropologist.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' },
+    ],
+    componentSkills: [skill('skill.career', 'Career/Anthropologist', 'Anthropologist'), skill('skill.investigation', 'Investigation')],
+    variableComponentSkills: [
+      variableSkill('anthropologist.history-culture', 'History subject (one culture)', VARIABLE_SKILL_DOMAINS.interestOpen),
+      variableSkill('anthropologist.language-one', 'First Language', VARIABLE_SKILL_DOMAINS.languages),
+      variableSkill('anthropologist.language-two', 'Second Language', VARIABLE_SKILL_DOMAINS.languages),
+      variableSkill('anthropologist.protocol-any', 'Protocol affiliation', VARIABLE_SKILL_DOMAINS.protocolAffiliations),
+    ],
+  },
+  {
+    id: ARCHAEOLOGIST_FIELD_ID, displayName: 'Archaeologist', category: 'advanced', source: { ...source('skill-field-archaeologist'), page: 92 },
+    prerequisites: [
+      { id: 'archaeologist.field', kind: 'skill-field', fieldIds: [GENERAL_STUDIES_FIELD_ID], description: 'General Studies Field' },
+      { id: 'archaeologist.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' },
+    ],
+    componentSkills: [
+      skill('skill.career', 'Career/Archaeologist', 'Archaeologist'),
+      skill('skill.appraisal', 'Appraisal'),
+      skill('skill.interest', 'Interest/Geology', 'Geology'),
+      skill('skill.navigation', 'Navigation/Ground', 'Ground'),
+      skill('skill.perception', 'Perception'),
+    ],
+    variableComponentSkills: [variableSkill('archaeologist.history-any', 'History subject', VARIABLE_SKILL_DOMAINS.interestOpen)],
+  },
+  {
+    id: LAWYER_FIELD_ID, displayName: 'Lawyer', category: 'special', source: { ...source('skill-field-lawyer'), page: 92 },
+    prerequisites: [
+      { id: 'lawyer.field', kind: 'skill-field', fieldIds: [GENERAL_STUDIES_FIELD_ID], description: 'General Studies Field' },
+      { id: 'lawyer.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' },
+      { id: 'lawyer.cha', kind: 'attribute-minimum', attributeId: 'CHA', minimum: 4, description: 'CHA 4+' },
+      { id: 'lawyer.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 5, description: 'WIL 5+' },
+    ],
+    componentSkills: [skill('skill.acting', 'Acting'), skill('skill.administration', 'Administration'), skill('skill.career', 'Career/Lawyer', 'Lawyer'), skill('skill.interest', 'Interest/Law', 'Law'), skill('skill.negotiation', 'Negotiation')],
+    variableComponentSkills: [variableSkill('lawyer.protocol-any', 'Protocol affiliation', VARIABLE_SKILL_DOMAINS.protocolAffiliations)],
   },
 ]
 

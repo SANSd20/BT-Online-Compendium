@@ -287,7 +287,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     const count = stageChoiceSlotCount(pending, stageChoiceSlotValues)
     const poolProgress = pending.allocationMode === 'pool' ? stageChoicePoolProgress(pending, values) : null
     return <div className="stage-choice-award" key={pending.id}>
-          <p aria-live="polite"><strong>{pending.description}</strong> · {poolProgress ? stageChoicePoolProgressLabel(poolProgress) : `${count} separate slot${count === 1 ? '' : 's'} · ${signed(pending.xpPerGrant)} XP each`}</p>
+          <p aria-live="polite"><strong>{pending.description}</strong> · {poolProgress ? stageChoicePoolProgressLabel(poolProgress) : pending.kind === 'related-skill-prerequisite' ? 'Prerequisite selection · 0 XP' : `${count} separate slot${count === 1 ? '' : 's'} · ${signed(pending.xpPerGrant)} XP each`}</p>
           {Array.from({ length: count }, (_, index) => {
             const value = { ...emptyStageChoiceSlot(pending), ...values[index] }
             const optionPending = pending.kind === 'flexible-xp' && value.targetType
@@ -303,7 +303,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             const slotId = `${pending.id.replace(/[^a-zA-Z0-9_-]/g, '-')}-${index}`
             return <div className="stage-choice-slot" key={`${pending.id}/${index}`}>
               <strong id={`${slotId}-label`}>{slotLabel}</strong>
-              <span id={`${slotId}-help`}>{pending.allocationMode === 'pool' ? 'Choose a legal destination and XP amount.' : `${signed(pending.xpPerGrant)} XP`}</span>
+              <span id={`${slotId}-help`}>{pending.kind === 'related-skill-prerequisite' ? 'Choose an already possessed concrete Skill. The relationship remains subject to GM approval and grants no XP.' : pending.allocationMode === 'pool' ? 'Choose a legal destination and XP amount.' : `${signed(pending.xpPerGrant)} XP`}</span>
               {pending.kind === 'flexible-xp' && <label htmlFor={`${slotId}-type`}>Target type
                 <select id={`${slotId}-type`} aria-describedby={`${slotId}-label ${slotId}-help`} value={value.targetType} onChange={(event) => updateStageChoiceSlot(pending, index, { targetType: event.target.value as StageChoiceSlotValue['targetType'], targetId: '', parameter: '', displayName: '' })}>
                   <option value="">Choose a target type…</option>
@@ -321,7 +321,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 <span id={`${slotId}-subject-help`}>{openSubject.description} Examples are illustrative, not a closed list.</span>
               </label>}
               {openSubjectResult?.error && <p className="notice" role="alert">{openSubjectResult.error}</p>}
-              {options.length > 0 && <label htmlFor={`${slotId}-destination`}>{pending.skillFieldChoice ? 'Field Skill subskill' : pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Destination'}
+              {options.length > 0 && <label htmlFor={`${slotId}-destination`}>{pending.kind === 'related-skill-prerequisite' ? 'Related existing Skill' : pending.skillFieldChoice ? 'Field Skill subskill' : pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Destination'}
                 <select id={`${slotId}-destination`} aria-describedby={`${slotId}-label ${slotId}-help`} value={optionValue(value)} onChange={(event) => {
                   const option = options.find((candidate) => candidate.value === event.target.value)
                   if (option) updateStageChoiceSlot(pending, index, optionDraft(option, value.xpAmount))
@@ -761,6 +761,7 @@ function pendingAwardSupportsSlot(pending: PendingLifeModuleAward, character: Ch
 function stageChoiceSlotLabel(pending: PendingLifeModuleAward, index: number): string {
   const suffix = pending.remainingGrants > 1 ? ` ${index + 1}` : ''
   if (pending.kind === 'flexible-xp') return `Flexible XP grant ${index + 1}`
+  if (pending.kind === 'related-skill-prerequisite') return 'Related existing Skill prerequisite'
   if (pending.requiredSkillId === 'skill.career') return `Career choice${suffix}`
   if (pending.requiredSkillId === 'skill.interest') return `Interest choice${suffix}`
   if (pending.kind === 'language-choice') return `Language choice${suffix}`

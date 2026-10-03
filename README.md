@@ -4,7 +4,7 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 70 is implemented.** Version `0.1.0-alpha.70`. The public product title is **AToW Online Character Creator**. University is the next source-audited Stage 3 school, with its exact Civilian-family transaction and conditional entry package. Manager, Planetary Surveyor, and Politician bring the mechanically acquirable catalog to thirty-five entries while the independent 56-entry reference catalog and 84-item equipment catalog remain unchanged.
+**Alpha Slice 71 is implemented.** Version `0.1.0-alpha.71`. The public product title is **AToW Online Character Creator**. General Studies now records its source-required, GM-arbitrated related Skill from concrete Skills the character already possesses, without granting prerequisite XP. Anthropologist, Archaeologist, and Lawyer are mechanically available through University, bringing the mechanically acquirable catalog to thirty-nine entries while the independent 56-entry reference catalog and 84-item equipment catalog remain unchanged.
 
 All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit remains the evidence record; Slice 28 governs its conflicts without silently correcting Tanker, Elemental, or Scout values, adding `REF`, renaming stable IDs, or activating back-sheet combat fields. Point Buy, Life Modules, Final Touches, and the 84-item audited Core equipment catalog are unchanged.
 
@@ -71,9 +71,9 @@ npm run preview
 
 The repository's Pages **Source** setting must be **GitHub Actions**. The public site opens through a normal browser URL and requires neither a special platform login nor an application login. Character data still lives only in that browser; JSON export/import is the portability and backup mechanism.
 
-The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.70` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
+The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.71` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
 
-The collapsed-by-default public notice identifies version `0.1.0-alpha.70`; its expandable details retain browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
+The collapsed-by-default public notice identifies version `0.1.0-alpha.71`; its expandable details retain browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
 
 ## Current resume points
 

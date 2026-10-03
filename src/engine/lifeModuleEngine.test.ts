@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSITY_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
-import { ANALYSIS_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, LAWYER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
@@ -772,6 +772,55 @@ describe('Life Module engine', () => {
     expect(() => applyStage3School(nextSchool, TECHNICAL_COLLEGE_ID, [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID])).toThrow('Another Civilian Stage 3 school has already been completed.')
     expect(applyMilitaryAcademy(nextSchool).lifeModuleHistory.at(-1)?.moduleId).toBe(MILITARY_ACADEMY_ID)
     expect(continueToStage4(decoded).creation.lifeModules!.phase).toBe('stage-4-selection')
+  })
+
+  it('commits General Studies related-Skill provenance and its dependent Fields without awarding prerequisite XP', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2(10000))
+    const committedBefore = structuredClone(selecting)
+    const computersBefore = selecting.skills.find((entry) => entry.displayName === 'Computers')!.accumulatedXp
+    let university = applyStage3School(selecting, UNIVERSITY_ID, [GENERAL_STUDIES_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, LAWYER_FIELD_ID])
+
+    expect(selecting).toEqual(committedBefore)
+    expect(university.lifeModuleHistory.at(-1)).toMatchObject({ moduleId: UNIVERSITY_ID, baseCostXp: 710, fieldCostXp: 408, costXp: 1118 })
+    expect(university.creation.lifeModules!.selectedSkillFields.map((entry) => entry.fieldId)).toEqual([GENERAL_STUDIES_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, LAWYER_FIELD_ID])
+    const related = university.creation.lifeModules!.pendingAwards.find((entry) => entry.kind === 'related-skill-prerequisite')!
+    expect(related).toMatchObject({ xpPerGrant: 0, remainingGrants: 1, skillFieldPrerequisiteChoice: { fieldId: GENERAL_STUDIES_FIELD_ID, prerequisiteId: 'general-studies.related-skill' } })
+    expect(related.skillFieldPrerequisiteChoice?.eligibleSkillKeys).toContain('skill.computers//')
+    expect(related.skillFieldPrerequisiteChoice?.eligibleSkillKeys).not.toContain('skill.career/subskill/anthropologist')
+    expect(() => resolvePendingLifeModuleAward(university, related.id, { type: 'skill', targetId: 'skill.fake', displayName: 'Fake' })).toThrow('already possesses')
+
+    university = resolvePendingLifeModuleAward(university, related.id, { type: 'skill', targetId: 'skill.computers', displayName: 'Computers' })
+    expect(university.skills.find((entry) => entry.displayName === 'Computers')?.accumulatedXp).toBe(computersBefore + 25 + 30)
+    expect(university.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === GENERAL_STUDIES_FIELD_ID)?.prerequisiteSkillChoices).toEqual([
+      expect.objectContaining({ prerequisiteId: 'general-studies.related-skill', gmApprovalRequired: true, destination: expect.objectContaining({ targetId: 'skill.computers' }) }),
+    ])
+
+    university = resolveByAward(university, 'university.skill.interest', 'skill.interest', 'Interest/History', 'History')
+    university = resolveByAward(university, 'university.attribute.any', 'INT', 'INT')
+    const fieldChoices = [
+      ['general-studies.career-any', 'skill.career', 'Career/Scholar', 'Scholar'],
+      ['general-studies.interest-any', 'skill.interest', 'Interest/Humanities', 'Humanities'],
+      ['general-studies.protocol-affiliation', 'skill.protocol', 'Protocol/Capellan', 'Capellan'],
+      ['anthropologist.history-culture', 'skill.interest', 'Interest/Capellan History', 'Capellan History'],
+      ['anthropologist.language-one', 'skill.language', 'Language/French', 'French'],
+      ['anthropologist.language-two', 'skill.language', 'Language/Russian', 'Russian'],
+      ['anthropologist.protocol-any', 'skill.protocol', 'Protocol/Capellan', 'Capellan'],
+      ['lawyer.protocol-any', 'skill.protocol', 'Protocol/Capellan', 'Capellan'],
+    ] as const
+    for (const [componentId, skillId, displayName, parameter] of fieldChoices) {
+      const pending = university.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.componentId === componentId)!
+      university = resolvePendingLifeModuleAward(university, pending.id, { type: 'skill', targetId: skillId, displayName, parameter: { kind: 'subskill', value: parameter } })
+    }
+    const flexible = university.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'university.flexible')!
+    university = resolvePendingLifeModuleAward(university, flexible.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 220)
+
+    expect(university.creation.lifeModules!.pendingAwards).toHaveLength(0)
+    expect(university.creation.lifeModules!.phase).toBe('alpha-stage-3-stop')
+    expect(university.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'general-studies.related-skill')).toMatchObject({ status: 'satisfied' })
+    expect(university.chronology.find((entry) => entry.eventId === `${UNIVERSITY_ID}.complete`)?.date).toBe('age:21')
+    const decoded = decodeCharacter(encodeCharacter(university, '2026-10-03T00:00:00.000Z'))
+    expect(decoded).toEqual(university)
+    expect(validateCharacter(decoded).valid).toBe(true)
   })
 
   it('blocks both Intelligence/Police same-family directions while preserving unused-family routes', () => {

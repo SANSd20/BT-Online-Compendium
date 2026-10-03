@@ -1,7 +1,7 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
-import { ANALYSIS_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, INTELLIGENCE_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
+import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INTELLIGENCE_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 
 export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
@@ -302,10 +302,13 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       offers: [
         { fieldId: CARTOGRAPHER_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: COMMUNICATIONS_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: GENERAL_STUDIES_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: MANAGER_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: SCIENTIST_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: TECHNICIAN_CIVILIAN_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: ANALYSIS_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: ANTHROPOLOGIST_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: ARCHAEOLOGIST_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: DETECTIVE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: ENGINEER_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: PLANETARY_SURVEYOR_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
@@ -314,6 +317,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: TECHNICIAN_AEROSPACE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: TECHNICIAN_VEHICLE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: DOCTOR_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: LAWYER_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: MILITARY_SCIENTIST_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: TECHNICIAN_MECH_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: TECHNICIAN_MILITARY_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
@@ -322,10 +326,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       minimumAdvanced: 1,
       maximumTotal: 3,
       referenceOnlyOffers: [
-        { displayName: 'General Studies', category: 'basic', chronologyYears: 1, reason: 'Its source prerequisite requires at least one other Skill related to its Field Skills, which is not yet mechanically governed.' },
-        ...['Anthropologist', 'Archaeologist'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 2, reason: 'Requires the reference-only General Studies Field.' })),
         { displayName: 'HPG Technician', category: 'advanced', chronologyYears: 2, reason: 'Restricted to ComStar, Word of Blake, or Clan affiliations, none of which is an implemented Stage 0 context.' },
-        { displayName: 'Lawyer', category: 'special', chronologyYears: 2, reason: 'Requires the reference-only General Studies Field.' },
       ],
     },
     awards: [
@@ -345,7 +346,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'university.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 220, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
     notes: ['Civilian Stage 3 school. Base cost is 710 XP plus selected Skill Field costs.'],
-    deferredRules: ['General Studies, Anthropologist, Archaeologist, HPG Technician, and Lawyer remain reference-only with explicit blockers.'],
+    deferredRules: ['HPG Technician remains reference-only because its required affiliation is not implemented.'],
   },
   {
     id: POLICE_ACADEMY_ID,

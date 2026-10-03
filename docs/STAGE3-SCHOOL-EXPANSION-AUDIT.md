@@ -29,3 +29,7 @@ University is the smallest coherent next expansion because it uses established f
 | Lawyer | Special, 2 years | Reference-only because General Studies remains reference-only. |
 
 All mechanical Fields retain +30 XP per Field Skill at a purchase cost of 24 XP per Field Skill. Manager costs 144 XP for six Skills, Planetary Surveyor costs 120 XP for five Skills, and Politician costs 120 XP for five Skills. The independent reference catalog remains 56 entries; the mechanical catalog increases from 32 to 35; equipment remains 84 unique stable IDs.
+
+## Slice 71 dependency update
+
+The Slice 70 classifications above preserve that checkpoint. Slice 71 subsequently establishes General Studies' "related Skill" as a GM-arbitrated selection of an already possessed concrete Skill and promotes General Studies, Anthropologist, Archaeologist, and Lawyer through University. HPG Technician remains reference-only for its unsupported affiliation prerequisite. The current mechanical catalog is 39; the reference catalog remains 56 and equipment remains 84.

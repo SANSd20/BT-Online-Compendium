@@ -228,7 +228,7 @@ export interface PendingLifeModuleAward {
   id: string
   moduleId: string
   awardId: string
-  kind: 'language-choice' | 'affiliation-skill-choice' | 'any-skill-choice' | 'multi-skill-choice' | 'flexible-xp'
+  kind: 'language-choice' | 'affiliation-skill-choice' | 'any-skill-choice' | 'multi-skill-choice' | 'flexible-xp' | 'related-skill-prerequisite'
   description: string
   xpPerGrant: number
   remainingGrants: number
@@ -241,6 +241,11 @@ export interface PendingLifeModuleAward {
   skillFieldChoice?: {
     fieldId: string
     componentId: string
+  }
+  skillFieldPrerequisiteChoice?: {
+    fieldId: string
+    prerequisiteId: string
+    eligibleSkillKeys: string[]
   }
   source: SourceCitation
 }
@@ -289,6 +294,11 @@ export interface SkillFieldGrantRecord {
   variableSkillChoices?: Array<{
     componentId: string
     destination: ResolvedLifeModuleDestination
+  }>
+  prerequisiteSkillChoices?: Array<{
+    prerequisiteId: string
+    destination: ResolvedLifeModuleDestination
+    gmApprovalRequired: true
   }>
 }
 

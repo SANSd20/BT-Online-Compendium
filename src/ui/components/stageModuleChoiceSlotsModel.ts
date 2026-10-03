@@ -144,7 +144,7 @@ export function previewStageModuleChoiceSlots(
 }
 
 export function slotValueComplete(value: StageChoiceSlotValue | undefined): value is StageChoiceSlotValue {
-  return Boolean(value?.targetType && value.targetId && Number.isInteger(value.xpAmount) && value.xpAmount !== 0)
+  return Boolean(value?.targetType && value.targetId && Number.isInteger(value.xpAmount))
 }
 
 export function emptyStageChoiceSlot(pending: PendingLifeModuleAward): StageChoiceSlotValue {
