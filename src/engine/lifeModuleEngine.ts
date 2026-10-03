@@ -430,6 +430,9 @@ export function resolvePendingLifeModuleAward(
   const fieldGrant = pending.skillFieldChoice
     ? state.selectedSkillFields.find((entry) => entry.schoolModuleId === pending.moduleId && entry.fieldId === pending.skillFieldChoice!.fieldId)
     : undefined
+  if (pending.skillFieldChoice && fieldGrant?.variableSkillChoices?.some((choice) => resolvedDestinationKey(choice.destination) === destinationKey)) {
+    throw new Error('Each variable component in a Skill Field must use a distinct concrete destination.')
+  }
   const provenanceId = fieldGrant?.provenanceId ?? moduleHistory?.provenanceIds[0]
   if (!provenanceId) throw new Error('Pending award module provenance is missing.')
   const ledgerDestination = toLifeModuleDestination(normalized)

@@ -14,6 +14,7 @@ export interface SkillFieldDefinition {
     id: string
     displayName: string
     skillId: string
+    choiceDomainId: string
     legalSubskills: string[]
   }>
   affiliationBoundComponentSkills?: Array<{

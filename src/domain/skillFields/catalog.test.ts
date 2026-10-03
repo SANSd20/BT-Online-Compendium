@@ -3,7 +3,7 @@ import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FI
 import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
 
 describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
-  it('contains the twenty source-audited Fields with calculated reduced costs', () => {
+  it('contains the thirty source-audited Fields with calculated reduced costs', () => {
     expect(SKILL_FIELD_CATALOG.map((entry) => entry.id)).toEqual([
       BASIC_TRAINING_FIELD_ID,
       BASIC_TRAINING_NAVAL_FIELD_ID,
@@ -25,6 +25,16 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       MARINE_FIELD_ID,
       SHIPS_CREW_FIELD_ID,
       TECHNICIAN_MILITARY_FIELD_ID,
+      'field.communications',
+      'field.engineer',
+      'field.merchant-marine',
+      'field.pilot-aircraft-civilian',
+      'field.medical-assistant',
+      'field.doctor',
+      'field.analysis',
+      'field.covert-operations',
+      'field.police-tactical-officer',
+      'field.military-scientist',
     ])
     expect(Object.fromEntries(SKILL_FIELD_CATALOG.slice(1).map((field) => [field.id, skillFieldCost(field, 24)]))).toEqual({
       [BASIC_TRAINING_NAVAL_FIELD_ID]: 144,
@@ -46,6 +56,16 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       [MARINE_FIELD_ID]: 120,
       [SHIPS_CREW_FIELD_ID]: 120,
       [TECHNICIAN_MILITARY_FIELD_ID]: 144,
+      'field.communications': 144,
+      'field.engineer': 120,
+      'field.merchant-marine': 120,
+      'field.pilot-aircraft-civilian': 120,
+      'field.medical-assistant': 120,
+      'field.doctor': 120,
+      'field.analysis': 168,
+      'field.covert-operations': 168,
+      'field.police-tactical-officer': 168,
+      'field.military-scientist': 144,
     })
     expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === TECHNICIAN_AEROSPACE_FIELD_ID)?.prerequisites).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'skill-field', fieldIds: [TECHNICIAN_CIVILIAN_FIELD_ID, 'field.technician-military'] }),

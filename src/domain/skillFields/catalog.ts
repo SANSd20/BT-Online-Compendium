@@ -2,6 +2,7 @@ import type { SourceCitation } from '../rules/model'
 import type { LifeModuleDestination } from '../lifeModules/model'
 import type { SkillFieldCatalogValidationIssue, SkillFieldDefinition } from './model'
 import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
+import { getVariableSkillDomain, VARIABLE_SKILL_DOMAINS } from './variableSkillDomains'
 
 const source = (ruleId: string): SourceCitation => ({
   sourceId: 'atow-core-corrected-third',
@@ -35,18 +36,29 @@ export const POLICE_OFFICER_FIELD_ID = 'field.police-officer'
 export const DETECTIVE_FIELD_ID = 'field.detective'
 export const INTELLIGENCE_FIELD_ID = 'field.intelligence'
 export const OFFICER_FIELD_ID = 'field.officer'
+export const COMMUNICATIONS_FIELD_ID = 'field.communications'
+export const ENGINEER_FIELD_ID = 'field.engineer'
+export const MERCHANT_MARINE_FIELD_ID = 'field.merchant-marine'
+export const PILOT_AIRCRAFT_CIVILIAN_FIELD_ID = 'field.pilot-aircraft-civilian'
+export const MEDICAL_ASSISTANT_FIELD_ID = 'field.medical-assistant'
+export const DOCTOR_FIELD_ID = 'field.doctor'
+export const ANALYSIS_FIELD_ID = 'field.analysis'
+export const COVERT_OPERATIONS_FIELD_ID = 'field.covert-operations'
+export const POLICE_TACTICAL_OFFICER_FIELD_ID = 'field.police-tactical-officer'
+export const MILITARY_SCIENTIST_FIELD_ID = 'field.military-scientist'
 
-export const SECURITY_SYSTEMS_SUBSKILLS = ['Electronic', 'Mechanical'] as const
-export const NAVAL_CAREER_SUBSKILLS = ['Pilot', 'Ship’s Crew'] as const
-export const DRIVING_SUBSKILLS = ['Ground Vehicles', 'Rail Vehicles', 'Sea Vehicles'] as const
-export const VEHICLE_GUNNERY_SUBSKILLS = ['Air Vehicle', 'Ground Vehicle', 'Sea Vehicle'] as const
-export const CAVALRY_TACTICS_SUBSKILLS = ['Land', 'Sea'] as const
-export const SCOUT_STREETWISE_SUBSKILLS = ['Capellan', 'FedSuns'] as const
-export const TRACKING_SUBSKILLS = ['Urban', 'Wilds'] as const
+export const SECURITY_SYSTEMS_SUBSKILLS = VARIABLE_SKILL_DOMAINS.securitySystems.options
+export const NAVAL_CAREER_SUBSKILLS = VARIABLE_SKILL_DOMAINS.navalCareer.options
+export const DRIVING_SUBSKILLS = VARIABLE_SKILL_DOMAINS.driving.options
+export const VEHICLE_GUNNERY_SUBSKILLS = VARIABLE_SKILL_DOMAINS.vehicleGunnery.options
+export const CAVALRY_TACTICS_SUBSKILLS = VARIABLE_SKILL_DOMAINS.cavalryTactics.options
+export const SCOUT_STREETWISE_SUBSKILLS = VARIABLE_SKILL_DOMAINS.streetwiseAffiliations.options
+export const TRACKING_SUBSKILLS = VARIABLE_SKILL_DOMAINS.tracking.options
+export const TECHNICIAN_SUBSKILLS = VARIABLE_SKILL_DOMAINS.technician.options
 
-export const TECHNICIAN_SUBSKILLS = [
-  'Aeronautics', 'Cybernetics', 'Electronic', 'Jets', 'Mechanics', 'Myomer', 'Nuclear', 'Weapons',
-] as const
+const variableSkill = (id: string, displayName: string, domain: { id: string; skillId: string; options: readonly string[] }) => ({
+  id, displayName, skillId: domain.skillId, choiceDomainId: domain.id, legalSubskills: [...domain.options],
+})
 
 export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
   {
@@ -89,6 +101,7 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       id: 'basic-training-naval.career',
       displayName: 'Naval Career subskill',
       skillId: 'skill.career',
+      choiceDomainId: VARIABLE_SKILL_DOMAINS.navalCareer.id,
       legalSubskills: [...NAVAL_CAREER_SUBSKILLS],
     }],
   },
@@ -111,6 +124,7 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       id: 'police-officer.driving-any',
       displayName: 'Driving subskill',
       skillId: 'skill.driving',
+      choiceDomainId: VARIABLE_SKILL_DOMAINS.driving.id,
       legalSubskills: [...DRIVING_SUBSKILLS],
     }],
     affiliationBoundComponentSkills: [{ skillId: 'skill.streetwise', displayName: 'Streetwise/Affiliation' }],
@@ -140,6 +154,7 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       id: 'detective.security-systems-any',
       displayName: 'Security Systems subskill',
       skillId: 'skill.security-systems',
+      choiceDomainId: VARIABLE_SKILL_DOMAINS.securitySystems.id,
       legalSubskills: [...SECURITY_SYSTEMS_SUBSKILLS],
     }],
     affiliationBoundComponentSkills: [{ skillId: 'skill.streetwise', displayName: 'Streetwise/Affiliation' }],
@@ -168,6 +183,7 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       id: 'intelligence.language-any',
       displayName: 'Language (currently modeled choices)',
       skillId: 'skill.language',
+      choiceDomainId: VARIABLE_SKILL_DOMAINS.languages.id,
       legalSubskills: [...MODELED_LANGUAGE_SUBSKILLS],
     }],
   },
@@ -340,18 +356,21 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
         id: 'cavalry.driving-any',
         displayName: 'Driving subskill',
         skillId: 'skill.driving',
+        choiceDomainId: VARIABLE_SKILL_DOMAINS.driving.id,
         legalSubskills: [...DRIVING_SUBSKILLS],
       },
       {
         id: 'cavalry.gunnery-any-vehicle',
         displayName: 'Vehicle Gunnery subskill',
         skillId: 'skill.gunnery',
+        choiceDomainId: VARIABLE_SKILL_DOMAINS.vehicleGunnery.id,
         legalSubskills: [...VEHICLE_GUNNERY_SUBSKILLS],
       },
       {
         id: 'cavalry.tactics-land-or-sea',
         displayName: 'Cavalry Tactics subskill',
         skillId: 'skill.tactics',
+        choiceDomainId: VARIABLE_SKILL_DOMAINS.cavalryTactics.id,
         legalSubskills: [...CAVALRY_TACTICS_SUBSKILLS],
       },
     ],
@@ -376,6 +395,7 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       id: 'mechwarrior.technician-any',
       displayName: 'Technician Field Skill',
       skillId: 'skill.technician',
+      choiceDomainId: VARIABLE_SKILL_DOMAINS.technician.id,
       legalSubskills: [...TECHNICIAN_SUBSKILLS],
     }],
   },
@@ -400,24 +420,28 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
         id: 'scout.language-any',
         displayName: 'Language (currently modeled choices)',
         skillId: 'skill.language',
+        choiceDomainId: VARIABLE_SKILL_DOMAINS.languages.id,
         legalSubskills: [...MODELED_LANGUAGE_SUBSKILLS],
       },
       {
         id: 'scout.security-systems-any',
         displayName: 'Security Systems subskill',
         skillId: 'skill.security-systems',
+        choiceDomainId: VARIABLE_SKILL_DOMAINS.securitySystems.id,
         legalSubskills: [...SECURITY_SYSTEMS_SUBSKILLS],
       },
       {
         id: 'scout.streetwise-any',
         displayName: 'Streetwise affiliation',
         skillId: 'skill.streetwise',
+        choiceDomainId: VARIABLE_SKILL_DOMAINS.streetwiseAffiliations.id,
         legalSubskills: [...SCOUT_STREETWISE_SUBSKILLS],
       },
       {
         id: 'scout.tracking-any',
         displayName: 'Tracking subskill',
         skillId: 'skill.tracking',
+        choiceDomainId: VARIABLE_SKILL_DOMAINS.tracking.id,
         legalSubskills: [...TRACKING_SUBSKILLS],
       },
     ],
@@ -441,6 +465,7 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       id: 'marine.security-systems-any',
       displayName: 'Security Systems subskill',
       skillId: 'skill.security-systems',
+      choiceDomainId: VARIABLE_SKILL_DOMAINS.securitySystems.id,
       legalSubskills: [...SECURITY_SYSTEMS_SUBSKILLS],
     }],
   },
@@ -464,6 +489,7 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       id: 'ships-crew.technician-any',
       displayName: 'Technician subskill',
       skillId: 'skill.technician',
+      choiceDomainId: VARIABLE_SKILL_DOMAINS.technician.id,
       legalSubskills: [...TECHNICIAN_SUBSKILLS],
     }],
   },
@@ -484,6 +510,67 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       skill('skill.technician', 'Technician/Nuclear', 'Nuclear'),
       skill('skill.technician', 'Technician/Weapons', 'Weapons'),
     ],
+  },
+  {
+    id: COMMUNICATIONS_FIELD_ID, displayName: 'Communications', category: 'advanced', source: { ...source('skill-field-communications'), page: 92 },
+    prerequisites: [{ id: 'communications.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' }],
+    componentSkills: [skill('skill.acting', 'Acting'), skill('skill.career', 'Career/Communications', 'Communications'), skill('skill.communications', 'Comms/Conventional', 'Conventional'), skill('skill.computers', 'Computers'), skill('skill.sensor-operations', 'Sensor Operations')],
+    variableComponentSkills: [variableSkill('communications.protocol-any', 'Protocol affiliation', VARIABLE_SKILL_DOMAINS.protocolAffiliations)],
+  },
+  {
+    id: ENGINEER_FIELD_ID, displayName: 'Engineer', category: 'advanced', source: { ...source('skill-field-engineer'), page: 92 },
+    prerequisites: [{ id: 'engineer.field', kind: 'skill-field', fieldIds: [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID], description: 'Technician/Civilian or Technician/Military Field' }, { id: 'engineer.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' }],
+    componentSkills: [skill('skill.appraisal', 'Appraisal'), skill('skill.career', 'Career/Engineer', 'Engineer'), skill('skill.perception', 'Perception'), skill('skill.technician', 'Technician/Nuclear', 'Nuclear')],
+    variableComponentSkills: [variableSkill('engineer.technician-any', 'Technician subskill', VARIABLE_SKILL_DOMAINS.technician)],
+  },
+  {
+    id: MERCHANT_MARINE_FIELD_ID, displayName: 'Merchant Marine', category: 'advanced', source: { ...source('skill-field-merchant-marine'), page: 92 },
+    prerequisites: [{ id: 'merchant-marine.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 3, description: 'RFL 3+' }, { id: 'merchant-marine.tds', kind: 'trait-absent', traitId: 'trait.tds', description: 'Cannot have TDS Trait' }],
+    componentSkills: [skill('skill.career', 'Career/Merchant Marine', 'Merchant Marine'), skill('skill.technician', 'Technician/Aeronautics', 'Aeronautics'), skill('skill.zero-g-operations', 'Zero-G Operations')],
+    variableComponentSkills: [variableSkill('merchant-marine.protocol-any', 'Protocol affiliation', VARIABLE_SKILL_DOMAINS.protocolAffiliations), variableSkill('merchant-marine.technician-any', 'Technician subskill', VARIABLE_SKILL_DOMAINS.technician)],
+  },
+  {
+    id: PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, displayName: 'Pilot - Aircraft (Civilian)', category: 'basic', source: { ...source('skill-field-pilot-aircraft-civilian'), page: 93 },
+    prerequisites: [{ id: 'pilot-aircraft-civilian.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 3, description: 'DEX 3+' }, { id: 'pilot-aircraft-civilian.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 3, description: 'RFL 3+' }],
+    componentSkills: [skill('skill.career', 'Career/Aircraft Pilot', 'Aircraft Pilot'), skill('skill.communications', 'Comms/Conventional', 'Conventional'), skill('skill.navigation', 'Navigation/Air', 'Air'), skill('skill.sensor-operations', 'Sensor Operations')],
+    variableComponentSkills: [variableSkill('pilot-aircraft-civilian.piloting', 'Aircraft Piloting subskill', VARIABLE_SKILL_DOMAINS.aircraftPiloting)],
+  },
+  {
+    id: MEDICAL_ASSISTANT_FIELD_ID, displayName: 'Medical Assistant', category: 'advanced', source: { ...source('skill-field-medical-assistant'), page: 92 },
+    prerequisites: [{ id: 'medical-assistant.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 3, description: 'DEX 3+' }, { id: 'medical-assistant.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' }],
+    componentSkills: [skill('skill.career', 'Career/MedTech', 'MedTech'), skill('skill.computers', 'Computers'), skill('skill.interest', 'Interest/Pharmacology', 'Pharmacology'), skill('skill.perception', 'Perception')],
+    variableComponentSkills: [variableSkill('medical-assistant.medtech-any', 'MedTech subskill', VARIABLE_SKILL_DOMAINS.medTech)],
+  },
+  {
+    id: DOCTOR_FIELD_ID, displayName: 'Doctor', category: 'special', source: { ...source('skill-field-doctor'), page: 92 },
+    prerequisites: [{ id: 'doctor.field', kind: 'skill-field', fieldIds: [MEDICAL_ASSISTANT_FIELD_ID, 'field.scientist'], description: 'Medical Assistant or Scientist Field' }, { id: 'doctor.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 4, description: 'DEX 4+' }, { id: 'doctor.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 5, description: 'INT 5+' }, { id: 'doctor.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 3, description: 'WIL 3+' }],
+    componentSkills: [skill('skill.administration', 'Administration'), skill('skill.career', 'Career/Doctor', 'Doctor')],
+    variableComponentSkills: [variableSkill('doctor.medtech-any', 'MedTech subskill', VARIABLE_SKILL_DOMAINS.medTech), variableSkill('doctor.surgery-any', 'Surgery subskill', VARIABLE_SKILL_DOMAINS.surgery)],
+    affiliationBoundComponentSkills: [{ skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' }],
+  },
+  {
+    id: ANALYSIS_FIELD_ID, displayName: 'Analysis', category: 'advanced', source: { ...source('skill-field-analysis'), page: 93 },
+    prerequisites: [{ id: 'analysis.int-floor', kind: 'attribute-minimum', attributeId: 'INT', minimum: 3, description: 'INT 3+' }, { id: 'analysis.entry', kind: 'any-of', description: 'INT 4+ and WIL 4+, or INT 3+ and WIL 4+ with the Police Officer Field', options: [{ id: 'analysis.standard-int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' }, { id: 'analysis.police', kind: 'skill-field', fieldIds: [POLICE_OFFICER_FIELD_ID], description: 'Police Officer Field' }] }, { id: 'analysis.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 4, description: 'WIL 4+' }],
+    componentSkills: [skill('skill.computers', 'Computers'), skill('skill.investigation', 'Investigation'), skill('skill.sensor-operations', 'Sensor Operations'), skill('skill.strategy', 'Strategy')],
+    variableComponentSkills: [variableSkill('analysis.language-one', 'First Language', VARIABLE_SKILL_DOMAINS.languages), variableSkill('analysis.language-two', 'Second Language', VARIABLE_SKILL_DOMAINS.languages), variableSkill('analysis.tactics-any', 'Tactics subskill', VARIABLE_SKILL_DOMAINS.tactics)],
+  },
+  {
+    id: COVERT_OPERATIONS_FIELD_ID, displayName: 'Covert Operations', category: 'advanced', source: { ...source('skill-field-covert-operations'), page: 93 },
+    prerequisites: [{ id: 'covert.int-floor', kind: 'attribute-minimum', attributeId: 'INT', minimum: 3, description: 'INT 3+' }, { id: 'covert.entry', kind: 'any-of', description: 'INT 4+ and WIL 4+, or INT 3+ and WIL 4+ with the Police Officer Field', options: [{ id: 'covert.standard-int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' }, { id: 'covert.police', kind: 'skill-field', fieldIds: [POLICE_OFFICER_FIELD_ID], description: 'Police Officer Field' }] }, { id: 'covert.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 4, description: 'WIL 4+' }],
+    componentSkills: [skill('skill.acting', 'Acting'), skill('skill.escape-artist', 'Escape Artist'), skill('skill.perception', 'Perception')],
+    variableComponentSkills: [variableSkill('covert.language-any', 'Language', VARIABLE_SKILL_DOMAINS.languages), variableSkill('covert.protocol-any', 'Protocol affiliation', VARIABLE_SKILL_DOMAINS.protocolAffiliations), variableSkill('covert.streetwise-any', 'Streetwise affiliation', VARIABLE_SKILL_DOMAINS.streetwiseAffiliations), variableSkill('covert.tracking-any', 'Tracking subskill', VARIABLE_SKILL_DOMAINS.tracking)],
+  },
+  {
+    id: POLICE_TACTICAL_OFFICER_FIELD_ID, displayName: 'Police Tactical Officer', category: 'special', source: { ...source('skill-field-police-tactical-officer'), page: 93 },
+    prerequisites: [{ id: 'police-tactical-officer.field', kind: 'skill-field', fieldIds: [POLICE_OFFICER_FIELD_ID], description: 'Police Officer Field' }, { id: 'police-tactical-officer.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 4, description: 'RFL 4+' }],
+    componentSkills: [skill('skill.climbing', 'Climbing'), skill('skill.demolitions', 'Demolitions'), skill('skill.running', 'Running'), skill('skill.support-weapons', 'Support Weapons'), skill('skill.tactics', 'Tactics/Infantry', 'Infantry'), skill('skill.tracking', 'Tracking/Urban', 'Urban')],
+    variableComponentSkills: [variableSkill('police-tactical-officer.thrown-weapons-any', 'Thrown Weapons subskill', VARIABLE_SKILL_DOMAINS.thrownWeapons)],
+  },
+  {
+    id: MILITARY_SCIENTIST_FIELD_ID, displayName: 'Military Scientist', category: 'special', source: { ...source('skill-field-military-scientist'), page: 94 },
+    prerequisites: [{ id: 'military-scientist.field', kind: 'skill-field', fieldIds: [ANALYSIS_FIELD_ID], description: 'Analysis Field' }, { id: 'military-scientist.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 5, description: 'INT 5+' }],
+    componentSkills: [skill('skill.career', 'Career/Military Scientist', 'Military Scientist'), skill('skill.computers', 'Computers'), skill('skill.cryptography', 'Cryptography'), skill('skill.interest', 'Interest/Military History', 'Military History'), skill('skill.strategy', 'Strategy')],
+    variableComponentSkills: [variableSkill('military-scientist.tactics-any', 'Tactics subskill', VARIABLE_SKILL_DOMAINS.tactics)],
   },
 ]
 
@@ -513,6 +600,10 @@ export function validateSkillFieldCatalog(catalog: readonly SkillFieldDefinition
     for (const component of field.variableComponentSkills ?? []) {
       if (!component.id || !component.displayName || !component.skillId || component.legalSubskills.length === 0 || new Set(component.legalSubskills).size !== component.legalSubskills.length) {
         issues.push({ fieldId: field.id, message: `Malformed variable component Skill: ${component.id || '(missing)'}` })
+      }
+      const domain = getVariableSkillDomain(component.choiceDomainId)
+      if (domain.skillId !== component.skillId || domain.options.join('\0') !== component.legalSubskills.join('\0')) {
+        issues.push({ fieldId: field.id, message: `Variable component domain mismatch: ${component.id}` })
       }
     }
     for (const component of field.affiliationBoundComponentSkills ?? []) {

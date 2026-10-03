@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
-import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, OFFICER_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { ANALYSIS_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, OFFICER_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
@@ -909,6 +909,19 @@ describe('Life Module engine', () => {
     })
     expect(character.skills.filter((entry) => entry.displayName === 'Technician/Weapons')).toHaveLength(1)
     expect(character.skills.find((entry) => entry.displayName === 'Technician/Weapons')?.accumulatedXp).toBe(40)
+  })
+
+  it('requires Analysis to use two distinct explicit Language choices', () => {
+    let character = applyStage3School(continueToStage3(completeHighSchoolStage2()), POLICE_ACADEMY_ID, [POLICE_OFFICER_FIELD_ID, ANALYSIS_FIELD_ID])
+    const languageChoices = character.creation.lifeModules!.pendingAwards.filter((entry) => entry.skillFieldChoice?.fieldId === ANALYSIS_FIELD_ID && entry.requiredSkillId === 'skill.language')
+    expect(languageChoices).toHaveLength(2)
+    expect(languageChoices.every((entry) => entry.remainingGrants === 1)).toBe(true)
+    character = resolvePendingLifeModuleAward(character, languageChoices[0].id, {
+      type: 'skill', targetId: 'skill.language', displayName: 'Language/Mandarin Chinese', parameter: { kind: 'subskill', value: 'Mandarin Chinese' },
+    })
+    expect(() => resolvePendingLifeModuleAward(character, languageChoices[1].id, {
+      type: 'skill', targetId: 'skill.language', displayName: 'Language/Mandarin Chinese', parameter: { kind: 'subskill', value: 'Mandarin Chinese' },
+    })).toThrow('distinct concrete destination')
   })
 
   it.each([
