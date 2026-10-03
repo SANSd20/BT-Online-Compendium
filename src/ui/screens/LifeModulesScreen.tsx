@@ -7,6 +7,7 @@ import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardO
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
+import { getSkillField, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyStage0Affiliation, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
@@ -16,7 +17,7 @@ import { LifeModuleAuditDrawer, LifeModuleDashboard, LifeModuleReviewSummary, Li
 import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesAffiliationTheme, previewStage0Affiliation } from '../components/stage0PreviewModel'
-import { previewSupportedStageModule, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
+import { previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
 import { emptyStageChoiceSlot, filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
 interface LifeModulesScreenProps {
@@ -63,6 +64,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const [davionNaturalAptitude, setDavionNaturalAptitude] = useState('')
   const [davionArt, setDavionArt] = useState('')
   const [stageModulePreviewId, setStageModulePreviewId] = useState<SupportedStageModuleId | ''>('')
+  const [stage3FieldIds, setStage3FieldIds] = useState<string[]>([TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID])
   const [stageChoiceSlotValues, setStageChoiceSlotValues] = useState<StageChoiceSlotValues>({})
   const [character, setCharacter] = useState<CharacterDefinition | null>(null)
   const [resolutionDrafts, setResolutionDrafts] = useState<Record<string, ResolutionDraft>>({})
@@ -78,6 +80,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
 
   function start(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setStage3FieldIds([TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID])
     operate(() => setMasterSkillFieldGoal(createLifeModuleCharacter(name, startingXp), masterSkillFieldGoalId || null), 'Life Module draft created and saved locally.')
   }
 
@@ -133,11 +136,11 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     ...(secondaryLanguage ? [`Secondary language: ${secondaryLanguage}`] : []),
   ] : []
   const stageModuleBasePreview = useMemo(() => character
-    ? previewSupportedStageModule(character, stageModulePreviewId)
-    : null, [character, stageModulePreviewId])
+    ? previewSupportedStageModule(character, stageModulePreviewId, stage3FieldIds)
+    : null, [character, stageModulePreviewId, stage3FieldIds])
   const stageModulePreview = useMemo(() => character
-    ? previewStageModuleChoiceSlots(character, stageModulePreviewId, stageChoiceSlotValues)
-    : null, [character, stageModulePreviewId, stageChoiceSlotValues])
+    ? previewStageModuleChoiceSlots(character, stageModulePreviewId, stageChoiceSlotValues, stage3FieldIds)
+    : null, [character, stageModulePreviewId, stageChoiceSlotValues, stage3FieldIds])
   const activePreview = stage0Preview ?? stageModulePreview?.character ?? null
   const activePreviewSelections = stage0PreviewSelections.length > 0
     ? stage0PreviewSelections
@@ -151,11 +154,25 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const catalogItems = filterEquipmentCatalog({ search: catalogSearch, category: catalogCategory, sourceStatus: catalogSourceStatus })
   const accessProfile = character?.creation.finalTouches?.equipmentAccessProfile ?? { enabled: false, affiliationCategory: 'inner-sphere' as const, nativeAffiliationCode: '' }
   const effectiveOwnedLimits = character?.creation.finalTouches ? adjustedOwnedEquipmentLimits(character.creation.finalTouches.equippedTpUsed, accessProfile.affiliationCategory) : null
+  const technicalCollegeOffers = getLifeModule(TECHNICAL_COLLEGE_ID).skillFieldSelection!.offers
+  const selectedStage3Offers = technicalCollegeOffers.filter((offer) => stage3FieldIds.includes(offer.fieldId))
+  const selectedStage3Cost = selectedStage3Offers.reduce((total, offer) => total + getSkillField(offer.fieldId).componentSkills.length * offer.costXpPerSkill, 600)
+  const selectedStage3Years = selectedStage3Offers.reduce((total, offer) => total + offer.chronologyYears, 0)
 
   const stageModulePendingAwards = stageModuleBasePreview?.creation.lifeModules?.pendingAwards.filter((entry) => entry.moduleId === stageModulePreviewId) ?? []
 
   function selectStageModule(moduleId: SupportedStageModuleId) {
     setStageModulePreviewId(moduleId)
+    setStageChoiceSlotValues({})
+  }
+
+  function selectStage3BasicField(fieldId: string) {
+    setStage3FieldIds((current) => [fieldId, ...current.filter((id) => getSkillField(id).category !== 'basic')])
+    setStageChoiceSlotValues({})
+  }
+
+  function toggleStage3AdvancedField(fieldId: string) {
+    setStage3FieldIds((current) => current.includes(fieldId) ? current.filter((id) => id !== fieldId) : [...current, fieldId])
     setStageChoiceSlotValues({})
   }
 
@@ -419,10 +436,27 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <><div className="stage-options">
                 <article>
                   <h3>Technical College</h3>
-                  <p>600 XP base cost · civilian Higher Education school.</p>
-                  <label><input type="checkbox" checked readOnly /> Technician/Civilian — Basic, 120 XP, +1 year</label>
-                  <label><input type="checkbox" checked readOnly /> Technician/Vehicle — Advanced, 96 XP, +2 years</label>
-                  <p><strong>Total: 816 XP · +3 years · expected age 19</strong></p>
+                  <p>600 XP base cost · choose exactly one Basic Field and one or two Advanced Fields. Each Field Skill receives +30 XP at a cost of 24 XP.</p>
+                  <fieldset><legend>Basic Field</legend>
+                    {technicalCollegeOffers.filter((offer) => offer.category === 'basic').map((offer) => {
+                      const field = getSkillField(offer.fieldId)
+                      const availability = stage3FieldSelectionStatus(character, field.id, stage3FieldIds)
+                      const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
+                      return <label key={field.id}><input type="radio" name="technical-college-basic" checked={stage3FieldIds.includes(field.id)} disabled={availability.state === 'unavailable'} onChange={() => selectStage3BasicField(field.id)} /> {field.displayName} — {field.componentSkills.length * offer.costXpPerSkill} XP, +{offer.chronologyYears} year <span>{status}</span></label>
+                    })}
+                  </fieldset>
+                  <fieldset><legend>Advanced Fields</legend>
+                    {technicalCollegeOffers.filter((offer) => offer.category === 'advanced').map((offer) => {
+                      const field = getSkillField(offer.fieldId)
+                      const selected = stage3FieldIds.includes(field.id)
+                      const availability = stage3FieldSelectionStatus(character, field.id, stage3FieldIds)
+                      const advancedCount = selectedStage3Offers.filter((entry) => entry.category === 'advanced').length
+                      const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
+                      return <label key={field.id}><input type="checkbox" checked={selected} disabled={!selected && (availability.state === 'unavailable' || advancedCount >= 2)} onChange={() => toggleStage3AdvancedField(field.id)} /> {field.displayName} — {field.componentSkills.length * offer.costXpPerSkill} XP, +{offer.chronologyYears} years <span>{status}</span></label>
+                    })}
+                  </fieldset>
+                  <p><strong>Total: {selectedStage3Cost} XP · +{selectedStage3Years} years · expected age {16 + selectedStage3Years}</strong></p>
+                  <p className="scope-note"><strong>Reference-only:</strong> Infantry requires a Military Academy or Military Enlistment implementation. MechWarrior requires Military Academy (or another source-authorized school) plus an explicit Technician/Any Field-Skill choice. Neither is purchasable here.</p>
                   <button className="button" type="button" aria-pressed={stageModulePreviewId === TECHNICAL_COLLEGE_ID} onClick={() => selectStageModule(TECHNICAL_COLLEGE_ID)}>Preview Technical College path</button>
                 </article>
               </div>{stageModulePreviewId === TECHNICAL_COLLEGE_ID && renderStageChoiceSlots('Higher Education', 'Technical College and choices committed.')}</>

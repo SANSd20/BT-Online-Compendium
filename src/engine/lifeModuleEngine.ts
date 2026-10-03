@@ -54,7 +54,7 @@ export function createLifeModuleCharacter(
     prerequisiteIssues: [],
     stopState: 'not-eligible',
     limitations: [
-      'Alpha Slice 9 includes the Stage 0/1/2 minimal catalog, Technical College with two Technician Skill Fields, Agitator at Stage 4, and final-review/Optimization foundations.',
+      'Alpha Slice 59 includes the Stage 0/1/2 bounded catalog, Technical College with seven source-audited selectable Skill Fields, Agitator at Stage 4, and final-review/Optimization foundations.',
       'The current minimal catalog can resolve language, /Affiliation, /Any, multi-choice, and flexible awards.',
       'Broad Stage 3/4 and Skill Field catalogs, repeated schooling and Stage 4 execution, Changing Affiliations, Life Events, equipment, PDF export, and true finalization are deferred.',
     ],

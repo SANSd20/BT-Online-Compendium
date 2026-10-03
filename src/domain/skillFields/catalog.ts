@@ -17,6 +17,11 @@ const skill = (skillId: string, displayName: string, parameter?: string): Extrac
 export const TECHNICIAN_CIVILIAN_FIELD_ID = 'field.technician-civilian'
 export const TECHNICIAN_VEHICLE_FIELD_ID = 'field.technician-vehicle'
 export const BASIC_TRAINING_FIELD_ID = 'field.basic-training'
+export const PILOT_EXOSKELETON_FIELD_ID = 'field.pilot-exoskeleton'
+export const CARTOGRAPHER_FIELD_ID = 'field.cartographer'
+export const PILOT_INDUSTRIALMECH_FIELD_ID = 'field.pilot-industrialmech'
+export const TECHNICIAN_AEROSPACE_FIELD_ID = 'field.technician-aerospace'
+export const TECHNICIAN_MECH_FIELD_ID = 'field.technician-mech'
 
 export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
   {
@@ -67,6 +72,89 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       skill('skill.computers', 'Computers'),
       skill('skill.technician', 'Technician/Electronic', 'Electronic'),
       skill('skill.technician', 'Technician/Mechanical', 'Mechanical'),
+      skill('skill.technician', 'Technician/Nuclear', 'Nuclear'),
+    ],
+  },
+  {
+    id: PILOT_EXOSKELETON_FIELD_ID,
+    displayName: 'Pilot/Exoskeleton',
+    category: 'basic',
+    source: { ...source('skill-field-pilot-exoskeleton'), page: 93 },
+    prerequisites: [
+      { id: 'pilot-exoskeleton.str', kind: 'attribute-minimum', attributeId: 'STR', minimum: 5, description: 'STR 5+' },
+      { id: 'pilot-exoskeleton.bod', kind: 'attribute-minimum', attributeId: 'BOD', minimum: 5, description: 'BOD 5+' },
+    ],
+    componentSkills: [
+      skill('skill.piloting', 'Piloting/Battlesuit', 'Battlesuit'),
+      skill('skill.sensor-operations', 'Sensor Operations'),
+      skill('skill.technician', 'Technician/Electronic', 'Electronic'),
+      skill('skill.technician', 'Technician/Mechanical', 'Mechanical'),
+      skill('skill.technician', 'Technician/Myomer', 'Myomer'),
+    ],
+  },
+  {
+    id: CARTOGRAPHER_FIELD_ID,
+    displayName: 'Cartographer',
+    category: 'advanced',
+    source: { ...source('skill-field-cartographer'), page: 92 },
+    prerequisites: [{ id: 'cartographer.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' }],
+    componentSkills: [
+      skill('skill.career', 'Career/Cartographer', 'Cartographer'),
+      skill('skill.computers', 'Computers'),
+      skill('skill.navigation', 'Navigation/Air', 'Air'),
+      skill('skill.navigation', 'Navigation/Ground', 'Ground'),
+      skill('skill.perception', 'Perception'),
+      skill('skill.sensor-operations', 'Sensor Operations'),
+    ],
+  },
+  {
+    id: PILOT_INDUSTRIALMECH_FIELD_ID,
+    displayName: 'Pilot/IndustrialMech',
+    category: 'advanced',
+    source: { ...source('skill-field-pilot-industrialmech'), page: 93 },
+    prerequisites: [
+      { id: 'pilot-industrialmech.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 3, description: 'DEX 3+' },
+      { id: 'pilot-industrialmech.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 3, description: 'RFL 3+' },
+    ],
+    componentSkills: [
+      skill('skill.piloting', 'Piloting/Mech', 'Mech'),
+      skill('skill.sensor-operations', 'Sensor Operations'),
+      skill('skill.technician', 'Technician/Electronic', 'Electronic'),
+      skill('skill.technician', 'Technician/Mechanical', 'Mechanical'),
+      skill('skill.technician', 'Technician/Myomer', 'Myomer'),
+    ],
+  },
+  {
+    id: TECHNICIAN_AEROSPACE_FIELD_ID,
+    displayName: 'Technician/Aerospace',
+    category: 'advanced',
+    source: { ...source('skill-field-technician-aerospace'), page: 93 },
+    prerequisites: [
+      { id: 'technician-aerospace.prior-field', kind: 'skill-field', fieldIds: [TECHNICIAN_CIVILIAN_FIELD_ID, 'field.technician-military'], description: 'Technician/Civilian or Technician/Military Field' },
+      { id: 'technician-aerospace.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' },
+    ],
+    componentSkills: [
+      skill('skill.computers', 'Computers'),
+      skill('skill.technician', 'Technician/Aeronautics', 'Aeronautics'),
+      skill('skill.technician', 'Technician/Nuclear', 'Nuclear'),
+      skill('skill.technician', 'Technician/Jets', 'Jets'),
+      skill('skill.zero-g-operations', 'Zero-G Operations'),
+    ],
+  },
+  {
+    id: TECHNICIAN_MECH_FIELD_ID,
+    displayName: 'Technician/Mech',
+    category: 'advanced',
+    source: { ...source('skill-field-technician-mech'), page: 93 },
+    prerequisites: [
+      { id: 'technician-mech.prior-field', kind: 'skill-field', fieldIds: [TECHNICIAN_CIVILIAN_FIELD_ID, 'field.technician-military'], description: 'Technician/Civilian or Technician/Military Field' },
+      { id: 'technician-mech.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' },
+    ],
+    componentSkills: [
+      skill('skill.technician', 'Technician/Electronic', 'Electronic'),
+      skill('skill.technician', 'Technician/Jet', 'Jet'),
+      skill('skill.technician', 'Technician/Mechanical', 'Mechanical'),
+      skill('skill.technician', 'Technician/Myomer', 'Myomer'),
       skill('skill.technician', 'Technician/Nuclear', 'Nuclear'),
     ],
   },

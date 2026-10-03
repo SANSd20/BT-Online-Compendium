@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
-import { TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { CARTOGRAPHER_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
@@ -404,6 +404,53 @@ describe('Life Module engine', () => {
       expect.objectContaining({ awardId: 'technical-college.interest', xpPerGrant: 30 }),
       expect.objectContaining({ awardId: 'technical-college.flexible', allocationMode: 'pool', remainingXp: 200 }),
     ]))
+  })
+
+  it.each([
+    [CARTOGRAPHER_FIELD_ID, 144, 6, 'Career/Cartographer'],
+    [PILOT_INDUSTRIALMECH_FIELD_ID, 120, 5, 'Piloting/Mech'],
+    [TECHNICIAN_AEROSPACE_FIELD_ID, 120, 5, 'Technician/Aeronautics'],
+    [TECHNICIAN_MECH_FIELD_ID, 120, 5, 'Technician/Jet'],
+  ] as const)('acquires bounded Advanced Field %s with exact cost and +30 XP awards', (fieldId, cost, skillCount, representativeSkill) => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const committedJson = JSON.stringify(selecting)
+    const character = applyTechnicalCollege(selecting, [TECHNICIAN_CIVILIAN_FIELD_ID, fieldId])
+    const grant = character.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === fieldId)
+    expect(grant).toMatchObject({ purchaseCostXp: cost, xpPerSkill: 30, chronologyYears: 2 })
+    expect(character.skills.find((entry) => entry.displayName === representativeSkill)?.sourceAwards.some((award) => award.xp === 30)).toBe(true)
+    expect(character.creation.lifeModules!.selectedSkillFields).toHaveLength(2)
+    expect(JSON.parse(committedJson).creation.lifeModules.selectedSkillFields).toEqual([])
+    expect(character.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === fieldId)).toBeDefined()
+    expect(skillCount).toBeGreaterThan(0)
+  })
+
+  it('acquires Pilot/Exoskeleton as the alternate Basic Field and preserves exact awards', () => {
+    const character = applyTechnicalCollege(continueToStage3(completeHighSchoolStage2()), [PILOT_EXOSKELETON_FIELD_ID, CARTOGRAPHER_FIELD_ID])
+    expect(character.creation.lifeModules!.selectedSkillFields.map((entry) => [entry.fieldId, entry.purchaseCostXp])).toEqual([
+      [PILOT_EXOSKELETON_FIELD_ID, 120],
+      [CARTOGRAPHER_FIELD_ID, 144],
+    ])
+    expect(character.skills.find((entry) => entry.displayName === 'Piloting/Battlesuit')?.accumulatedXp).toBe(30)
+    expect(character.skills.find((entry) => entry.displayName === 'Technician/Myomer')?.accumulatedXp).toBe(30)
+    expect(character.creation.lifeModules!.prerequisiteIssues.filter((entry) => entry.moduleId === PILOT_EXOSKELETON_FIELD_ID).map((entry) => entry.prerequisiteId)).toEqual(['pilot-exoskeleton.str', 'pilot-exoskeleton.bod'])
+  })
+
+  it('requires an actually acquired Technician Field for dependent Fields', () => {
+    const withActualField = applyTechnicalCollege(continueToStage3(completeHighSchoolStage2()), [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID])
+    expect(withActualField.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'technician-aerospace.prior-field')?.status).toBe('satisfied')
+
+    const componentSkillsOnly = continueToStage3(completeHighSchoolStage2())
+    componentSkillsOnly.skills.push(...withActualField.skills.filter((entry) => entry.displayName?.startsWith('Technician/')).map((entry) => structuredClone(entry)))
+    const withoutField = applyTechnicalCollege(componentSkillsOnly, [PILOT_EXOSKELETON_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID])
+    expect(withoutField.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'technician-aerospace.prior-field')?.status).toBe('outstanding')
+  })
+
+  it('does not duplicate Field grants or Skill awards', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    expect(() => applyTechnicalCollege(selecting, [TECHNICIAN_CIVILIAN_FIELD_ID, CARTOGRAPHER_FIELD_ID, CARTOGRAPHER_FIELD_ID])).toThrow('more than once')
+    const character = applyTechnicalCollege(selecting, [TECHNICIAN_CIVILIAN_FIELD_ID, CARTOGRAPHER_FIELD_ID])
+    expect(character.creation.lifeModules!.selectedSkillFields.filter((entry) => entry.fieldId === CARTOGRAPHER_FIELD_ID)).toHaveLength(1)
+    expect(character.skills.find((entry) => entry.displayName === 'Career/Cartographer')?.sourceAwards.filter((award) => award.xp === 30)).toHaveLength(1)
   })
 
   it('tracks and re-evaluates Technical College Skill Field prerequisites', () => {

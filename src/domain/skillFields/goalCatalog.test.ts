@@ -3,10 +3,10 @@ import { SKILL_FIELD_CATALOG } from './catalog'
 import { getMasterSkillFieldGoal, MASTER_SKILL_FIELD_GOAL_CATALOG, MECHWARRIOR_GOAL_ID } from './goalCatalog'
 
 describe('Master Skill Field goal/reference catalog', () => {
-  it('separates all 56 published goal references from the three mechanically acquirable Fields', () => {
+  it('separates all 56 published goal references from the bounded mechanically acquirable Fields', () => {
     expect(MASTER_SKILL_FIELD_GOAL_CATALOG).toHaveLength(56)
     expect(new Set(MASTER_SKILL_FIELD_GOAL_CATALOG.map((entry) => entry.id)).size).toBe(56)
-    expect(SKILL_FIELD_CATALOG).toHaveLength(3)
+    expect(SKILL_FIELD_CATALOG).toHaveLength(8)
     expect(MASTER_SKILL_FIELD_GOAL_CATALOG.length).toBeGreaterThan(SKILL_FIELD_CATALOG.length)
     expect(MASTER_SKILL_FIELD_GOAL_CATALOG.filter((entry) => entry.category === 'civilian')).toHaveLength(27)
     expect(MASTER_SKILL_FIELD_GOAL_CATALOG.filter((entry) => entry.category === 'intelligence-police')).toHaveLength(6)

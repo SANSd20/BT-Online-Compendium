@@ -84,11 +84,12 @@ export function previewStageModuleChoiceSlots(
   character: CharacterDefinition,
   moduleId: SupportedStageModuleId | '',
   values: StageChoiceSlotValues,
+  stage3FieldIds?: string[],
 ): StageChoiceSlotPreview | null {
   if (!moduleId) return null
   const initialExistingAwards = character.creation.lifeModules!.pendingAwards.map((entry) => structuredClone(entry))
   const existingAwardIds = new Set(initialExistingAwards.map((entry) => entry.id))
-  let preview = applySupportedStageModule(character, moduleId)
+  let preview = applySupportedStageModule(character, moduleId, stage3FieldIds)
   const existingPending = () => preview.creation.lifeModules!.pendingAwards.filter((entry) => existingAwardIds.has(entry.id))
   const modulePending = () => preview.creation.lifeModules!.pendingAwards.filter((entry) => entry.moduleId === moduleId)
 
