@@ -25,6 +25,16 @@ export interface MasterSkillFieldGoalStatus {
   satisfied: number
   total: number
   requirements: MasterSkillFieldGoalRequirementStatus[]
+  prerequisiteFields: MasterSkillFieldReferenceStatus[]
+}
+
+export interface MasterSkillFieldReferenceStatus {
+  fieldId: string
+  displayName: string
+  acquired: boolean
+  cycle: boolean
+  requirements: MasterSkillFieldGoalRequirementStatus[]
+  prerequisiteFields: MasterSkillFieldReferenceStatus[]
 }
 
 export function setMasterSkillFieldGoal(character: CharacterDefinition, fieldId: string | null): CharacterDefinition {
@@ -42,27 +52,33 @@ export function masterSkillFieldGoalStatus(character: CharacterDefinition): Mast
   const fieldId = character.creation.lifeModules?.masterSkillFieldGoalId
   if (!fieldId) return null
   const field = getMasterSkillFieldGoal(fieldId)
-  const requirements = [
-    ...field.prerequisites.map((entry) => prerequisiteStatus(character, entry)),
-    ...field.fieldSkills.map((entry) => {
-      const skill = character.skills.find((candidate) => entry.variable ? candidate.address.skillId === entry.skillId : skillKey(candidate.address) === skillKey({ skillId: entry.skillId, ...(entry.parameter ? { parameter: { value: entry.parameter } } : {}) }))
-      const currentLevel = skill?.level ?? deriveStandardSkillLevel(skill?.accumulatedXp ?? 0)
-      const satisfied = currentLevel !== null
-      const currentXp = skill?.accumulatedXp ?? 0
-      return {
-        id: `${field.id}.${entry.id}`,
-        kind: entry.variable ? 'variable-skill' as const : 'skill' as const,
-        section: 'field-skill' as const,
-        label: entry.displayName,
-        satisfied,
-        current: satisfied ? `${skill?.displayName ?? entry.displayName}: Level +${currentLevel}` : entry.variable ? 'Source-defined choice not yet satisfied' : `${currentXp} XP (untrained)`,
-        xpRequired: skill && !entry.variable ? Math.max(0, standardSkillThreshold(0) - currentXp) : null,
-        skillId: entry.skillId,
-        ...(skill && !entry.variable ? { destination: { type: 'skill' as const, targetId: entry.skillId, displayName: entry.displayName, ...(entry.parameter ? { parameter: { kind: 'subskill' as const, value: entry.parameter } } : {}) } } : {}),
-      }
-    }),
-  ]
-  return { fieldId, displayName: field.displayName, satisfied: requirements.filter((entry) => entry.satisfied).length, total: requirements.length, requirements }
+  const requirements = fieldRequirementsStatus(character, field)
+  return {
+    fieldId,
+    displayName: field.displayName,
+    satisfied: requirements.filter((entry) => entry.satisfied).length,
+    total: requirements.length,
+    requirements,
+    prerequisiteFields: prerequisiteFieldIds(field.prerequisites).map((id) => masterSkillFieldReferenceStatus(character, id, [field.id])),
+  }
+}
+
+export function masterSkillFieldReferenceStatus(character: CharacterDefinition, fieldId: string, ancestorFieldIds: readonly string[] = []): MasterSkillFieldReferenceStatus {
+  const field = getMasterSkillFieldGoal(fieldId)
+  const acquired = Boolean(character.creation.lifeModules?.selectedSkillFields.some((entry) => entry.fieldId === fieldId))
+  if (ancestorFieldIds.includes(fieldId)) {
+    return { fieldId, displayName: field.displayName, acquired, cycle: true, requirements: [], prerequisiteFields: [] }
+  }
+  const requirements = fieldRequirementsStatus(character, field)
+  const ancestors = [...ancestorFieldIds, fieldId]
+  return {
+    fieldId,
+    displayName: field.displayName,
+    acquired,
+    cycle: false,
+    requirements,
+    prerequisiteFields: prerequisiteFieldIds(field.prerequisites).map((id) => masterSkillFieldReferenceStatus(character, id, ancestors)),
+  }
 }
 
 export function lifeModuleGoalContributions(character: CharacterDefinition, module: LifeModuleDefinition): string[] {
@@ -116,6 +132,40 @@ function prerequisiteStatus(character: CharacterDefinition, prerequisite: Master
       ? !character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
       : false
   return { id: prerequisite.id, kind: 'structural', section: 'prerequisite', label: prerequisite.label, satisfied, current: satisfied ? 'Satisfied' : prerequisite.kind === 'phenotype' ? 'Required phenotype not established' : 'Not satisfied', xpRequired: null }
+}
+
+function fieldRequirementsStatus(character: CharacterDefinition, field: ReturnType<typeof getMasterSkillFieldGoal>): MasterSkillFieldGoalRequirementStatus[] {
+  return [
+    ...field.prerequisites.map((entry) => prerequisiteStatus(character, entry)),
+    ...field.fieldSkills.map((entry) => fieldSkillStatus(character, field.id, entry)),
+  ]
+}
+
+function fieldSkillStatus(character: CharacterDefinition, fieldId: string, entry: ReturnType<typeof getMasterSkillFieldGoal>['fieldSkills'][number]): MasterSkillFieldGoalRequirementStatus {
+  const skill = character.skills.find((candidate) => entry.variable ? candidate.address.skillId === entry.skillId : skillKey(candidate.address) === skillKey({ skillId: entry.skillId, ...(entry.parameter ? { parameter: { value: entry.parameter } } : {}) }))
+  const currentLevel = skill?.level ?? deriveStandardSkillLevel(skill?.accumulatedXp ?? 0)
+  const satisfied = currentLevel !== null
+  const currentXp = skill?.accumulatedXp ?? 0
+  return {
+    id: `${fieldId}.${entry.id}`,
+    kind: entry.variable ? 'variable-skill' : 'skill',
+    section: 'field-skill',
+    label: entry.displayName,
+    satisfied,
+    current: satisfied ? `${skill?.displayName ?? entry.displayName}: Level +${currentLevel} · ${currentXp} XP` : entry.variable ? 'Source-defined choice not yet satisfied' : `${currentXp} XP (untrained)`,
+    xpRequired: skill && !entry.variable ? Math.max(0, standardSkillThreshold(0) - currentXp) : null,
+    skillId: entry.skillId,
+    ...(skill && !entry.variable ? { destination: { type: 'skill' as const, targetId: entry.skillId, displayName: entry.displayName, ...(entry.parameter ? { parameter: { kind: 'subskill' as const, value: entry.parameter } } : {}) } } : {}),
+  }
+}
+
+function prerequisiteFieldIds(prerequisites: readonly MasterSkillFieldGoalPrerequisite[]): string[] {
+  const ids = prerequisites.flatMap((entry): string[] => {
+    if (entry.kind === 'skill-field') return entry.fieldIds
+    if (entry.kind === 'alternative') return entry.options.flatMap((option) => prerequisiteFieldIds(option))
+    return []
+  })
+  return [...new Set(ids)]
 }
 
 function prerequisiteSatisfied(character: CharacterDefinition, prerequisite: MasterSkillFieldGoalPrerequisite): boolean {

@@ -4,7 +4,7 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 57 is implemented.** Version `0.1.0-alpha.57`. The public product title is **AToW Online Character Creator**. This release preserves the Slice 56 Stage 0 affiliation switching behavior and fixes committed Federated Suns / Crucis March Art/Painting metadata so JSON export/import round trips validate without replaying awards. `/Any`, Stage 2 flexible caps, faction themes, Master Skill Field behavior, and the 84-item equipment catalog remain intact.
+**Alpha Slice 58 is implemented.** Version `0.1.0-alpha.58`. The public product title is **AToW Online Character Creator**. Master Skill Field prerequisite Fields are now keyboard-accessible nested disclosures backed by the existing 56-entry reference catalog, with prerequisites and Field Skills kept separate, current character status shown, and cycle-safe expansion. Reference guidance remains mechanically inert: component Skills do not grant a Field, `/Any` remains unresolved, and Review exposes structural Field gaps without XP controls. The existing Capellan and Federated Suns affiliation themes now map the current government/faction `UI_ADAPTATION` roles from `SANSd20/battletech-faction-colors` commit `f5ce62194c57e28d3d8a7a31d69b01f901c0672f`; no military identity or new affiliation was added. Slice 57 JSON round trips, Slice 56 switching isolation, `/Affiliation`, `/Any`, Stage 2 caps, and the 84-item equipment catalog remain intact.
 
 All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit remains the evidence record; Slice 28 governs its conflicts without silently correcting Tanker, Elemental, or Scout values, adding `REF`, renaming stable IDs, or activating back-sheet combat fields. Point Buy, Life Modules, Final Touches, and the 84-item audited Core equipment catalog are unchanged.
 
@@ -71,9 +71,9 @@ npm run preview
 
 The repository's Pages **Source** setting must be **GitHub Actions**. The public site opens through a normal browser URL and requires neither a special platform login nor an application login. Character data still lives only in that browser; JSON export/import is the portability and backup mechanism.
 
-The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.57` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
+The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.58` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
 
-The collapsed-by-default public notice identifies version `0.1.0-alpha.57`; its expandable details retain browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
+The collapsed-by-default public notice identifies version `0.1.0-alpha.58`; its expandable details retain browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
 
 ## Current resume points
 

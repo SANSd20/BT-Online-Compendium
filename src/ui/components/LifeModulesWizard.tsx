@@ -1,7 +1,7 @@
 import type { ReactNode, Ref } from 'react'
 import type { CharacterDefinition, PendingLifeModuleAward } from '../../domain/character/model'
 import { APP_PUBLIC_ALPHA_LABEL, APP_VERSION } from '../../appMetadata'
-import { masterSkillFieldGoalStatus } from '../../domain/skillFields/goals'
+import { masterSkillFieldGoalStatus, type MasterSkillFieldGoalRequirementStatus, type MasterSkillFieldReferenceStatus } from '../../domain/skillFields/goals'
 import { LIFE_MODULE_WIZARD_STEPS, lifeModuleStagePresentation, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
 
 export function LifeModulesVersionBadge() {
@@ -92,12 +92,34 @@ export function LifeModuleCharacterSummary({ character, previewCharacter, previe
       <div><dt>Net stat XP</dt><dd>{effectiveCharacter.xp.creation.allocated.toLocaleString()}</dd></div>
       <div><dt>Pending choices</dt><dd>{effectiveState.pendingAwards.length}</dd></div>
     </dl>
-    {goalStatus && <details open className="life-summary-goal"><summary>{goalStatus.displayName} goal · {goalStatus.satisfied} / {goalStatus.total}</summary><h3>Prerequisites</h3><ul>{goalStatus.requirements.filter((entry) => entry.section === 'prerequisite').map((entry) => <li key={entry.id} className={entry.satisfied ? 'goal-satisfied' : 'goal-unmet'}><span>{entry.label}</span><strong>{entry.satisfied ? 'Satisfied' : entry.current}</strong></li>)}</ul><h3>Field Skills</h3><ul>{goalStatus.requirements.filter((entry) => entry.section === 'field-skill').map((entry) => <li key={entry.id} className={entry.satisfied ? 'goal-satisfied' : 'goal-unmet'}><span>{entry.label}</span><strong>{entry.satisfied ? 'Satisfied' : entry.current}</strong></li>)}</ul><p className="scope-note">Guidance only. Field Skills are listed separately from prerequisites, and the selected Field is not acquired until a legal Stage 3 purchase grants it.</p></details>}
+    {goalStatus && <details open className="life-summary-goal"><summary>{goalStatus.displayName} goal · {goalStatus.satisfied} / {goalStatus.total}</summary><GoalRequirementSections requirements={goalStatus.requirements} prerequisiteFields={goalStatus.prerequisiteFields} /><p className="scope-note">Guidance only. Field Skills are listed separately from prerequisites, and the selected Field is not acquired until a legal Stage 3 purchase grants it.</p></details>}
     <details open className="life-summary-attributes"><summary>Attributes</summary><ul>{effectiveCharacter.attributes.map((entry) => <li key={entry.attributeId} className={isPreviewAttribute(entry.attributeId, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.attributeId}</span><strong>{entry.accumulatedXp.toLocaleString()}</strong></li>)}</ul></details>
     <details open><summary>Traits ({effectiveCharacter.traits.length})</summary><ul>{effectiveCharacter.traits.map((entry, index) => <li key={`${entry.traitId}-${index}`} className={isPreviewTrait(entry.traitId, entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.traitId}</span><strong>{entry.active ? `${entry.attainedTp ?? 0} TP · ${entry.accumulatedXp.toLocaleString()} XP` : entry.accumulatedXp !== 0 ? `pending · ${entry.accumulatedXp.toLocaleString()} XP` : 'pending'}</strong></li>)}</ul></details>
     <details open><summary>Skills ({effectiveCharacter.skills.length})</summary><ul>{effectiveCharacter.skills.map((entry, index) => <li key={`${entry.address.skillId}-${index}`} className={isPreviewSkill(entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.address.skillId}</span><strong>{entry.accumulatedXp.toLocaleString()} XP</strong></li>)}</ul></details>
     <details open><summary>Chosen modules</summary>{effectiveCharacter.lifeModuleHistory.length === 0 ? <p>None yet.</p> : <ol>{effectiveCharacter.lifeModuleHistory.map((entry) => <li key={entry.moduleId} className={!committedModules.has(entry.moduleId) ? 'preview-row' : ''}>{entry.displayName}</li>)}</ol>}{previewPendingAwards.length > 0 && <div className="life-summary-pending"><h3>Pending preview choices</h3><ul>{previewPendingAwards.map((entry) => <li key={entry.id} className="preview-row pending-row"><span>{entry.description}</span><strong>pending · {(entry.allocationMode === 'pool' ? entry.remainingXp : entry.xpPerGrant * entry.remainingGrants)?.toLocaleString()} XP</strong></li>)}</ul></div>}</details>
   </aside>
+}
+
+function GoalRequirementSections({ requirements, prerequisiteFields }: { requirements: MasterSkillFieldGoalRequirementStatus[]; prerequisiteFields: MasterSkillFieldReferenceStatus[] }) {
+  return <>
+    <h3>Prerequisites</h3>
+    <ul>{requirements.filter((entry) => entry.section === 'prerequisite').map((entry) => <GoalRequirementRow key={entry.id} requirement={entry} />)}</ul>
+    {prerequisiteFields.map((field) => <PrerequisiteFieldDisclosure key={field.fieldId} field={field} />)}
+    <h3>Field Skills</h3>
+    <ul>{requirements.filter((entry) => entry.section === 'field-skill').map((entry) => <GoalRequirementRow key={entry.id} requirement={entry} />)}</ul>
+  </>
+}
+
+function GoalRequirementRow({ requirement }: { requirement: MasterSkillFieldGoalRequirementStatus }) {
+  const current = requirement.satisfied && requirement.current !== 'Satisfied' ? `Satisfied · ${requirement.current}` : requirement.satisfied ? 'Satisfied' : requirement.current
+  return <li className={requirement.satisfied ? 'goal-satisfied' : 'goal-unmet'}><span>{requirement.label}</span><strong>{current}</strong></li>
+}
+
+function PrerequisiteFieldDisclosure({ field }: { field: MasterSkillFieldReferenceStatus }) {
+  return <details className="goal-field-disclosure">
+    <summary>{field.displayName} Field details · {field.acquired ? 'acquired' : 'not acquired'}</summary>
+    {field.cycle ? <p className="scope-note">Reference cycle detected; deeper prerequisite expansion stopped.</p> : <GoalRequirementSections requirements={field.requirements} prerequisiteFields={field.prerequisiteFields} />}
+  </details>
 }
 
 export function LifeModuleStageStatus({ pendingAwards, warnings, specializedPendingMessage, showResolutionLink = true }: { pendingAwards: PendingLifeModuleAward[]; warnings: string[]; specializedPendingMessage?: string; showResolutionLink?: boolean }) {

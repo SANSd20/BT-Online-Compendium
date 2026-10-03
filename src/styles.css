@@ -158,75 +158,101 @@ tbody th { color: #e8edf2; font-weight: 650; }
 :where(button, a, input, select, textarea, summary):focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .life-modules-page { width: min(1760px, 96vw); max-width: none; padding-top: 28px; }
+/* Government/faction UI_ADAPTATION roles from SANSd20/battletech-faction-colors government-ui.yaml at f5ce62194c57e28d3d8a7a31d69b01f901c0672f. */
 .life-modules-page.capellan-theme {
-  --panel: #173c2f;
-  --panel-light: #205242;
-  --line: #4c9b7a;
-  --muted: #9ae3bb;
-  --amber: #e2c36e;
-  --amber-dark: #0b3a2b;
+  --faction-primary: #00a86b;
+  --faction-primary-deep: #0b3a2b;
+  --faction-primary-surface: #174c3b;
+  --faction-panel: #173c2f;
+  --faction-panel-alt: #205242;
+  --faction-border: #4c9b7a;
+  --faction-secondary: #c9a83d;
+  --faction-accent: #e2c36e;
+  --faction-foreground: #ecf5f0;
+  --faction-ink: #111111;
+  --panel: var(--faction-panel);
+  --panel-light: var(--faction-panel-alt);
+  --line: var(--faction-border);
+  --muted: var(--faction-foreground);
+  --amber: var(--faction-accent);
+  --amber-dark: var(--faction-primary-deep);
+  --success: var(--faction-primary);
 }
-.life-modules-page.capellan-theme .life-dashboard { padding: 12px; border: 1px solid #4c9b7a; background: linear-gradient(145deg, #0b3a2b, #173c2f); }
+.life-modules-page.capellan-theme .life-dashboard { padding: 12px; border: 1px solid var(--faction-border); background: linear-gradient(145deg, var(--faction-primary-deep), var(--faction-panel)); }
 .life-modules-page.capellan-theme .life-progress,
 .life-modules-page.capellan-theme .life-summary-xp,
-.life-modules-page.capellan-theme .life-review-summary { background: #4c9b7a; }
-.life-modules-page.capellan-theme .life-progress li { background: #173c2f; }
-.life-modules-page.capellan-theme .life-progress li.complete { color: #9ae3bb; background: #0b3a2b; }
-.life-modules-page.capellan-theme .life-progress li.current { color: #fff; background: #4a202d; box-shadow: inset 0 -3px 0 #e2c36e; }
+.life-modules-page.capellan-theme .life-review-summary { background: var(--faction-border); }
+.life-modules-page.capellan-theme .life-progress li { background: var(--faction-panel); }
+.life-modules-page.capellan-theme .life-progress li.complete { color: var(--faction-foreground); background: var(--faction-primary-deep); }
+.life-modules-page.capellan-theme .life-progress li.current { color: var(--faction-foreground); background: var(--faction-primary-surface); box-shadow: inset 0 -3px 0 var(--faction-accent); }
 .life-modules-page.capellan-theme .life-summary,
 .life-modules-page.capellan-theme .life-stage-panel,
-.life-modules-page.capellan-theme .life-dashboard-details { border-color: #4c9b7a; background: #173c2f; }
+.life-modules-page.capellan-theme .life-dashboard-details { border-color: var(--faction-border); background: var(--faction-panel); }
 .life-modules-page.capellan-theme .life-summary-xp div,
 .life-modules-page.capellan-theme .life-stage-status section,
 .life-modules-page.capellan-theme .life-review-summary > div,
-.life-modules-page.capellan-theme .life-review-summary li { background: #0b3a2b; }
-.life-modules-page.capellan-theme .life-summary-preview-status { border-color: #e2c36e; background: #205242; }
-.life-modules-page.capellan-theme .life-summary .preview-row { color: #9ae3bb; }
+.life-modules-page.capellan-theme .life-review-summary li { background: var(--faction-primary-deep); }
+.life-modules-page.capellan-theme .life-summary-preview-status { border-color: var(--faction-accent); background: var(--faction-panel-alt); }
+.life-modules-page.capellan-theme .life-summary .preview-row { color: var(--faction-foreground); }
 .life-modules-page.capellan-theme .life-summary .preview-row strong,
-.life-modules-page.capellan-theme .life-summary-preview-status > strong { color: #e2c36e; }
-.life-modules-page.capellan-theme .stage0-package-section { border-color: #4c9b7a; background: #0b3a2b; }
-.life-modules-page.capellan-theme .stage0-package-section.current { border-color: #e2c36e; background: #173c2f; }
-.life-modules-page.capellan-theme .stage0-secondary-action { border-color: #4c9b7a; }
+.life-modules-page.capellan-theme .life-summary-preview-status > strong { color: var(--faction-accent); }
+.life-modules-page.capellan-theme .stage0-package-section { border-color: var(--faction-border); background: var(--faction-primary-deep); }
+.life-modules-page.capellan-theme .stage0-package-section.current { border-color: var(--faction-accent); background: var(--faction-panel); }
+.life-modules-page.capellan-theme .stage0-secondary-action { border-color: var(--faction-border); }
 .life-modules-page.capellan-theme .stage0-choice-grid select,
-.life-modules-page.capellan-theme .stage0-secondary-action select { border-color: #4c9b7a; background: #0b3a2b; }
-.life-modules-page.capellan-theme .stage0-requirements { border-left-color: #713445; background: #4a202d; }
-.life-modules-page.capellan-theme .stage0-requirements.ready { border-left-color: #00a86b; color: #9ae3bb; background: #0b3a2b; }
+.life-modules-page.capellan-theme .stage0-secondary-action select { border-color: var(--faction-border); background: var(--faction-primary-deep); }
+.life-modules-page.capellan-theme .stage0-requirements { border-left-color: var(--faction-secondary); background: var(--faction-panel-alt); }
+.life-modules-page.capellan-theme .stage0-requirements.ready { border-left-color: var(--faction-primary); color: var(--faction-foreground); background: var(--faction-primary-deep); }
 .life-modules-page.davion-theme {
-  --panel: #202b22;
-  --panel-light: #2b3829;
-  --line: #687962;
-  --muted: #a7c979;
-  --amber: #d7b66a;
-  --amber-dark: #202b22;
-  --success: #a7c979;
+  --faction-primary: #d6ae3d;
+  --faction-primary-deep: #6b4d12;
+  --faction-primary-surface: #4b3a18;
+  --faction-panel: #241f18;
+  --faction-panel-alt: #332a1d;
+  --faction-border: #806e48;
+  --faction-secondary: #a83a32;
+  --faction-accent: #f0d77a;
+  --faction-foreground: #f4eedc;
+  --faction-ink: #111111;
+  --panel: var(--faction-panel);
+  --panel-light: var(--faction-panel-alt);
+  --line: var(--faction-border);
+  --muted: var(--faction-foreground);
+  --amber: var(--faction-accent);
+  --amber-dark: var(--faction-primary-deep);
+  --success: var(--faction-primary);
 }
-.life-modules-page.davion-theme .life-dashboard { padding: 12px; border: 1px solid #687962; background: linear-gradient(145deg, #202b22, #2b3829); }
+.life-modules-page.davion-theme .life-dashboard { padding: 12px; border: 1px solid var(--faction-border); background: linear-gradient(145deg, var(--faction-primary-deep), var(--faction-panel)); }
 .life-modules-page.davion-theme .life-progress,
 .life-modules-page.davion-theme .life-summary-xp,
-.life-modules-page.davion-theme .life-review-summary { background: #687962; }
+.life-modules-page.davion-theme .life-review-summary { background: var(--faction-border); }
 .life-modules-page.davion-theme .life-progress li,
 .life-modules-page.davion-theme .life-summary,
 .life-modules-page.davion-theme .life-stage-panel,
-.life-modules-page.davion-theme .life-dashboard-details { border-color: #687962; background: #202b22; }
+.life-modules-page.davion-theme .life-dashboard-details { border-color: var(--faction-border); background: var(--faction-panel); }
 .life-modules-page.davion-theme .life-progress li.complete,
 .life-modules-page.davion-theme .life-summary-xp div,
 .life-modules-page.davion-theme .life-stage-status section,
 .life-modules-page.davion-theme .life-review-summary > div,
 .life-modules-page.davion-theme .life-review-summary li,
-.life-modules-page.davion-theme .stage0-package-section { background: #2b3829; }
-.life-modules-page.davion-theme .life-progress li.current { color: #fff; background: #202b22; box-shadow: inset 0 -3px 0 #d7b66a; }
+.life-modules-page.davion-theme .stage0-package-section { background: var(--faction-panel-alt); }
+.life-modules-page.davion-theme .life-progress li.current { color: var(--faction-ink); background: var(--faction-primary); box-shadow: inset 0 -3px 0 var(--faction-accent); }
 .life-modules-page.davion-theme .life-summary-preview-status,
-.life-modules-page.davion-theme .stage0-package-section.current { border-color: #d7b66a; background: #2b3829; }
+.life-modules-page.davion-theme .stage0-package-section.current { border-color: var(--faction-accent); background: var(--faction-panel-alt); }
 .life-modules-page.davion-theme .life-summary .preview-row,
-.life-modules-page.davion-theme .stage0-requirements.ready { color: #a7c979; }
+.life-modules-page.davion-theme .stage0-requirements.ready { color: var(--faction-foreground); }
 .life-modules-page.davion-theme .life-summary .preview-row strong,
-.life-modules-page.davion-theme .life-summary-preview-status > strong { color: #d7b66a; }
+.life-modules-page.davion-theme .life-summary-preview-status > strong { color: var(--faction-accent); }
 .life-modules-page.davion-theme .stage0-choice-grid select,
-.life-modules-page.davion-theme .stage0-secondary-action select { border-color: #687962; background: #202b22; }
+.life-modules-page.davion-theme .stage0-secondary-action select { border-color: var(--faction-border); background: var(--faction-panel); }
 .goal-contributions { padding: 9px 12px; border-left: 3px solid var(--amber); color: var(--muted); background: color-mix(in srgb, var(--panel) 84%, var(--amber)); font-size: .78rem; }
 .goal-review { margin: 18px 0; padding: 14px; border: 1px solid var(--amber); background: color-mix(in srgb, var(--panel) 88%, var(--amber)); }
 .goal-satisfied strong { color: var(--success); }
 .goal-unmet strong { color: var(--amber); }
+.goal-field-disclosure { margin: 8px 0 12px; padding: 8px 10px; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 88%, var(--amber)); }
+.goal-field-disclosure > summary { color: var(--amber); font-weight: 800; cursor: pointer; }
+.goal-field-disclosure .goal-field-disclosure { margin-left: 12px; }
+.goal-field-disclosure h3 { margin: 12px 0 6px; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
 .life-modules-page > .hero.compact { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 4px 24px; padding-block: 18px; }
 .life-modules-page > .hero.compact h1 { margin: 0; }
 .life-modules-page > .hero.compact > p:last-child { grid-column: 1 / -1; max-width: 100ch; margin: 4px 0 0; font-size: .82rem; }

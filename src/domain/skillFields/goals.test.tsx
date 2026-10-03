@@ -6,8 +6,8 @@ import { createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { LifeModuleCharacterSummary } from '../../ui/components/LifeModulesWizard'
 import { LifeModulesScreen } from '../../ui/screens/LifeModulesScreen'
 import { BASIC_TRAINING_FIELD_ID, getSkillField, TECHNICIAN_VEHICLE_FIELD_ID } from './catalog'
-import { MASTER_SKILL_FIELD_GOAL_CATALOG, MECHWARRIOR_GOAL_ID } from './goalCatalog'
-import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from './goals'
+import { getMasterSkillFieldGoal, MASTER_SKILL_FIELD_GOAL_CATALOG, MECHWARRIOR_GOAL_ID } from './goalCatalog'
+import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, masterSkillFieldReferenceStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from './goals'
 
 describe('Master Skill Field goal guidance', () => {
   it('renders No goal and the broad reference catalog, including MechWarrior, in initial setup', () => {
@@ -98,5 +98,56 @@ describe('Master Skill Field goal guidance', () => {
     character = allocateFinalReviewXp(character, intGap.destination!, intGap.xpRequired!)
     expect(masterSkillFieldGoalStatus(character)!.requirements.find((entry) => entry.label === 'INT 3+')).toMatchObject({ satisfied: true, xpRequired: 0 })
     expect(character.creation.lifeModules?.selectedSkillFields).toEqual([])
+  })
+
+  it('renders Infantry - Anti-Mech prerequisite Fields as nested native disclosures', () => {
+    const antiMechId = MASTER_SKILL_FIELD_GOAL_CATALOG.find((entry) => entry.displayName === 'Infantry - Anti-Mech')!.id
+    const character = setMasterSkillFieldGoal(createLifeModuleCharacter('Anti-Mech guidance'), antiMechId)
+    const status = masterSkillFieldGoalStatus(character)!
+    const infantry = status.prerequisiteFields[0]
+
+    expect(status.requirements.find((entry) => entry.label === 'Infantry Field')).toMatchObject({ kind: 'skill-field', satisfied: false, current: 'Required Field not completed', xpRequired: null })
+    expect(infantry).toMatchObject({ displayName: 'Infantry', acquired: false, cycle: false })
+    expect(infantry.requirements.filter((entry) => entry.section === 'prerequisite').map((entry) => entry.label)).toEqual(['Basic Training Field'])
+    expect(infantry.requirements.filter((entry) => entry.section === 'field-skill').map((entry) => entry.label)).toEqual(['Acrobatics/Free-Fall', 'Artillery', 'Climbing', 'Comms/Conventional', 'Support Weapons', 'Tactics/Infantry'])
+    expect(infantry.prerequisiteFields[0]).toMatchObject({ displayName: 'Basic Training', cycle: false })
+
+    const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={character} />)
+    expect(markup).toContain('<details class="goal-field-disclosure"><summary>Infantry Field details · not acquired</summary>')
+    expect(markup).toContain('<summary>Basic Training Field details · not acquired</summary>')
+    expect(markup.indexOf('Prerequisites')).toBeLessThan(markup.indexOf('Field Skills'))
+    expect(markup).not.toContain('Apply required XP')
+  })
+
+  it('does not mistake every Infantry component Skill for actual Field acquisition', () => {
+    const infantry = getMasterSkillFieldGoal('field.infantry')
+    const character = createLifeModuleCharacter('Skills are not a Field')
+    character.skills.push(...infantry.fieldSkills.map((entry) => ({
+      address: { skillId: entry.skillId, ...(entry.parameter ? { parameter: { kind: 'subskill' as const, value: entry.parameter } } : {}) },
+      displayName: entry.displayName,
+      accumulatedXp: 20,
+      level: 0,
+      sourceAwards: [],
+    })))
+    const reference = masterSkillFieldReferenceStatus(character, infantry.id)
+    expect(reference.requirements.filter((entry) => entry.section === 'field-skill').every((entry) => entry.satisfied)).toBe(true)
+    expect(reference.acquired).toBe(false)
+
+    character.creation.lifeModules!.selectedSkillFields.push({
+      id: 'test-infantry-grant', schoolModuleId: 'test-school', fieldId: infantry.id, displayName: infantry.displayName, category: 'basic', purchaseCostXp: 0, xpPerSkill: 20, chronologyYears: 0, selectedAt: new Date(0).toISOString(), provenanceId: 'test-provenance', source: structuredClone(infantry.source),
+    })
+    expect(masterSkillFieldReferenceStatus(character, infantry.id).acquired).toBe(true)
+  })
+
+  it('expands a second generic Field chain while preserving variable /Any requirements', () => {
+    const anthropologistId = MASTER_SKILL_FIELD_GOAL_CATALOG.find((entry) => entry.displayName === 'Anthropologist')!.id
+    const status = masterSkillFieldGoalStatus(setMasterSkillFieldGoal(createLifeModuleCharacter('Generic chain'), anthropologistId))!
+    expect(status.prerequisiteFields[0]).toMatchObject({ displayName: 'General Studies', acquired: false, cycle: false })
+    expect(status.prerequisiteFields[0].requirements).toContainEqual(expect.objectContaining({ label: 'Career/Any', kind: 'variable-skill', xpRequired: null }))
+  })
+
+  it('stops recursive Field expansion when an ancestor would repeat', () => {
+    const cycle = masterSkillFieldReferenceStatus(createLifeModuleCharacter('Cycle guard'), 'field.infantry', ['field.infantry'])
+    expect(cycle).toMatchObject({ displayName: 'Infantry', cycle: true, requirements: [], prerequisiteFields: [] })
   })
 })
