@@ -56,7 +56,7 @@ export function createLifeModuleCharacter(
     prerequisiteIssues: [],
     stopState: 'not-eligible',
     limitations: [
-      'Alpha Slice 60 includes the Stage 0/1/2 bounded catalog, Technical College, Military Academy, Military Enlistment, nine source-audited mechanically acquirable Skill Fields, Agitator at Stage 4, and final-review/Optimization foundations.',
+      'Alpha Slice 61 includes the Stage 0/1/2 bounded catalog, Technical College, Military Academy, Military Enlistment, ten source-audited mechanically acquirable Skill Fields, bounded variable Field-Skill choices, Agitator at Stage 4, and final-review/Optimization foundations.',
       'The current minimal catalog can resolve language, /Affiliation, /Any, multi-choice, and flexible awards.',
       'Broad Stage 3/4 and Skill Field catalogs, repeated schooling and Stage 4 execution, Changing Affiliations, Life Events, equipment, PDF export, and true finalization are deferred.',
     ],
@@ -272,7 +272,7 @@ export function applyMilitaryEnlistment(
 function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: string, fieldIds: string[]): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-3-selection') throw new Error('A Stage 3 school is not the current legal action.')
-  if (character.lifeModuleHistory.some((entry) => entry.stage === 3)) throw new Error('Repeated Stage 3 schooling is not supported in Alpha Slice 60.')
+  if (character.lifeModuleHistory.some((entry) => entry.stage === 3)) throw new Error('Repeated Stage 3 schooling is not supported in Alpha Slice 61.')
   const publishedSchool = getLifeModule(moduleId)
   if (publishedSchool.stage !== 3 || !publishedSchool.skillFieldSelection) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
   const conditional = publishedSchool.conditionalPriorModuleAwards
@@ -302,7 +302,24 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
       selectedAt,
       provenanceId,
       source: { ...field.source },
+      variableSkillChoices: [],
     })
+    for (const component of field.variableComponentSkills ?? []) {
+      requireLifeModules(next).pendingAwards.push({
+        id: makeId(undefined, 'pending-field-skill'),
+        moduleId: school.id,
+        awardId: `skill-field/${field.id}/${component.id}`,
+        kind: 'any-skill-choice',
+        description: `${component.displayName}: choose one Technician subskill.`,
+        xpPerGrant: offer.awardedXpPerSkill,
+        remainingGrants: 1,
+        allocationMode: 'fixed-grants',
+        allowedTargetTypes: ['skill'],
+        requiredSkillId: component.skillId,
+        skillFieldChoice: { fieldId: field.id, componentId: component.id },
+        source: { ...field.source },
+      })
+    }
   }
   next.xp.creation.allocated = calculateLedgerXp(next)
   const age = 16 + selections.reduce((total, selection) => total + selection.offer.chronologyYears, 0)
@@ -379,12 +396,21 @@ export function resolvePendingLifeModuleAward(
     if (cap !== undefined && alreadyAllocated + appliedXp! > cap) throw new Error(`This flexible award may allocate no more than ${cap} XP to one ${normalized.type}.`)
   }
   const moduleHistory = next.lifeModuleHistory.find((entry) => entry.moduleId === pending.moduleId)
-  const provenanceId = moduleHistory?.provenanceIds[0]
+  const fieldGrant = pending.skillFieldChoice
+    ? state.selectedSkillFields.find((entry) => entry.schoolModuleId === pending.moduleId && entry.fieldId === pending.skillFieldChoice!.fieldId)
+    : undefined
+  const provenanceId = fieldGrant?.provenanceId ?? moduleHistory?.provenanceIds[0]
   if (!provenanceId) throw new Error('Pending award module provenance is missing.')
   const ledgerDestination = toLifeModuleDestination(normalized)
   applyDestinationAward(next, ledgerDestination, appliedXp!, provenanceId)
-  recordResolvedAward(state.resolvedAwards, pending, normalized, provenanceId, appliedXp!)
-  next.creation.resolvedChoiceIds.push(`${pending.moduleId}/${pending.awardId}/${destinationKey}/${appliedXp}`)
+  if (pending.skillFieldChoice) {
+    if (!fieldGrant) throw new Error('Pending Field-Skill choice has no matching durable Field grant.')
+    fieldGrant.variableSkillChoices ??= []
+    fieldGrant.variableSkillChoices.push({ componentId: pending.skillFieldChoice.componentId, destination: structuredClone(normalized) })
+  } else {
+    recordResolvedAward(state.resolvedAwards, pending, normalized, provenanceId, appliedXp!)
+    next.creation.resolvedChoiceIds.push(`${pending.moduleId}/${pending.awardId}/${destinationKey}/${appliedXp}`)
+  }
   if (isPool) {
     pending.remainingXp = (pending.remainingXp ?? 0) - appliedXp!
     if (pending.remainingXp === 0) state.pendingAwards.splice(pendingIndex, 1)

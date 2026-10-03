@@ -610,6 +610,19 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     return
   }
   state.pendingAwards.forEach((award, index) => {
+    if (award.skillFieldChoice) {
+      let field
+      try { field = getSkillField(award.skillFieldChoice.fieldId) } catch { /* malformed below */ }
+      const component = field?.variableComponentSkills?.find((entry) => entry.id === award.skillFieldChoice?.componentId)
+      const grant = state.selectedSkillFields.find((entry) => entry.schoolModuleId === award.moduleId && entry.fieldId === award.skillFieldChoice?.fieldId)
+      if (
+        !selectedIds.has(award.moduleId) || !grant || !component || award.kind !== 'any-skill-choice' ||
+        award.requiredSkillId !== component.skillId || award.xpPerGrant !== grant.xpPerSkill || award.remainingGrants !== 1 ||
+        award.allocationMode !== 'fixed-grants' || award.allowedTargetTypes.length !== 1 || award.allowedTargetTypes[0] !== 'skill' ||
+        !award.source.sourceId
+      ) issues.push(issue('life-modules.pending-field-skill.malformed', `creation.lifeModules.pendingAwards.${index}`, 'Pending variable Field-Skill choice is malformed.'))
+      return
+    }
     let catalogAward: LifeModuleAward | undefined
     try { catalogAward = getLifeModule(award.moduleId).awards.find((entry) => entry.id === award.awardId) } catch { /* malformed below */ }
     const poolAward = catalogAward?.kind === 'flexible-xp' && catalogAward.allocationMode === 'pool' ? catalogAward : undefined
@@ -904,6 +917,9 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
     let schoolDefinition: LifeModuleDefinition | undefined
     try { schoolDefinition = school ? getLifeModule(school.moduleId) : undefined } catch { /* school validation reports this */ }
     const offer = schoolDefinition?.skillFieldSelection?.offers.find((entry) => entry.fieldId === grant.fieldId)
+    const variableChoices = grant.variableSkillChoices ?? []
+    const variableComponents = field.variableComponentSkills ?? []
+    const pendingVariableChoices = state.pendingAwards.filter((entry) => entry.skillFieldChoice?.fieldId === field.id && entry.moduleId === grant.schoolModuleId)
     if (
       !grant.id ||
       !school ||
@@ -915,9 +931,21 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
       grant.chronologyYears !== offer?.chronologyYears ||
       !grant.selectedAt ||
       !grant.source.sourceId ||
-      !provenanceIds.has(grant.provenanceId)
+      !provenanceIds.has(grant.provenanceId) ||
+      variableChoices.length + pendingVariableChoices.length !== variableComponents.length ||
+      new Set(variableChoices.map((entry) => entry.componentId)).size !== variableChoices.length
     ) {
       issues.push(issue('life-modules.skill-field.malformed', `creation.lifeModules.selectedSkillFields.${index}`, 'Durable Skill Field record does not match its catalog definition, school, cost, chronology, or provenance.'))
+    }
+    for (const choice of variableChoices) {
+      const component = variableComponents.find((entry) => entry.id === choice.componentId)
+      const parameter = choice.destination.parameter?.value
+      const ledger = character.skills.find((entry) => entry.address.skillId === choice.destination.targetId && entry.address.parameter?.value.toLowerCase() === parameter?.toLowerCase())
+      if (
+        !component || choice.destination.type !== 'skill' || choice.destination.targetId !== component.skillId ||
+        !parameter || !component.legalSubskills.includes(parameter) ||
+        !ledger?.sourceAwards.some((award) => award.provenanceId === grant.provenanceId && award.xp === grant.xpPerSkill)
+      ) issues.push(issue('life-modules.skill-field.choice.malformed', `creation.lifeModules.selectedSkillFields.${index}.variableSkillChoices`, `${field.displayName} variable Skill choice is malformed or lacks its source award.`))
     }
     for (const prerequisite of field.prerequisites) {
       const tracked = state.prerequisiteIssues.find((entry) => entry.moduleId === field.id && entry.prerequisiteId === prerequisite.id)

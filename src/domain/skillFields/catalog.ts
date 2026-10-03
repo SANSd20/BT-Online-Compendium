@@ -23,6 +23,11 @@ export const PILOT_INDUSTRIALMECH_FIELD_ID = 'field.pilot-industrialmech'
 export const TECHNICIAN_AEROSPACE_FIELD_ID = 'field.technician-aerospace'
 export const TECHNICIAN_MECH_FIELD_ID = 'field.technician-mech'
 export const INFANTRY_FIELD_ID = 'field.infantry'
+export const MECHWARRIOR_FIELD_ID = 'field.mechwarrior'
+
+export const TECHNICIAN_SUBSKILLS = [
+  'Aeronautics', 'Cybernetics', 'Electronic', 'Jets', 'Mechanics', 'Myomer', 'Nuclear', 'Weapons',
+] as const
 
 export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
   {
@@ -176,6 +181,29 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       skill('skill.tactics', 'Tactics/Infantry', 'Infantry'),
     ],
   },
+  {
+    id: MECHWARRIOR_FIELD_ID,
+    displayName: 'MechWarrior',
+    category: 'advanced',
+    source: { ...source('skill-field-mechwarrior'), page: 94 },
+    prerequisites: [
+      { id: 'mechwarrior.field', kind: 'skill-field', fieldIds: [BASIC_TRAINING_FIELD_ID], description: 'Basic Training Field' },
+      { id: 'mechwarrior.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 4, description: 'DEX 4+' },
+      { id: 'mechwarrior.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 4, description: 'RFL 4+' },
+    ],
+    componentSkills: [
+      skill('skill.gunnery', 'Gunnery/Mech', 'Mech'),
+      skill('skill.piloting', 'Piloting/Mech', 'Mech'),
+      skill('skill.sensor-operations', 'Sensor Operations'),
+      skill('skill.tactics', 'Tactics/Land', 'Land'),
+    ],
+    variableComponentSkills: [{
+      id: 'mechwarrior.technician-any',
+      displayName: 'Technician Field Skill',
+      skillId: 'skill.technician',
+      legalSubskills: [...TECHNICIAN_SUBSKILLS],
+    }],
+  },
 ]
 
 export function getSkillField(fieldId: string): SkillFieldDefinition {
@@ -185,7 +213,7 @@ export function getSkillField(fieldId: string): SkillFieldDefinition {
 }
 
 export function skillFieldCost(field: SkillFieldDefinition, costXpPerSkill: number): number {
-  return field.componentSkills.length * costXpPerSkill
+  return (field.componentSkills.length + (field.variableComponentSkills?.length ?? 0)) * costXpPerSkill
 }
 
 export function validateSkillFieldCatalog(catalog: readonly SkillFieldDefinition[] = SKILL_FIELD_CATALOG): SkillFieldCatalogValidationIssue[] {
@@ -194,12 +222,17 @@ export function validateSkillFieldCatalog(catalog: readonly SkillFieldDefinition
   for (const field of catalog) {
     if (!field.id || ids.has(field.id)) issues.push({ fieldId: field.id, message: `Duplicate or missing Skill Field ID: ${field.id || '(missing)'}` })
     ids.add(field.id)
-    if (!field.displayName || !field.source.sourceId || field.componentSkills.length === 0) issues.push({ fieldId: field.id, message: 'Skill Field name, source, and component Skills are required.' })
+    if (!field.displayName || !field.source.sourceId || field.componentSkills.length + (field.variableComponentSkills?.length ?? 0) === 0) issues.push({ fieldId: field.id, message: 'Skill Field name, source, and component Skills are required.' })
     const skills = new Set<string>()
     for (const component of field.componentSkills) {
       const key = `${component.address.skillId}/${component.address.parameter?.value ?? ''}`
       if (!component.address.skillId || skills.has(key)) issues.push({ fieldId: field.id, message: `Malformed or duplicate component Skill: ${key}` })
       skills.add(key)
+    }
+    for (const component of field.variableComponentSkills ?? []) {
+      if (!component.id || !component.displayName || !component.skillId || component.legalSubskills.length === 0 || new Set(component.legalSubskills).size !== component.legalSubskills.length) {
+        issues.push({ fieldId: field.id, message: `Malformed variable component Skill: ${component.id || '(missing)'}` })
+      }
     }
   }
   return issues

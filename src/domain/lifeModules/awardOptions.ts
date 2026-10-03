@@ -1,6 +1,7 @@
 import type { CharacterDefinition, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../character/model'
 import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../pointBuy/catalog'
 import { getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions } from './affiliations'
+import { TECHNICIAN_SUBSKILLS } from '../skillFields/catalog'
 
 export interface PendingAwardOption extends ResolvedLifeModuleDestination {
   value: string
@@ -13,6 +14,7 @@ const KNOWN_SUBSKILLS: Readonly<Record<string, readonly string[]>> = {
   'skill.driving': ['Ground', 'Ground Car'],
   'skill.prestidigitation': ['Sleight of Hand'],
   'skill.art': ['Painting'],
+  'skill.technician': TECHNICIAN_SUBSKILLS,
 }
 
 export function knownPendingChoiceValues(pending: Pick<PendingLifeModuleAward, 'choiceSource' | 'kind' | 'requiredSkillId'>): readonly string[] {

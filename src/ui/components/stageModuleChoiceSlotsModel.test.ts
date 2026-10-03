@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, MILITARY_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
+import { BASIC_TRAINING_FIELD_ID, MECHWARRIOR_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { previewSupportedStageModule } from './stageModulePreviewModel'
 import { filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
@@ -79,6 +80,28 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     expect(result.character.skills.find((entry) => entry.displayName === 'Career/Soldier')?.accumulatedXp).toBe(10)
     expect(result.pendingAwards.some((entry) => entry.awardId === 'blue-collar.career')).toBe(false)
     expect(result.complete).toBe(false)
+  })
+
+  it('replaces the MechWarrior Technician preview choice without stale XP or mutation', () => {
+    const character = draftAt('stage-3-selection')
+    const committed = JSON.stringify(character)
+    const fields = [BASIC_TRAINING_FIELD_ID, MECHWARRIOR_FIELD_ID]
+    const base = previewSupportedStageModule(character, MILITARY_ACADEMY_ID, fields)!
+    const pending = base.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.fieldId === MECHWARRIOR_FIELD_ID)!
+
+    const weapons = previewStageModuleChoiceSlots(character, MILITARY_ACADEMY_ID, {
+      [pending.awardId]: [value('skill', 'skill.technician', 'Technician/Weapons', 30, 'Weapons')],
+    }, fields)!
+    const electronic = previewStageModuleChoiceSlots(character, MILITARY_ACADEMY_ID, {
+      [pending.awardId]: [value('skill', 'skill.technician', 'Technician/Electronic', 30, 'Electronic')],
+    }, fields)!
+
+    expect(weapons.character.skills.find((entry) => entry.displayName === 'Technician/Weapons')?.accumulatedXp).toBe(30)
+    expect(electronic.character.skills.some((entry) => entry.displayName === 'Technician/Weapons')).toBe(false)
+    expect(electronic.character.skills.filter((entry) => entry.displayName === 'Technician/Electronic')).toHaveLength(1)
+    expect(electronic.character.skills.find((entry) => entry.displayName === 'Technician/Electronic')?.accumulatedXp).toBe(30)
+    expect(electronic.pendingAwards.some((entry) => entry.skillFieldChoice?.fieldId === MECHWARRIOR_FIELD_ID)).toBe(false)
+    expect(JSON.stringify(character)).toBe(committed)
   })
 
   it('reports assigned, remaining, and over-limit flexible XP as slot amounts change', () => {

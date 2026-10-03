@@ -17,7 +17,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · Slice 60 · v0.1.0-alpha.60')
+    expect(markup).toContain('Public Alpha · Slice 61 · v0.1.0-alpha.61')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -118,12 +118,14 @@ describe('Life Modules wizard presentation', () => {
     }
   })
 
-  it('renders Trait TP with XP and Skill XP instead of level-style summary values', () => {
+  it('renders resolved Trait ratings beside full names and leaves XP on the right', () => {
     const character = createLifeModuleCharacter('XP Summary')
     const preview = previewStage0Affiliation(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')
     const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={character} previewCharacter={preview} />)
-    expect(markup).toContain('<span>Exceptional Attribute/EDG</span><strong>1 TP · 100 XP</strong>')
-    expect(markup).toContain('<span>Compulsion/Paranoia</span><strong>-1 TP · -100 XP</strong>')
+    expect(markup).toContain('<span>Exceptional Attribute/EDG (1)</span><strong>100 XP</strong>')
+    expect(markup).toContain('<span>Compulsion/Paranoia (-1)</span><strong>-100 XP</strong>')
+    expect(markup).toContain('<span>Wealth</span><strong>pending · 15 XP</strong>')
+    expect(markup).not.toContain(' TP · ')
     expect(markup).toContain('<span>Language/Mandarin Chinese</span><strong>20 XP</strong>')
     expect(markup).toContain('<span>Language/Russian</span><strong>10 XP</strong>')
     expect(markup).toContain('<span>Language/English</span><strong>20 XP</strong>')
@@ -181,7 +183,7 @@ describe('Life Modules wizard presentation', () => {
     expect(markup).toContain('Not saved until Continue')
     expect(markup).toContain('<li class="preview-row">Back Woods</li>')
     expect(markup).toContain('<span>BOD</span><strong>200</strong>')
-    expect(markup).toContain('<span>Fit</span><strong>1 TP · 100 XP</strong>')
+    expect(markup).toContain('<span>Fit (1)</span><strong>100 XP</strong>')
     expect(markup).toContain('<span>Martial Arts</span><strong>15 XP</strong>')
     expect(markup).toContain('Pending preview choices')
     expect(markup).toContain('pending · 50 XP')

@@ -238,6 +238,10 @@ export interface PendingLifeModuleAward {
   allowedTargetTypes: Array<'attribute' | 'trait' | 'skill'>
   choiceSource?: AffiliationLanguageSelectorGroupId
   requiredSkillId?: string
+  skillFieldChoice?: {
+    fieldId: string
+    componentId: string
+  }
   source: SourceCitation
 }
 
@@ -282,6 +286,10 @@ export interface SkillFieldGrantRecord {
   selectedAt: string
   provenanceId: string
   source: SourceCitation
+  variableSkillChoices?: Array<{
+    componentId: string
+    destination: ResolvedLifeModuleDestination
+  }>
 }
 
 export interface LifeModuleFinalAllocationRecord {

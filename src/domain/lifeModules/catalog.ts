@@ -288,13 +288,14 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       offers: [
         { fieldId: 'field.basic-training', category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: 'field.infantry', category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: 'field.mechwarrior', category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
       ],
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
       referenceOnlyOffers: [
         { displayName: 'Basic Training (Naval)', category: 'basic', chronologyYears: 1, reason: 'Mechanical Field dependencies are not yet implemented.' },
-        ...['Analysis', 'Cavalry', 'Marine', 'MechWarrior', 'Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)', 'Pilot/DropShip', 'Scientist', 'Scout', 'Ship’s Crew'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1, reason: displayName === 'MechWarrior' ? 'Technician/Any still requires an explicit player-choice destination.' : 'Mechanical Field dependencies are not yet implemented.' })),
+        ...['Analysis', 'Cavalry', 'Marine', 'Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)', 'Pilot/DropShip', 'Scientist', 'Scout', 'Ship’s Crew'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1, reason: 'Mechanical Field dependencies are not yet implemented.' })),
         ...['Doctor', 'Infantry/Anti-Mech', 'Military Scientist', 'Pilot/Battle Armor', 'Pilot/JumpShip', 'Pilot/WarShip', 'Special Forces'].map((displayName) => ({ displayName, category: 'special' as const, chronologyYears: 2, reason: 'Mechanical Field dependencies are not yet implemented.' })),
       ],
     },

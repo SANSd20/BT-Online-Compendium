@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
-import { BASIC_TRAINING_FIELD_ID, CARTOGRAPHER_FIELD_ID, INFANTRY_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, CARTOGRAPHER_FIELD_ID, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
@@ -470,6 +470,60 @@ describe('Life Module engine', () => {
     expect(decoded.creation.lifeModules!.selectedSkillFields.map((entry) => entry.fieldId)).toEqual([BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID])
     expect(decoded.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'military-academy.flexible')?.remainingXp).toBe(100)
     expect(validateCharacter(decoded).valid).toBe(true)
+  })
+
+  it('requires and durably resolves the source-backed MechWarrior Technician/Any Field Skill', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const before = JSON.stringify(selecting)
+    let character = applyMilitaryAcademy(selecting, [BASIC_TRAINING_FIELD_ID, MECHWARRIOR_FIELD_ID])
+    const state = character.creation.lifeModules!
+    const pending = state.pendingAwards.find((entry) => entry.skillFieldChoice?.fieldId === MECHWARRIOR_FIELD_ID)!
+
+    expect(character.lifeModuleHistory.at(-1)).toMatchObject({ moduleId: MILITARY_ACADEMY_ID, costXp: 1070, fieldCostXp: 240 })
+    expect(state.selectedSkillFields.find((entry) => entry.fieldId === MECHWARRIOR_FIELD_ID)).toMatchObject({ purchaseCostXp: 120, xpPerSkill: 30, chronologyYears: 1, variableSkillChoices: [] })
+    expect(pending).toMatchObject({ kind: 'any-skill-choice', requiredSkillId: 'skill.technician', xpPerGrant: 30, remainingGrants: 1 })
+    expect(character.skills.some((entry) => entry.address.skillId === 'skill.technician' && TECHNICIAN_SUBSKILLS.includes(entry.address.parameter?.value as typeof TECHNICIAN_SUBSKILLS[number]))).toBe(false)
+    expect(state.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'mechwarrior.field')?.status).toBe('satisfied')
+    expect(JSON.stringify(selecting)).toBe(before)
+
+    character = resolvePendingLifeModuleAward(character, pending.id, {
+      type: 'skill', targetId: 'skill.technician', displayName: 'Technician/Weapons', parameter: { kind: 'subskill', value: 'Weapons' },
+    })
+    expect(character.skills.find((entry) => entry.displayName === 'Technician/Weapons')).toMatchObject({ accumulatedXp: 30 })
+    expect(character.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === MECHWARRIOR_FIELD_ID)?.variableSkillChoices).toEqual([
+      expect.objectContaining({ componentId: 'mechwarrior.technician-any', destination: expect.objectContaining({ displayName: 'Technician/Weapons' }) }),
+    ])
+    expect(character.creation.lifeModules!.pendingAwards.some((entry) => entry.skillFieldChoice?.fieldId === MECHWARRIOR_FIELD_ID)).toBe(false)
+
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-10-02T00:00:00.000Z'))
+    expect(decoded).toEqual(character)
+    expect(decoded.skills.filter((entry) => entry.displayName === 'Technician/Weapons')).toHaveLength(1)
+    expect(validateCharacter(decoded).valid).toBe(true)
+  })
+
+  it('does not accept MechWarrior component Skills in place of actual Basic Training', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const withFields = applyMilitaryAcademy(selecting, [BASIC_TRAINING_FIELD_ID, MECHWARRIOR_FIELD_ID])
+    const componentSkillsOnly = structuredClone(selecting)
+    componentSkillsOnly.skills.push(...withFields.skills.filter((entry) => ['Career/Soldier', 'Martial Arts', 'MedTech/General', 'Navigation/Ground', 'Small Arms'].includes(entry.displayName ?? '')).map((entry) => structuredClone(entry)))
+    componentSkillsOnly.creation.lifeModules!.selectedSkillFields.push({ ...structuredClone(withFields.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === MECHWARRIOR_FIELD_ID)!), id: 'component-only-mechwarrior' })
+    reevaluateLifeModulePrerequisites(componentSkillsOnly)
+    expect(componentSkillsOnly.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'mechwarrior.field')?.status).toBe('outstanding')
+  })
+
+  it('adds the variable Field award to an existing concrete Technician Skill without duplication', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    selecting.skills.push({
+      address: { skillId: 'skill.technician', parameter: { kind: 'subskill', value: 'Weapons' } },
+      displayName: 'Technician/Weapons', accumulatedXp: 10, level: null, sourceAwards: [],
+    })
+    let character = applyMilitaryAcademy(selecting, [BASIC_TRAINING_FIELD_ID, MECHWARRIOR_FIELD_ID])
+    const pending = character.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.fieldId === MECHWARRIOR_FIELD_ID)!
+    character = resolvePendingLifeModuleAward(character, pending.id, {
+      type: 'skill', targetId: 'skill.technician', displayName: 'Technician/Weapons', parameter: { kind: 'subskill', value: 'Weapons' },
+    })
+    expect(character.skills.filter((entry) => entry.displayName === 'Technician/Weapons')).toHaveLength(1)
+    expect(character.skills.find((entry) => entry.displayName === 'Technician/Weapons')?.accumulatedXp).toBe(40)
   })
 
   it.each([

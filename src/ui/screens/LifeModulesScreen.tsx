@@ -7,7 +7,7 @@ import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardO
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
-import { BASIC_TRAINING_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyStage0Affiliation, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
@@ -234,7 +234,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     const selectedOffers = offers.filter((offer) => candidateFieldIds.includes(offer.fieldId))
     const advancedCount = selectedOffers.filter((entry) => entry.category === 'advanced').length
     const years = selectedOffers.reduce((total, offer) => total + offer.chronologyYears, 0)
-    const cost = selectedOffers.reduce((total, offer) => total + getSkillField(offer.fieldId).componentSkills.length * offer.costXpPerSkill, school.costXp)
+    const cost = selectedOffers.reduce((total, offer) => total + skillFieldCost(getSkillField(offer.fieldId), offer.costXpPerSkill), school.costXp)
     return <article key={schoolId} className={isSelected ? 'preview-selected' : ''}>
       <h3>{school.displayName}</h3>
       <p>{school.costXp} XP base cost · choose exactly one Basic Field and one or two Advanced Fields. Each Field Skill receives +30 XP at a cost of 24 XP.</p>
@@ -244,7 +244,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           const field = getSkillField(offer.fieldId)
           const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds)
           const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
-          return <label key={field.id}><input type="radio" name={`${schoolId}-basic`} checked={isSelected && stage3FieldIds.includes(field.id)} disabled={!isSelected || availability.state === 'unavailable'} onChange={() => selectStage3BasicField(field.id)} /> {field.displayName} — {field.componentSkills.length * offer.costXpPerSkill} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
+          return <label key={field.id}><input type="radio" name={`${schoolId}-basic`} checked={isSelected && stage3FieldIds.includes(field.id)} disabled={!isSelected || availability.state === 'unavailable'} onChange={() => selectStage3BasicField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
         })}
       </fieldset>
       <fieldset><legend>Advanced Fields</legend>
@@ -253,12 +253,11 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           const selected = isSelected && stage3FieldIds.includes(field.id)
           const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds)
           const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
-          return <label key={field.id}><input type="checkbox" checked={selected} disabled={!isSelected || (!selected && (availability.state === 'unavailable' || advancedCount >= 2))} onChange={() => toggleStage3AdvancedField(field.id)} /> {field.displayName} — {field.componentSkills.length * offer.costXpPerSkill} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
+          return <label key={field.id}><input type="checkbox" checked={selected} disabled={!isSelected || (selected ? advancedCount <= 1 : availability.state === 'unavailable' || advancedCount >= 2)} onChange={() => toggleStage3AdvancedField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
         })}
       </fieldset>
       {isSelected && <p><strong>Total: {cost} XP · +{years} years · expected age {16 + years}</strong></p>}
       {school.skillFieldSelection!.referenceOnlyOffers && <details><summary>Source-offered reference-only Fields</summary><ul>{school.skillFieldSelection!.referenceOnlyOffers!.map((offer) => <li key={`${offer.category}/${offer.displayName}`}><strong>{offer.displayName}</strong> ({offer.category}, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'}): {offer.reason}</li>)}</ul></details>}
-      {schoolId === MILITARY_ACADEMY_ID && <p className="scope-note"><strong>MechWarrior remains reference-only:</strong> military schooling is now supported, but Technician/Any still requires an explicit player-choice destination.</p>}
       <button className="button" type="button" aria-pressed={isSelected} onClick={() => selectStageModule(schoolId)}>Preview {school.displayName} path</button>
     </article>
   }
@@ -292,7 +291,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               {pending.allocationMode === 'pool' && <label htmlFor={`${slotId}-xp`}>XP
                 <input id={`${slotId}-xp`} type="number" min="1" max={pending.remainingXp} step="1" aria-describedby={`${slotId}-label ${slotId}-help`} value={value.xpAmount} onChange={(event) => updateStageChoiceSlot(pending, index, { xpAmount: Number(event.target.value) })} />
               </label>}
-              {options.length > 0 && <label htmlFor={`${slotId}-destination`}>{pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Destination'}
+              {options.length > 0 && <label htmlFor={`${slotId}-destination`}>{pending.skillFieldChoice ? 'Technician subskill' : pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Destination'}
                 <select id={`${slotId}-destination`} aria-describedby={`${slotId}-label ${slotId}-help`} value={optionValue(value)} onChange={(event) => {
                   const option = options.find((candidate) => candidate.value === event.target.value)
                   if (option) updateStageChoiceSlot(pending, index, optionDraft(option, value.xpAmount))
@@ -651,7 +650,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <summary>Show applied awards</summary>
             <div className="award-columns">
               <div><h3>Attributes</h3><ul>{character.attributes.map((entry) => <li key={entry.attributeId}>{entry.attributeId}: {signed(entry.accumulatedXp)} XP · attained {entry.purchasedLevel ?? '—'}</li>)}</ul></div>
-              <div><h3>Traits</h3><ul>{character.traits.map((entry, index) => <li key={`${entry.traitId}-${index}`}>{entry.displayName}: {signed(entry.accumulatedXp)} XP · {entry.active ? `${signed(entry.attainedTp ?? 0)} TP active` : 'not yet active'}</li>)}</ul></div>
+              <div><h3>Traits</h3><ul>{character.traits.map((entry, index) => <li key={`${entry.traitId}-${index}`}>{entry.displayName}{entry.active && entry.attainedTp !== null ? ` (${entry.attainedTp})` : ''}: {entry.active ? `${signed(entry.accumulatedXp)} XP` : entry.accumulatedXp !== 0 ? `pending · ${signed(entry.accumulatedXp)} XP` : 'pending'}</li>)}</ul></div>
               <div><h3>Skills</h3><ul>{character.skills.map((entry) => <li key={`${entry.address.skillId}-${entry.address.parameter?.value ?? ''}`}>{entry.displayName}: {signed(entry.accumulatedXp)} XP · {entry.level === null ? 'untrained' : `Level +${entry.level}`}</li>)}</ul></div>
             </div>
           </details>

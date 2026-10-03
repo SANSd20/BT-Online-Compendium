@@ -10,6 +10,12 @@ export interface SkillFieldDefinition {
   source: SourceCitation
   prerequisites: LifeModulePrerequisite[]
   componentSkills: Array<Extract<LifeModuleDestination, { type: 'skill' }>>
+  variableComponentSkills?: Array<{
+    id: string
+    displayName: string
+    skillId: string
+    legalSubskills: string[]
+  }>
 }
 
 export interface SkillFieldCatalogValidationIssue {
