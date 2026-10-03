@@ -16,16 +16,20 @@ describe('Alpha Slice 68 promoted Stage 3 Field offers', () => {
       { fieldId: 'field.communications', category: 'advanced', chronologyYears: 1 },
       { fieldId: 'field.covert-operations', category: 'special', chronologyYears: 2 },
       { fieldId: 'field.police-tactical-officer', category: 'special', chronologyYears: 2 },
+      { fieldId: 'field.special-forces', category: 'special', chronologyYears: 2 },
     ]))
     expect(offers(INTELLIGENCE_OPERATIVE_TRAINING_ID)).toEqual(expect.arrayContaining([
       { fieldId: 'field.analysis', category: 'advanced', chronologyYears: 1 },
       { fieldId: 'field.covert-operations', category: 'advanced', chronologyYears: 1 },
       { fieldId: 'field.police-tactical-officer', category: 'special', chronologyYears: 2 },
+      { fieldId: 'field.special-forces', category: 'special', chronologyYears: 2 },
     ]))
     expect(offers(MILITARY_ACADEMY_ID)).toEqual(expect.arrayContaining([
       { fieldId: 'field.analysis', category: 'advanced', chronologyYears: 1 },
+      { fieldId: 'field.scientist', category: 'advanced', chronologyYears: 1 },
       { fieldId: 'field.doctor', category: 'special', chronologyYears: 2 },
       { fieldId: 'field.military-scientist', category: 'special', chronologyYears: 2 },
+      { fieldId: 'field.special-forces', category: 'special', chronologyYears: 2 },
     ]))
     expect(offers(MILITARY_ENLISTMENT_ID)).toEqual(expect.arrayContaining([
       { fieldId: 'field.medical-assistant', category: 'advanced', chronologyYears: 1.5 },
@@ -35,6 +39,7 @@ describe('Alpha Slice 68 promoted Stage 3 Field offers', () => {
       { fieldId: 'field.technician-aerospace', category: 'special', chronologyYears: 1 },
       { fieldId: 'field.technician-mech', category: 'special', chronologyYears: 1 },
       { fieldId: 'field.technician-vehicle', category: 'special', chronologyYears: 1 },
+      { fieldId: 'field.special-forces', category: 'special', chronologyYears: 1 },
     ]))
   })
 })

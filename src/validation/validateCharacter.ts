@@ -21,7 +21,8 @@ import {
 import type { ValidationIssue, ValidationResult } from './model'
 import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
-import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
+import { knownPendingChoiceValues, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
+import { openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
 import { getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { stage3SchoolClassification, stage3SchoolEligibility, usedStage3SchoolFamilies } from '../domain/lifeModules/stage3Schooling'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
@@ -889,6 +890,19 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
       requiredSkillId: award.kind === 'affiliation-skill-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' ? award.skillId : award.kind === 'language-choice' ? 'skill.language' : undefined,
     })
     const knownChoiceValid = state.awardSelectorVersion !== 1 || knownChoices.length === 0 || knownChoices.includes(resolved.destination.parameter?.value ?? '')
+    const openSubject = pendingOpenSubject({
+      kind: award.kind,
+      requiredSkillId,
+    })
+    let openSubjectValid = true
+    if (openSubject) {
+      try {
+        const canonical = openSkillSubjectDestination(openSubject.skillId, resolved.destination.parameter?.value ?? '')
+        openSubjectValid = JSON.stringify(canonical) === JSON.stringify(resolved.destination)
+      } catch {
+        openSubjectValid = false
+      }
+    }
     if (
       resolved.kind !== award.kind ||
       (expectedXp === null ? !Number.isInteger(resolved.xp) || resolved.xp <= 0 : resolved.xp !== expectedXp) ||
@@ -898,6 +912,7 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
       !targetIdValid ||
       !languageValid ||
       !knownChoiceValid ||
+      !openSubjectValid ||
       !resolved.source.sourceId ||
       !provenanceIds.has(resolved.provenanceId)
     ) {
@@ -958,9 +973,16 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
       const component = variableComponents.find((entry) => entry.id === choice.componentId)
       const parameter = choice.destination.parameter?.value
       const ledger = character.skills.find((entry) => entry.address.skillId === choice.destination.targetId && entry.address.parameter?.value.toLowerCase() === parameter?.toLowerCase())
+      let openSubjectValid = false
+      if (component?.inputMode === 'open-subject' && parameter) {
+        try {
+          const canonical = openSkillSubjectDestination(component.skillId, parameter)
+          openSubjectValid = canonical.targetId === choice.destination.targetId && canonical.displayName === choice.destination.displayName && canonical.parameter?.value === parameter
+        } catch { /* malformed below */ }
+      }
       if (
         !component || choice.destination.type !== 'skill' || choice.destination.targetId !== component.skillId ||
-        !parameter || !component.legalSubskills.includes(parameter) ||
+        !parameter || (component.inputMode === 'open-subject' ? !openSubjectValid : !component.legalSubskills.includes(parameter)) ||
         !ledger?.sourceAwards.some((award) => award.provenanceId === grant.provenanceId && award.xp === grant.xpPerSkill)
       ) issues.push(issue('life-modules.skill-field.choice.malformed', `creation.lifeModules.selectedSkillFields.${index}.variableSkillChoices`, `${field.displayName} variable Skill choice is malformed or lacks its source award.`))
     }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
-import { ANALYSIS_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, OFFICER_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { ANALYSIS_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, OFFICER_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
@@ -219,7 +219,7 @@ describe('Life Module engine', () => {
     let character = applyStage1Module(completeStage0(), BLUE_COLLAR_ID)
     character = resolveByAward(character, 'blue-collar.interests', 'skill.interest', 'Interest/History', 'History')
     expect(() => resolveByAward(character, 'blue-collar.interests', 'skill.interest', 'Interest/History', 'History')).toThrow('already been selected')
-    expect(() => resolveByAward(character, 'blue-collar.career', 'skill.career', 'Career', '')).toThrow('concrete language or subskill')
+    expect(() => resolveByAward(character, 'blue-collar.career', 'skill.career', 'Career', '')).toThrow('Enter a subject')
 
     const backWoods = applyStage1Module(completeStage0(), BACK_WOODS_ID)
     const flexible = backWoods.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'back-woods.flexible')!
@@ -258,10 +258,11 @@ describe('Life Module engine', () => {
     expect(continueToStage2(character).creation.lifeModules?.phase).toBe('stage-2-selection')
   })
 
-  it('rejects values outside safe known pending-award choices', () => {
+  it('rejects values outside bounded choices while accepting a valid open Survival environment', () => {
     const character = applyStage1Module(completeStage0(), BACK_WOODS_ID)
     expect(() => resolveByAward(character, 'commonality.language.fedsuns', 'skill.language', 'Language/Klingon', 'Klingon')).toThrow('safe known choice')
-    expect(() => resolveByAward(character, 'back-woods.skill.survival', 'skill.survival', 'Survival/Ocean', 'Ocean')).toThrow('safe known choice')
+    expect(resolveByAward(character, 'back-woods.skill.survival', 'skill.survival', 'Survival/Ocean', 'Ocean').skills).toContainEqual(expect.objectContaining({ displayName: 'Survival/Ocean' }))
+    expect(() => resolveByAward(character, 'back-woods.skill.survival', 'skill.survival', 'Survival/Forest/Jungle', 'Forest/Jungle')).toThrow('Slash characters')
   })
 
   it('round-trips partially resolved and unresolved award state', () => {
@@ -284,6 +285,13 @@ describe('Life Module engine', () => {
     expect(ids).toContain('life-modules.resolution.malformed')
     expect(ids).toContain('life-modules.choice-requirement.malformed')
     expect(ids).toContain('life-modules.choice-requirement.missing')
+  })
+
+  it('rejects imported open-subject resolutions that do not retain their canonical parent and display name', () => {
+    let character = applyStage1Module(completeStage0(), BLUE_COLLAR_ID)
+    character = resolveByAward(character, 'blue-collar.career', 'skill.career', 'Career/Soldier', 'Soldier')
+    character.creation.lifeModules!.resolvedAwards.at(-1)!.destination.displayName = 'Interest/Soldier'
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).toContain('life-modules.resolution.malformed')
   })
 
   it('reports malformed premature Stage 4 continuation and unsupported finalization', () => {
@@ -922,6 +930,49 @@ describe('Life Module engine', () => {
     expect(() => resolvePendingLifeModuleAward(character, languageChoices[1].id, {
       type: 'skill', targetId: 'skill.language', displayName: 'Language/Mandarin Chinese', parameter: { kind: 'subskill', value: 'Mandarin Chinese' },
     })).toThrow('distinct concrete destination')
+  })
+
+  it('commits and round-trips canonical open Scientist subjects without duplicate Skills or reopened choices', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const existingInterest = selecting.skills.find((entry) => entry.address.skillId === 'skill.interest' && entry.address.parameter?.value === 'Science')
+    expect(existingInterest).toBeDefined()
+    const beforeXp = existingInterest!.accumulatedXp
+    let character = applyStage3School(selecting, MILITARY_ACADEMY_ID, [BASIC_TRAINING_FIELD_ID, SCIENTIST_FIELD_ID])
+    const interest = character.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.componentId === 'scientist.interest-any')!
+    const science = character.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.componentId === 'scientist.science-any')!
+    expect(interest).toBeDefined()
+    expect(science).toBeDefined()
+    expect(() => resolvePendingLifeModuleAward(character, science.id, {
+      type: 'skill', targetId: 'skill.science', displayName: 'Science/Bad/Escape', parameter: { kind: 'subskill', value: 'Bad/Escape' },
+    })).toThrow('Slash characters')
+    character = resolvePendingLifeModuleAward(character, interest.id, {
+      type: 'skill', targetId: 'skill.interest', displayName: 'ignored', parameter: { kind: 'subskill', value: '  Science  ' },
+    })
+    character = resolvePendingLifeModuleAward(character, science.id, {
+      type: 'skill', targetId: 'skill.science', displayName: 'ignored', parameter: { kind: 'subskill', value: '  K-F   Drive Physics  ' },
+    })
+    const flexible = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'military-academy.flexible')!
+    character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 100)
+    expect(character.skills.filter((entry) => entry.displayName === 'Interest/Science')).toHaveLength(1)
+    expect(character.skills.find((entry) => entry.displayName === 'Interest/Science')?.accumulatedXp).toBe(beforeXp + 30)
+    expect(character.skills.find((entry) => entry.displayName === 'Science/K-F Drive Physics')).toMatchObject({ accumulatedXp: 30 })
+    expect(character.creation.lifeModules!.pendingAwards.some((entry) => entry.skillFieldChoice?.fieldId === SCIENTIST_FIELD_ID)).toBe(false)
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-10-03T00:00:00.000Z'))
+    expect(decoded).toEqual(character)
+    expect(decoded.skills.filter((entry) => entry.displayName === 'Science/K-F Drive Physics')).toHaveLength(1)
+    expect(decoded.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === SCIENTIST_FIELD_ID)?.variableSkillChoices).toEqual(expect.arrayContaining([
+      expect.objectContaining({ componentId: 'scientist.science-any', destination: expect.objectContaining({ targetId: 'skill.science', parameter: { kind: 'subskill', value: 'K-F Drive Physics' } }) }),
+    ]))
+  })
+
+  it('creates explicit Survival and bounded Tracking choices for Special Forces', () => {
+    const character = applyStage3School(continueToStage3(completeHighSchoolStage2()), MILITARY_ACADEMY_ID, [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID, SPECIAL_FORCES_FIELD_ID])
+    const choices = character.creation.lifeModules!.pendingAwards.filter((entry) => entry.skillFieldChoice?.fieldId === SPECIAL_FORCES_FIELD_ID)
+    expect(character.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === SPECIAL_FORCES_FIELD_ID)).toMatchObject({ purchaseCostXp: 144, xpPerSkill: 30, chronologyYears: 2 })
+    expect(choices).toEqual(expect.arrayContaining([
+      expect.objectContaining({ requiredSkillId: 'skill.survival', remainingGrants: 1 }),
+      expect.objectContaining({ requiredSkillId: 'skill.tracking', remainingGrants: 1 }),
+    ]))
   })
 
   it.each([

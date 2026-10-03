@@ -139,3 +139,7 @@ Corrected-printing p. 94 defines Officer as a five-Skill Field requiring Basic T
 ## Alpha Slice 68 — governed `/Any` dependencies
 
 The Corrected Third Printing Master Skill Fields list on pp. 92–95 is authoritative for Field prerequisites and components. Stage 3 school tables on pp. 82–83 are authoritative for offer category and duration. The v4.0 errata was checked for applicable corrections; its Military Academy Pilot/WarShip correction is already reflected in the corrected printing and does not alter the Slice 68 variable-choice semantics. The implementation distinguishes closed canonical subskill sets, modeled bounded language/affiliation subsets, named finite source options, affiliation-bound automatic awards, and open GM-defined choices. See `docs/STAGE3-FIELD-DEPENDENCY-AUDIT.md`.
+
+## Alpha Slice 69 — open Skill subjects
+
+Corrected-printing pp. 144, 147–148, 153, and 156–157 govern Career, Interest, Science, and Survival. Each is open rather than an exhaustive finite list, while the parent Skill remains fixed and the gamemaster determines whether a proposed subject applies instead of a better-fitting Skill. Survival is restricted to general environment types and carries planet-specific guidance. Master Skill Fields pp. 93–94 and Stage 3 school tables pp. 82–83 authorize Scientist and Special Forces with their implemented categories and durations. The v4.0 errata contains no semantic correction for these four parent Skills. See `docs/OPEN-SKILL-SUBJECT-AUDIT.md`.

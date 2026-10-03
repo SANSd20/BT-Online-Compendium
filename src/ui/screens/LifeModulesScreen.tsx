@@ -3,7 +3,7 @@ import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalo
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
-import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
+import { pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
@@ -19,7 +19,7 @@ import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../co
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesAffiliationTheme, previewStage0Affiliation } from '../components/stage0PreviewModel'
 import { defaultStage3FieldIds, previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
-import { emptyStageChoiceSlot, filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
+import { emptyStageChoiceSlot, filterSiblingDestinationOptions, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -296,6 +296,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             const unfilteredOptions = pending.kind === 'flexible-xp' && !value.targetType ? [] : pendingAwardOptions(optionPending, optionCharacter)
             const relatedSiblingValues = relatedStageChoiceSlotValues(pending, siblingAwards, stageChoiceSlotValues)
             const options = filterSiblingDestinationOptions(unfilteredOptions, values, index, relatedSiblingValues)
+            const openSubject = pendingOpenSubject(pending)
+            const openSubjectResult = openSubject ? openSubjectStageChoiceSlot(pending, value.subjectInput ?? '') : null
             const unsupported = value.targetType ? pendingAwardUnsupportedMessage(optionPending, options) : null
             const slotLabel = stageChoiceSlotLabel(pending, index)
             const slotId = `${pending.id.replace(/[^a-zA-Z0-9_-]/g, '-')}-${index}`
@@ -311,6 +313,14 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               {pending.allocationMode === 'pool' && <label htmlFor={`${slotId}-xp`}>XP
                 <input id={`${slotId}-xp`} type="number" min="1" max={pending.remainingXp} step="1" aria-describedby={`${slotId}-label ${slotId}-help`} value={value.xpAmount} onChange={(event) => updateStageChoiceSlot(pending, index, { xpAmount: Number(event.target.value) })} />
               </label>}
+              {openSubject && <label htmlFor={`${slotId}-subject`}>{openSubject.parentLabel} subject
+                <input id={`${slotId}-subject`} type="text" value={value.subjectInput ?? ''} maxLength={60} aria-describedby={`${slotId}-label ${slotId}-help ${slotId}-subject-help`} onChange={(event) => {
+                  const result = openSubjectStageChoiceSlot(pending, event.target.value)
+                  updateStageChoiceSlot(pending, index, result.value)
+                }} />
+                <span id={`${slotId}-subject-help`}>{openSubject.description} Examples are illustrative, not a closed list.</span>
+              </label>}
+              {openSubjectResult?.error && <p className="notice" role="alert">{openSubjectResult.error}</p>}
               {options.length > 0 && <label htmlFor={`${slotId}-destination`}>{pending.skillFieldChoice ? 'Field Skill subskill' : pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Destination'}
                 <select id={`${slotId}-destination`} aria-describedby={`${slotId}-label ${slotId}-help`} value={optionValue(value)} onChange={(event) => {
                   const option = options.find((candidate) => candidate.value === event.target.value)
@@ -743,6 +753,7 @@ function optionValue(draft: Pick<StageChoiceSlotValue, 'targetType' | 'targetId'
 }
 
 function pendingAwardSupportsSlot(pending: PendingLifeModuleAward, character: CharacterDefinition): boolean {
+  if (pendingOpenSubject(pending)) return true
   if (pending.kind !== 'flexible-xp') return pendingAwardOptions(pending, character).length > 0
   return pending.allowedTargetTypes.some((targetType) => pendingAwardOptions({ ...pending, allowedTargetTypes: [targetType] }, character).length > 0)
 }

@@ -2,15 +2,47 @@ import type { CharacterDefinition, PendingLifeModuleAward, ResolvedLifeModuleDes
 import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../pointBuy/catalog'
 import { getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions } from './affiliations'
 import { getSkillField, TECHNICIAN_SUBSKILLS } from '../skillFields/catalog'
+import { getVariableSkillDomain } from '../skillFields/variableSkillDomains'
 
 export interface PendingAwardOption extends ResolvedLifeModuleDestination {
   value: string
 }
 
+export interface PendingOpenSubject {
+  skillId: string
+  parentLabel: string
+  description: string
+}
+
+export function pendingOpenSubject(pending: Pick<PendingLifeModuleAward, 'kind' | 'requiredSkillId' | 'skillFieldChoice'>): PendingOpenSubject | null {
+  let skillId: string | undefined
+  let description: string | undefined
+  if (pending.skillFieldChoice) {
+    const component = getSkillField(pending.skillFieldChoice.fieldId).variableComponentSkills
+      ?.find((entry) => entry.id === pending.skillFieldChoice?.componentId)
+    if (!component) return null
+    const domain = getVariableSkillDomain(component.choiceDomainId)
+    if (domain.inputMode !== 'open-subject') return null
+    skillId = component.skillId
+    description = domain.description
+  } else if (pending.kind === 'any-skill-choice' && pending.requiredSkillId) {
+    const domain = VARIABLE_OPEN_DOMAINS.find((entry) => entry.skillId === pending.requiredSkillId)
+    if (!domain) return null
+    skillId = domain.skillId
+    description = domain.description
+  }
+  if (!skillId || !description) return null
+  return { skillId, parentLabel: skillName(skillId), description }
+}
+
+const VARIABLE_OPEN_DOMAINS = [
+  getVariableSkillDomain('open-career-subject'),
+  getVariableSkillDomain('open-interest-subject'),
+  getVariableSkillDomain('open-science-subject'),
+  getVariableSkillDomain('open-survival-environment'),
+]
+
 const KNOWN_SUBSKILLS: Readonly<Record<string, readonly string[]>> = {
-  'skill.career': ['Journalist', 'Lawyer', 'Pilot', 'Soldier', 'Technician'],
-  'skill.interest': ['Art', 'BattleMechs', 'Clan Remembrance', 'Engineering', 'FedSuns History', 'History', 'Law', 'Modern Fashion', 'Music', 'Physics', 'Science'],
-  'skill.survival': ['Badlands', 'Desert', 'Forest'],
   'skill.driving': ['Ground', 'Ground Car'],
   'skill.prestidigitation': ['Sleight of Hand'],
   'skill.art': ['Painting'],
@@ -47,6 +79,7 @@ export function pendingAwardOptions(pending: PendingLifeModuleAward, character: 
 }
 
 export function pendingAwardUnsupportedMessage(pending: PendingLifeModuleAward, options: PendingAwardOption[]): string | null {
+  if (pendingOpenSubject(pending)) return null
   if (options.length > 0) return null
   if (pending.requiredSkillId) return `No source-backed ${skillName(pending.requiredSkillId)} choices are available in the current Alpha data. This award remains pending.`
   return 'No safe existing destination is available for this target type. Choose another target type or leave this award pending.'

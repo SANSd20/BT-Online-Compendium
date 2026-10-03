@@ -15,6 +15,7 @@ export interface SkillFieldDefinition {
     displayName: string
     skillId: string
     choiceDomainId: string
+    inputMode?: 'select' | 'open-subject'
     legalSubskills: string[]
   }>
   affiliationBoundComponentSkills?: Array<{

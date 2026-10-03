@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { BACK_WOODS_ID, CAPELLAN_COMMONALITY_ID } from './catalog'
-import { pendingAwardOptions } from './awardOptions'
+import { pendingAwardOptions, pendingOpenSubject } from './awardOptions'
 import { CAVALRY_FIELD_ID, DRIVING_SUBSKILLS, MARINE_FIELD_ID, SECURITY_SYSTEMS_SUBSKILLS, VEHICLE_GUNNERY_SUBSKILLS } from '../skillFields/catalog'
 
 function backWoodsDraft() {
@@ -56,12 +56,11 @@ describe('Life Module pending award options', () => {
     ]))
   })
 
-  it('offers safe Survival subskills from current Alpha data', () => {
+  it('classifies Survival as an explicit open environment subject without a fabricated option list', () => {
     const character = backWoodsDraft()
     const pending = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'back-woods.skill.survival')!
-    expect(pendingAwardOptions(pending, character).map((entry) => entry.displayName)).toEqual([
-      'Survival/Badlands', 'Survival/Desert', 'Survival/Forest',
-    ])
+    expect(pendingAwardOptions(pending, character)).toEqual([])
+    expect(pendingOpenSubject(pending)).toMatchObject({ skillId: 'skill.survival', parentLabel: 'Survival' })
   })
 
   it('shows readable Trait choices while retaining stable IDs internally', () => {

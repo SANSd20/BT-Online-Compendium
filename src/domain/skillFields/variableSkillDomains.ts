@@ -12,7 +12,8 @@ export interface VariableSkillDomain {
   id: string
   skillId: string
   semantics: VariableSkillDomainSemantics
-  completeness: 'exhaustive' | 'modeled-bounded'
+  completeness: 'exhaustive' | 'modeled-bounded' | 'open'
+  inputMode: 'select' | 'open-subject'
   options: readonly string[]
   description: string
 }
@@ -36,6 +37,10 @@ export const VARIABLE_SKILL_DOMAINS = {
   languages: domain('modeled-languages', 'skill.language', 'modeled-bounded-subset', 'modeled-bounded', MODELED_LANGUAGE_SUBSKILLS, 'Concrete languages supported by current character-creation data; not a claim of a complete setting language list.'),
   protocolAffiliations: domain('modeled-protocol-affiliations', 'skill.protocol', 'affiliation-constrained-choice', 'modeled-bounded', affiliationLabels('protocolContextLabel'), 'Protocol choices derived from supported affiliation contexts.'),
   streetwiseAffiliations: domain('modeled-streetwise-affiliations', 'skill.streetwise', 'affiliation-constrained-choice', 'modeled-bounded', affiliationLabels('streetwiseContextLabel'), 'Streetwise choices derived from supported affiliation contexts.'),
+  careerOpen: openDomain('open-career-subject', 'skill.career', 'Player-proposed occupation subject; applicability remains GM-defined.'),
+  interestOpen: openDomain('open-interest-subject', 'skill.interest', 'Player-proposed academic, cultural, or hobby subject; applicability remains GM-defined.'),
+  scienceOpen: openDomain('open-science-subject', 'skill.science', 'Player-proposed major scientific field; must not replace a better-fitting Technician or other Skill.'),
+  survivalOpen: openDomain('open-survival-environment', 'skill.survival', 'Player-proposed general environment type; source guidance also ties Survival expertise to a specific planet.'),
 } as const satisfies Record<string, VariableSkillDomain>
 
 export const VARIABLE_SKILL_DOMAIN_CATALOG: readonly VariableSkillDomain[] = Object.values(VARIABLE_SKILL_DOMAINS)
@@ -47,5 +52,9 @@ export function getVariableSkillDomain(id: string): VariableSkillDomain {
 }
 
 function domain(id: string, skillId: string, semantics: VariableSkillDomainSemantics, completeness: VariableSkillDomain['completeness'], options: readonly string[], description: string): VariableSkillDomain {
-  return { id, skillId, semantics, completeness, options, description }
+  return { id, skillId, semantics, completeness, inputMode: 'select', options, description }
+}
+
+function openDomain(id: string, skillId: string, description: string): VariableSkillDomain {
+  return { id, skillId, semantics: 'open-gm-defined', completeness: 'open', inputMode: 'open-subject', options: [], description }
 }

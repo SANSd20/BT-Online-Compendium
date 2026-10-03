@@ -1,7 +1,7 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
-import { ANALYSIS_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
+import { ANALYSIS_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 
 export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
@@ -296,13 +296,11 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: COMMUNICATIONS_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: COVERT_OPERATIONS_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: POLICE_TACTICAL_OFFICER_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: SPECIAL_FORCES_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
       ],
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
-      referenceOnlyOffers: [
-        { displayName: 'Special Forces', category: 'special', chronologyYears: 2, reason: 'Survival/Any and Tracking/Any are not yet fully governed mechanically.' },
-      ],
     },
     awards: [
       fixed('police-academy.attribute.rfl', 100, attribute('RFL')),
@@ -342,13 +340,11 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: ANALYSIS_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: COVERT_OPERATIONS_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: POLICE_TACTICAL_OFFICER_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: SPECIAL_FORCES_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
       ],
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
-      referenceOnlyOffers: [
-        { displayName: 'Special Forces', category: 'special', chronologyYears: 2, reason: 'Survival/Any and Tracking/Any are not yet fully governed mechanically.' },
-      ],
     },
     awards: [
       fixed('intelligence-operative.attribute.int', 100, attribute('INT')),
@@ -398,15 +394,17 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: SHIPS_CREW_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: SCOUT_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: ANALYSIS_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: SCIENTIST_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: DOCTOR_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: MILITARY_SCIENTIST_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: SPECIAL_FORCES_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
       ],
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
       referenceOnlyOffers: [
-        ...['Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)', 'Pilot/DropShip', 'Scientist'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1, reason: 'Not included in this dependency-driven bounded promotion.' })),
-        ...['Infantry/Anti-Mech', 'Pilot/Battle Armor', 'Pilot/JumpShip', 'Pilot/WarShip', 'Special Forces'].map((displayName) => ({ displayName, category: 'special' as const, chronologyYears: 2, reason: displayName === 'Special Forces' ? 'Survival/Any remains open and GM-defined.' : 'Not included in this dependency-driven bounded promotion.' })),
+        ...['Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)', 'Pilot/DropShip'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1, reason: 'Not included in this dependency-driven bounded promotion.' })),
+        ...['Infantry/Anti-Mech', 'Pilot/Battle Armor', 'Pilot/JumpShip', 'Pilot/WarShip'].map((displayName) => ({ displayName, category: 'special' as const, chronologyYears: 2, reason: 'Not included in this dependency-driven bounded promotion.' })),
       ],
     },
     awards: [
@@ -451,12 +449,13 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: TECHNICIAN_AEROSPACE_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: TECHNICIAN_MECH_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: TECHNICIAN_VEHICLE_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: SPECIAL_FORCES_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
       ],
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
       referenceOnlyOffers: [
-        ...['Infantry/Anti-Mech', 'Special Forces'].map((displayName) => ({ displayName, category: 'special' as const, chronologyYears: 1, reason: displayName === 'Special Forces' ? 'Survival/Any remains open and GM-defined.' : 'Not included in this dependency-driven bounded promotion.' })),
+        { displayName: 'Infantry/Anti-Mech', category: 'special', chronologyYears: 1, reason: 'Not included in this dependency-driven bounded promotion.' },
       ],
     },
     awards: [

@@ -1,6 +1,8 @@
 import type { CharacterDefinition, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { applySupportedStageModule, type SupportedStageModuleId } from './stageModulePreviewModel'
+import { pendingOpenSubject } from '../../domain/lifeModules/awardOptions'
+import { openSkillSubjectDestination, validateOpenSkillSubject } from '../../domain/skillFields/openSkillSubjects'
 
 export interface StageChoiceSlotValue {
   targetType: '' | ResolvedLifeModuleDestination['type']
@@ -8,6 +10,7 @@ export interface StageChoiceSlotValue {
   parameter: string
   displayName: string
   xpAmount: number
+  subjectInput?: string
 }
 
 export type StageChoiceSlotValues = Record<string, StageChoiceSlotValue[]>
@@ -146,6 +149,21 @@ export function slotValueComplete(value: StageChoiceSlotValue | undefined): valu
 
 export function emptyStageChoiceSlot(pending: PendingLifeModuleAward): StageChoiceSlotValue {
   return { targetType: '', targetId: '', parameter: '', displayName: '', xpAmount: pending.xpPerGrant }
+}
+
+export function openSubjectStageChoiceSlot(pending: PendingLifeModuleAward, input: string): { value: StageChoiceSlotValue; error: string | null } {
+  const metadata = pendingOpenSubject(pending)
+  if (!metadata) throw new Error('Pending award is not an open-subject choice.')
+  const checked = validateOpenSkillSubject(input)
+  if (checked.error) return { value: { ...emptyStageChoiceSlot(pending), subjectInput: input, parameter: checked.subject }, error: checked.error }
+  const destination = openSkillSubjectDestination(metadata.skillId, input)
+  return {
+    value: {
+      targetType: 'skill', targetId: destination.targetId, parameter: destination.parameter!.value,
+      displayName: destination.displayName, xpAmount: pending.xpPerGrant, subjectInput: input,
+    },
+    error: null,
+  }
 }
 
 function toDestination(value: StageChoiceSlotValue): ResolvedLifeModuleDestination {

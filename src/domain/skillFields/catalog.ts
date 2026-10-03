@@ -46,6 +46,8 @@ export const ANALYSIS_FIELD_ID = 'field.analysis'
 export const COVERT_OPERATIONS_FIELD_ID = 'field.covert-operations'
 export const POLICE_TACTICAL_OFFICER_FIELD_ID = 'field.police-tactical-officer'
 export const MILITARY_SCIENTIST_FIELD_ID = 'field.military-scientist'
+export const SCIENTIST_FIELD_ID = 'field.scientist'
+export const SPECIAL_FORCES_FIELD_ID = 'field.special-forces'
 
 export const SECURITY_SYSTEMS_SUBSKILLS = VARIABLE_SKILL_DOMAINS.securitySystems.options
 export const NAVAL_CAREER_SUBSKILLS = VARIABLE_SKILL_DOMAINS.navalCareer.options
@@ -57,7 +59,7 @@ export const TRACKING_SUBSKILLS = VARIABLE_SKILL_DOMAINS.tracking.options
 export const TECHNICIAN_SUBSKILLS = VARIABLE_SKILL_DOMAINS.technician.options
 
 const variableSkill = (id: string, displayName: string, domain: { id: string; skillId: string; options: readonly string[] }) => ({
-  id, displayName, skillId: domain.skillId, choiceDomainId: domain.id, legalSubskills: [...domain.options],
+  id, displayName, skillId: domain.skillId, choiceDomainId: domain.id, inputMode: getVariableSkillDomain(domain.id).inputMode, legalSubskills: [...domain.options],
 })
 
 export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
@@ -572,6 +574,29 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
     componentSkills: [skill('skill.career', 'Career/Military Scientist', 'Military Scientist'), skill('skill.computers', 'Computers'), skill('skill.cryptography', 'Cryptography'), skill('skill.interest', 'Interest/Military History', 'Military History'), skill('skill.strategy', 'Strategy')],
     variableComponentSkills: [variableSkill('military-scientist.tactics-any', 'Tactics subskill', VARIABLE_SKILL_DOMAINS.tactics)],
   },
+  {
+    id: SCIENTIST_FIELD_ID, displayName: 'Scientist', category: 'advanced', source: { ...source('skill-field-scientist'), page: 93 },
+    prerequisites: [{ id: 'scientist.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' }],
+    componentSkills: [skill('skill.career', 'Career/Scientist', 'Scientist'), skill('skill.computers', 'Computers'), skill('skill.investigation', 'Investigation'), skill('skill.perception', 'Perception'), skill('skill.training', 'Training')],
+    variableComponentSkills: [
+      variableSkill('scientist.interest-any', 'Interest subject', VARIABLE_SKILL_DOMAINS.interestOpen),
+      variableSkill('scientist.science-any', 'Science subject', VARIABLE_SKILL_DOMAINS.scienceOpen),
+    ],
+  },
+  {
+    id: SPECIAL_FORCES_FIELD_ID, displayName: 'Special Forces', category: 'special', source: { ...source('skill-field-special-forces'), page: 94 },
+    prerequisites: [
+      { id: 'special-forces.field', kind: 'skill-field', fieldIds: [INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, SCOUT_FIELD_ID], description: 'Infantry, MechWarrior, or Scout Field' },
+      { id: 'special-forces.bod', kind: 'attribute-minimum', attributeId: 'BOD', minimum: 4, description: 'BOD 4+' },
+      { id: 'special-forces.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 4, description: 'RFL 4+' },
+      { id: 'special-forces.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 5, description: 'WIL 5+' },
+    ],
+    componentSkills: [skill('skill.acrobatics', 'Acrobatics/Free-Fall', 'Free-Fall'), skill('skill.demolitions', 'Demolitions'), skill('skill.small-arms', 'Small Arms'), skill('skill.stealth', 'Stealth')],
+    variableComponentSkills: [
+      variableSkill('special-forces.survival-any', 'Survival environment', VARIABLE_SKILL_DOMAINS.survivalOpen),
+      variableSkill('special-forces.tracking-any', 'Tracking subskill', VARIABLE_SKILL_DOMAINS.tracking),
+    ],
+  },
 ]
 
 export function getSkillField(fieldId: string): SkillFieldDefinition {
@@ -598,11 +623,11 @@ export function validateSkillFieldCatalog(catalog: readonly SkillFieldDefinition
       skills.add(key)
     }
     for (const component of field.variableComponentSkills ?? []) {
-      if (!component.id || !component.displayName || !component.skillId || component.legalSubskills.length === 0 || new Set(component.legalSubskills).size !== component.legalSubskills.length) {
+      if (!component.id || !component.displayName || !component.skillId || ((component.inputMode ?? 'select') === 'select' && component.legalSubskills.length === 0) || new Set(component.legalSubskills).size !== component.legalSubskills.length) {
         issues.push({ fieldId: field.id, message: `Malformed variable component Skill: ${component.id || '(missing)'}` })
       }
       const domain = getVariableSkillDomain(component.choiceDomainId)
-      if (domain.skillId !== component.skillId || domain.options.join('\0') !== component.legalSubskills.join('\0')) {
+      if (domain.skillId !== component.skillId || domain.inputMode !== (component.inputMode ?? 'select') || domain.options.join('\0') !== component.legalSubskills.join('\0')) {
         issues.push({ fieldId: field.id, message: `Variable component domain mismatch: ${component.id}` })
       }
     }

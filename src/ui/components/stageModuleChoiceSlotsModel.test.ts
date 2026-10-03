@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, MILITARY_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
-import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, MECHWARRIOR_FIELD_ID, SCOUT_FIELD_ID } from '../../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, MECHWARRIOR_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { previewSupportedStageModule } from './stageModulePreviewModel'
-import { filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
+import { filterSiblingDestinationOptions, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
   let character = createLifeModuleCharacter(`Slots ${phase}`)
@@ -144,6 +144,46 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     expect(french.character.creation.lifeModules!.resolvedAwards.some((entry) => entry.destination.displayName === 'Language/English' && entry.xp === 30)).toBe(false)
     expect(french.complete).toBe(false)
     expect(stageSlotContinueEnabled(french)).toBe(false)
+    expect(JSON.stringify(character)).toBe(committed)
+  })
+
+  it('previews, replaces, and deselects an open Scientist subject without stale state', () => {
+    const character = draftAt('stage-3-selection')
+    const committed = JSON.stringify(character)
+    const fields = [BASIC_TRAINING_FIELD_ID, SCIENTIST_FIELD_ID]
+    const base = previewSupportedStageModule(character, MILITARY_ACADEMY_ID, fields)!
+    const pending = base.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.componentId === 'scientist.science-any')!
+    const invalid = openSubjectStageChoiceSlot(pending, '   ')
+    expect(invalid.error).toBe('Enter a subject.')
+    expect(invalid.value.targetId).toBe('')
+
+    const biologyValue = openSubjectStageChoiceSlot(pending, 'Biology').value
+    const physicsValue = openSubjectStageChoiceSlot(pending, 'K-F  Drive Physics').value
+    const biology = previewStageModuleChoiceSlots(character, MILITARY_ACADEMY_ID, { [pending.awardId]: [biologyValue] }, fields)!
+    const physics = previewStageModuleChoiceSlots(character, MILITARY_ACADEMY_ID, { [pending.awardId]: [physicsValue] }, fields)!
+    const deselected = previewStageModuleChoiceSlots(character, MILITARY_ACADEMY_ID, {}, [BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID])!
+
+    expect(biology.character.skills.filter((entry) => entry.displayName === 'Science/Biology')).toHaveLength(1)
+    expect(physics.character.skills.some((entry) => entry.displayName === 'Science/Biology')).toBe(false)
+    expect(physics.character.skills.find((entry) => entry.displayName === 'Science/K-F Drive Physics')).toMatchObject({ accumulatedXp: 30 })
+    expect(physics.character.provenance.some((entry) => entry.description.includes('Scientist'))).toBe(true)
+    expect(physics.complete).toBe(false)
+    expect(stageSlotContinueEnabled(physics)).toBe(false)
+    expect(deselected.character.skills.some((entry) => entry.address.skillId === 'skill.science')).toBe(false)
+    expect(deselected.character.creation.lifeModules!.selectedSkillFields.some((entry) => entry.fieldId === SCIENTIST_FIELD_ID)).toBe(false)
+    expect(JSON.stringify(character)).toBe(committed)
+
+    const interestPending = base.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.componentId === 'scientist.interest-any')!
+    const flexible = base.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'military-academy.flexible')!
+    const complete = previewStageModuleChoiceSlots(character, MILITARY_ACADEMY_ID, {
+      [interestPending.awardId]: [openSubjectStageChoiceSlot(interestPending, 'Astrobiology').value],
+      [pending.awardId]: [physicsValue],
+      [flexible.awardId]: [value('attribute', 'INT', 'INT', 100)],
+    }, fields)!
+    expect(complete.error).toBeNull()
+    expect(complete.complete).toBe(true)
+    expect(stageSlotContinueEnabled(complete)).toBe(true)
+    expect(complete.character.skills.filter((entry) => entry.displayName === 'Interest/Astrobiology')).toHaveLength(1)
     expect(JSON.stringify(character)).toBe(committed)
   })
 

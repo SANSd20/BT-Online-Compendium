@@ -27,7 +27,8 @@ import {
   UNIVERSAL_STAGE_0_ID,
 } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
-import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
+import { knownPendingChoiceValues, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
+import { openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
 import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
@@ -322,7 +323,9 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
         moduleId: school.id,
         awardId: `skill-field/${field.id}/${component.id}`,
         kind: 'any-skill-choice',
-        description: `${component.displayName}: choose one governed subskill.`,
+        description: component.inputMode === 'open-subject'
+          ? `${component.displayName}: enter one open, GM-defined subject.`
+          : `${component.displayName}: choose one governed subskill.`,
         xpPerGrant: offer.awardedXpPerSkill,
         remainingGrants: 1,
         allocationMode: 'fixed-grants',
@@ -409,7 +412,10 @@ export function resolvePendingLifeModuleAward(
   const pendingIndex = state.pendingAwards.findIndex((entry) => entry.id === pendingAwardId)
   if (pendingIndex < 0) throw new Error(`Unknown pending Life Module award: ${pendingAwardId}`)
   const pending = state.pendingAwards[pendingIndex]
-  const normalized = normalizeResolvedDestination(destination)
+  const openSubject = pendingOpenSubject(pending)
+  const normalized = openSubject
+    ? openSkillSubjectDestination(openSubject.skillId, destination.parameter?.value ?? '')
+    : normalizeResolvedDestination(destination)
   validateResolutionDestination(next, pending, normalized)
   const destinationKey = resolvedDestinationKey(normalized)
   const isPool = pending.allocationMode === 'pool'
@@ -732,6 +738,13 @@ function validateResolutionDestination(character: CharacterDefinition, pending: 
     }
   }
   const knownChoices = knownPendingChoiceValues(pending)
+  const openSubject = pendingOpenSubject(pending)
+  if (openSubject) {
+    const canonical = openSkillSubjectDestination(openSubject.skillId, destination.parameter?.value ?? '')
+    if (destination.targetId !== canonical.targetId || destination.displayName !== canonical.displayName || destination.parameter?.value !== canonical.parameter?.value) {
+      throw new Error('Open subject destination must use its canonical parent Skill identity.')
+    }
+  }
   if (knownChoices.length > 0 && !knownChoices.includes(destination.parameter?.value ?? '')) {
     throw new Error('This award must resolve to a safe known choice from the current Alpha data.')
   }
