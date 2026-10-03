@@ -1,7 +1,7 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
-import { BASIC_TRAINING_NAVAL_FIELD_ID, MARINE_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID } from '../skillFields/catalog'
+import { BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, MARINE_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID } from '../skillFields/catalog'
 
 export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
 
@@ -290,6 +290,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: 'field.basic-training', category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: BASIC_TRAINING_NAVAL_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: 'field.infantry', category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: CAVALRY_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: 'field.mechwarrior', category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: MARINE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: SHIPS_CREW_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
@@ -298,7 +299,8 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       minimumAdvanced: 1,
       maximumTotal: 3,
       referenceOnlyOffers: [
-        ...['Analysis', 'Cavalry', 'Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)', 'Pilot/DropShip', 'Scientist', 'Scout'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1, reason: 'Mechanical Field dependencies are not yet implemented.' })),
+        ...['Analysis', 'Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)', 'Pilot/DropShip', 'Scientist'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1, reason: 'Mechanical Field dependencies are not yet implemented.' })),
+        { displayName: 'Scout', category: 'advanced', chronologyYears: 1, reason: 'Language/Any permits any specific language, but a complete governed general-language catalog is not implemented.' },
         ...['Doctor', 'Infantry/Anti-Mech', 'Military Scientist', 'Pilot/Battle Armor', 'Pilot/JumpShip', 'Pilot/WarShip', 'Special Forces'].map((displayName) => ({ displayName, category: 'special' as const, chronologyYears: 2, reason: 'Mechanical Field dependencies are not yet implemented.' })),
       ],
     },
@@ -331,6 +333,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: 'field.basic-training', category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 0.5 },
         { fieldId: BASIC_TRAINING_NAVAL_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 0.5 },
         { fieldId: 'field.infantry', category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
+        { fieldId: CAVALRY_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
         { fieldId: MARINE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
         { fieldId: SHIPS_CREW_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
         { fieldId: TECHNICIAN_MILITARY_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
@@ -339,7 +342,8 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       minimumAdvanced: 1,
       maximumTotal: 3,
       referenceOnlyOffers: [
-        ...['Cavalry', 'Medical Assistant', 'Police Officer', 'Scout'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1.5, reason: 'Mechanical Field dependencies are not yet implemented.' })),
+        ...['Medical Assistant', 'Police Officer'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1.5, reason: 'Mechanical Field dependencies are not yet implemented.' })),
+        { displayName: 'Scout', category: 'advanced', chronologyYears: 1.5, reason: 'Language/Any permits any specific language, but a complete governed general-language catalog is not implemented.' },
         ...['Detective', 'Police Tactical Officer', 'Infantry/Anti-Mech', 'Special Forces', 'Technician/Aerospace', 'Technician/Mech', 'Technician/Vehicle'].map((displayName) => ({ displayName, category: 'special' as const, chronologyYears: 1, reason: 'Mechanical Field dependencies are not yet implemented.' })),
       ],
     },

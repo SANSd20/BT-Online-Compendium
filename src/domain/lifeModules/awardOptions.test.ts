@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { BACK_WOODS_ID, CAPELLAN_COMMONALITY_ID } from './catalog'
 import { pendingAwardOptions } from './awardOptions'
-import { MARINE_FIELD_ID, SECURITY_SYSTEMS_SUBSKILLS } from '../skillFields/catalog'
+import { CAVALRY_FIELD_ID, DRIVING_SUBSKILLS, MARINE_FIELD_ID, SECURITY_SYSTEMS_SUBSKILLS, VEHICLE_GUNNERY_SUBSKILLS } from '../skillFields/catalog'
 
 function backWoodsDraft() {
   let character = createLifeModuleCharacter('Selector Test')
@@ -28,6 +28,24 @@ describe('Life Module pending award options', () => {
       source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 94 },
     }, character)
     expect(options.map((entry) => entry.parameter?.value)).toEqual([...SECURITY_SYSTEMS_SUBSKILLS])
+  })
+  it('uses each Cavalry component’s exact canonical source-defined option set', () => {
+    const character = createLifeModuleCharacter('Cavalry options')
+    const base = {
+      id: 'pending-cavalry', moduleId: 'stage3.military-academy', kind: 'any-skill-choice' as const,
+      xpPerGrant: 30, remainingGrants: 1, allowedTargetTypes: ['skill' as const],
+      source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 94 },
+    }
+    const driving = pendingAwardOptions({
+      ...base, awardId: 'skill-field/field.cavalry/cavalry.driving-any', description: 'Driving subskill', requiredSkillId: 'skill.driving',
+      skillFieldChoice: { fieldId: CAVALRY_FIELD_ID, componentId: 'cavalry.driving-any' },
+    }, character)
+    const gunnery = pendingAwardOptions({
+      ...base, awardId: 'skill-field/field.cavalry/cavalry.gunnery-any-vehicle', description: 'Vehicle Gunnery subskill', requiredSkillId: 'skill.gunnery',
+      skillFieldChoice: { fieldId: CAVALRY_FIELD_ID, componentId: 'cavalry.gunnery-any-vehicle' },
+    }, character)
+    expect(driving.map((entry) => entry.parameter?.value)).toEqual([...DRIVING_SUBSKILLS])
+    expect(gunnery.map((entry) => entry.parameter?.value)).toEqual([...VEHICLE_GUNNERY_SUBSKILLS])
   })
   it('offers known Federated Suns languages without raw text entry', () => {
     const character = backWoodsDraft()

@@ -28,9 +28,13 @@ export const MECHWARRIOR_FIELD_ID = 'field.mechwarrior'
 export const MARINE_FIELD_ID = 'field.marine'
 export const SHIPS_CREW_FIELD_ID = 'field.ships-crew'
 export const TECHNICIAN_MILITARY_FIELD_ID = 'field.technician-military'
+export const CAVALRY_FIELD_ID = 'field.cavalry'
 
 export const SECURITY_SYSTEMS_SUBSKILLS = ['Electronic', 'Mechanical'] as const
 export const NAVAL_CAREER_SUBSKILLS = ['Pilot', 'Ship’s Crew'] as const
+export const DRIVING_SUBSKILLS = ['Ground Vehicles', 'Rail Vehicles', 'Sea Vehicles'] as const
+export const VEHICLE_GUNNERY_SUBSKILLS = ['Air Vehicle', 'Ground Vehicle', 'Sea Vehicle'] as const
+export const CAVALRY_TACTICS_SUBSKILLS = ['Land', 'Sea'] as const
 
 export const TECHNICIAN_SUBSKILLS = [
   'Aeronautics', 'Cybernetics', 'Electronic', 'Jets', 'Mechanics', 'Myomer', 'Nuclear', 'Weapons',
@@ -211,6 +215,41 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       skill('skill.communications', 'Comms/Conventional', 'Conventional'),
       skill('skill.support-weapons', 'Support Weapons'),
       skill('skill.tactics', 'Tactics/Infantry', 'Infantry'),
+    ],
+  },
+  {
+    id: CAVALRY_FIELD_ID,
+    displayName: 'Cavalry',
+    category: 'advanced',
+    source: { ...source('skill-field-cavalry'), page: 94 },
+    prerequisites: [
+      { id: 'cavalry.field', kind: 'skill-field', fieldIds: [BASIC_TRAINING_FIELD_ID], description: 'Basic Training Field' },
+      { id: 'cavalry.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 3, description: 'DEX 3+' },
+    ],
+    componentSkills: [
+      skill('skill.artillery', 'Artillery'),
+      skill('skill.sensor-operations', 'Sensor Operations'),
+      skill('skill.technician', 'Technician/Mechanical', 'Mechanical'),
+    ],
+    variableComponentSkills: [
+      {
+        id: 'cavalry.driving-any',
+        displayName: 'Driving subskill',
+        skillId: 'skill.driving',
+        legalSubskills: [...DRIVING_SUBSKILLS],
+      },
+      {
+        id: 'cavalry.gunnery-any-vehicle',
+        displayName: 'Vehicle Gunnery subskill',
+        skillId: 'skill.gunnery',
+        legalSubskills: [...VEHICLE_GUNNERY_SUBSKILLS],
+      },
+      {
+        id: 'cavalry.tactics-land-or-sea',
+        displayName: 'Cavalry Tactics subskill',
+        skillId: 'skill.tactics',
+        legalSubskills: [...CAVALRY_TACTICS_SUBSKILLS],
+      },
     ],
   },
   {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
-import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, INFANTRY_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, INFANTRY_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
@@ -474,6 +474,62 @@ describe('Life Module engine', () => {
     const enlistment = applyMilitaryEnlistment(selecting, [BASIC_TRAINING_NAVAL_FIELD_ID, MARINE_FIELD_ID])
     expect(enlistment.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === MARINE_FIELD_ID)).toMatchObject({ chronologyYears: 1.5 })
     expect(JSON.stringify(selecting)).toBe(before)
+  })
+
+  it('acquires Cavalry through both military schools with exact no-default governed choices and durable provenance', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const before = JSON.stringify(selecting)
+    let academy = applyMilitaryAcademy(selecting, [BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID])
+    const cavalryPending = () => academy.creation.lifeModules!.pendingAwards.filter((entry) => entry.skillFieldChoice?.fieldId === CAVALRY_FIELD_ID)
+    expect(academy.lifeModuleHistory.at(-1)).toMatchObject({ fieldCostXp: 264, costXp: 1094 })
+    expect(academy.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === CAVALRY_FIELD_ID)).toMatchObject({ purchaseCostXp: 144, xpPerSkill: 30, chronologyYears: 1, variableSkillChoices: [] })
+    expect(cavalryPending().map((entry) => [entry.requiredSkillId, entry.xpPerGrant])).toEqual([
+      ['skill.driving', 30], ['skill.gunnery', 30], ['skill.tactics', 30],
+    ])
+    expect(academy.skills.find((entry) => entry.displayName === 'Artillery')?.sourceAwards.some((entry) => entry.xp === 30)).toBe(true)
+    expect(academy.skills.find((entry) => entry.displayName === 'Sensor Operations')?.sourceAwards.some((entry) => entry.xp === 30)).toBe(true)
+    expect(academy.skills.find((entry) => entry.displayName === 'Technician/Mechanical')?.sourceAwards.some((entry) => entry.xp === 30)).toBe(true)
+    expect(academy.skills.some((entry) => ['skill.driving', 'skill.gunnery', 'skill.tactics'].includes(entry.address.skillId) && entry.sourceAwards.some((award) => award.xp === 30))).toBe(false)
+    expect(() => resolvePendingLifeModuleAward(academy, cavalryPending()[0].id, {
+      type: 'skill', targetId: 'skill.driving', displayName: 'Driving/Tracked', parameter: { kind: 'subskill', value: 'Tracked' },
+    })).toThrow('safe known choice')
+
+    const choices = [
+      ['skill.driving', 'Driving/Ground Vehicles', 'Ground Vehicles'],
+      ['skill.gunnery', 'Gunnery/Ground Vehicle', 'Ground Vehicle'],
+      ['skill.tactics', 'Tactics/Land', 'Land'],
+    ] as const
+    for (const [skillId, displayName, parameter] of choices) {
+      const pending = cavalryPending().find((entry) => entry.requiredSkillId === skillId)!
+      academy = resolvePendingLifeModuleAward(academy, pending.id, { type: 'skill', targetId: skillId, displayName, parameter: { kind: 'subskill', value: parameter } })
+    }
+    const grant = academy.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === CAVALRY_FIELD_ID)!
+    expect(grant.variableSkillChoices).toHaveLength(3)
+    expect(grant.variableSkillChoices?.map((entry) => entry.destination.displayName)).toEqual(choices.map((entry) => entry[1]))
+    expect(cavalryPending()).toEqual([])
+
+    const decoded = decodeCharacter(encodeCharacter(academy, '2026-10-02T00:00:00.000Z'))
+    expect(decoded).toEqual(academy)
+    expect(decoded.creation.lifeModules!.selectedSkillFields.filter((entry) => entry.fieldId === CAVALRY_FIELD_ID)).toHaveLength(1)
+    expect(decoded.skills.filter((entry) => choices.some((choice) => choice[1] === entry.displayName))).toHaveLength(3)
+    expect(decoded.creation.lifeModules!.pendingAwards.some((entry) => entry.skillFieldChoice?.fieldId === CAVALRY_FIELD_ID)).toBe(false)
+    expect(validateCharacter(decoded).valid).toBe(true)
+
+    const enlistment = applyMilitaryEnlistment(selecting, [BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID])
+    expect(enlistment.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === CAVALRY_FIELD_ID)).toMatchObject({ purchaseCostXp: 144, chronologyYears: 1.5 })
+    expect(JSON.stringify(selecting)).toBe(before)
+  })
+
+  it('requires actual Basic Training for Cavalry and keeps Scout reference-only for unrestricted Language/Any', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const withFields = applyMilitaryAcademy(selecting, [BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID])
+    expect(withFields.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'cavalry.field')?.status).toBe('satisfied')
+    const componentSkillsOnly = structuredClone(selecting)
+    componentSkillsOnly.skills.push(...withFields.skills.filter((entry) => ['Career/Soldier', 'Martial Arts', 'MedTech/General', 'Navigation/Ground', 'Small Arms'].includes(entry.displayName ?? '')).map((entry) => structuredClone(entry)))
+    componentSkillsOnly.creation.lifeModules!.selectedSkillFields.push({ ...structuredClone(withFields.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === CAVALRY_FIELD_ID)!), id: 'component-only-cavalry' })
+    reevaluateLifeModulePrerequisites(componentSkillsOnly)
+    expect(componentSkillsOnly.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'cavalry.field')?.status).toBe('outstanding')
+    expect(() => applyMilitaryAcademy(selecting, [BASIC_TRAINING_FIELD_ID, 'field.scout'])).toThrow('not offered')
   })
 
   it('acquires Ship’s Crew through both authorized schools and preserves its Technician choice through JSON', () => {

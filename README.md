@@ -4,7 +4,7 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 62 is implemented.** Version `0.1.0-alpha.62`. The public product title is **AToW Online Character Creator**. The bounded military Field catalog adds Basic Training (Naval), Marine, Ship’s Crew, and Technician/Military with source-exact prerequisites, Skills, costs, school availability, and time. Marine and Ship’s Crew use explicit no-default Field-Skill choices that persist with the canonical Field grant. The mechanically acquirable catalog now contains fourteen explicitly bounded Fields, while the independent 56-entry reference catalog remains guidance-only. Stage 3 repetition remains unavailable in the current UI; the corrected-printing Civilian, Intelligence/Police, Military, and secondary Officer Training classifications are now represented and tested for future execution. Preview, Continue, committed-only save/export, Trait presentation, faction themes, and the 84-item equipment catalog remain intact.
+**Alpha Slice 63 is implemented.** Version `0.1.0-alpha.63`. The public product title is **AToW Online Character Creator**. Cavalry is now a mechanically acquirable Military Academy and Military Enlistment Field with exact Basic Training and DEX prerequisites, six Skills, and explicit no-default Driving, vehicle Gunnery, and Land-or-Sea Tactics choices. The mechanically acquirable catalog now contains fifteen explicitly bounded Fields, while the independent 56-entry reference catalog remains guidance-only. Scout remains reference-only because its source-defined Language/Any permits any specific language and the current project has no complete governed general-language catalog. Preview, Continue, committed-only save/export, Stage 3 repetition behavior, Trait presentation, faction themes, and the 84-item equipment catalog remain intact.
 
 All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit remains the evidence record; Slice 28 governs its conflicts without silently correcting Tanker, Elemental, or Scout values, adding `REF`, renaming stable IDs, or activating back-sheet combat fields. Point Buy, Life Modules, Final Touches, and the 84-item audited Core equipment catalog are unchanged.
 
@@ -71,9 +71,9 @@ npm run preview
 
 The repository's Pages **Source** setting must be **GitHub Actions**. The public site opens through a normal browser URL and requires neither a special platform login nor an application login. Character data still lives only in that browser; JSON export/import is the portability and backup mechanism.
 
-The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.62` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
+The target Pages URL was verified live during Slice 21 and remains the Public Alpha deployment target. Version `0.1.0-alpha.63` will be live after this commit reaches `main` and the existing Pages deployment succeeds.
 
-The collapsed-by-default public notice identifies version `0.1.0-alpha.62`; its expandable details retain browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
+The collapsed-by-default public notice identifies version `0.1.0-alpha.63`; its expandable details retain browser-local storage, JSON backup/import portability, normal-browser access without a special platform or application login, Core-first source scope, incomplete rules and equipment coverage, lack of a play-ready guarantee, and unavailable PDF export. Source PDFs are not part of the repository or production bundle.
 
 ## Current resume points
 

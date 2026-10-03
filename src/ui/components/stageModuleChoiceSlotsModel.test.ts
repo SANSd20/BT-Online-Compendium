@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, MILITARY_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
-import { BASIC_TRAINING_FIELD_ID, MECHWARRIOR_FIELD_ID } from '../../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, MECHWARRIOR_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { previewSupportedStageModule } from './stageModulePreviewModel'
 import { filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
@@ -101,6 +101,27 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
     expect(electronic.character.skills.filter((entry) => entry.displayName === 'Technician/Electronic')).toHaveLength(1)
     expect(electronic.character.skills.find((entry) => entry.displayName === 'Technician/Electronic')?.accumulatedXp).toBe(30)
     expect(electronic.pendingAwards.some((entry) => entry.skillFieldChoice?.fieldId === MECHWARRIOR_FIELD_ID)).toBe(false)
+    expect(JSON.stringify(character)).toBe(committed)
+  })
+
+  it('replaces a Cavalry governed choice without stale XP or provenance and keeps Continue blocked until all choices are set', () => {
+    const character = draftAt('stage-3-selection')
+    const committed = JSON.stringify(character)
+    const fields = [BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID]
+    const base = previewSupportedStageModule(character, MILITARY_ACADEMY_ID, fields)!
+    const pending = base.creation.lifeModules!.pendingAwards.find((entry) => entry.skillFieldChoice?.componentId === 'cavalry.driving-any')!
+    const ground = previewStageModuleChoiceSlots(character, MILITARY_ACADEMY_ID, {
+      [pending.awardId]: [value('skill', 'skill.driving', 'Driving/Ground Vehicles', 30, 'Ground Vehicles')],
+    }, fields)!
+    const sea = previewStageModuleChoiceSlots(character, MILITARY_ACADEMY_ID, {
+      [pending.awardId]: [value('skill', 'skill.driving', 'Driving/Sea Vehicles', 30, 'Sea Vehicles')],
+    }, fields)!
+    expect(ground.character.skills.find((entry) => entry.displayName === 'Driving/Ground Vehicles')?.accumulatedXp).toBe(30)
+    expect(sea.character.skills.some((entry) => entry.displayName === 'Driving/Ground Vehicles')).toBe(false)
+    expect(sea.character.skills.filter((entry) => entry.displayName === 'Driving/Sea Vehicles')).toHaveLength(1)
+    expect(sea.character.skills.find((entry) => entry.displayName === 'Driving/Sea Vehicles')?.sourceAwards).toHaveLength(1)
+    expect(sea.complete).toBe(false)
+    expect(stageSlotContinueEnabled(sea)).toBe(false)
     expect(JSON.stringify(character)).toBe(committed)
   })
 
