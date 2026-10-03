@@ -15,9 +15,11 @@ import {
   CAPELLAN_COMMONALITY_ID,
   FEDERATED_SUNS_CRUCIS_MARCH_ID,
   getLifeModule,
+  INTELLIGENCE_OPERATIVE_TRAINING_ID,
   LIFE_MODULE_RULES_SOURCE,
   MILITARY_ACADEMY_ID,
   MILITARY_ENLISTMENT_ID,
+  POLICE_ACADEMY_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   TECHNICAL_COLLEGE_ID,
@@ -292,6 +294,9 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
     const provenanceId = makeId(undefined, `field-${field.id}`)
     next.provenance.push({ id: provenanceId, kind: 'published', description: `${field.displayName} Skill Field grant`, source: { ...field.source } })
     for (const component of field.componentSkills) applyDestinationAward(next, component, offer.awardedXpPerSkill, provenanceId)
+    for (const component of field.affiliationBoundComponentSkills ?? []) {
+      applyDestinationAward(next, resolveAffiliationBoundLifeModuleDestination(next, component.skillId, component.displayName), offer.awardedXpPerSkill, provenanceId)
+    }
     requireLifeModules(next).selectedSkillFields.push({
       id: makeId(undefined, 'field-grant'),
       schoolModuleId: school.id,
@@ -330,7 +335,7 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
 }
 
 export function applyStage3School(character: CharacterDefinition, moduleId: string, fieldIds: string[]): CharacterDefinition {
-  if (![TECHNICAL_COLLEGE_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
+  if (![TECHNICAL_COLLEGE_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
   return applyStage3SchoolDefinition(character, moduleId, fieldIds)
 }
 
@@ -341,7 +346,7 @@ export function continueStage3Schooling(character: CharacterDefinition): Charact
     throw new Error('Additional Stage 3 schooling requires a resolved, prerequisite-satisfied Stage 3 Alpha stop.')
   }
   const completed = next.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId)
-  const implementedSchools = [TECHNICAL_COLLEGE_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID]
+  const implementedSchools = [TECHNICAL_COLLEGE_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID]
   if (!implementedSchools.some((moduleId) => stage3SchoolEligibility(completed, moduleId).eligible)) {
     throw new Error('No additional implemented Stage 3 school family is available.')
   }
@@ -674,8 +679,10 @@ function evaluatePrerequisite(
     satisfied = (entry?.purchasedLevel ?? 0) >= prerequisite.minimum
   }
   if (prerequisite.kind === 'trait') satisfied = character.traits.some((item) => item.traitId === prerequisite.traitId && item.active)
+  if (prerequisite.kind === 'trait-minimum') satisfied = character.traits.some((item) => item.traitId === prerequisite.traitId && (item.attainedTp ?? 0) >= prerequisite.minimum)
   if (prerequisite.kind === 'trait-absent') satisfied = !character.traits.some((item) => item.traitId === prerequisite.traitId && item.active)
   if (prerequisite.kind === 'skill-field') satisfied = prerequisite.fieldIds.some((fieldId) => character.creation.lifeModules?.selectedSkillFields.some((grant) => grant.fieldId === fieldId))
+  if (prerequisite.kind === 'any-of') satisfied = prerequisite.options.some((option) => prerequisiteSatisfied(character, option))
   return {
     id: `${moduleId}/${prerequisite.id}`,
     moduleId,
@@ -684,6 +691,16 @@ function evaluatePrerequisite(
     status: satisfied ? 'satisfied' as const : 'outstanding' as const,
     finalValidationRequired: true,
   }
+}
+
+function prerequisiteSatisfied(character: CharacterDefinition, prerequisite: Exclude<LifeModulePrerequisite, { kind: 'any-of' }>): boolean {
+  if (prerequisite.kind === 'affiliation') return character.affiliations.length > 0 && (prerequisite.classification !== 'non-clan' || character.affiliations.every((entry) => !entry.affiliationId.startsWith('affiliation.clan')))
+  if (prerequisite.kind === 'attribute-minimum') return (character.attributes.find((entry) => entry.attributeId === prerequisite.attributeId)?.purchasedLevel ?? 0) >= prerequisite.minimum
+  if (prerequisite.kind === 'trait') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
+  if (prerequisite.kind === 'trait-minimum') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && (entry.attainedTp ?? 0) >= prerequisite.minimum)
+  if (prerequisite.kind === 'trait-absent') return !character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
+  if (prerequisite.kind === 'skill-field') return prerequisite.fieldIds.some((fieldId) => character.creation.lifeModules?.selectedSkillFields.some((grant) => grant.fieldId === fieldId))
+  return false
 }
 
 function validateResolutionDestination(character: CharacterDefinition, pending: PendingLifeModuleAward, destination: ResolvedLifeModuleDestination): void {

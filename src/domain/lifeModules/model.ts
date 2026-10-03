@@ -29,8 +29,10 @@ export type LifeModulePrerequisite =
   | { id: string; kind: 'affiliation'; affiliationId?: string; classification?: 'any' | 'non-clan'; description: string }
   | { id: string; kind: 'attribute-minimum'; attributeId: string; minimum: number; description: string }
   | { id: string; kind: 'trait'; traitId: string; description: string }
+  | { id: string; kind: 'trait-minimum'; traitId: string; minimum: number; description: string }
   | { id: string; kind: 'trait-absent'; traitId: string; description: string }
   | { id: string; kind: 'skill-field'; fieldIds: string[]; description: string }
+  | { id: string; kind: 'any-of'; options: Array<Exclude<LifeModulePrerequisite, { kind: 'any-of' }>>; description: string }
   | { id: string; kind: 'path'; description: string }
 
 export interface LifeModuleDefinition {

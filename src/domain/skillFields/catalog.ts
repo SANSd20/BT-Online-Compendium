@@ -31,6 +31,9 @@ export const SHIPS_CREW_FIELD_ID = 'field.ships-crew'
 export const TECHNICIAN_MILITARY_FIELD_ID = 'field.technician-military'
 export const CAVALRY_FIELD_ID = 'field.cavalry'
 export const SCOUT_FIELD_ID = 'field.scout'
+export const POLICE_OFFICER_FIELD_ID = 'field.police-officer'
+export const DETECTIVE_FIELD_ID = 'field.detective'
+export const INTELLIGENCE_FIELD_ID = 'field.intelligence'
 
 export const SECURITY_SYSTEMS_SUBSKILLS = ['Electronic', 'Mechanical'] as const
 export const NAVAL_CAREER_SUBSKILLS = ['Pilot', 'Ship’s Crew'] as const
@@ -86,6 +89,85 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       displayName: 'Naval Career subskill',
       skillId: 'skill.career',
       legalSubskills: [...NAVAL_CAREER_SUBSKILLS],
+    }],
+  },
+  {
+    id: POLICE_OFFICER_FIELD_ID,
+    displayName: 'Police Officer',
+    category: 'basic',
+    source: { ...source('skill-field-police-officer'), page: 93 },
+    prerequisites: [
+      { id: 'police-officer.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 3, description: 'WIL 3+' },
+    ],
+    componentSkills: [
+      skill('skill.acting', 'Acting'),
+      skill('skill.career', 'Career/Police', 'Police'),
+      skill('skill.martial-arts', 'Martial Arts'),
+      skill('skill.medtech', 'MedTech/General', 'General'),
+      skill('skill.small-arms', 'Small Arms'),
+    ],
+    variableComponentSkills: [{
+      id: 'police-officer.driving-any',
+      displayName: 'Driving subskill',
+      skillId: 'skill.driving',
+      legalSubskills: [...DRIVING_SUBSKILLS],
+    }],
+    affiliationBoundComponentSkills: [{ skillId: 'skill.streetwise', displayName: 'Streetwise/Affiliation' }],
+  },
+  {
+    id: DETECTIVE_FIELD_ID,
+    displayName: 'Detective',
+    category: 'advanced',
+    source: { ...source('skill-field-detective'), page: 93 },
+    prerequisites: [{ id: 'detective.int-floor', kind: 'attribute-minimum', attributeId: 'INT', minimum: 3, description: 'INT 3+' }, {
+      id: 'detective.entry',
+      kind: 'any-of',
+      description: 'INT 4+ and WIL 4+, or INT 3+ and WIL 4+ with the Police Officer Field',
+      options: [
+        { id: 'detective.standard-int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' },
+        { id: 'detective.police-officer', kind: 'skill-field', fieldIds: [POLICE_OFFICER_FIELD_ID], description: 'Police Officer Field' },
+      ],
+    }, { id: 'detective.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 4, description: 'WIL 4+' }],
+    componentSkills: [
+      skill('skill.career', 'Career/Detective', 'Detective'),
+      skill('skill.computers', 'Computers'),
+      skill('skill.interrogation', 'Interrogation'),
+      skill('skill.investigation', 'Investigation'),
+      skill('skill.perception', 'Perception'),
+    ],
+    variableComponentSkills: [{
+      id: 'detective.security-systems-any',
+      displayName: 'Security Systems subskill',
+      skillId: 'skill.security-systems',
+      legalSubskills: [...SECURITY_SYSTEMS_SUBSKILLS],
+    }],
+    affiliationBoundComponentSkills: [{ skillId: 'skill.streetwise', displayName: 'Streetwise/Affiliation' }],
+  },
+  {
+    id: INTELLIGENCE_FIELD_ID,
+    displayName: 'Intelligence',
+    category: 'advanced',
+    source: { ...source('skill-field-intelligence'), page: 93 },
+    prerequisites: [{ id: 'intelligence.int-floor', kind: 'attribute-minimum', attributeId: 'INT', minimum: 3, description: 'INT 3+' }, {
+      id: 'intelligence.entry',
+      kind: 'any-of',
+      description: 'INT 4+ and WIL 4+, or INT 3+ and WIL 4+ with the Police Officer Field',
+      options: [
+        { id: 'intelligence.standard-int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' },
+        { id: 'intelligence.police-officer', kind: 'skill-field', fieldIds: [POLICE_OFFICER_FIELD_ID], description: 'Police Officer Field' },
+      ],
+    }, { id: 'intelligence.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 4, description: 'WIL 4+' }],
+    componentSkills: [
+      skill('skill.communications', 'Comms/Conventional', 'Conventional'),
+      skill('skill.computers', 'Computers'),
+      skill('skill.cryptography', 'Cryptography'),
+      skill('skill.sensor-operations', 'Sensor Operations'),
+    ],
+    variableComponentSkills: [{
+      id: 'intelligence.language-any',
+      displayName: 'Language (currently modeled choices)',
+      skillId: 'skill.language',
+      legalSubskills: [...MODELED_LANGUAGE_SUBSKILLS],
     }],
   },
   {
@@ -394,7 +476,7 @@ export function getSkillField(fieldId: string): SkillFieldDefinition {
 }
 
 export function skillFieldCost(field: SkillFieldDefinition, costXpPerSkill: number): number {
-  return (field.componentSkills.length + (field.variableComponentSkills?.length ?? 0)) * costXpPerSkill
+  return (field.componentSkills.length + (field.variableComponentSkills?.length ?? 0) + (field.affiliationBoundComponentSkills?.length ?? 0)) * costXpPerSkill
 }
 
 export function validateSkillFieldCatalog(catalog: readonly SkillFieldDefinition[] = SKILL_FIELD_CATALOG): SkillFieldCatalogValidationIssue[] {
@@ -413,6 +495,11 @@ export function validateSkillFieldCatalog(catalog: readonly SkillFieldDefinition
     for (const component of field.variableComponentSkills ?? []) {
       if (!component.id || !component.displayName || !component.skillId || component.legalSubskills.length === 0 || new Set(component.legalSubskills).size !== component.legalSubskills.length) {
         issues.push({ fieldId: field.id, message: `Malformed variable component Skill: ${component.id || '(missing)'}` })
+      }
+    }
+    for (const component of field.affiliationBoundComponentSkills ?? []) {
+      if (!component.displayName || !['skill.language', 'skill.protocol', 'skill.streetwise'].includes(component.skillId)) {
+        issues.push({ fieldId: field.id, message: `Malformed affiliation-bound component Skill: ${component.displayName || '(missing)'}` })
       }
     }
   }

@@ -22,7 +22,7 @@ import type { ValidationIssue, ValidationResult } from './model'
 import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
-import { getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
+import { getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { stage3SchoolClassification, usedStage3SchoolFamilies } from '../domain/lifeModules/stage3Schooling'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
 import { getMasterSkillFieldGoal } from '../domain/skillFields/goalCatalog'
@@ -955,6 +955,19 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
         !ledger?.sourceAwards.some((award) => award.provenanceId === grant.provenanceId && award.xp === grant.xpPerSkill)
       ) issues.push(issue('life-modules.skill-field.choice.malformed', `creation.lifeModules.selectedSkillFields.${index}.variableSkillChoices`, `${field.displayName} variable Skill choice is malformed or lacks its source award.`))
     }
+    for (const component of field.affiliationBoundComponentSkills ?? []) {
+      const finalAffiliation = [...character.affiliations].reverse().find((entry) => entry.role === 'final')
+      const context = finalAffiliation ? getLifeModuleAffiliationContextByAffiliationId(finalAffiliation.affiliationId) : undefined
+      const parameter = component.skillId === 'skill.language'
+        ? state.affiliationLanguage
+        : component.skillId === 'skill.streetwise'
+          ? context?.streetwiseContextLabel
+          : context?.protocolContextLabel
+      const ledger = character.skills.find((entry) => entry.address.skillId === component.skillId && entry.address.parameter?.value.toLowerCase() === parameter?.toLowerCase())
+      if (!ledger?.sourceAwards.some((award) => award.provenanceId === grant.provenanceId && award.xp === grant.xpPerSkill)) {
+        issues.push(issue('life-modules.skill-field.affiliation-award.malformed', `creation.lifeModules.selectedSkillFields.${index}`, `${field.displayName} affiliation-bound Skill is missing or malformed.`))
+      }
+    }
     for (const prerequisite of field.prerequisites) {
       const tracked = state.prerequisiteIssues.find((entry) => entry.moduleId === field.id && entry.prerequisiteId === prerequisite.id)
       if (!tracked || tracked.description !== prerequisite.description) {
@@ -997,8 +1010,10 @@ function skillFieldPrerequisiteSatisfied(character: CharacterDefinition, prerequ
   if (prerequisite.kind === 'attribute-minimum') return (character.attributes.find((entry) => entry.attributeId === prerequisite.attributeId)?.purchasedLevel ?? 0) >= prerequisite.minimum
   if (prerequisite.kind === 'skill-field') return prerequisite.fieldIds.some((fieldId) => character.creation.lifeModules?.selectedSkillFields.some((grant) => grant.fieldId === fieldId))
   if (prerequisite.kind === 'trait') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
+  if (prerequisite.kind === 'trait-minimum') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && (entry.attainedTp ?? 0) >= prerequisite.minimum)
   if (prerequisite.kind === 'trait-absent') return !character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
   if (prerequisite.kind === 'affiliation') return character.affiliations.length > 0 && (prerequisite.classification !== 'non-clan' || character.affiliations.every((entry) => !entry.affiliationId.startsWith('affiliation.clan')))
+  if (prerequisite.kind === 'any-of') return prerequisite.options.some((option) => skillFieldPrerequisiteSatisfied(character, option))
   return false
 }
 

@@ -1,7 +1,7 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
-import { BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, MARINE_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID } from '../skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { stage3SchoolClassification } from './stage3Schooling'
 
 export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
@@ -41,6 +41,8 @@ export const BACK_WOODS_ID = 'stage1.back-woods'
 export const STAGE_2_BACK_WOODS_ID = 'stage2.back-woods'
 export const STAGE_2_HIGH_SCHOOL_ID = 'stage2.high-school'
 export const TECHNICAL_COLLEGE_ID = 'stage3.technical-college'
+export const POLICE_ACADEMY_ID = 'stage3.police-academy'
+export const INTELLIGENCE_OPERATIVE_TRAINING_ID = 'stage3.intelligence-operative-training'
 export const MILITARY_ACADEMY_ID = 'stage3.military-academy'
 export const MILITARY_ENLISTMENT_ID = 'stage3.military-enlistment'
 export const AGITATOR_ID = 'stage4.agitator'
@@ -267,6 +269,98 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     ],
     notes: ['Civilian Stage 3 school. Base cost is 600 XP plus selected Skill Field costs.', 'Alpha Slice 59 exposes only source-audited Fields whose requirements can be represented without unresolved /Any choices.'],
     deferredRules: [],
+  },
+  {
+    id: POLICE_ACADEMY_ID,
+    displayName: 'Police Academy',
+    stage: 3,
+    kind: 'higher-education',
+    stage3School: stage3SchoolClassification(POLICE_ACADEMY_ID),
+    source: source(82, 'stage-3-police-academy'),
+    costXp: 680,
+    prerequisites: [],
+    skillFieldSelection: {
+      offers: [
+        { fieldId: POLICE_OFFICER_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 0.5 },
+        { fieldId: DETECTIVE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: INTELLIGENCE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: TECHNICIAN_MILITARY_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: TECHNICIAN_AEROSPACE_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: TECHNICIAN_VEHICLE_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+      ],
+      exactlyBasic: 1,
+      minimumAdvanced: 1,
+      maximumTotal: 3,
+      referenceOnlyOffers: [
+        { displayName: 'Analysis', category: 'advanced', chronologyYears: 1, reason: 'Two unrestricted Language/Any choices and Tactics/Any are not yet governed mechanically.' },
+        { displayName: 'Communications', category: 'advanced', chronologyYears: 1, reason: 'Protocol/Any is not yet governed mechanically.' },
+        { displayName: 'Covert Operations', category: 'special', chronologyYears: 2, reason: 'Protocol/Any, Streetwise/Any, and Tracking/Any are not yet fully governed mechanically.' },
+        { displayName: 'Police Tactical Officer', category: 'special', chronologyYears: 2, reason: 'Thrown Weapons/Any is not yet governed mechanically.' },
+        { displayName: 'Special Forces', category: 'special', chronologyYears: 2, reason: 'Survival/Any and Tracking/Any are not yet fully governed mechanically.' },
+      ],
+    },
+    awards: [
+      fixed('police-academy.attribute.rfl', 100, attribute('RFL')),
+      fixed('police-academy.attribute.wil', 100, attribute('WIL')),
+      fixed('police-academy.trait.connections', 50, trait('trait.connections', 'Connections')),
+      fixed('police-academy.trait.rank', 100, trait('trait.rank', 'Rank')),
+      fixed('police-academy.trait.reputation', 100, trait('trait.reputation', 'Reputation')),
+      fixed('police-academy.skill.computers', 15, skill('skill.computers', 'Computers')),
+      { id: 'police-academy.skill.driving', kind: 'any-skill-choice', xp: 20, skillId: 'skill.driving', displayName: 'Driving/Any', count: 1 },
+      { id: 'police-academy.skill.protocol-affiliation', kind: 'affiliation-bound-skill', xp: 25, skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' },
+      { id: 'police-academy.skill.streetwise-affiliation', kind: 'affiliation-bound-skill', xp: 30, skillId: 'skill.streetwise', displayName: 'Streetwise/Affiliation' },
+      { id: 'police-academy.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 140, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: ['Intelligence/Police Stage 3 school. Base cost is 680 XP plus selected Skill Field costs.'],
+    deferredRules: ['Officer Candidate School and source-listed reference-only Fields remain deferred.'],
+  },
+  {
+    id: INTELLIGENCE_OPERATIVE_TRAINING_ID,
+    displayName: 'Intelligence Operative Training',
+    stage: 3,
+    kind: 'higher-education',
+    stage3School: stage3SchoolClassification(INTELLIGENCE_OPERATIVE_TRAINING_ID),
+    source: source(83, 'stage-3-intelligence-operative-training'),
+    costXp: 760,
+    prerequisites: [
+      { id: 'intelligence-operative.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' },
+      { id: 'intelligence-operative.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 5, description: 'WIL 5+' },
+      { id: 'intelligence-operative.connections', kind: 'trait-minimum', traitId: 'trait.connections', minimum: 2, description: 'Connections +2 TP or higher' },
+    ],
+    skillFieldSelection: {
+      offers: [
+        { fieldId: BASIC_TRAINING_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: DETECTIVE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: INTELLIGENCE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: POLICE_OFFICER_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: SCOUT_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+      ],
+      exactlyBasic: 1,
+      minimumAdvanced: 1,
+      maximumTotal: 3,
+      referenceOnlyOffers: [
+        { displayName: 'Analysis', category: 'advanced', chronologyYears: 1, reason: 'Two unrestricted Language/Any choices and Tactics/Any are not yet governed mechanically.' },
+        { displayName: 'Covert Operations', category: 'advanced', chronologyYears: 1, reason: 'Protocol/Any, Streetwise/Any, and Tracking/Any are not yet fully governed mechanically.' },
+        { displayName: 'Police Tactical Officer', category: 'special', chronologyYears: 2, reason: 'Thrown Weapons/Any is not yet governed mechanically.' },
+        { displayName: 'Special Forces', category: 'special', chronologyYears: 2, reason: 'Survival/Any and Tracking/Any are not yet fully governed mechanically.' },
+      ],
+    },
+    awards: [
+      fixed('intelligence-operative.attribute.int', 100, attribute('INT')),
+      fixed('intelligence-operative.attribute.wil', 150, attribute('WIL')),
+      { id: 'intelligence-operative.attribute.any', kind: 'flexible-xp', xpPerGrant: 50, count: 1, allowedTargetTypes: ['attribute'] },
+      fixed('intelligence-operative.trait.alternate-id', 50, trait('trait.alternate-id', 'Alternate ID')),
+      fixed('intelligence-operative.trait.connections', 200, trait('trait.connections', 'Connections')),
+      fixed('intelligence-operative.trait.in-for-life', -300, trait('trait.in-for-life', 'In For Life')),
+      fixed('intelligence-operative.trait.rank', 250, trait('trait.rank', 'Rank')),
+      fixed('intelligence-operative.trait.wealth', 50, trait('trait.wealth', 'Wealth')),
+      fixed('intelligence-operative.skill.acting', 20, skill('skill.acting', 'Acting')),
+      fixed('intelligence-operative.skill.computers', 20, skill('skill.computers', 'Computers')),
+      { id: 'intelligence-operative.skill.protocol-affiliation', kind: 'affiliation-bound-skill', xp: 20, skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' },
+      { id: 'intelligence-operative.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 150, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: ['Intelligence/Police Stage 3 school. Base cost is 760 XP plus selected Skill Field costs.'],
+    deferredRules: ['Officer Candidate School and source-listed reference-only Fields remain deferred.'],
   },
   {
     id: MILITARY_ACADEMY_ID,

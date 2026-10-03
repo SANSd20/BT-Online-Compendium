@@ -2,13 +2,13 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, getLifeModule, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID } from '../../domain/lifeModules/catalog'
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
-import { BASIC_TRAINING_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
+import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyStage0Affiliation, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
@@ -18,14 +18,14 @@ import { LifeModuleAuditDrawer, LifeModuleDashboard, LifeModuleReviewSummary, Li
 import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesAffiliationTheme, previewStage0Affiliation } from '../components/stage0PreviewModel'
-import { previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
+import { defaultStage3FieldIds, previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
 import { emptyStageChoiceSlot, filterSiblingDestinationOptions, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
 }
 
-const STAGE_3_SCHOOL_IDS = [TECHNICAL_COLLEGE_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID] as const
+const STAGE_3_SCHOOL_IDS = [TECHNICAL_COLLEGE_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID] as const
 type Stage3SchoolId = (typeof STAGE_3_SCHOOL_IDS)[number]
 
 interface ResolutionDraft {
@@ -164,14 +164,15 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
 
   function selectStageModule(moduleId: SupportedStageModuleId) {
     if (STAGE_3_SCHOOL_IDS.includes(moduleId as Stage3SchoolId)) {
-      setStage3FieldIds(moduleId === TECHNICAL_COLLEGE_ID ? [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID] : [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID])
+      setStage3FieldIds(defaultStage3FieldIds(moduleId as Stage3SchoolId))
     }
     setStageModulePreviewId(moduleId)
     setStageChoiceSlotValues({})
   }
 
   function selectStage3BasicField(fieldId: string) {
-    setStage3FieldIds((current) => [fieldId, ...current.filter((id) => getSkillField(id).category !== 'basic')])
+    const school = stageModulePreviewId && STAGE_3_SCHOOL_IDS.includes(stageModulePreviewId as Stage3SchoolId) ? getLifeModule(stageModulePreviewId) : null
+    setStage3FieldIds((current) => [fieldId, ...current.filter((id) => school?.skillFieldSelection?.offers.find((offer) => offer.fieldId === id)?.category !== 'basic')])
     setStageChoiceSlotValues({})
   }
 
@@ -234,15 +235,16 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     const availabilityId = `${schoolId}-availability`
     const offers = school.skillFieldSelection!.offers
     const isSelected = stageModulePreviewId === schoolId
-    const defaultFieldIds = schoolId === TECHNICAL_COLLEGE_ID ? [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID] : [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID]
+    const defaultFieldIds = defaultStage3FieldIds(schoolId)
     const candidateFieldIds = isSelected ? stage3FieldIds : defaultFieldIds
     const selectedOffers = offers.filter((offer) => candidateFieldIds.includes(offer.fieldId))
     const advancedCount = selectedOffers.filter((entry) => entry.category === 'advanced').length
+    const selectedFieldCount = selectedOffers.length
     const years = selectedOffers.reduce((total, offer) => total + offer.chronologyYears, 0)
     const cost = selectedOffers.reduce((total, offer) => total + skillFieldCost(getSkillField(offer.fieldId), offer.costXpPerSkill), school.costXp)
     return <article key={schoolId} className={isSelected ? 'preview-selected' : ''} aria-disabled={!schoolEligibility.eligible}>
       <h3>{school.displayName}</h3>
-      <p>{school.costXp} XP base cost · choose exactly one Basic Field and one or two Advanced Fields. Each Field Skill receives +30 XP at a cost of 24 XP.</p>
+      <p>{school.costXp} XP base cost · choose exactly one Basic Field, at least one Advanced Field, and no more than three Fields total. Special Fields require an Advanced Field. Each Field Skill receives +30 XP at a cost of 24 XP.</p>
       {school.conditionalPriorModuleAwards && <p><strong>Conditional entry adjustment:</strong> {school.conditionalPriorModuleAwards.description}</p>}
       <fieldset><legend>Basic Field</legend>
         {offers.filter((offer) => offer.category === 'basic').map((offer) => {
@@ -258,9 +260,18 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           const selected = isSelected && stage3FieldIds.includes(field.id)
           const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds)
           const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
-          return <label key={field.id}><input type="checkbox" checked={selected} disabled={!isSelected || (selected ? advancedCount <= 1 : availability.state === 'unavailable' || advancedCount >= 2)} onChange={() => toggleStage3AdvancedField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
+          return <label key={field.id}><input type="checkbox" checked={selected} disabled={!isSelected || (selected ? advancedCount <= 1 : availability.state === 'unavailable' || selectedFieldCount >= 3)} onChange={() => toggleStage3AdvancedField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
         })}
       </fieldset>
+      {offers.some((offer) => offer.category === 'special') && <fieldset><legend>Special Fields</legend>
+        {offers.filter((offer) => offer.category === 'special').map((offer) => {
+          const field = getSkillField(offer.fieldId)
+          const selected = isSelected && stage3FieldIds.includes(field.id)
+          const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds)
+          const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
+          return <label key={field.id}><input type="checkbox" checked={selected} disabled={!isSelected || (selected ? false : advancedCount === 0 || availability.state === 'unavailable' || selectedFieldCount >= 3)} onChange={() => toggleStage3AdvancedField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} years <span>{status}</span></label>
+        })}
+      </fieldset>}
       {isSelected && <p><strong>Total: {cost} XP · +{years} years · expected age {(currentAge(character!) ?? 16) + years}</strong></p>}
       {school.skillFieldSelection!.referenceOnlyOffers && <details><summary>Source-offered reference-only Fields</summary><ul>{school.skillFieldSelection!.referenceOnlyOffers!.map((offer) => <li key={`${offer.category}/${offer.displayName}`}><strong>{offer.displayName}</strong> ({offer.category}, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'}): {offer.reason}</li>)}</ul></details>}
       {!schoolEligibility.eligible && <p className="notice" id={availabilityId}>{schoolEligibility.reason}</p>}

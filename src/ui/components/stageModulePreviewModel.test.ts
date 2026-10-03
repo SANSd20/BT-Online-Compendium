@@ -4,14 +4,16 @@ import {
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
   CAPELLAN_COMMONALITY_ID,
+  INTELLIGENCE_OPERATIVE_TRAINING_ID,
   MILITARY_ACADEMY_ID,
   MILITARY_ENLISTMENT_ID,
+  POLICE_ACADEMY_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   TECHNICAL_COLLEGE_ID,
 } from '../../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
-import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, MARINE_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, SCOUT_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, MARINE_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applySupportedStageModule, previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from './stageModulePreviewModel'
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
@@ -29,6 +31,8 @@ describe('supported Stage 1–4 module preview model', () => {
     ['stage-2-selection', STAGE_2_BACK_WOODS_ID, 'WIL', 220, 'stage2.back-woods.flexible'],
     ['stage-2-selection', STAGE_2_HIGH_SCHOOL_ID, 'CHA', 125, 'high-school.interest-40'],
     ['stage-3-selection', TECHNICAL_COLLEGE_ID, 'DEX', 200, 'technical-college.flexible'],
+    ['stage-3-selection', POLICE_ACADEMY_ID, 'RFL', 200, 'police-academy.flexible'],
+    ['stage-3-selection', INTELLIGENCE_OPERATIVE_TRAINING_ID, 'INT', 200, 'intelligence-operative.flexible'],
     ['stage-3-selection', MILITARY_ACADEMY_ID, 'WIL', 350, 'military-academy.flexible'],
     ['stage-3-selection', MILITARY_ENLISTMENT_ID, 'STR', 225, 'military-enlistment.flexible'],
     ['stage-4-selection', AGITATOR_ID, 'WIL', 225, 'agitator.skill.driving'],
@@ -79,6 +83,9 @@ describe('supported Stage 1–4 module preview model', () => {
     expect(stage3FieldSelectionStatus(character, TECHNICAL_COLLEGE_ID, TECHNICIAN_AEROSPACE_FIELD_ID, [PILOT_EXOSKELETON_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID])).toMatchObject({
       state: 'unavailable', reasons: expect.arrayContaining(['Technician/Civilian or Technician/Military Field']),
     })
+    expect(stage3FieldSelectionStatus(character, INTELLIGENCE_OPERATIVE_TRAINING_ID, BASIC_TRAINING_FIELD_ID, [BASIC_TRAINING_FIELD_ID, POLICE_OFFICER_FIELD_ID])).toMatchObject({
+      state: 'final-prerequisites-outstanding', reasons: ['INT 3+'],
+    })
   })
 
   it('rebuilds changed military Field previews without stale costs, awards, choices, or provenance', () => {
@@ -125,6 +132,20 @@ describe('supported Stage 1–4 module preview model', () => {
     expect(replacement.creation.lifeModules!.selectedSkillFields.some((entry) => entry.fieldId === SCOUT_FIELD_ID)).toBe(false)
     expect(replacement.skills.some((entry) => entry.displayName === 'Comms/Conventional')).toBe(false)
     expect(replacement.provenance.some((entry) => entry.description === 'Scout Skill Field grant')).toBe(false)
+    expect(JSON.stringify(character)).toBe(before)
+  })
+
+  it('replaces Intelligence/Police Field previews without stale affiliation awards or governed choices', () => {
+    const character = draftAt('stage-3-selection')
+    const before = JSON.stringify(character)
+    const detective = previewSupportedStageModule(character, POLICE_ACADEMY_ID, [POLICE_OFFICER_FIELD_ID, DETECTIVE_FIELD_ID])!
+    expect(detective.creation.lifeModules!.pendingAwards.some((entry) => entry.skillFieldChoice?.fieldId === DETECTIVE_FIELD_ID)).toBe(true)
+    expect(detective.skills.some((entry) => entry.displayName === 'Career/Detective')).toBe(true)
+
+    const technician = previewSupportedStageModule(character, POLICE_ACADEMY_ID, [POLICE_OFFICER_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID])!
+    expect(technician.creation.lifeModules!.pendingAwards.some((entry) => entry.skillFieldChoice?.fieldId === DETECTIVE_FIELD_ID)).toBe(false)
+    expect(technician.skills.some((entry) => entry.displayName === 'Career/Detective')).toBe(false)
+    expect(technician.provenance.some((entry) => entry.description === 'Detective Skill Field grant')).toBe(false)
     expect(JSON.stringify(character)).toBe(before)
   })
 

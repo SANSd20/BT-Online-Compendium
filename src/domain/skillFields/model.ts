@@ -16,6 +16,10 @@ export interface SkillFieldDefinition {
     skillId: string
     legalSubskills: string[]
   }>
+  affiliationBoundComponentSkills?: Array<{
+    skillId: 'skill.language' | 'skill.protocol' | 'skill.streetwise'
+    displayName: string
+  }>
 }
 
 export interface SkillFieldCatalogValidationIssue {
