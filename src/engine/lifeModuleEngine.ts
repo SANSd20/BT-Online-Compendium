@@ -16,6 +16,8 @@ import {
   FEDERATED_SUNS_CRUCIS_MARCH_ID,
   getLifeModule,
   LIFE_MODULE_RULES_SOURCE,
+  MILITARY_ACADEMY_ID,
+  MILITARY_ENLISTMENT_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   TECHNICAL_COLLEGE_ID,
@@ -25,7 +27,7 @@ import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, Life
 import { knownPendingChoiceValues } from '../domain/lifeModules/awardOptions'
 import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
-import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
 
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
@@ -54,7 +56,7 @@ export function createLifeModuleCharacter(
     prerequisiteIssues: [],
     stopState: 'not-eligible',
     limitations: [
-      'Alpha Slice 59 includes the Stage 0/1/2 bounded catalog, Technical College with seven source-audited selectable Skill Fields, Agitator at Stage 4, and final-review/Optimization foundations.',
+      'Alpha Slice 60 includes the Stage 0/1/2 bounded catalog, Technical College, Military Academy, Military Enlistment, nine source-audited mechanically acquirable Skill Fields, Agitator at Stage 4, and final-review/Optimization foundations.',
       'The current minimal catalog can resolve language, /Affiliation, /Any, multi-choice, and flexible awards.',
       'Broad Stage 3/4 and Skill Field catalogs, repeated schooling and Stage 4 execution, Changing Affiliations, Life Events, equipment, PDF export, and true finalization are deferred.',
     ],
@@ -250,10 +252,34 @@ export function applyTechnicalCollege(
   character: CharacterDefinition,
   fieldIds: string[] = [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID],
 ): CharacterDefinition {
+  return applyStage3SchoolDefinition(character, TECHNICAL_COLLEGE_ID, fieldIds)
+}
+
+export function applyMilitaryAcademy(
+  character: CharacterDefinition,
+  fieldIds: string[] = [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID],
+): CharacterDefinition {
+  return applyStage3SchoolDefinition(character, MILITARY_ACADEMY_ID, fieldIds)
+}
+
+export function applyMilitaryEnlistment(
+  character: CharacterDefinition,
+  fieldIds: string[] = [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID],
+): CharacterDefinition {
+  return applyStage3SchoolDefinition(character, MILITARY_ENLISTMENT_ID, fieldIds)
+}
+
+function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: string, fieldIds: string[]): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-3-selection') throw new Error('A Stage 3 school is not the current legal action.')
-  if (character.lifeModuleHistory.some((entry) => entry.stage === 3)) throw new Error('Repeated Stage 3 schooling is not supported in Alpha Slice 9.')
-  const school = getLifeModule(TECHNICAL_COLLEGE_ID)
+  if (character.lifeModuleHistory.some((entry) => entry.stage === 3)) throw new Error('Repeated Stage 3 schooling is not supported in Alpha Slice 60.')
+  const publishedSchool = getLifeModule(moduleId)
+  if (publishedSchool.stage !== 3 || !publishedSchool.skillFieldSelection) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
+  const conditional = publishedSchool.conditionalPriorModuleAwards
+  const conditionalApplies = Boolean(conditional && conditional.absentModuleIds.every((id) => !character.lifeModuleHistory.some((entry) => entry.moduleId === id)))
+  const school: LifeModuleDefinition = conditionalApplies
+    ? { ...publishedSchool, awards: [...conditional!.awards, ...publishedSchool.awards], notes: [...publishedSchool.notes, conditional!.description] }
+    : publishedSchool
   validateSchoolFieldSelection(school, fieldIds)
   const selections = fieldIds.map((fieldId) => ({ field: getSkillField(fieldId), offer: school.skillFieldSelection!.offers.find((entry) => entry.fieldId === fieldId)! }))
   const fieldCostXp = selections.reduce((total, selection) => total + skillFieldCost(selection.field, selection.offer.costXpPerSkill), 0)
@@ -285,8 +311,8 @@ export function applyTechnicalCollege(
 }
 
 export function applyStage3School(character: CharacterDefinition, moduleId: string, fieldIds: string[]): CharacterDefinition {
-  if (moduleId !== TECHNICAL_COLLEGE_ID) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
-  return applyTechnicalCollege(character, fieldIds)
+  if (![TECHNICAL_COLLEGE_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
+  return applyStage3SchoolDefinition(character, moduleId, fieldIds)
 }
 
 export function continueToStage4(character: CharacterDefinition): CharacterDefinition {

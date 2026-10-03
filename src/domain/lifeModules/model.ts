@@ -63,6 +63,17 @@ export interface LifeModuleDefinition {
     exactlyBasic: number
     minimumAdvanced: number
     maximumTotal: number
+    referenceOnlyOffers?: Array<{
+      displayName: string
+      category: 'basic' | 'advanced' | 'special'
+      chronologyYears: number
+      reason: string
+    }>
+  }
+  conditionalPriorModuleAwards?: {
+    absentModuleIds: string[]
+    description: string
+    awards: LifeModuleAward[]
   }
   prerequisites: LifeModulePrerequisite[]
   awards: LifeModuleAward[]

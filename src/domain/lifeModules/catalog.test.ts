@@ -6,6 +6,8 @@ import {
   CAPELLAN_COMMONALITY_ID,
   FEDERATED_SUNS_CRUCIS_MARCH_ID,
   LIFE_MODULE_CATALOG,
+  MILITARY_ACADEMY_ID,
+  MILITARY_ENLISTMENT_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   TECHNICAL_COLLEGE_ID,
@@ -14,7 +16,7 @@ import {
 } from './catalog'
 
 describe('Life Module Alpha catalog', () => {
-  it('contains the nine audited Core entries through the minimal Stage 4 branch', () => {
+  it('contains the eleven audited Core entries through the minimal Stage 4 branch', () => {
     expect(LIFE_MODULE_CATALOG.map((entry) => entry.id)).toEqual([
       UNIVERSAL_STAGE_0_ID,
       CAPELLAN_COMMONALITY_ID,
@@ -24,9 +26,14 @@ describe('Life Module Alpha catalog', () => {
       STAGE_2_BACK_WOODS_ID,
       STAGE_2_HIGH_SCHOOL_ID,
       TECHNICAL_COLLEGE_ID,
+      MILITARY_ACADEMY_ID,
+      MILITARY_ENLISTMENT_ID,
       AGITATOR_ID,
     ])
     expect(validateLifeModuleCatalog()).toEqual([])
+    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ACADEMY_ID)).toMatchObject({ costXp: 830, skillFieldSelection: { exactlyBasic: 1, minimumAdvanced: 1, maximumTotal: 3 } })
+    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ENLISTMENT_ID)).toMatchObject({ costXp: 720, skillFieldSelection: { exactlyBasic: 1, minimumAdvanced: 1, maximumTotal: 3 } })
+    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ACADEMY_ID)?.skillFieldSelection?.referenceOnlyOffers).toContainEqual(expect.objectContaining({ displayName: 'MechWarrior', category: 'advanced', reason: expect.stringContaining('Technician/Any') }))
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === AGITATOR_ID)).toMatchObject({
       stage: 4,
       costXp: 900,

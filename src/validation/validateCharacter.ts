@@ -944,9 +944,9 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
   const grants = state.selectedSkillFields.filter((grant) => grant.schoolModuleId === stage3.moduleId)
   const basicCount = grants.filter((grant) => grant.category === 'basic').length
   const advancedCount = grants.filter((grant) => grant.category === 'advanced').length
-  if (basicCount !== policy.exactlyBasic) issues.push(issue('life-modules.skill-field.basic.required', 'creation.lifeModules.selectedSkillFields', 'Technical College requires exactly one Basic Skill Field.'))
-  if (advancedCount < policy.minimumAdvanced) issues.push(issue('life-modules.skill-field.advanced.required', 'creation.lifeModules.selectedSkillFields', 'Technical College requires at least one Advanced Skill Field.'))
-  if (grants.length > policy.maximumTotal) issues.push(issue('life-modules.skill-field.maximum', 'creation.lifeModules.selectedSkillFields', `Technical College permits no more than ${policy.maximumTotal} Skill Fields.`))
+  if (basicCount !== policy.exactlyBasic) issues.push(issue('life-modules.skill-field.basic.required', 'creation.lifeModules.selectedSkillFields', `${school.displayName} requires exactly one Basic Skill Field.`))
+  if (advancedCount < policy.minimumAdvanced) issues.push(issue('life-modules.skill-field.advanced.required', 'creation.lifeModules.selectedSkillFields', `${school.displayName} requires at least one Advanced Skill Field.`))
+  if (grants.length > policy.maximumTotal) issues.push(issue('life-modules.skill-field.maximum', 'creation.lifeModules.selectedSkillFields', `${school.displayName} permits no more than ${policy.maximumTotal} Skill Fields.`))
   if (stage3Count === 1) {
     const expectedAge = 16 + grants.reduce((total, grant) => total + grant.chronologyYears, 0)
     const chronology = character.chronology.find((entry) => entry.eventId === `${stage3.moduleId}.complete`)

@@ -21,7 +21,9 @@ AToW Errata v4.0 was checked against the selected Alpha Slice 4 modules. No erra
 
 AToW Errata v4.0 was also checked during the supplied Alpha Slice 6 rules audit. No erratum changes the implemented Stage 2 Back Woods or High School data; the nearby Military School/Military Academy correction remains outside this slice.
 
-The supplied Alpha Slice 7 audit likewise records no erratum affecting Technical College or its two implemented Technician Fields. The Military Academy Pilot/WarShip correction remains outside this slice.
+The supplied Alpha Slice 7 audit likewise records no erratum affecting Technical College or its two implemented Technician Fields.
+
+Alpha Slice 60 audited corrected-printing pp. 80–83 and the Military Skill Fields on p. 94. Military Academy is 830 XP plus Field costs; Military Enlistment is 720 XP plus Field costs. Both follow the Stage 3 rule of exactly one Basic Field, at least one Advanced Field, no more than three total, +30 XP to every component Skill at a cost of 24 XP per Skill, and source-listed Field time. Academy's published conditional entry adjustment applies when neither Preparatory School nor Military School was taken in Stage 2. The v4.0 errata adds Pilot/WarShip to Military Academy's Special list; the corrected third printing already contains that entry, so no mechanical delta is required. Slice 60 mechanically exposes only Basic Training and Infantry from these military lists; the complete source-offered lists remain visible as reference-only metadata.
 
 The supplied Alpha Slice 8 audit records no erratum affecting Agitator or the implemented Stage 4 Real Life rules. No fresh PDF transcription was performed for Slice 8; the handoff's audited values and no-page source identifiers were preserved without inventing page citations.
 

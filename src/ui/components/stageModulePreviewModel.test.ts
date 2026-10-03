@@ -4,6 +4,8 @@ import {
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
   CAPELLAN_COMMONALITY_ID,
+  MILITARY_ACADEMY_ID,
+  MILITARY_ENLISTMENT_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   TECHNICAL_COLLEGE_ID,
@@ -27,6 +29,8 @@ describe('supported Stage 1–4 module preview model', () => {
     ['stage-2-selection', STAGE_2_BACK_WOODS_ID, 'WIL', 220, 'stage2.back-woods.flexible'],
     ['stage-2-selection', STAGE_2_HIGH_SCHOOL_ID, 'CHA', 125, 'high-school.interest-40'],
     ['stage-3-selection', TECHNICAL_COLLEGE_ID, 'DEX', 200, 'technical-college.flexible'],
+    ['stage-3-selection', MILITARY_ACADEMY_ID, 'WIL', 350, 'military-academy.flexible'],
+    ['stage-3-selection', MILITARY_ENLISTMENT_ID, 'STR', 225, 'military-enlistment.flexible'],
     ['stage-4-selection', AGITATOR_ID, 'WIL', 225, 'agitator.skill.driving'],
   ] as const)('previews %s module %s without mutating committed state', (phase, moduleId, attributeId, expectedXp, pendingAwardId) => {
     const character = draftAt(phase)
@@ -69,10 +73,10 @@ describe('supported Stage 1–4 module preview model', () => {
 
   it('distinguishes final-validation requirements from a missing prerequisite Field', () => {
     const character = draftAt('stage-3-selection')
-    expect(stage3FieldSelectionStatus(character, TECHNICIAN_CIVILIAN_FIELD_ID, [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID])).toMatchObject({
+    expect(stage3FieldSelectionStatus(character, TECHNICAL_COLLEGE_ID, TECHNICIAN_CIVILIAN_FIELD_ID, [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID])).toMatchObject({
       state: 'final-prerequisites-outstanding', reasons: ['INT 3+', 'DEX 3+'],
     })
-    expect(stage3FieldSelectionStatus(character, TECHNICIAN_AEROSPACE_FIELD_ID, [PILOT_EXOSKELETON_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID])).toMatchObject({
+    expect(stage3FieldSelectionStatus(character, TECHNICAL_COLLEGE_ID, TECHNICIAN_AEROSPACE_FIELD_ID, [PILOT_EXOSKELETON_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID])).toMatchObject({
       state: 'unavailable', reasons: expect.arrayContaining(['Technician/Civilian or Technician/Military Field']),
     })
   })

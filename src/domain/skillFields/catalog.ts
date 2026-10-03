@@ -22,6 +22,7 @@ export const CARTOGRAPHER_FIELD_ID = 'field.cartographer'
 export const PILOT_INDUSTRIALMECH_FIELD_ID = 'field.pilot-industrialmech'
 export const TECHNICIAN_AEROSPACE_FIELD_ID = 'field.technician-aerospace'
 export const TECHNICIAN_MECH_FIELD_ID = 'field.technician-mech'
+export const INFANTRY_FIELD_ID = 'field.infantry'
 
 export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
   {
@@ -156,6 +157,23 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       skill('skill.technician', 'Technician/Mechanical', 'Mechanical'),
       skill('skill.technician', 'Technician/Myomer', 'Myomer'),
       skill('skill.technician', 'Technician/Nuclear', 'Nuclear'),
+    ],
+  },
+  {
+    id: INFANTRY_FIELD_ID,
+    displayName: 'Infantry',
+    category: 'advanced',
+    source: { ...source('skill-field-infantry'), page: 94 },
+    prerequisites: [
+      { id: 'infantry.field', kind: 'skill-field', fieldIds: [BASIC_TRAINING_FIELD_ID], description: 'Basic Training Field' },
+    ],
+    componentSkills: [
+      skill('skill.acrobatics', 'Acrobatics/Free-Fall', 'Free-Fall'),
+      skill('skill.artillery', 'Artillery'),
+      skill('skill.climbing', 'Climbing'),
+      skill('skill.communications', 'Comms/Conventional', 'Conventional'),
+      skill('skill.support-weapons', 'Support Weapons'),
+      skill('skill.tactics', 'Tactics/Infantry', 'Infantry'),
     ],
   },
 ]

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
-import { CARTOGRAPHER_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, CARTOGRAPHER_FIELD_ID, INFANTRY_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
-import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
+import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from './lifeModuleFinalReview'
 import { createPointBuyCharacter } from './pointBuyEngine'
 
@@ -404,6 +404,72 @@ describe('Life Module engine', () => {
       expect.objectContaining({ awardId: 'technical-college.interest', xpPerGrant: 30 }),
       expect.objectContaining({ awardId: 'technical-college.flexible', allocationMode: 'pool', remainingXp: 200 }),
     ]))
+  })
+
+  it('applies Military Academy source awards, conditional entry adjustment, Fields, cost, and time together', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const before = JSON.stringify(selecting)
+    const beforeXp = Object.fromEntries(selecting.attributes.map((entry) => [entry.attributeId, entry.accumulatedXp]))
+    const character = applyMilitaryAcademy(selecting)
+    const state = character.creation.lifeModules!
+    expect(character.lifeModuleHistory.at(-1)).toMatchObject({ moduleId: MILITARY_ACADEMY_ID, costXp: 1094, baseCostXp: 830, fieldCostXp: 264 })
+    expect(state.selectedSkillFields.map((entry) => [entry.fieldId, entry.purchaseCostXp, entry.chronologyYears])).toEqual([
+      [BASIC_TRAINING_FIELD_ID, 120, 1],
+      [INFANTRY_FIELD_ID, 144, 1],
+    ])
+    expect(character.attributes.find((entry) => entry.attributeId === 'STR')?.accumulatedXp).toBe(beforeXp.STR + 50)
+    expect(character.attributes.find((entry) => entry.attributeId === 'BOD')?.accumulatedXp).toBe(beforeXp.BOD + 100)
+    expect(character.attributes.find((entry) => entry.attributeId === 'RFL')?.accumulatedXp).toBe(beforeXp.RFL + 125)
+    expect(character.attributes.find((entry) => entry.attributeId === 'WIL')?.accumulatedXp).toBe(beforeXp.WIL + 200)
+    expect(character.attributes.find((entry) => entry.attributeId === 'EDG')?.accumulatedXp).toBe(beforeXp.EDG - 100)
+    expect(character.traits.find((entry) => entry.traitId === 'trait.rank')?.accumulatedXp).toBe(200)
+    expect(character.traits.find((entry) => entry.traitId === 'trait.connections')?.accumulatedXp).toBe(220)
+    expect(character.skills.find((entry) => entry.displayName === 'Protocol/Capellan')?.sourceAwards.some((award) => award.xp === 15)).toBe(true)
+    expect(character.skills.find((entry) => entry.displayName === 'Tactics/Infantry')?.accumulatedXp).toBe(30)
+    expect(state.prerequisiteIssues.find((entry) => entry.moduleId === INFANTRY_FIELD_ID && entry.prerequisiteId === 'infantry.field')?.status).toBe('satisfied')
+    expect(state.pendingAwards).toContainEqual(expect.objectContaining({ awardId: 'military-academy.flexible', remainingXp: 100 }))
+    expect(character.chronology.at(-1)?.date).toBe('age:18')
+    expect(JSON.stringify(selecting)).toBe(before)
+  })
+
+  it('applies Military Enlistment exact fixed awards and half-year Field timings', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const beforeXp = Object.fromEntries(selecting.attributes.map((entry) => [entry.attributeId, entry.accumulatedXp]))
+    const character = applyMilitaryEnlistment(selecting)
+    expect(character.lifeModuleHistory.at(-1)).toMatchObject({ moduleId: MILITARY_ENLISTMENT_ID, costXp: 984, baseCostXp: 720, fieldCostXp: 264 })
+    expect(character.creation.lifeModules!.selectedSkillFields.map((entry) => [entry.fieldId, entry.chronologyYears])).toEqual([
+      [BASIC_TRAINING_FIELD_ID, 0.5],
+      [INFANTRY_FIELD_ID, 1.5],
+    ])
+    expect(character.attributes.find((entry) => entry.attributeId === 'STR')?.accumulatedXp).toBe(beforeXp.STR + 125)
+    expect(character.attributes.find((entry) => entry.attributeId === 'BOD')?.accumulatedXp).toBe(beforeXp.BOD + 125)
+    expect(character.attributes.find((entry) => entry.attributeId === 'RFL')?.accumulatedXp).toBe(beforeXp.RFL + 100)
+    expect(character.attributes.find((entry) => entry.attributeId === 'WIL')?.accumulatedXp).toBe(beforeXp.WIL + 100)
+    expect(character.attributes.find((entry) => entry.attributeId === 'CHA')?.accumulatedXp).toBe(beforeXp.CHA - 100)
+    expect(character.traits.find((entry) => entry.traitId === 'trait.rank')?.accumulatedXp).toBe(100)
+    expect(character.skills.find((entry) => entry.displayName === 'Swimming')?.sourceAwards.some((award) => award.xp === 20)).toBe(true)
+    expect(character.creation.lifeModules!.pendingAwards).toContainEqual(expect.objectContaining({ awardId: 'military-enlistment.flexible', remainingXp: 200 }))
+    expect(character.chronology.at(-1)?.date).toBe('age:18')
+  })
+
+  it('requires actual Basic Training for Infantry and does not accept component Skills alone', () => {
+    const selecting = continueToStage3(completeHighSchoolStage2())
+    const withTraining = applyMilitaryEnlistment(selecting)
+    expect(withTraining.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'infantry.field')?.status).toBe('satisfied')
+    const componentSkillsOnly = structuredClone(selecting)
+    componentSkillsOnly.skills.push(...withTraining.skills.filter((entry) => ['Career/Soldier', 'Martial Arts', 'MedTech/General', 'Navigation/Ground', 'Small Arms'].includes(entry.displayName ?? '')).map((entry) => structuredClone(entry)))
+    componentSkillsOnly.creation.lifeModules!.selectedSkillFields.push({ ...structuredClone(withTraining.creation.lifeModules!.selectedSkillFields.find((entry) => entry.fieldId === INFANTRY_FIELD_ID)!), id: 'component-only-infantry' })
+    reevaluateLifeModulePrerequisites(componentSkillsOnly)
+    expect(componentSkillsOnly.creation.lifeModules!.prerequisiteIssues.find((entry) => entry.prerequisiteId === 'infantry.field')?.status).toBe('outstanding')
+  })
+
+  it('round-trips committed Military Academy, Infantry, and unresolved flexible XP', () => {
+    const character = applyMilitaryAcademy(continueToStage3(completeHighSchoolStage2()))
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-10-02T00:00:00.000Z'))
+    expect(decoded).toEqual(character)
+    expect(decoded.creation.lifeModules!.selectedSkillFields.map((entry) => entry.fieldId)).toEqual([BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID])
+    expect(decoded.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'military-academy.flexible')?.remainingXp).toBe(100)
+    expect(validateCharacter(decoded).valid).toBe(true)
   })
 
   it.each([

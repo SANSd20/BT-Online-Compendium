@@ -39,6 +39,8 @@ export const BACK_WOODS_ID = 'stage1.back-woods'
 export const STAGE_2_BACK_WOODS_ID = 'stage2.back-woods'
 export const STAGE_2_HIGH_SCHOOL_ID = 'stage2.high-school'
 export const TECHNICAL_COLLEGE_ID = 'stage3.technical-college'
+export const MILITARY_ACADEMY_ID = 'stage3.military-academy'
+export const MILITARY_ENLISTMENT_ID = 'stage3.military-enlistment'
 export const AGITATOR_ID = 'stage4.agitator'
 
 export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
@@ -264,6 +266,91 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     deferredRules: ['Repeated Stage 3 schooling is not supported in Alpha Slice 9.'],
   },
   {
+    id: MILITARY_ACADEMY_ID,
+    displayName: 'Military Academy',
+    stage: 3,
+    kind: 'higher-education',
+    source: source(83, 'stage-3-military-academy'),
+    costXp: 830,
+    prerequisites: [],
+    conditionalPriorModuleAwards: {
+      absentModuleIds: ['stage2.preparatory-school', 'stage2.military-school'],
+      description: 'Applies when the character did not take Preparatory School or Military School in Stage 2.',
+      awards: [
+        fixed('military-academy.entry.wil', 100, attribute('WIL')),
+        fixed('military-academy.entry.edg', -100, attribute('EDG')),
+        fixed('military-academy.entry.connections', 200, trait('trait.connections', 'Connections')),
+        fixed('military-academy.entry.reputation', -100, trait('trait.reputation', 'Reputation')),
+        fixed('military-academy.entry.wealth', -100, trait('trait.wealth', 'Wealth')),
+      ],
+    },
+    skillFieldSelection: {
+      offers: [
+        { fieldId: 'field.basic-training', category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: 'field.infantry', category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+      ],
+      exactlyBasic: 1,
+      minimumAdvanced: 1,
+      maximumTotal: 3,
+      referenceOnlyOffers: [
+        { displayName: 'Basic Training (Naval)', category: 'basic', chronologyYears: 1, reason: 'Mechanical Field dependencies are not yet implemented.' },
+        ...['Analysis', 'Cavalry', 'Marine', 'MechWarrior', 'Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)', 'Pilot/DropShip', 'Scientist', 'Scout', 'Ship’s Crew'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1, reason: displayName === 'MechWarrior' ? 'Technician/Any still requires an explicit player-choice destination.' : 'Mechanical Field dependencies are not yet implemented.' })),
+        ...['Doctor', 'Infantry/Anti-Mech', 'Military Scientist', 'Pilot/Battle Armor', 'Pilot/JumpShip', 'Pilot/WarShip', 'Special Forces'].map((displayName) => ({ displayName, category: 'special' as const, chronologyYears: 2, reason: 'Mechanical Field dependencies are not yet implemented.' })),
+      ],
+    },
+    awards: [
+      fixed('military-academy.attribute.str', 50, attribute('STR')),
+      fixed('military-academy.attribute.bod', 100, attribute('BOD')),
+      fixed('military-academy.attribute.rfl', 125, attribute('RFL')),
+      fixed('military-academy.attribute.wil', 100, attribute('WIL')),
+      fixed('military-academy.trait.equipped', 100, trait('trait.equipped', 'Equipped')),
+      fixed('military-academy.trait.rank', 200, trait('trait.rank', 'Rank')),
+      fixed('military-academy.skill.interest-history', 15, skill('skill.interest', 'Interest/Military History', 'Military History')),
+      fixed('military-academy.skill.leadership', 10, skill('skill.leadership', 'Leadership')),
+      { id: 'military-academy.skill.protocol-affiliation', kind: 'affiliation-bound-skill', xp: 15, skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' },
+      fixed('military-academy.skill.swimming', 15, skill('skill.swimming', 'Swimming')),
+      { id: 'military-academy.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 100, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: ['Military Stage 3 school. Base cost is 830 XP plus selected Skill Field costs.'],
+    deferredRules: ['Repeated Military schooling, Officer Candidate School, and reference-only Fields remain deferred.'],
+  },
+  {
+    id: MILITARY_ENLISTMENT_ID,
+    displayName: 'Military Enlistment',
+    stage: 3,
+    kind: 'higher-education',
+    source: source(83, 'stage-3-military-enlistment'),
+    costXp: 720,
+    prerequisites: [],
+    skillFieldSelection: {
+      offers: [
+        { fieldId: 'field.basic-training', category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 0.5 },
+        { fieldId: 'field.infantry', category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
+      ],
+      exactlyBasic: 1,
+      minimumAdvanced: 1,
+      maximumTotal: 3,
+      referenceOnlyOffers: [
+        { displayName: 'Basic Training (Naval)', category: 'basic', chronologyYears: 0.5, reason: 'Mechanical Field dependencies are not yet implemented.' },
+        ...['Cavalry', 'Marine', 'Medical Assistant', 'Police Officer', 'Scout', 'Ship’s Crew', 'Technician/Military'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1.5, reason: 'Mechanical Field dependencies are not yet implemented.' })),
+        ...['Detective', 'Police Tactical Officer', 'Infantry/Anti-Mech', 'Special Forces', 'Technician/Aerospace', 'Technician/Mech', 'Technician/Vehicle'].map((displayName) => ({ displayName, category: 'special' as const, chronologyYears: 1, reason: 'Mechanical Field dependencies are not yet implemented.' })),
+      ],
+    },
+    awards: [
+      fixed('military-enlistment.attribute.str', 125, attribute('STR')),
+      fixed('military-enlistment.attribute.bod', 125, attribute('BOD')),
+      fixed('military-enlistment.attribute.rfl', 100, attribute('RFL')),
+      fixed('military-enlistment.attribute.wil', 100, attribute('WIL')),
+      fixed('military-enlistment.attribute.cha', -100, attribute('CHA')),
+      fixed('military-enlistment.trait.equipped', 50, trait('trait.equipped', 'Equipped')),
+      fixed('military-enlistment.trait.rank', 100, trait('trait.rank', 'Rank')),
+      fixed('military-enlistment.skill.swimming', 20, skill('skill.swimming', 'Swimming')),
+      { id: 'military-enlistment.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 200, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: ['Military Stage 3 school. Base cost is 720 XP plus selected Skill Field costs.'],
+    deferredRules: ['Repeated Military schooling, Officer Candidate School, and reference-only Fields remain deferred.'],
+  },
+  {
     id: AGITATOR_ID,
     displayName: 'Agitator',
     stage: 4,
@@ -326,7 +413,7 @@ export function validateLifeModuleCatalog(catalog: readonly LifeModuleDefinition
     if (module.skillFieldSelection) {
       const fieldIds = new Set<string>()
       for (const offer of module.skillFieldSelection.offers) {
-        if (!offer.fieldId || fieldIds.has(offer.fieldId) || !Number.isInteger(offer.costXpPerSkill) || offer.costXpPerSkill <= 0 || !Number.isInteger(offer.awardedXpPerSkill) || offer.awardedXpPerSkill <= 0 || !Number.isInteger(offer.chronologyYears) || offer.chronologyYears <= 0) {
+        if (!offer.fieldId || fieldIds.has(offer.fieldId) || !Number.isInteger(offer.costXpPerSkill) || offer.costXpPerSkill <= 0 || !Number.isInteger(offer.awardedXpPerSkill) || offer.awardedXpPerSkill <= 0 || !Number.isInteger(offer.chronologyYears * 2) || offer.chronologyYears <= 0) {
           issues.push({ moduleId: module.id, message: `Malformed or duplicate Skill Field offer: ${offer.fieldId || '(missing)'}` })
         }
         fieldIds.add(offer.fieldId)
