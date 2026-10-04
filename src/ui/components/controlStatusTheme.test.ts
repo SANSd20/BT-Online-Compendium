@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 describe('generic required-control visual treatment', () => {
   it('uses one semantic error token that overrides theme borders without replacing focus', () => {
     const css = readFileSync(new URL('../../styles.css', import.meta.url), 'utf8')
-    expect(css).toContain('--control-required: #512525')
+    expect(css).toContain('--control-required: #9B5555')
     expect(css).toContain('[data-control-status="required-unresolved"]')
     expect(css).toContain('border: 1px solid var(--control-required) !important')
     expect(css).toContain('box-shadow: none')

@@ -5,7 +5,7 @@ import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BA
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
-import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, removeFinalReviewAllocation, resolveLifeModuleOpposedTraits } from './lifeModuleFinalReview'
+import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, purchaseAdditionalNegativeTraitXp, removeFinalReviewAllocation, removeAdditionalNegativeTraitXp, resolveLifeModuleOpposedTraits } from './lifeModuleFinalReview'
 import { createPointBuyCharacter } from './pointBuyEngine'
 
 function completeStage0(startingXp = 5000) {
@@ -1322,6 +1322,22 @@ describe('Life Module engine', () => {
     expect(character.creation.lifeModules!.finalReview!.allocationPool).toMatchObject({ allocated: 0, remaining: 1674 })
     expect(character.attributes.find((entry) => entry.attributeId === 'STR')).toMatchObject({ accumulatedXp: 205 })
     expect(character.creation.lifeModules!.finalReview!.allocations).toHaveLength(0)
+  })
+
+  it('supports governed negative-Trait Additional XP with aggregate cap accounting', () => {
+    let character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    for (const opportunity of previewLifeModuleOptimization(character)) character = applyLifeModuleOptimization(character, opportunity.id)
+    const poolBeforeAdditionalXp = character.creation.lifeModules!.finalReview!.allocationPool.remaining
+    character = purchaseAdditionalNegativeTraitXp(character, 'trait.unattractive', -1)
+    const review = character.creation.lifeModules!.finalReview!
+    expect(review.negativeTraitXpPurchase).toMatchObject({ capXp: 500, purchasedXp: 100 })
+    expect(review.allocationPool.remaining).toBe(poolBeforeAdditionalXp + 100)
+    expect(character.traits.find((entry) => entry.traitId === 'trait.unattractive')).toMatchObject({ accumulatedXp: -100, attainedTp: -1, active: true })
+    const recordId = review.additionalTraitXp![0].id
+    character = removeAdditionalNegativeTraitXp(character, recordId)
+    expect(character.creation.lifeModules!.finalReview!.negativeTraitXpPurchase.purchasedXp).toBe(0)
+    expect(character.creation.lifeModules!.finalReview!.allocationPool.remaining).toBe(poolBeforeAdditionalXp)
+    expect(character.traits.some((entry) => entry.traitId === 'trait.unattractive')).toBe(false)
   })
 
   it('derives only fully attained levels and previews supported Optimization', () => {

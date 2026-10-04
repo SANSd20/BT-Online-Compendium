@@ -52,3 +52,11 @@ Existing Traits are bounded to concrete ledger instances with catalog-defined TP
 Existing concrete Skills can receive final XP only on the exact ledger address already possessed, using Standard, Fast Learner, or Slow Learner cumulative thresholds and a hard Level +10 maximum. Arbitrary new Skills and specialties remain deferred.
 
 The Stage 0 package status badge was audited as redundant presentation-only state and removed. Keyboard focus remains visible and uses the active faction/Order accent while required and invalid borders remain independent. Slice 89 preserves the 56 Reference Fields, 50 Mechanical Fields, and 84-record equipment catalog.
+
+## Alpha Slice 90 checkpoint
+
+The optional Additional Experience Points rule is implemented after Optimization and opposed-Trait resolution. It supports adding or enhancing governed negative Traits only when the resulting level is a fully attained legal negative TP value. The aggregate allowance is 10% of the original design allotment, not the current Pool or recovered Optimization amount; for a standard 5,000-XP design this is 500 XP. Each transaction records the before/after Trait XP, gained XP, player-choice provenance, and exact Pool increase. Removing a proposal reverses the Trait and Pool changes without regenerating XP.
+
+The current governed catalog safely exposes only negative Traits with modeled ranges and complete parameters; unsupported negative Traits, incomplete prerequisite/conflict metadata, and GM approval workflows remain blocked/deferred. Attributes and Skills cannot be reduced to create Additional XP. Illiterate remains subject to its existing special opposed-Trait handling and maximum. Additional XP is spent through the ordinary final-improvement Pool and cannot be purchased while Optimization opportunities remain.
+
+Slice 90 also refines required-unresolved controls to a generic 1px `#9B5555` border. Invalid `#FF6B6B`, disabled, resolved active-theme borders, and theme-aware focus remain separate.

@@ -107,6 +107,70 @@ export function removeFinalReviewAllocation(character: CharacterDefinition, allo
   return refreshFinalReview(next)
 }
 
+export function purchaseAdditionalNegativeTraitXp(character: CharacterDefinition, traitId: string, targetNegativeTp: number, parameters: Record<string, string | number | boolean> = {}): CharacterDefinition {
+  const next = structuredClone(character)
+  const review = requireFinalReview(next)
+  if (previewLifeModuleOptimization(next).length > 0) throw new Error('Additional Trait XP is available only after Optimization is complete.')
+  if (getModeledOpposedTraitConflicts(next).length > 0) throw new Error('Resolve opposed Traits before purchasing Additional XP.')
+  if (!Number.isInteger(targetNegativeTp) || targetNegativeTp >= 0) throw new RangeError('Additional XP requires a fully attained negative Trait level.')
+  const definition = traitModeledRange(traitId)
+  if (!definition) throw new Error('This Trait is not represented by the governed negative-Trait catalog.')
+  if (definition.maximum >= 0 || targetNegativeTp < definition.minimum) throw new RangeError('Additional XP exceeds the legal negative Trait maximum.')
+  const matches = next.traits.filter((entry) => entry.traitId === traitId && JSON.stringify(entry.parameters) === JSON.stringify(parameters))
+  if (matches.length > 1) throw new Error('Additional XP requires one concrete Trait instance.')
+  const existing = matches[0]
+  const beforeXp = existing?.accumulatedXp ?? 0
+  const afterXp = targetNegativeTp * 100
+  if (afterXp >= beforeXp || afterXp % 100 !== 0) throw new RangeError('Additional XP requires an enhancement to a fully attained negative Trait level.')
+  const gainedXp = beforeXp - afterXp
+  const used = (review.additionalTraitXp ?? []).reduce((total, entry) => total + entry.gainedXp, 0)
+  if (used + gainedXp > review.negativeTraitXpPurchase.capXp) throw new RangeError('Additional XP exceeds the aggregate 10% cap.')
+  const appliedAt = new Date().toISOString()
+  const provenanceId = makeId('additional-trait-xp-provenance')
+  const displayName = existing?.displayName ?? traitId
+  next.provenance.push({ id: provenanceId, kind: 'player-choice', description: `Optional Additional XP: ${displayName} ${beforeXp} → ${afterXp} XP; gained ${gainedXp} XP`, source: { ...FINAL_REVIEW_RULES_SOURCE } })
+  if (existing) {
+    applyLedgerDelta(existing, afterXp - beforeXp, provenanceId)
+    existing.attainedTp = deriveTraitPoints(afterXp)
+    existing.active = existing.attainedTp !== null
+  } else {
+    next.traits.push({ traitId, displayName, accumulatedXp: afterXp, attainedTp: deriveTraitPoints(afterXp), active: true, parameters: { ...parameters }, sourceAwards: [{ id: makeId('additional-trait-xp-award'), xp: afterXp, provenanceId }] })
+  }
+  review.additionalTraitXp ??= []
+  review.additionalTraitXp.push({ id: makeId('additional-trait-xp'), traitId, displayName, parameters: { ...parameters }, beforeXp, afterXp, gainedXp, appliedAt, provenanceId })
+  review.negativeTraitXpPurchase.purchasedXp = used + gainedXp
+  review.negativeTraitXpPurchase.uiStatus = 'deferred'
+  review.allocationPool.remaining += gainedXp
+  next.xp.creation.remaining = review.allocationPool.remaining
+  next.updatedAt = appliedAt
+  return refreshFinalReview(next)
+}
+
+export function removeAdditionalNegativeTraitXp(character: CharacterDefinition, recordId: string): CharacterDefinition {
+  const next = structuredClone(character)
+  const review = requireFinalReview(next)
+  const records = review.additionalTraitXp ?? []
+  const index = records.findIndex((entry) => entry.id === recordId)
+  if (index < 0) throw new Error(`Unknown Additional XP transaction: ${recordId}`)
+  const record = records[index]
+  const trait = next.traits.find((entry) => entry.traitId === record.traitId && JSON.stringify(entry.parameters) === JSON.stringify(record.parameters))
+  if (!trait) throw new Error('Additional XP Trait ledger is missing.')
+  const provenanceId = makeId('additional-trait-xp-reversal-provenance')
+  next.provenance.push({ id: provenanceId, kind: 'derived', description: `Removed optional Additional XP: ${record.displayName} -${record.gainedXp} XP`, source: { ...FINAL_REVIEW_RULES_SOURCE } })
+  if (record.beforeXp === 0) next.traits = next.traits.filter((entry) => entry !== trait)
+  else {
+    applyLedgerDelta(trait, record.beforeXp - record.afterXp, provenanceId)
+    trait.attainedTp = deriveTraitPoints(record.beforeXp)
+    trait.active = trait.attainedTp !== null
+  }
+  records.splice(index, 1)
+  review.negativeTraitXpPurchase.purchasedXp -= record.gainedXp
+  review.allocationPool.remaining -= record.gainedXp
+  next.xp.creation.remaining = review.allocationPool.remaining
+  next.updatedAt = new Date().toISOString()
+  return refreshFinalReview(next)
+}
+
 export function previewLifeModuleOptimization(character: CharacterDefinition): OptimizationOpportunity[] {
   requireFinalReview(character)
   return getOptimizationPreview(character)

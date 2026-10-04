@@ -849,12 +849,13 @@ function validateFinalReview(
   validateConflictingPrerequisites(character, issues)
 
   const cap = negativeTraitXpPurchaseCap(state.moduleXp.starting)
+  const purchasedAdditionalXp = review.additionalTraitXp?.reduce((total, entry) => total + entry.gainedXp, 0) ?? 0
   if (
     review.negativeTraitXpPurchase.capXp !== cap ||
-    review.negativeTraitXpPurchase.purchasedXp !== 0 ||
+    review.negativeTraitXpPurchase.purchasedXp !== purchasedAdditionalXp ||
+    purchasedAdditionalXp > cap ||
     review.negativeTraitXpPurchase.uiStatus !== 'deferred'
-  ) issues.push(issue('life-modules.negative-trait-xp.malformed', 'creation.lifeModules.finalReview.negativeTraitXpPurchase', 'Negative-Trait XP purchase metadata is malformed or unsupported.'))
-  issues.push(issue('life-modules.negative-trait-xp.deferred', 'creation.lifeModules.finalReview.negativeTraitXpPurchase', `Up to ${cap} XP may eventually be purchased through fully attained negative Traits; the purchase UI is deferred.`, { severity: 'information', kind: 'availability' }))
+  ) issues.push(issue('life-modules.negative-trait-xp.malformed', 'creation.lifeModules.finalReview.negativeTraitXpPurchase', 'Negative-Trait XP purchase metadata is malformed or exceeds the aggregate cap.'))
 
   const blockers = getFinalReviewBlockers(character)
   const expectedReadiness = blockers.length === 0 ? 'ready-for-final-touches' : 'review-required'

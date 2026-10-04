@@ -344,6 +344,18 @@ export interface LifeModuleOpposedTraitResolutionRecord {
   provenanceId: string
 }
 
+export interface LifeModuleAdditionalTraitXpRecord {
+  id: string
+  traitId: string
+  displayName: string
+  parameters: Record<string, string | number | boolean>
+  beforeXp: number
+  afterXp: number
+  gainedXp: number
+  appliedAt: string
+  provenanceId: string
+}
+
 export interface LifeModuleFinalReviewState {
   version: 1
   enteredAt: string
@@ -358,6 +370,8 @@ export interface LifeModuleFinalReviewState {
   optimizations: LifeModuleOptimizationRecord[]
   /** Added in Slice 85; absent on older Alpha saves. */
   opposedTraitResolutions?: LifeModuleOpposedTraitResolutionRecord[]
+  /** Added in Slice 90; absent on older Alpha saves. */
+  additionalTraitXp?: LifeModuleAdditionalTraitXpRecord[]
   negativeTraitXpPurchase: {
     capXp: number
     purchasedXp: number

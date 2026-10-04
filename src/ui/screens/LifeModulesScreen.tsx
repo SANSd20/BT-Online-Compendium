@@ -7,11 +7,12 @@ import { getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSe
 import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { getFinalReviewBlockers, getModeledOpposedTraitConflicts } from '../../domain/lifeModules/finalReview'
+import { POINT_BUY_TRAITS } from '../../domain/pointBuy/catalog'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
 import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyStage0Affiliation, applyUniversalStage0, continueStage3Schooling, continueStage4Modules, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
-import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, removeFinalReviewAllocation, resolveLifeModuleOpposedTraits } from '../../engine/lifeModuleFinalReview'
+import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, purchaseAdditionalNegativeTraitXp, removeAdditionalNegativeTraitXp, removeFinalReviewAllocation, resolveLifeModuleOpposedTraits } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
@@ -86,6 +87,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const [resolutionDrafts, setResolutionDrafts] = useState<Record<string, ResolutionDraft>>({})
   const [finalAllocationTarget, setFinalAllocationTarget] = useState('attribute:STR')
   const [finalAllocationXp, setFinalAllocationXp] = useState(1)
+  const [additionalTraitId, setAdditionalTraitId] = useState('trait.unattractive')
+  const [additionalTraitTp, setAdditionalTraitTp] = useState(-1)
   const [equipmentDraft, setEquipmentDraft] = useState<EquipmentDraft>(EMPTY_EQUIPMENT_DRAFT)
   const [catalogSearch, setCatalogSearch] = useState('')
   const [catalogCategory, setCatalogCategory] = useState('all')
@@ -465,6 +468,11 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     operate(() => allocateFinalReviewXp(character, finalReviewDestination(character, finalAllocationTarget), finalAllocationXp), 'Final-allocation XP applied.')
   }
 
+  function purchaseAdditionalXp() {
+    if (!character) return
+    operate(() => purchaseAdditionalNegativeTraitXp(character, additionalTraitId, additionalTraitTp), 'Optional Additional XP proposed.')
+  }
+
   function updateDescription(patch: Parameters<typeof updatePersonalDescription>[1]) {
     if (!character) return
     operate(() => updatePersonalDescription(character, patch), 'Final Touches description saved.')
@@ -773,7 +781,18 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             <h3>Review blockers</h3>
             {finalReviewBlockers.length === 0 ? <p>No final-review blockers remain.</p> : <ul>{finalReviewBlockers.map((entry) => <li key={entry.id}>{entry.message}</li>)}</ul>}
             <h3>4. Optional additional XP and final validation</h3>
-            <p className="scope-note">Buying Additional Experience Points is an optional rule. Its cap is {state.finalReview.negativeTraitXpPurchase.capXp} XP (10% of the original design allotment). Purchasing fully attained negative Traits is intentionally deferred.</p>
+            <p className="scope-note"><strong>Optional rule:</strong> work with the gamemaster before adding or enhancing a negative Trait. Additional XP purchased: {state.finalReview.negativeTraitXpPurchase.purchasedXp} / {state.finalReview.negativeTraitXpPurchase.capXp} XP · remaining allowance: {state.finalReview.negativeTraitXpPurchase.capXp - state.finalReview.negativeTraitXpPurchase.purchasedXp} XP · Pool: {state.finalReview.allocationPool.remaining} XP.</p>
+            <div className="row-actions">
+              <label>Negative Trait
+                <select value={additionalTraitId} onChange={(event) => setAdditionalTraitId(event.target.value)}>
+                  {POINT_BUY_TRAITS.filter((entry) => Math.min(...entry.allowedTp) < 0 && !entry.parameter).map((entry) => <option key={entry.id} value={entry.id}>{entry.displayName}</option>)}
+                  {character.traits.filter((entry) => entry.accumulatedXp < 0 && !POINT_BUY_TRAITS.some((definition) => definition.id === entry.traitId)).map((entry) => <option key={entry.traitId} value={entry.traitId}>{entry.displayName ?? entry.traitId} (existing only)</option>)}
+                </select>
+              </label>
+              <label>Fully attained negative TP<input type="number" max="-1" step="1" value={additionalTraitTp} onChange={(event) => setAdditionalTraitTp(Number(event.target.value))} /></label>
+              <button className="button secondary" type="button" onClick={purchaseAdditionalXp}>Add / enhance negative Trait</button>
+            </div>
+            {(state.finalReview.additionalTraitXp ?? []).length > 0 && <ul className="purchase-list" aria-label="Proposed optional Additional XP">{(state.finalReview.additionalTraitXp ?? []).map((entry) => <li key={entry.id}><div><strong>{entry.displayName}</strong><span>{entry.beforeXp} → {entry.afterXp} XP · gained {entry.gainedXp} XP</span></div><button className="button secondary danger" type="button" onClick={() => operate(() => removeAdditionalNegativeTraitXp(character, entry.id), 'Optional Additional XP proposal removed.')}>Remove</button></li>)}</ul>}
             <p className="scope-note">Final review does not purchase equipment, export PDF, lock the character, or mark it ready for play.</p>
           </section>}
 

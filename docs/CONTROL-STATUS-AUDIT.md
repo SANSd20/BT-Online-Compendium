@@ -5,7 +5,7 @@ Alpha Slice 87 adds one reusable semantic control-state model for concrete form 
 ## States and mapping
 
 - `valid`: an enabled required control is resolved, so the active theme supplies its normal border.
-- `required-unresolved`: an enabled required control still needs a choice or value but is legal so far. It receives `aria-required="true"` and a 1px `#512525` border with no glow, fill, animation, or thickness change.
+- `required-unresolved`: an enabled required control still needs a choice or value but is legal so far. It receives `aria-required="true"` and a 1px `#9B5555` border with no glow, fill, animation, or thickness change. The token remains generic across neutral, Federated Suns, Capellan, ComStar, and Word of Blake themes.
 - `invalid`: a provided value fails validation. It receives `aria-invalid="true"`, remains associated with existing help or validation text where available, and uses the stronger shared `--control-error` treatment.
 - `disabled`: a dependent control cannot yet be used because its prerequisite is missing. It remains disabled and is not falsely marked invalid.
 - `optional-empty`: an empty optional control is normal, not an error.
