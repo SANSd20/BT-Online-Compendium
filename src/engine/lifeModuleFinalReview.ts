@@ -6,13 +6,16 @@ import type {
 } from '../domain/character/model'
 import {
   deriveAttributeLevel,
-  deriveStandardSkillLevel,
+  deriveSkillLevel,
   deriveTraitPoints,
   FINAL_REVIEW_RULES_SOURCE,
   getFinalReviewBlockers,
   getModeledOpposedTraitConflicts,
   getOptimizationPreview,
   negativeTraitXpPurchaseCap,
+  characterSkillProgression,
+  skillXpCosts,
+  traitModeledRange,
   type OptimizationOpportunity,
 } from '../domain/lifeModules/finalReview'
 import { POINT_BUY_ATTRIBUTE_MAXIMUMS } from '../domain/pointBuy/catalog'
@@ -40,6 +43,7 @@ export function enterLifeModuleFinalReview(character: CharacterDefinition): Char
     },
     allocations: [],
     optimizations: [],
+    opposedTraitResolutions: [],
     negativeTraitXpPurchase: {
       capXp: negativeTraitXpPurchaseCap(state.moduleXp.starting),
       purchasedXp: 0,
@@ -63,6 +67,7 @@ export function allocateFinalReviewXp(
   if (xp > state.allocationPool.remaining) throw new RangeError('Final allocation would overspend the remaining XP pool.')
   const normalized = normalizeDestination(destination)
   const target = findLedgerTarget(next, normalized)
+  assertFinalAllocationWithinModeledMaximum(next, normalized, target.accumulatedXp + xp)
   const allocatedAt = new Date().toISOString()
   const provenanceId = makeId('final-allocation-provenance')
   next.provenance.push({
@@ -123,6 +128,36 @@ export function applyLifeModuleOptimization(character: CharacterDefinition, oppo
   return refreshFinalReview(next)
 }
 
+export function resolveLifeModuleOpposedTraits(character: CharacterDefinition, conflictId: string): CharacterDefinition {
+  const next = structuredClone(character)
+  const review = requireFinalReview(next)
+  const conflict = getModeledOpposedTraitConflicts(next).find((entry) => entry.id === conflictId)
+  if (!conflict) throw new Error(`Unknown or stale opposed-Trait conflict: ${conflictId}`)
+  if (conflict.positiveTraitId === 'skill.language-4') {
+    const illiterate = next.traits.find((entry) => entry.traitId === conflict.negativeTraitId)
+    if (!illiterate) throw new Error('Illiterate Trait is missing.')
+    const before = illiterate.accumulatedXp
+    recordTraitDelta(illiterate, -before, next, `Illiterate erased by Language Level +4`, 'opposed-trait')
+    addOpposedResolution(review, next, conflict, 0, before, 0)
+    return refreshFinalReview(next)
+  }
+  const positive = next.traits.find((entry) => entry.traitId === conflict.positiveTraitId && entry.accumulatedXp > 0)
+  const negative = next.traits.find((entry) => entry.traitId === conflict.negativeTraitId && entry.accumulatedXp < 0)
+  if (!positive || !negative) throw new Error('Opposed Trait ledgers are missing.')
+  const positiveBefore = positive.accumulatedXp
+  const negativeBefore = negative.accumulatedXp
+  const remaining = positiveBefore + negativeBefore
+  const resolvedAt = new Date().toISOString()
+  const provenanceId = makeId('opposed-trait-provenance')
+  next.provenance.push({ id: provenanceId, kind: 'derived', description: `Opposed Traits resolved: ${positive.displayName ?? positive.traitId} / ${negative.displayName ?? negative.traitId}`, source: { ...FINAL_REVIEW_RULES_SOURCE } })
+  applyLedgerDelta(positive, (remaining > 0 ? remaining : 0) - positiveBefore, provenanceId)
+  applyLedgerDelta(negative, (remaining < 0 ? remaining : 0) - negativeBefore, provenanceId)
+  review.opposedTraitResolutions ??= []
+  review.opposedTraitResolutions.push({ id: makeId('opposed-trait'), positiveTraitId: positive.traitId, negativeTraitId: negative.traitId, positiveBeforeXp: positiveBefore, negativeBeforeXp: negativeBefore, remainingXp: remaining, resolvedAt, provenanceId })
+  next.updatedAt = resolvedAt
+  return refreshFinalReview(next)
+}
+
 export function refreshFinalReview(character: CharacterDefinition): CharacterDefinition {
   const state = requireLifeModules(character)
   const review = state.finalReview
@@ -159,13 +194,46 @@ function applyLedgerDelta(target: { accumulatedXp: number; sourceAwards: XpAward
   target.sourceAwards.push({ id: makeId('final-review-award'), xp: delta, provenanceId })
 }
 
+function assertFinalAllocationWithinModeledMaximum(character: CharacterDefinition, destination: ResolvedLifeModuleDestination, proposedXp: number): void {
+  if (destination.type === 'attribute') {
+    const maximum = POINT_BUY_ATTRIBUTE_MAXIMUMS[destination.targetId]
+    if (maximum !== undefined && proposedXp > maximum * 100) throw new RangeError(`Final allocation exceeds the modeled Attribute maximum of ${maximum}.`)
+    return
+  }
+  if (destination.type === 'trait') {
+    const trait = character.traits.find((entry) => entry.traitId === destination.targetId && JSON.stringify(entry.parameters) === JSON.stringify(destination.parameters ?? {}))
+    if (trait && proposedXp < trait.accumulatedXp) throw new RangeError('Positive final allocation cannot reduce a Trait.')
+    const range = traitModeledRange(destination.targetId)
+    if (range && proposedXp > Math.max(0, range.maximum) * 100) throw new RangeError(`Final allocation exceeds the modeled Trait maximum of ${range.maximum}.`)
+    return
+  }
+  const progression = characterSkillProgression(character)
+  const maximumXp = skillXpCosts(progression).at(-1)!
+  if (proposedXp > maximumXp) throw new RangeError('Final allocation exceeds Skill Level +10 for the character’s learner progression.')
+}
+
 function recalculateDerivedLevels(character: CharacterDefinition): void {
   character.attributes.forEach((entry) => { entry.purchasedLevel = deriveAttributeLevel(entry.accumulatedXp) })
   character.traits.forEach((entry) => {
     entry.attainedTp = deriveTraitPoints(entry.accumulatedXp)
     entry.active = entry.attainedTp !== null
   })
-  character.skills.forEach((entry) => { entry.level = deriveStandardSkillLevel(entry.accumulatedXp) })
+  const progression = characterSkillProgression(character)
+  character.skills.forEach((entry) => { entry.level = deriveSkillLevel(entry.accumulatedXp, progression) })
+}
+
+function recordTraitDelta(target: { accumulatedXp: number; sourceAwards: XpAward[] }, delta: number, character: CharacterDefinition, description: string, prefix: string): void {
+  const provenanceId = makeId(`${prefix}-provenance`)
+  character.provenance.push({ id: provenanceId, kind: 'derived', description, source: { ...FINAL_REVIEW_RULES_SOURCE } })
+  applyLedgerDelta(target, delta, provenanceId)
+}
+
+function addOpposedResolution(review: ReturnType<typeof requireFinalReview>, character: CharacterDefinition, conflict: { positiveTraitId: string; negativeTraitId: string }, positiveBeforeXp: number, negativeBeforeXp: number, remainingXp: number): void {
+  const resolvedAt = new Date().toISOString()
+  const provenance = character.provenance.at(-1)!
+  review.opposedTraitResolutions ??= []
+  review.opposedTraitResolutions.push({ id: makeId('opposed-trait'), positiveTraitId: conflict.positiveTraitId, negativeTraitId: conflict.negativeTraitId, positiveBeforeXp, negativeBeforeXp, remainingXp, resolvedAt, provenanceId: provenance.id })
+  character.updatedAt = resolvedAt
 }
 
 function normalizeDestination(destination: ResolvedLifeModuleDestination): ResolvedLifeModuleDestination {

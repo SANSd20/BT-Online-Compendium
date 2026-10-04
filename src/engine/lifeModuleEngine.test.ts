@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSITY_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
-import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
+import { deriveSkillLevel, getOptimizationPreview as getDomainOptimizationPreview, skillThreshold } from '../domain/lifeModules/finalReview'
 import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, LAWYER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
-import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from './lifeModuleFinalReview'
+import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, resolveLifeModuleOpposedTraits } from './lifeModuleFinalReview'
 import { createPointBuyCharacter } from './pointBuyEngine'
 
 function completeStage0(startingXp = 5000) {
@@ -1320,13 +1320,16 @@ describe('Life Module engine', () => {
     const acting = character.skills.find((entry) => entry.address.skillId === 'skill.acting')!
     const patient = character.traits.find((entry) => entry.traitId === 'trait.patient')!
     str.accumulatedXp = 325
-    acting.accumulatedXp = 75
+    acting.accumulatedXp = 115
     patient.accumulatedXp = 200
+    const compulsion = character.traits.find((entry) => entry.traitId === 'trait.compulsion')!
+    compulsion.accumulatedXp = -125
     const preview = previewLifeModuleOptimization(character)
     expect(preview).toEqual(expect.arrayContaining([
       expect.objectContaining({ beforeXp: 325, afterXp: 300, returnedXp: 25 }),
-      expect.objectContaining({ beforeXp: 75, afterXp: 50, returnedXp: 25 }),
+      expect.objectContaining({ beforeXp: 115, afterXp: 80, returnedXp: 35 }),
       expect.objectContaining({ beforeXp: 200, afterXp: 100, returnedXp: 100 }),
+      expect.objectContaining({ beforeXp: -125, afterXp: -200, returnedXp: 75 }),
     ]))
   })
 
@@ -1405,5 +1408,43 @@ describe('Life Module engine', () => {
     expect(reviewed.creation.lifeModules!.finalReview!.readiness).toBe('ready-for-final-touches')
     expect(validateCharacter(reviewed).issues.map((entry) => entry.id)).toContain('life-modules.final-touches.ready')
     expect(reviewed.creation.status).toBe('draft')
+  })
+
+  it('uses the corrected Fast and Slow Learner final Skill thresholds', () => {
+    expect(deriveSkillLevel(64, 'fast')).toBe(3)
+    expect(skillThreshold(3, 'fast')).toBe(64)
+    expect(deriveSkillLevel(95, 'slow')).toBe(2)
+    expect(deriveSkillLevel(96, 'slow')).toBe(3)
+    expect(skillThreshold(10, 'slow')).toBe(684)
+  })
+
+  it('resolves opposed Traits before Optimization and records the finalization adjustment', () => {
+    let character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    const provenanceId = character.provenance[0].id
+    const gregarious = character.traits.find((entry) => entry.traitId === 'trait.gregarious')!
+    gregarious.accumulatedXp = 200
+    gregarious.attainedTp = 2
+    gregarious.active = true
+    character.traits.push({ traitId: 'trait.introvert', displayName: 'Introvert', accumulatedXp: -100, attainedTp: -1, active: true, parameters: {}, sourceAwards: [{ id: 'test-introvert', xp: -100, provenanceId }] })
+    character = resolveLifeModuleOpposedTraits(character, 'trait.gregarious/trait.introvert')
+    expect(character.traits.find((entry) => entry.traitId === 'trait.gregarious')).toMatchObject({ accumulatedXp: 100, attainedTp: 1, active: true })
+    expect(character.traits.find((entry) => entry.traitId === 'trait.introvert')).toMatchObject({ accumulatedXp: 0, attainedTp: null, active: false })
+    expect(character.creation.lifeModules!.finalReview!.opposedTraitResolutions).toHaveLength(1)
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).not.toContain('life-modules.opposed-traits.conflict')
+    const decoded = decodeCharacter(encodeCharacter(character, '2026-10-04T00:00:00.000Z'))
+    expect(decoded.creation.lifeModules!.finalReview!.opposedTraitResolutions).toEqual(character.creation.lifeModules!.finalReview!.opposedTraitResolutions)
+  })
+
+  it('rejects final improvements above modeled Attribute and Skill maxima', () => {
+    const character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    const strength = character.attributes.find((entry) => entry.attributeId === 'STR')!
+    strength.accumulatedXp = 800
+    expect(() => allocateFinalReviewXp(character, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 1)).toThrow('Attribute maximum')
+    const acting = character.skills.find((entry) => entry.address.skillId === 'skill.acting')!
+    acting.accumulatedXp = 570
+    expect(() => allocateFinalReviewXp(character, { type: 'skill', targetId: 'skill.acting', displayName: 'Acting' }, 1)).toThrow('Skill Level +10')
+    const patient = character.traits.find((entry) => entry.traitId === 'trait.patient')!
+    patient.accumulatedXp = 100
+    expect(() => allocateFinalReviewXp(character, { type: 'trait', targetId: 'trait.patient', displayName: 'Patient' }, 1)).toThrow('Trait maximum')
   })
 })

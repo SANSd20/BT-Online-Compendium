@@ -333,6 +333,17 @@ export interface LifeModuleOptimizationRecord {
   provenanceId: string
 }
 
+export interface LifeModuleOpposedTraitResolutionRecord {
+  id: string
+  positiveTraitId: string
+  negativeTraitId: string
+  positiveBeforeXp: number
+  negativeBeforeXp: number
+  remainingXp: number
+  resolvedAt: string
+  provenanceId: string
+}
+
 export interface LifeModuleFinalReviewState {
   version: 1
   enteredAt: string
@@ -345,6 +356,8 @@ export interface LifeModuleFinalReviewState {
   }
   allocations: LifeModuleFinalAllocationRecord[]
   optimizations: LifeModuleOptimizationRecord[]
+  /** Added in Slice 85; absent on older Alpha saves. */
+  opposedTraitResolutions?: LifeModuleOpposedTraitResolutionRecord[]
   negativeTraitXpPurchase: {
     capXp: number
     purchasedXp: number

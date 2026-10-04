@@ -4,7 +4,7 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 84 is implemented.** Version `0.1.0-alpha.84`. The public product title is **AToW Online Character Creator**. Stage 4 now includes the source-correct ComStar/Word of Blake Service module for committed Order-affiliation characters, with exact shared and branch awards, governed choices, four distinct Skill awards, flexible XP, and repeat handling. The mechanically acquirable catalog remains fifty entries while the independent 56-entry reference catalog and 84-item equipment catalog remain unchanged.
+**Alpha Slice 85 is implemented.** Version `0.1.0-alpha.85`. The public product title is **AToW Online Character Creator**. Life Modules final review now follows the audited source sequence for attained levels, opposed Traits, Optimization, final XP improvements, optional additional-XP disclosure, and final validation. The mechanically acquirable catalog remains fifty entries while the independent 56-entry reference catalog and 84-item equipment catalog remain unchanged.
 
 All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit remains the evidence record; Slice 28 governs its conflicts without silently correcting Tanker, Elemental, or Scout values, adding `REF`, renaming stable IDs, or activating back-sheet combat fields. Point Buy, Life Modules, Final Touches, and the 84-item audited Core equipment catalog are unchanged.
 

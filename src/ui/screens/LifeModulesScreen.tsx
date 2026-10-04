@@ -6,12 +6,12 @@ import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, COMSTAR_WOB_SERVICE_ID, FAM
 import { getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
-import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
+import { getFinalReviewBlockers, getModeledOpposedTraitConflicts } from '../../domain/lifeModules/finalReview'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
 import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyStage0Affiliation, applyUniversalStage0, continueStage3Schooling, continueStage4Modules, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
-import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
+import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, resolveLifeModuleOpposedTraits } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
@@ -169,6 +169,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
   const goalStatus = character ? masterSkillFieldGoalStatus(character) : null
   const finalReviewBlockers = character && state?.finalReview ? getFinalReviewBlockers(character) : []
+  const opposedTraitConflicts = character && state?.finalReview ? getModeledOpposedTraitConflicts(character) : []
   const catalogItems = filterEquipmentCatalog({ search: catalogSearch, category: catalogCategory, sourceStatus: catalogSourceStatus })
   const accessProfile = character?.creation.finalTouches?.equipmentAccessProfile ?? { enabled: false, affiliationCategory: 'inner-sphere' as const, nativeAffiliationCode: '' }
   const effectiveOwnedLimits = character?.creation.finalTouches ? adjustedOwnedEquipmentLimits(character.creation.finalTouches.equippedTpUsed, accessProfile.affiliationCategory) : null
@@ -734,7 +735,13 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <div><span>Optimization returned</span><strong>{state.finalReview.allocationPool.optimizationReturned.toLocaleString()}</strong></div>
               <div><span>Remaining</span><strong>{state.finalReview.allocationPool.remaining.toLocaleString()}</strong></div>
             </div>
-            <h3>Allocate remaining XP</h3>
+            <h3>1. Determine levels and requirements</h3>
+            <p>Attained scores and levels use the final XP totals. Resolve minimums, maximums, prerequisites, and opposed Traits before Optimization.</p>
+            {opposedTraitConflicts.length === 0 ? <p>No opposed-Trait conflicts remain.</p> : <ul className="module-history">{opposedTraitConflicts.map((entry) => <li key={entry.id}><div><strong>Opposed Traits</strong><span>{entry.description}</span></div><button className="button secondary" type="button" onClick={() => operate(() => resolveLifeModuleOpposedTraits(character, entry.id), 'Opposed Traits resolved.')}>Resolve</button></li>)}</ul>}
+            <h3>2. Optimization</h3>
+            {optimizationPreview.length === 0 ? <p>No supported Optimization opportunities remain.</p> : <ul className="module-history">{optimizationPreview.map((entry) => <li key={entry.id}><div><strong>{entry.destination.displayName}</strong><span>Current {signed(entry.beforeXp)} XP · attained threshold {signed(entry.afterXp)} XP · recover {entry.returnedXp} XP · {entry.reason}</span></div><button className="button secondary" type="button" disabled={opposedTraitConflicts.length > 0} onClick={() => operate(() => applyLifeModuleOptimization(character, entry.id), 'Optimization applied and returned XP to final allocation.')}>Optimize</button></li>)}</ul>}
+            <h3>3. Spend final XP</h3>
+            <p>Spend the available pool on existing modeled Attributes, Traits, and Skills. Optimization recovers excess; it does not purchase improvements.</p>
             <div className="row-actions">
               <label>Existing statistic
                 <select value={finalAllocationTarget} onChange={(event) => setFinalAllocationTarget(event.target.value)}>
@@ -751,11 +758,10 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <p>{goalStatus.satisfied} / {goalStatus.total} guidance requirements satisfied. Goal gaps are shown before ordinary Optimization; selecting a goal never grants the Field.</p>
               {goalStatus.requirements.every((entry) => entry.satisfied) ? <p>All tracked guidance requirements are satisfied.</p> : <ul className="module-history">{goalStatus.requirements.filter((entry) => !entry.satisfied).map((entry) => <li key={entry.id}><div><strong>{entry.label}</strong><span>Current: {entry.current}{entry.xpRequired !== null ? ` · ${entry.xpRequired} XP required` : ' · structural requirement'}</span></div>{entry.destination && entry.xpRequired && entry.xpRequired <= state.finalReview!.allocationPool.remaining ? <button className="button secondary" type="button" onClick={() => operate(() => allocateFinalReviewXp(character, entry.destination!, entry.xpRequired!), `${entry.label} goal gap funded through final allocation.`)}>Apply required XP</button> : null}</li>)}</ul>}
             </section>}
-            <h3>Optimization preview</h3>
-            {optimizationPreview.length === 0 ? <p>No supported Optimization opportunities remain.</p> : <ul className="module-history">{optimizationPreview.map((entry) => <li key={entry.id}><div><strong>{entry.destination.displayName}</strong><span>{signed(entry.beforeXp)} → {signed(entry.afterXp)} XP · return {entry.returnedXp} XP · {entry.reason}</span></div><button className="button secondary" type="button" onClick={() => operate(() => applyLifeModuleOptimization(character, entry.id), 'Optimization applied and returned XP to final allocation.')}>Apply</button></li>)}</ul>}
             <h3>Review blockers</h3>
             {finalReviewBlockers.length === 0 ? <p>No final-review blockers remain.</p> : <ul>{finalReviewBlockers.map((entry) => <li key={entry.id}>{entry.message}</li>)}</ul>}
-            <p className="scope-note">Negative-Trait XP purchase cap: {state.finalReview.negativeTraitXpPurchase.capXp} XP. The purchase UI is intentionally deferred.</p>
+            <h3>4. Optional additional XP and final validation</h3>
+            <p className="scope-note">Buying Additional Experience Points is an optional rule. Its cap is {state.finalReview.negativeTraitXpPurchase.capXp} XP (10% of the original design allotment). Purchasing fully attained negative Traits is intentionally deferred.</p>
             <p className="scope-note">Final review does not purchase equipment, export PDF, lock the character, or mark it ready for play.</p>
           </section>}
 

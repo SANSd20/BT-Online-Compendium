@@ -35,9 +35,12 @@ import { stage3SchoolClassification, stage3SchoolEligibility, usedStage3SchoolFa
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
 import { getMasterSkillFieldGoal } from '../domain/skillFields/goalCatalog'
 import {
+  FAST_SKILL_XP_COSTS,
+  SLOW_SKILL_XP_COSTS,
   deriveAttributeLevel,
-  deriveStandardSkillLevel,
+  deriveSkillLevel,
   deriveTraitPoints,
+  characterSkillProgression,
   finalReviewDestinationKey,
   getFinalReviewBlockers,
   getModeledOpposedTraitConflicts,
@@ -824,10 +827,12 @@ function validateFinalReview(
     const maximum = POINT_BUY_ATTRIBUTE_MAXIMUMS[entry.attributeId]
     if (maximum !== undefined && (derived ?? 0) > maximum) issues.push(issue('life-modules.final-level.attribute.maximum', `attributes.${index}`, `${entry.attributeId} exceeds the modeled Normal Human maximum of ${maximum}.`))
   })
+  const progression = characterSkillProgression(character)
+  const maximumSkillXp = progression === 'fast' ? 456 : progression === 'slow' ? 684 : 570
   character.skills.forEach((entry, index) => {
-    const derived = deriveStandardSkillLevel(entry.accumulatedXp)
-    if (entry.level !== derived) issues.push(issue('life-modules.final-level.skill.malformed', `skills.${index}.level`, 'Skill level does not match its highest fully attained Standard threshold.'))
-    if (entry.accumulatedXp > 570) issues.push(issue('life-modules.final-level.skill.maximum', `skills.${index}.accumulatedXp`, 'Skill XP exceeds the modeled Standard Level +10 maximum and must be optimized.'))
+    const derived = deriveSkillLevel(entry.accumulatedXp, progression)
+    if (entry.level !== derived) issues.push(issue('life-modules.final-level.skill.malformed', `skills.${index}.level`, `Skill level does not match its highest fully attained ${progression} threshold.`))
+    if (entry.accumulatedXp > maximumSkillXp) issues.push(issue('life-modules.final-level.skill.maximum', `skills.${index}.accumulatedXp`, `Skill XP exceeds the modeled ${progression} Level +10 maximum and must be optimized.`))
   })
   character.traits.forEach((entry, index) => {
     const derived = deriveTraitPoints(entry.accumulatedXp)
@@ -866,8 +871,9 @@ function optimizationRecordTargetsFullyAttained(record: LifeModuleOptimizationRe
   if (record.reason === 'negative-trait-threshold') return record.beforeXp < 0 && record.afterXp < record.beforeXp && Math.abs(record.afterXp) % 100 === 0
   if (record.afterXp < 0 || record.afterXp >= record.beforeXp) return false
   if (record.destination.type === 'attribute' || record.destination.type === 'trait') return record.afterXp % 100 === 0
-  if (record.afterXp === 0) return record.beforeXp < standardSkillXpCost(0)
-  return deriveStandardSkillLevel(record.afterXp) !== null && record.afterXp === standardSkillXpCost(deriveStandardSkillLevel(record.afterXp))
+  if (record.afterXp === 0) return record.beforeXp < Math.max(standardSkillXpCost(0), FAST_SKILL_XP_COSTS[0], SLOW_SKILL_XP_COSTS[0])
+  return [FAST_SKILL_XP_COSTS, SLOW_SKILL_XP_COSTS].some((costs) => costs.includes(record.afterXp as never)) ||
+    Array.from({ length: 11 }, (_, level) => standardSkillXpCost(level)).includes(record.afterXp)
 }
 
 function finalReviewTargetExists(character: CharacterDefinition, destination: { type: string; targetId: string; parameter?: { kind: string; value: string }; parameters?: Record<string, string | number | boolean> }): boolean {

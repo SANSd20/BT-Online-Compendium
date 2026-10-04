@@ -34,8 +34,21 @@ export interface FinalReviewBlocker {
   message: string
 }
 
+export const FAST_SKILL_XP_COSTS = [16, 24, 40, 64, 96, 136, 184, 240, 304, 376, 456] as const
+export const SLOW_SKILL_XP_COSTS = [24, 36, 60, 96, 144, 204, 276, 360, 456, 564, 684] as const
+
 const MODELED_OPPOSED_TRAIT_PAIRS = [
+  ['trait.animal-empathy', 'trait.animal-antipathy', 'Animal Empathy and Animal Antipathy are opposed Traits.'],
+  ['trait.attractive', 'trait.unattractive', 'Attractive and Unattractive are opposed Traits.'],
+  ['trait.combat-sense', 'trait.combat-paralysis', 'Combat Sense and Combat Paralysis are opposed Traits.'],
+  ['trait.fast-learner', 'trait.slow-learner', 'Fast Learner and Slow Learner are opposed Traits.'],
+  ['trait.fit', 'trait.handicap', 'Fit and Handicap are opposed Traits.'],
+  ['trait.good-hearing', 'trait.poor-hearing', 'Good Hearing and Poor Hearing are opposed Traits.'],
+  ['trait.good-vision', 'trait.poor-vision', 'Good Vision and Poor Vision are opposed Traits.'],
   ['trait.gregarious', 'trait.introvert', 'Gregarious and Introvert are opposed Traits.'],
+  ['trait.patient', 'trait.impatient', 'Patient and Impatient are opposed Traits.'],
+  ['trait.tech-empathy', 'trait.gremlins', 'Tech Empathy and Gremlins are opposed Traits.'],
+  ['trait.toughness', 'trait.glass-jaw', 'Toughness and Glass Jaw are opposed Traits.'],
 ] as const
 
 const NEGATIVE_TRAIT_IDS = new Set([
@@ -43,6 +56,14 @@ const NEGATIVE_TRAIT_IDS = new Set([
   'trait.compulsion',
   'trait.illiterate',
   'trait.introvert',
+  'trait.animal-antipathy',
+  'trait.combat-paralysis',
+  'trait.gremlins',
+  'trait.handicap',
+  'trait.impatient',
+  'trait.poor-hearing',
+  'trait.poor-vision',
+  'trait.slow-learner',
   'trait.unattractive',
   'trait.glass-jaw',
 ])
@@ -60,15 +81,34 @@ export function deriveTraitPoints(xp: number): number | null {
   return points === 0 ? null : points
 }
 
-export function deriveStandardSkillLevel(xp: number): number | null {
-  if (!Number.isFinite(xp) || xp < STANDARD_SKILL_XP_COSTS[0]) return null
+export type SkillProgression = 'standard' | 'fast' | 'slow'
+
+export function skillXpCosts(progression: SkillProgression): readonly number[] {
+  return progression === 'fast' ? FAST_SKILL_XP_COSTS : progression === 'slow' ? SLOW_SKILL_XP_COSTS : STANDARD_SKILL_XP_COSTS
+}
+
+export function characterSkillProgression(character: CharacterDefinition): SkillProgression {
+  if (character.traits.some((entry) => entry.traitId === 'trait.fast-learner' && entry.active)) return 'fast'
+  if (character.traits.some((entry) => entry.traitId === 'trait.slow-learner' && entry.active)) return 'slow'
+  return 'standard'
+}
+
+export function deriveSkillLevel(xp: number, progression: SkillProgression = 'standard'): number | null {
+  const costs = skillXpCosts(progression)
+  if (!Number.isFinite(xp) || xp < costs[0]) return null
   let level = 0
-  STANDARD_SKILL_XP_COSTS.forEach((threshold, index) => { if (xp >= threshold) level = index })
+  costs.forEach((threshold, index) => { if (xp >= threshold) level = index })
   return level
 }
 
+export const deriveStandardSkillLevel = (xp: number): number | null => deriveSkillLevel(xp, 'standard')
+
 export function standardSkillThreshold(level: number | null): number {
   return level === null ? 0 : STANDARD_SKILL_XP_COSTS[level]
+}
+
+export function skillThreshold(level: number | null, progression: SkillProgression = 'standard'): number {
+  return level === null ? 0 : skillXpCosts(progression)[level]
 }
 
 export function negativeTraitXpPurchaseCap(startingXp: number): number {
@@ -109,9 +149,10 @@ export function getOptimizationPreview(character: CharacterDefinition): Optimiza
     ))
   }
 
+  const progression = characterSkillProgression(character)
   for (const skill of character.skills) {
     if (skill.accumulatedXp <= 0) continue
-    const targetXp = standardSkillThreshold(deriveStandardSkillLevel(skill.accumulatedXp))
+    const targetXp = skillThreshold(deriveSkillLevel(skill.accumulatedXp, progression), progression)
     if (targetXp < skill.accumulatedXp) opportunities.push(opportunity(
       skillDestination(skill), skill.accumulatedXp, targetXp, 'excess-xp',
     ))
@@ -121,8 +162,8 @@ export function getOptimizationPreview(character: CharacterDefinition): Optimiza
 
 export function getModeledOpposedTraitConflicts(character: CharacterDefinition): OpposedTraitConflict[] {
   const conflicts: OpposedTraitConflict[] = MODELED_OPPOSED_TRAIT_PAIRS.flatMap(([positiveTraitId, negativeTraitId, description]) => {
-    const positive = character.traits.some((entry) => entry.traitId === positiveTraitId && entry.active)
-    const negative = character.traits.some((entry) => entry.traitId === negativeTraitId && entry.active)
+    const positive = character.traits.some((entry) => entry.traitId === positiveTraitId && entry.accumulatedXp > 0)
+    const negative = character.traits.some((entry) => entry.traitId === negativeTraitId && entry.accumulatedXp < 0)
     return positive && negative ? [{ id: `${positiveTraitId}/${negativeTraitId}`, positiveTraitId, negativeTraitId, description }] : []
   })
   const illiterate = character.traits.some((entry) => entry.traitId === 'trait.illiterate' && entry.active)
