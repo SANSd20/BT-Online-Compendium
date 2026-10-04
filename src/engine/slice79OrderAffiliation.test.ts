@@ -64,6 +64,7 @@ describe('Alpha Slice 79 ComStar / Word of Blake affiliation layer', () => {
       expect.objectContaining({ displayName: 'Technician/Electronic', accumulatedXp: 10 }),
       expect.objectContaining({ displayName: 'Language/French' }),
     ]))
+    expect(character.skills.find((entry) => entry.displayName === 'Language/French')?.sourceAwards).toContainEqual(expect.objectContaining({ xp: 0 }))
     expect(validateCharacter(character).valid).toBe(true)
     expect(decodeCharacter(encodeCharacter(character, '2026-10-03T00:00:00.000Z'))).toEqual(character)
   })

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, MILITARY_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
-import { pendingAwardOptions } from '../../domain/lifeModules/awardOptions'
+import { openSubjectChoiceOptions, pendingAwardOptions } from '../../domain/lifeModules/awardOptions'
 import { ANTHROPOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, GENERAL_STUDIES_FIELD_ID, JOURNALIST_FIELD_ID, MECHWARRIOR_FIELD_ID, MERCHANT_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyCapellanCommonality, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { previewSupportedStageModule } from './stageModulePreviewModel'
-import { filterSiblingDestinationOptions, modeledOpenSubjectStageChoiceSlot, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
+import { emptyStageChoiceSlot, filterSiblingDestinationOptions, modeledOpenSubjectStageChoiceSlot, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoicePresentationPending, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from './stageModuleChoiceSlotsModel'
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
   let character = createLifeModuleCharacter(`Slots ${phase}`)
@@ -81,7 +81,32 @@ describe('Stage 1–4 choice slot preview and commit model', () => {
 
     expect(stageChoiceSlotCount(interests, {})).toBe(2)
     expect(stageChoiceSlotCount(flexible, {})).toBe(4)
+    expect(stageChoicePresentationPending(flexible).allowedTargetTypes).toEqual(['skill'])
+    expect(emptyStageChoiceSlot(stageChoicePresentationPending(flexible)).targetType).toBe('skill')
     expect(previewStageModuleChoiceSlots(character, BLUE_COLLAR_ID, {})?.complete).toBe(false)
+    expect(JSON.stringify(character)).toBe(committed)
+  })
+
+  it('switches a Blue Collar open subject from known to Other and back without stale preview state', () => {
+    const character = draftAt('stage-1-selection')
+    character.skills.push({ address: { skillId: 'skill.career', parameter: { kind: 'subskill', value: 'Mechanic' } }, displayName: 'Career/Mechanic', accumulatedXp: 20, level: 0, sourceAwards: [] })
+    const committed = JSON.stringify(character)
+    const base = previewSupportedStageModule(character, BLUE_COLLAR_ID)!
+    const pending = base.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'blue-collar.career')!
+    const options = openSubjectChoiceOptions(pending, base)
+    const known = options.find((entry) => entry.displayName === 'Career/Mechanic')!
+    const knownValue = value('skill', known.targetId, known.displayName, 10, known.parameter?.value)
+    const customValue = openSubjectStageChoiceSlot(pending, 'Orbital Welder').value
+
+    const knownPreview = previewStageModuleChoiceSlots(character, BLUE_COLLAR_ID, { [pending.awardId]: [knownValue] })!
+    const customPreview = previewStageModuleChoiceSlots(character, BLUE_COLLAR_ID, { [pending.awardId]: [customValue] })!
+    const restoredKnown = previewStageModuleChoiceSlots(character, BLUE_COLLAR_ID, { [pending.awardId]: [knownValue] })!
+
+    expect(knownPreview.character.skills.find((entry) => entry.displayName === 'Career/Mechanic')?.accumulatedXp).toBe(30)
+    expect(customPreview.character.skills.some((entry) => entry.displayName === 'Career/Mechanic' && entry.accumulatedXp === 30)).toBe(false)
+    expect(customPreview.character.skills).toContainEqual(expect.objectContaining({ displayName: 'Career/Orbital Welder', accumulatedXp: 10 }))
+    expect(restoredKnown.character.skills.some((entry) => entry.displayName === 'Career/Orbital Welder')).toBe(false)
+    expect(restoredKnown.character.skills.find((entry) => entry.displayName === 'Career/Mechanic')?.accumulatedXp).toBe(30)
     expect(JSON.stringify(character)).toBe(committed)
   })
 

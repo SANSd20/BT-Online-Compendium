@@ -203,3 +203,9 @@ Corrected-printing pp. 62–63 require a Stage 0 affiliation but explicitly labe
 ## Alpha Slice 81 — HPG Technician
 
 Corrected-printing pp. 82 and 92 define HPG Technician as an Advanced two-year Field at Trade School and University. Its prerequisite is ComStar, Word of Blake, or Clan affiliation plus the Communications Field. The five fixed Skills are Administration, Comms/Conventional, Comms/HPG, Computers, and Cryptography; Perception is not part of the corrected entry. At 24 XP per Skill the Field costs 120 XP and awards +30 XP to each Skill. The v4.0 errata contains no applicable HPG Technician, HPG communications, affiliation, or school-offer correction.
+
+## Alpha Slice 82 — variable-Skill presentation and Stage 0 correction
+
+The existing Slices 68–69 rules distinction remains authoritative: Career/Any, Interest/Any, Science/Any, and Survival/Any are open, GM-defined subject domains, while Technician, Driving, Gunnery, and other source-bounded domains remain closed governed sets. Slice 82 changes only the choice presentation: known modeled and already-possessed concrete subjects are suggestions, and Other… retains the validated open path. It does not turn suggestions into an exhaustive rules catalog or permit free-text parent Skill identities.
+
+The Stage 0 defect was a validator-context mismatch rather than a source-rule ambiguity. The Universal pending language award retained the generic affiliation-language selector even after the selected Federated Suns context supplied its correct language domain. Resolution now contextualizes that pending award before applying the existing safe-known-choice validator. The ComStar/Word of Blake nearest-state language remains a source-required secondary-language identity with a deliberate 0-XP award; it records and persists the concrete Skill without inventing XP.

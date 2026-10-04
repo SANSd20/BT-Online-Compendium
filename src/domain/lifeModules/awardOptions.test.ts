@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { BACK_WOODS_ID, CAPELLAN_COMMONALITY_ID } from './catalog'
-import { pendingAwardOptions, pendingOpenSubject } from './awardOptions'
+import { openSubjectChoiceOptions, pendingAwardOptions, pendingOpenSubject } from './awardOptions'
 import { CAVALRY_FIELD_ID, DRIVING_SUBSKILLS, MARINE_FIELD_ID, SECURITY_SYSTEMS_SUBSKILLS, VEHICLE_GUNNERY_SUBSKILLS } from '../skillFields/catalog'
 
 function backWoodsDraft() {
@@ -56,17 +56,28 @@ describe('Life Module pending award options', () => {
     ]))
   })
 
-  it('classifies Survival as an explicit open environment subject without a fabricated option list', () => {
+  it('offers known Survival subjects first and retains Other for the open environment domain', () => {
     const character = backWoodsDraft()
     const pending = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'back-woods.skill.survival')!
     expect(pendingAwardOptions(pending, character)).toEqual([])
     expect(pendingOpenSubject(pending)).toMatchObject({ skillId: 'skill.survival', parentLabel: 'Survival' })
+    const options = openSubjectChoiceOptions(pending, character)
+    expect(options.at(-1)).toMatchObject({ value: 'skill.survival/__open__', inputMode: 'open-subject' })
   })
 
   it('uses the same open subject entry for multi-grant Interest awards', () => {
     expect(pendingOpenSubject({ kind: 'multi-skill-choice', requiredSkillId: 'skill.interest' })).toMatchObject({
       skillId: 'skill.interest', parentLabel: 'Interest',
     })
+  })
+
+  it('prioritizes existing concrete subjects without making the open domain exhaustive', () => {
+    const character = backWoodsDraft()
+    character.skills.push({ address: { skillId: 'skill.interest', parameter: { kind: 'subskill', value: 'Military History' } }, displayName: 'Interest/Military History', accumulatedXp: 10, level: 0, sourceAwards: [] })
+    const pending = { kind: 'multi-skill-choice' as const, requiredSkillId: 'skill.interest', id: 'interest', moduleId: 'test', awardId: 'interest', description: 'Interest', xpPerGrant: 5, remainingGrants: 1, allowedTargetTypes: ['skill' as const], source: { sourceId: 'test', edition: 'test', page: 1 } }
+    const options = openSubjectChoiceOptions(pending, character)
+    expect(options[0]).toMatchObject({ displayName: 'Interest/Military History' })
+    expect(options.at(-1)).toMatchObject({ displayName: 'Interest/Other…', inputMode: 'open-subject' })
   })
 
   it('shows readable Trait choices while retaining stable IDs internally', () => {

@@ -95,6 +95,20 @@ export function pendingAwardOptions(pending: PendingLifeModuleAward, character: 
   return flexibleTargetOptions(pending, character)
 }
 
+export function openSubjectChoiceOptions(pending: PendingLifeModuleAward, character: CharacterDefinition): PendingAwardOption[] {
+  const metadata = pendingOpenSubject(pending)
+  if (!metadata) return []
+  const existingValues = new Set(character.skills
+    .filter((entry) => entry.address.skillId === metadata.skillId && entry.address.parameter?.value)
+    .map((entry) => `${entry.address.skillId}/${entry.address.parameter!.value}`))
+  const candidates = modeledSkillChoiceOptions(character).filter((entry) => entry.targetId === metadata.skillId)
+  const known = candidates
+    .filter((entry) => entry.inputMode !== 'open-subject')
+    .sort((left, right) => Number(existingValues.has(right.value)) - Number(existingValues.has(left.value)) || left.displayName.localeCompare(right.displayName))
+  const other = candidates.find((entry) => entry.inputMode === 'open-subject')
+  return other ? [...known, other] : known
+}
+
 export function pendingAwardUnsupportedMessage(pending: PendingLifeModuleAward, options: PendingAwardOption[]): string | null {
   if (pendingOpenSubject(pending)) return null
   if (options.length > 0) return null

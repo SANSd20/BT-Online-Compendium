@@ -4,7 +4,7 @@ import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, FAMILY_TRAINING_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, SOLARIS_INTERNSHIP_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
 import { getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
-import { pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
+import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
@@ -20,7 +20,7 @@ import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../co
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesAffiliationTheme, previewStage0Affiliation } from '../components/stage0PreviewModel'
 import { defaultStage3FieldIds, previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
-import { emptyStageChoiceSlot, filterSiblingDestinationOptions, modeledOpenSubjectStageChoiceSlot, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
+import { emptyStageChoiceSlot, filterSiblingDestinationOptions, modeledOpenSubjectStageChoiceSlot, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoicePresentationPending, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -36,6 +36,7 @@ interface ResolutionDraft {
   displayName: string
   xpAmount: number
   choiceOptionValue?: string
+  subjectInput?: string
 }
 
 interface EquipmentDraft {
@@ -306,21 +307,24 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   }
 
   function renderStageChoiceAward(pending: PendingLifeModuleAward, siblingAwards: PendingLifeModuleAward[], optionCharacter: CharacterDefinition) {
+    const presentationPending = stageChoicePresentationPending(pending)
     const values = stageChoiceSlotValues[pending.awardId] ?? []
     const count = stageChoiceSlotCount(pending, stageChoiceSlotValues)
     const poolProgress = pending.allocationMode === 'pool' ? stageChoicePoolProgress(pending, values) : null
     return <div className="stage-choice-award" key={pending.id}>
           <p aria-live="polite"><strong>{pending.description}</strong> · {poolProgress ? stageChoicePoolProgressLabel(poolProgress) : pending.kind === 'related-skill-prerequisite' ? 'Prerequisite selection · 0 XP' : `${count} separate slot${count === 1 ? '' : 's'} · ${signed(pending.xpPerGrant)} XP each`}</p>
           {Array.from({ length: count }, (_, index) => {
-            const value = { ...emptyStageChoiceSlot(pending), ...values[index] }
-            const optionPending = pending.kind === 'flexible-xp' && value.targetType
-              ? { ...pending, allowedTargetTypes: [value.targetType] }
-              : pending
+            const value = { ...emptyStageChoiceSlot(presentationPending), ...values[index] }
+            const optionPending = presentationPending.kind === 'flexible-xp' && value.targetType
+              ? { ...presentationPending, allowedTargetTypes: [value.targetType] }
+              : presentationPending
             const unfilteredOptions = pending.kind === 'flexible-xp' && !value.targetType ? [] : pendingAwardOptions(optionPending, optionCharacter)
             const relatedSiblingValues = relatedStageChoiceSlotValues(pending, siblingAwards, stageChoiceSlotValues)
             const options = filterSiblingDestinationOptions(unfilteredOptions, values, index, relatedSiblingValues)
             const openSubject = pendingOpenSubject(pending)
-            const openSubjectResult = openSubject ? openSubjectStageChoiceSlot(pending, value.subjectInput ?? '') : null
+            const openSubjectOptions = openSubject ? filterSiblingDestinationOptions(openSubjectChoiceOptions(pending, optionCharacter), values, index, relatedSiblingValues) : []
+            const openSubjectOtherSelected = Boolean(openSubject && value.choiceOptionValue === `${openSubject.skillId}/__open__`)
+            const openSubjectResult = openSubjectOtherSelected ? openSubjectStageChoiceSlot(pending, value.subjectInput ?? '') : null
             const modeledOpenOption = pending.kind === 'modeled-skill-choice' ? unfilteredOptions.find((option) => option.value === value.choiceOptionValue && option.inputMode === 'open-subject') : undefined
             const modeledOpenResult = modeledOpenOption ? modeledOpenSubjectStageChoiceSlot(pending, modeledOpenOption.targetId, modeledOpenOption.value, value.subjectInput ?? '') : null
             const unsupported = value.targetType ? pendingAwardUnsupportedMessage(optionPending, options) : null
@@ -329,21 +333,32 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             return <div className="stage-choice-slot" key={`${pending.id}/${index}`}>
               <strong id={`${slotId}-label`}>{slotLabel}</strong>
               <span id={`${slotId}-help`}>{pending.kind === 'related-skill-prerequisite' ? 'Choose an already possessed concrete Skill. The relationship remains subject to GM approval and grants no XP.' : pending.allocationMode === 'pool' ? 'Choose a legal destination and XP amount.' : `${signed(pending.xpPerGrant)} XP`}</span>
-              {pending.kind === 'flexible-xp' && <label htmlFor={`${slotId}-type`}>Target type
+              {presentationPending.kind === 'flexible-xp' && presentationPending.allowedTargetTypes.length > 1 && <label htmlFor={`${slotId}-type`}>Target type
                 <select id={`${slotId}-type`} aria-describedby={`${slotId}-label ${slotId}-help`} value={value.targetType} onChange={(event) => updateStageChoiceSlot(pending, index, { targetType: event.target.value as StageChoiceSlotValue['targetType'], targetId: '', parameter: '', displayName: '' })}>
                   <option value="">Choose a target type…</option>
-                  {pending.allowedTargetTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                  {presentationPending.allowedTargetTypes.map((type) => <option key={type} value={type}>{type}</option>)}
                 </select>
               </label>}
               {pending.allocationMode === 'pool' && <label htmlFor={`${slotId}-xp`}>XP
                 <input id={`${slotId}-xp`} type="number" min="1" max={pending.remainingXp} step="1" aria-describedby={`${slotId}-label ${slotId}-help`} value={value.xpAmount} onChange={(event) => updateStageChoiceSlot(pending, index, { xpAmount: Number(event.target.value) })} />
               </label>}
-              {openSubject && <label htmlFor={`${slotId}-subject`}>{openSubject.parentLabel} subject
+              {openSubject && <label htmlFor={`${slotId}-subject-choice`}>{openSubject.parentLabel}
+                <select id={`${slotId}-subject-choice`} aria-describedby={`${slotId}-label ${slotId}-help`} value={optionValue(value)} onChange={(event) => {
+                  const option = openSubjectOptions.find((candidate) => candidate.value === event.target.value)
+                  if (option?.inputMode === 'open-subject') updateStageChoiceSlot(pending, index, { ...emptyStageChoiceSlot(presentationPending), choiceOptionValue: option.value, subjectInput: '' })
+                  else if (option) updateStageChoiceSlot(pending, index, { ...optionDraft(option, value.xpAmount), choiceOptionValue: undefined, subjectInput: undefined })
+                  else updateStageChoiceSlot(pending, index, { ...emptyStageChoiceSlot(presentationPending), choiceOptionValue: undefined, subjectInput: undefined })
+                }}>
+                  <option value="">Choose a subject…</option>
+                  {openSubjectOptions.map((option) => <option key={option.value} value={option.value}>{option.inputMode === 'open-subject' ? 'Other…' : option.parameter?.value ?? option.displayName}</option>)}
+                </select>
+              </label>}
+              {openSubjectOtherSelected && <label htmlFor={`${slotId}-subject`}>Custom {openSubject!.parentLabel} subject
                 <input id={`${slotId}-subject`} type="text" value={value.subjectInput ?? ''} maxLength={60} aria-describedby={`${slotId}-label ${slotId}-help ${slotId}-subject-help`} onChange={(event) => {
                   const result = openSubjectStageChoiceSlot(pending, event.target.value)
-                  updateStageChoiceSlot(pending, index, result.value)
+                  updateStageChoiceSlot(pending, index, { ...result.value, choiceOptionValue: `${openSubject!.skillId}/__open__` })
                 }} />
-                <span id={`${slotId}-subject-help`}>{openSubject.description} Examples are illustrative, not a closed list.</span>
+                <span id={`${slotId}-subject-help`}>{openSubject!.description} Examples are illustrative, not a closed list.</span>
               </label>}
               {openSubjectResult?.error && <p className="notice" role="alert">{openSubjectResult.error}</p>}
               {modeledOpenOption && <label htmlFor={`${slotId}-modeled-subject`}>{modeledOpenOption.displayName.replace('/Other…', '')} subject
@@ -351,12 +366,12 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 <span id={`${slotId}-modeled-subject-help`}>{modeledOpenOption.description} Examples are illustrative, not a closed list.</span>
               </label>}
               {modeledOpenResult?.error && <p className="notice" role="alert">{modeledOpenResult.error}</p>}
-              {options.length > 0 && <label htmlFor={`${slotId}-destination`}>{pending.kind === 'related-skill-prerequisite' ? 'Related existing Skill' : pending.skillFieldChoice ? 'Field Skill subskill' : pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Destination'}
+              {!openSubject && options.length > 0 && <label htmlFor={`${slotId}-destination`}>{pending.kind === 'related-skill-prerequisite' ? 'Related existing Skill' : pending.skillFieldChoice ? 'Field Skill subskill' : pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Skill'}
                 <select id={`${slotId}-destination`} aria-describedby={`${slotId}-label ${slotId}-help`} value={optionValue(value)} onChange={(event) => {
                   const option = options.find((candidate) => candidate.value === event.target.value)
-                  if (option?.inputMode === 'open-subject') updateStageChoiceSlot(pending, index, { ...emptyStageChoiceSlot(pending), choiceOptionValue: option.value })
-                  else if (option) updateStageChoiceSlot(pending, index, optionDraft(option, value.xpAmount))
-                  else updateStageChoiceSlot(pending, index, { targetId: '', parameter: '', displayName: '' })
+                  if (option?.inputMode === 'open-subject') updateStageChoiceSlot(pending, index, { ...emptyStageChoiceSlot(presentationPending), choiceOptionValue: option.value, subjectInput: '' })
+                  else if (option) updateStageChoiceSlot(pending, index, { ...optionDraft(option, value.xpAmount), choiceOptionValue: undefined, subjectInput: undefined })
+                  else updateStageChoiceSlot(pending, index, { ...emptyStageChoiceSlot(presentationPending), choiceOptionValue: undefined, subjectInput: undefined })
                 }}>
                   <option value="">Choose a valid target…</option>
                   {options.map((option) => <option key={option.value} value={option.value}>{option.displayName}</option>)}
@@ -378,6 +393,10 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       const draft = { ...defaultResolutionDraft(entry), ...resolutionDrafts[entry.id] }
       const optionEntry = entry.kind === 'flexible-xp' ? { ...entry, allowedTargetTypes: [draft.targetType] } : entry
       const options = pendingAwardOptions(optionEntry, character!)
+      const openSubject = pendingOpenSubject(entry)
+      const openSubjectOptions = openSubject ? openSubjectChoiceOptions(entry, character!) : []
+      const openSubjectOtherSelected = Boolean(openSubject && draft.choiceOptionValue === `${openSubject.skillId}/__open__`)
+      const openSubjectResult = openSubjectOtherSelected ? openSubjectStageChoiceSlot(entry, draft.subjectInput ?? '') : null
       const unsupported = pendingAwardUnsupportedMessage(optionEntry, options)
       const selectedOption = optionValue(draft)
       return (
@@ -390,7 +409,26 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               </select>
             </label>{entry.allocationMode === 'pool' && <label>XP to allocate<input type="number" min="1" max={entry.remainingXp} step="1" value={draft.xpAmount} onChange={(event) => updateResolutionDraft(entry, { xpAmount: Number(event.target.value) })} /></label>}</>
           )}
-          {options.length > 0 && <label>{entry.kind === 'language-choice' ? 'Language' : draft.targetType === 'trait' ? 'Trait' : draft.targetType === 'attribute' ? 'Attribute' : 'Destination'}
+          {openSubject && <label>{openSubject.parentLabel}
+            <select value={selectedOption} onChange={(event) => {
+              const option = openSubjectOptions.find((candidate) => candidate.value === event.target.value)
+              if (option?.inputMode === 'open-subject') updateResolutionDraft(entry, { targetType: 'skill', targetId: '', parameter: '', displayName: '', choiceOptionValue: option.value, subjectInput: '' })
+              else if (option) updateResolutionDraft(entry, { ...optionDraft(option, draft.xpAmount), choiceOptionValue: undefined, subjectInput: undefined })
+              else updateResolutionDraft(entry, { targetId: '', parameter: '', displayName: '', choiceOptionValue: undefined, subjectInput: undefined })
+            }}>
+              <option value="">Choose a subject…</option>
+              {openSubjectOptions.map((option) => <option key={option.value} value={option.value}>{option.inputMode === 'open-subject' ? 'Other…' : option.parameter?.value ?? option.displayName}</option>)}
+            </select>
+          </label>}
+          {openSubjectOtherSelected && <label>Custom {openSubject!.parentLabel} subject
+            <input type="text" value={draft.subjectInput ?? ''} maxLength={60} onChange={(event) => {
+              const result = openSubjectStageChoiceSlot(entry, event.target.value)
+              updateResolutionDraft(entry, { ...result.value, targetType: 'skill', choiceOptionValue: `${openSubject!.skillId}/__open__` })
+            }} />
+            <span>{openSubject!.description} Examples are illustrative, not a closed list.</span>
+          </label>}
+          {openSubjectResult?.error && <p className="notice" role="alert">{openSubjectResult.error}</p>}
+          {!openSubject && options.length > 0 && <label>{entry.kind === 'language-choice' ? 'Language' : draft.targetType === 'trait' ? 'Trait' : draft.targetType === 'attribute' ? 'Attribute' : 'Skill'}
             <select value={selectedOption} onChange={(event) => {
               const option = options.find((candidate) => candidate.value === event.target.value)
               if (option) updateResolutionDraft(entry, optionDraft(option, draft.xpAmount))
@@ -570,7 +608,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.phase === 'ready-for-final-touches' && character.creation.finalTouches && <p className="notice">Final Touches equipment state: {formatPhase(character.creation.finalTouches.equipmentReviewState)}. This is not a finalized or ready-for-play character.</p>}
             <LifeModuleStageStatus
               pendingAwards={visiblePendingAwards}
-              specializedPendingMessage={state.phase === 'stage-0-affiliation' && state.pendingAwards.length > genericPendingAwards.length ? 'Complete the required language choices in the Affiliation Package above.' : undefined}
+              specializedPendingMessage={state.phase === 'stage-0-affiliation' && (previewState ?? state).pendingAwards.length > 0 ? 'Complete the required language choices in the Affiliation Package above.' : undefined}
               showResolutionLink={!stageModulePreviewId || stageExistingFallbackAwards.length > 0}
               warnings={(previewState ?? state).prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => `${moduleName(activePreview ?? character, entry.moduleId)}: ${entry.description}`)}
             />

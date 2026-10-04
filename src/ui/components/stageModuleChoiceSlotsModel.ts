@@ -169,7 +169,13 @@ export function modeledOpenSubjectStageChoiceSlot(pending: PendingLifeModuleAwar
 }
 
 export function emptyStageChoiceSlot(pending: PendingLifeModuleAward): StageChoiceSlotValue {
-  return { targetType: '', targetId: '', parameter: '', displayName: '', xpAmount: pending.xpPerGrant }
+  return { targetType: pending.allowedTargetTypes.length === 1 ? pending.allowedTargetTypes[0] : '', targetId: '', parameter: '', displayName: '', xpAmount: pending.xpPerGrant }
+}
+
+export function stageChoicePresentationPending(pending: PendingLifeModuleAward): PendingLifeModuleAward {
+  return pending.awardId === 'blue-collar.flexible'
+    ? { ...pending, allowedTargetTypes: ['skill'] }
+    : pending
 }
 
 export function openSubjectStageChoiceSlot(pending: PendingLifeModuleAward, input: string): { value: StageChoiceSlotValue; error: string | null } {

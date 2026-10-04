@@ -99,8 +99,16 @@ export function applyUniversalStage0(
     parameter: { kind: 'subskill', value: language },
   }
   const universalAlreadyIncluded = state.selectedModuleIds.includes(UNIVERSAL_STAGE_0_ID)
+  const universalLanguageAward = state.pendingAwards.find((entry) => entry.moduleId === UNIVERSAL_STAGE_0_ID && entry.awardId === 'universal.language.affiliation')
+  const resolutionCharacter = universalAlreadyIncluded && universalLanguageAward
+    ? structuredClone(character)
+    : character
+  if (universalAlreadyIncluded && universalLanguageAward) {
+    const pendingAward = requireLifeModules(resolutionCharacter).pendingAwards.find((entry) => entry.id === universalLanguageAward.id)
+    if (pendingAward) pendingAward.choiceSource = resolution.context.affiliationLanguageSelector
+  }
   const next = universalAlreadyIncluded
-    ? resolvePendingLifeModuleAward(character, state.pendingAwards.find((entry) => entry.moduleId === UNIVERSAL_STAGE_0_ID && entry.awardId === 'universal.language.affiliation')?.id ?? '', destination)
+    ? resolvePendingLifeModuleAward(resolutionCharacter, universalLanguageAward?.id ?? '', destination)
     : applyModule(character, getLifeModule(UNIVERSAL_STAGE_0_ID), {
         'universal.language.affiliation': toLifeModuleDestination(destination),
       })

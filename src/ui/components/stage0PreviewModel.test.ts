@@ -161,4 +161,78 @@ describe('Stage 0 preview model', () => {
     expect(exported).not.toContain('Language/Mandarin Chinese')
     expect(stage0Signature(capellanPreview)).not.toEqual(stage0Signature(finalCommitted))
   })
+
+  it('resolves Federated Suns affiliation languages against the selected context and can continue', () => {
+    const committed = createLifeModuleCharacter('Federated Suns language regression')
+    const committedExport = encodeCharacter(committed, '2026-10-04T00:00:00.000Z')
+    const preview = previewStage0Affiliation(
+      committed,
+      FEDERATED_SUNS_CRUCIS_MARCH_ID,
+      'French',
+      '',
+      'Strategy',
+      'Painting',
+      'no',
+      '',
+      '',
+      '',
+      FEDERATED_SUNS_CRUCIS_MARCH_ID,
+    )!
+
+    expect(preview).not.toBeNull()
+    expect(preview.creation.lifeModules?.phase).toBe('stage-1-selection')
+    expect(preview.creation.lifeModules?.pendingAwards).toHaveLength(0)
+    expect(preview.skills).toContainEqual(expect.objectContaining({ displayName: 'Language/French', accumulatedXp: 20 }))
+    expect(encodeCharacter(committed, '2026-10-04T00:00:00.000Z')).toBe(committedExport)
+
+    const continued = applyStage0Affiliation(
+      committed,
+      FEDERATED_SUNS_CRUCIS_MARCH_ID,
+      'French',
+      undefined,
+      'Strategy',
+      'Painting',
+      'no',
+      undefined,
+      undefined,
+      undefined,
+      FEDERATED_SUNS_CRUCIS_MARCH_ID,
+    )
+    expect(continued.creation.lifeModules?.phase).toBe('stage-1-selection')
+    expect(continued.creation.lifeModules?.pendingAwards).toHaveLength(0)
+  })
+
+  it('does not retain language blockers while switching sub-affiliation, language, or order layer', () => {
+    const committed = createLifeModuleCharacter('Stage 0 switching regression')
+    const cases = [
+      { language: 'German', sub: 'no', order: 'no' as const, nearest: '', orderLanguage: '', technician: '' },
+      { language: 'Russian', sub: FEDERATED_SUNS_CRUCIS_MARCH_ID, order: 'no' as const, nearest: '', orderLanguage: '', technician: '' },
+      { language: 'French', sub: 'no', order: 'comstar' as const, nearest: CAPELLAN_COMMONALITY_ID, orderLanguage: 'Russian', technician: 'Electronic' },
+      { language: 'Hindi', sub: FEDERATED_SUNS_CRUCIS_MARCH_ID, order: 'word-of-blake' as const, nearest: CAPELLAN_COMMONALITY_ID, orderLanguage: 'Russian', technician: 'Electronic' },
+    ]
+
+    for (const entry of cases) {
+      const preview = previewStage0Affiliation(
+        committed,
+        FEDERATED_SUNS_CRUCIS_MARCH_ID,
+        entry.language,
+        '',
+        'Strategy',
+        entry.sub === 'no' ? '' : 'Painting',
+        entry.order,
+        entry.nearest,
+        entry.orderLanguage,
+        entry.technician,
+        entry.sub,
+      )!
+      expect(preview).not.toBeNull()
+      expect(preview.creation.lifeModules?.phase).toBe('stage-1-selection')
+      expect(preview.creation.lifeModules?.pendingAwards).toHaveLength(0)
+      expect(preview.skills).toContainEqual(expect.objectContaining({ displayName: `Language/${entry.language}` }))
+      if (entry.sub === 'no') expect(preview.skills.some((skill) => skill.displayName === 'Art/Painting')).toBe(false)
+    }
+
+    expect(committed.creation.lifeModules?.phase).toBe('stage-0-affiliation')
+    expect(committed.creation.lifeModules?.pendingAwards).toContainEqual(expect.objectContaining({ awardId: 'universal.language.affiliation' }))
+  })
 })
