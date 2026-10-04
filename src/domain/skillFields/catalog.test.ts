@@ -3,9 +3,10 @@ import { ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_I
 import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
 import { INFANTRY_ANTI_MECH_FIELD_ID } from './catalog'
 import { PILOT_AEROSPACE_CIVILIAN_FIELD_ID, PILOT_AEROSPACE_COMBAT_FIELD_ID, PILOT_AIRCRAFT_COMBAT_FIELD_ID } from './catalog'
+import { HPG_TECHNICIAN_FIELD_ID } from './catalog'
 
 describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
-  it('contains the forty-nine source-audited Fields with calculated reduced costs', () => {
+  it('contains the fifty source-audited Fields with calculated reduced costs', () => {
     expect(SKILL_FIELD_CATALOG.map((entry) => entry.id)).toEqual([
       BASIC_TRAINING_FIELD_ID,
       BASIC_TRAINING_NAVAL_FIELD_ID,
@@ -33,6 +34,7 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       SHIPS_CREW_FIELD_ID,
       TECHNICIAN_MILITARY_FIELD_ID,
       'field.communications',
+      HPG_TECHNICIAN_FIELD_ID,
       'field.engineer',
       'field.merchant-marine',
       'field.pilot-aircraft-civilian',
@@ -83,6 +85,7 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       [SHIPS_CREW_FIELD_ID]: 120,
       [TECHNICIAN_MILITARY_FIELD_ID]: 144,
       'field.communications': 144,
+      [HPG_TECHNICIAN_FIELD_ID]: 120,
       'field.engineer': 120,
       'field.merchant-marine': 120,
       'field.pilot-aircraft-civilian': 120,

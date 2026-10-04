@@ -20,7 +20,7 @@ The selected Skill is retained on the durable General Studies Field grant becaus
 
 Each dependent Field requires the actual acquired General Studies Field. General Studies component Skills, goal guidance, or its related-Skill prerequisite do not substitute. University category ordering still requires one Basic Field and at least one Advanced Field before Special training.
 
-HPG Technician remains reference-only because its ComStar, Word of Blake, or Clan affiliation requirement cannot be met by an implemented Stage 0 context.
+Historical Slice 71 note: HPG Technician was then reference-only because its affiliation requirement was not yet represented. Slice 81 supersedes that blocker by using the committed ComStar/Word of Blake order-affiliation state; see `STAGE3-FIELD-DEPENDENCY-AUDIT.md`.
 
 ## Checkpoint
 

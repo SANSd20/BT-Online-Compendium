@@ -199,3 +199,7 @@ Corrected-printing p. 74 defines the 50-XP ComStar/Word of Blake affiliation mod
 ## Alpha Slice 80 — optional sub-affiliation correction
 
 Corrected-printing pp. 62–63 require a Stage 0 affiliation but explicitly label sub-affiliation optional. Omitting the sub-affiliation omits its listed XP/effects without reducing the affiliation module cost; the text notes this wastes potential character experience. The v4.0 errata has no correction to that rule. Its only sub-affiliation-related correction concerns Astrokaszy Streetwise/Periphery and is outside the currently modeled contexts.
+
+## Alpha Slice 81 — HPG Technician
+
+Corrected-printing pp. 82 and 92 define HPG Technician as an Advanced two-year Field at Trade School and University. Its prerequisite is ComStar, Word of Blake, or Clan affiliation plus the Communications Field. The five fixed Skills are Administration, Comms/Conventional, Comms/HPG, Computers, and Cryptography; Perception is not part of the corrected entry. At 24 XP per Skill the Field costs 120 XP and awards +30 XP to each Skill. The v4.0 errata contains no applicable HPG Technician, HPG communications, affiliation, or school-offer correction.

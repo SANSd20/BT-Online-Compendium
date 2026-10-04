@@ -42,6 +42,7 @@ export const DETECTIVE_FIELD_ID = 'field.detective'
 export const INTELLIGENCE_FIELD_ID = 'field.intelligence'
 export const OFFICER_FIELD_ID = 'field.officer'
 export const COMMUNICATIONS_FIELD_ID = 'field.communications'
+export const HPG_TECHNICIAN_FIELD_ID = 'field.hpg-technician'
 export const ENGINEER_FIELD_ID = 'field.engineer'
 export const MERCHANT_MARINE_FIELD_ID = 'field.merchant-marine'
 export const PILOT_AIRCRAFT_CIVILIAN_FIELD_ID = 'field.pilot-aircraft-civilian'
@@ -631,6 +632,32 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
     prerequisites: [{ id: 'communications.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'INT 4+' }],
     componentSkills: [skill('skill.acting', 'Acting'), skill('skill.career', 'Career/Communications', 'Communications'), skill('skill.communications', 'Comms/Conventional', 'Conventional'), skill('skill.computers', 'Computers'), skill('skill.sensor-operations', 'Sensor Operations')],
     variableComponentSkills: [variableSkill('communications.protocol-any', 'Protocol affiliation', VARIABLE_SKILL_DOMAINS.protocolAffiliations)],
+  },
+  {
+    id: HPG_TECHNICIAN_FIELD_ID,
+    displayName: 'HPG Technician',
+    category: 'advanced',
+    source: { ...source('skill-field-hpg-technician'), page: 92 },
+    prerequisites: [
+      {
+        id: 'hpg-technician.affiliation',
+        kind: 'any-of',
+        description: 'ComStar, Word of Blake, or Clan affiliation',
+        options: [
+          { id: 'hpg-technician.affiliation.comstar', kind: 'affiliation', affiliationId: 'affiliation.comstar', description: 'ComStar affiliation' },
+          { id: 'hpg-technician.affiliation.word-of-blake', kind: 'affiliation', affiliationId: 'affiliation.word-of-blake', description: 'Word of Blake affiliation' },
+          { id: 'hpg-technician.affiliation.clan', kind: 'affiliation', affiliationId: 'affiliation.clan', description: 'Clan affiliation' },
+        ],
+      },
+      { id: 'hpg-technician.field', kind: 'skill-field', fieldIds: [COMMUNICATIONS_FIELD_ID], description: 'Communications Field' },
+    ],
+    componentSkills: [
+      skill('skill.administration', 'Administration'),
+      skill('skill.communications', 'Comms/Conventional', 'Conventional'),
+      skill('skill.communications', 'Comms/HPG', 'HPG'),
+      skill('skill.computers', 'Computers'),
+      skill('skill.cryptography', 'Cryptography'),
+    ],
   },
   {
     id: ENGINEER_FIELD_ID, displayName: 'Engineer', category: 'advanced', source: { ...source('skill-field-engineer'), page: 92 },

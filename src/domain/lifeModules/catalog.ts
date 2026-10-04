@@ -5,6 +5,7 @@ import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BAS
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 import { INFANTRY_ANTI_MECH_FIELD_ID } from '../skillFields/catalog'
 import { PILOT_AEROSPACE_CIVILIAN_FIELD_ID, PILOT_AEROSPACE_COMBAT_FIELD_ID, PILOT_AIRCRAFT_COMBAT_FIELD_ID } from '../skillFields/catalog'
+import { HPG_TECHNICIAN_FIELD_ID } from '../skillFields/catalog'
 
 export { CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
 export { OFFICER_TRAINING_SCHOOL_ID } from './stage3Schooling'
@@ -361,13 +362,14 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: ARCHAEOLOGIST_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: CARTOGRAPHER_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: COMMUNICATIONS_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: HPG_TECHNICIAN_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: JOURNALIST_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: MANAGER_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: MEDICAL_ASSISTANT_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: MERCHANT_MARINE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
       ],
       exactlyBasic: 1, minimumAdvanced: 1, maximumTotal: 3,
-      referenceOnlyOffers: [{ displayName: 'HPG Technician', category: 'advanced', chronologyYears: 2, reason: 'Restricted to affiliations not represented by the implemented Stage 0 contexts.' }],
+      referenceOnlyOffers: [],
     },
     awards: [
       fixed('trade-school.attribute.int', 50, attribute('INT')),
@@ -415,6 +417,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: ARCHAEOLOGIST_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: DETECTIVE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: ENGINEER_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: HPG_TECHNICIAN_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: PLANETARY_SURVEYOR_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: MEDICAL_ASSISTANT_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: POLITICIAN_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
@@ -429,9 +432,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
-      referenceOnlyOffers: [
-        { displayName: 'HPG Technician', category: 'advanced', chronologyYears: 2, reason: 'Restricted to ComStar, Word of Blake, or Clan affiliations, none of which is an implemented Stage 0 context.' },
-      ],
+      referenceOnlyOffers: [],
     },
     awards: [
       fixed('university.attribute.int', 150, attribute('INT')),
@@ -450,7 +451,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'university.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 220, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
     notes: ['Civilian Stage 3 school. Base cost is 710 XP plus selected Skill Field costs.'],
-    deferredRules: ['HPG Technician remains reference-only because its required affiliation is not implemented.'],
+    deferredRules: [],
   },
   {
     id: SOLARIS_INTERNSHIP_ID,

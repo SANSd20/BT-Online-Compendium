@@ -1140,7 +1140,12 @@ function skillFieldPrerequisiteSatisfied(character: CharacterDefinition, prerequ
   if (prerequisite.kind === 'trait') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
   if (prerequisite.kind === 'trait-minimum') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && (entry.attainedTp ?? 0) >= prerequisite.minimum)
   if (prerequisite.kind === 'trait-absent') return !character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
-  if (prerequisite.kind === 'affiliation') return character.affiliations.length > 0 && (prerequisite.classification !== 'non-clan' || character.affiliations.every((entry) => !entry.affiliationId.startsWith('affiliation.clan')))
+  if (prerequisite.kind === 'affiliation') {
+    const matchesIdentity = prerequisite.affiliationId
+      ? character.affiliations.some((entry) => entry.affiliationId === prerequisite.affiliationId)
+      : character.affiliations.length > 0
+    return matchesIdentity && (prerequisite.classification !== 'non-clan' || character.affiliations.every((entry) => !entry.affiliationId.startsWith('affiliation.clan')))
+  }
   if (prerequisite.kind === 'any-of') return prerequisite.options.some((option) => skillFieldPrerequisiteSatisfied(character, option))
   return false
 }

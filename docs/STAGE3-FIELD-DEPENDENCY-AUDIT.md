@@ -55,3 +55,7 @@ The reference catalog remains 56 and the mechanical catalog is now 49. The seven
 ## Alpha Slice 79 affiliation re-evaluation
 
 Committed ComStar and Word of Blake order affiliations now satisfy exact generic affiliation predicates. HPG Technician's prior affiliation blocker is therefore removed for those characters, but the Field remains reference-only because Slice 79 does not authorize its Field/school implementation. It is the next bounded non-Clan dependency target. The six Clan Fields remain blocked. Reference Fields remain 56 and mechanical Fields remain 49.
+
+## Alpha Slice 81 — HPG Technician resolution
+
+HPG Technician is mechanical through Trade School and University as an Advanced two-year Field. Its prerequisite is `(ComStar OR Word of Blake OR Clan) AND Communications Field`; exact committed affiliation identity and actual Field acquisition are required, while component Skills and goal selection do not substitute. ComStar and Word of Blake order affiliations now satisfy the two implemented branches. Clan remains a valid but currently unavailable branch. The source lists five Field Skills, producing a 120-XP reduced cost and +30 XP per Skill. The six remaining reference-only entries are Clan Aerospace Warrior, Clan Basic Training, Clan Cavalry, Clan Elemental, Clan MechWarrior, and Clan ProtoMech Warrior. Reference Fields remain 56 and mechanical Fields are 50.
