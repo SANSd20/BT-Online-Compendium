@@ -27,6 +27,9 @@ export const TECHNICIAN_AEROSPACE_FIELD_ID = 'field.technician-aerospace'
 export const TECHNICIAN_MECH_FIELD_ID = 'field.technician-mech'
 export const INFANTRY_FIELD_ID = 'field.infantry'
 export const PILOT_BATTLE_ARMOR_FIELD_ID = 'field.pilot-battle-armor'
+export const PILOT_DROPSHIP_FIELD_ID = 'field.pilot-dropship'
+export const PILOT_JUMPSHIP_FIELD_ID = 'field.pilot-jumpship'
+export const PILOT_WARSHIP_FIELD_ID = 'field.pilot-warship'
 export const MECHWARRIOR_FIELD_ID = 'field.mechwarrior'
 export const MARINE_FIELD_ID = 'field.marine'
 export const SHIPS_CREW_FIELD_ID = 'field.ships-crew'
@@ -367,6 +370,65 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       skill('skill.sensor-operations', 'Sensor Operations'),
       skill('skill.tactics', 'Tactics/Land', 'Land'),
     ],
+  },
+  {
+    id: PILOT_DROPSHIP_FIELD_ID,
+    displayName: 'Pilot/DropShip',
+    category: 'basic',
+    source: { ...source('skill-field-pilot-dropship'), page: 93 },
+    prerequisites: [
+      { id: 'pilot-dropship.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 4, description: 'DEX 4+' },
+      { id: 'pilot-dropship.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 3, description: 'INT 3+' },
+      { id: 'pilot-dropship.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 3, description: 'WIL 3+' },
+      { id: 'pilot-dropship.tds', kind: 'trait-absent', traitId: 'trait.tds', description: 'Cannot have TDS Trait' },
+    ],
+    componentSkills: [
+      skill('skill.career', 'Career/DropShip Pilot', 'DropShip Pilot'),
+      skill('skill.communications', 'Comms/Conventional', 'Conventional'),
+      skill('skill.navigation', 'Navigation/Space', 'Space'),
+      skill('skill.piloting', 'Piloting/Spacecraft', 'Spacecraft'),
+      skill('skill.sensor-operations', 'Sensor Operations'),
+      skill('skill.zero-g-operations', 'Zero-G Operations'),
+    ],
+  },
+  {
+    id: PILOT_JUMPSHIP_FIELD_ID,
+    displayName: 'Pilot/JumpShip',
+    category: 'advanced',
+    source: { ...source('skill-field-pilot-jumpship'), page: 93 },
+    prerequisites: [
+      { id: 'pilot-jumpship.field', kind: 'skill-field', fieldIds: [PILOT_DROPSHIP_FIELD_ID], description: 'Pilot/DropShip Field' },
+      { id: 'pilot-jumpship.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 5, description: 'INT 5+' },
+      { id: 'pilot-jumpship.tds', kind: 'trait-absent', traitId: 'trait.tds', description: 'Cannot have TDS Trait' },
+    ],
+    componentSkills: [
+      skill('skill.administration', 'Administration'),
+      skill('skill.computers', 'Computers'),
+      skill('skill.navigation', 'Navigation/K-F Jump', 'K-F Jump'),
+      skill('skill.navigation', 'Navigation/Space', 'Space'),
+      skill('skill.piloting', 'Piloting/Spacecraft', 'Spacecraft'),
+    ],
+  },
+  {
+    id: PILOT_WARSHIP_FIELD_ID,
+    displayName: 'Pilot/WarShip',
+    category: 'special',
+    source: { ...source('skill-field-pilot-warship'), page: 94 },
+    prerequisites: [
+      { id: 'pilot-warship.field', kind: 'skill-field', fieldIds: [PILOT_DROPSHIP_FIELD_ID], description: 'Pilot/DropShip Field' },
+      { id: 'pilot-warship.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 4, description: 'DEX 4+' },
+      { id: 'pilot-warship.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 6, description: 'INT 6+' },
+      { id: 'pilot-warship.tds', kind: 'trait-absent', traitId: 'trait.tds', description: 'Cannot have TDS Trait' },
+    ],
+    componentSkills: [
+      skill('skill.computers', 'Computers'),
+      skill('skill.leadership', 'Leadership'),
+      skill('skill.navigation', 'Navigation/K-F Jump', 'K-F Jump'),
+      skill('skill.navigation', 'Navigation/Space', 'Space'),
+      skill('skill.strategy', 'Strategy'),
+      skill('skill.tactics', 'Tactics/Space', 'Space'),
+    ],
+    affiliationBoundComponentSkills: [{ skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' }],
   },
   {
     id: CAVALRY_FIELD_ID,
