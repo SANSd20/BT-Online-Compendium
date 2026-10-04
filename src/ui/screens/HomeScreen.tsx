@@ -12,7 +12,7 @@ interface HomeScreenProps {
 const methods: Array<{ method: CreationMethod; label: string; description: string }> = [
   { method: 'archetype', label: 'Archetype', description: 'Start from one of eight source-backed Core foundations with shared XP accounting.' },
   { method: 'point-buy', label: 'Point Buy', description: 'Build a Normal Human draft with Core Attribute, Skill/subskill, and focused Trait purchasing.' },
-  { method: 'life-modules', label: 'Life Modules', description: 'Build through the audited minimal Core path from Stage 0 to Agitator at Stage 4.' },
+  { method: 'life-modules', label: 'Life Modules', description: 'Build through audited Core paths from Stage 0 through Stage 4, including ComStar/Word of Blake Service.' },
 ]
 
 export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) {

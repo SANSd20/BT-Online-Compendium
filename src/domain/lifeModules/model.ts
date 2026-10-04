@@ -19,7 +19,7 @@ export type LifeModuleAward =
   | { id: string; kind: 'affiliation-skill-choice'; xp: number; skillId: string; displayName: string; description: string }
   | { id: string; kind: 'any-skill-choice'; xp: number; skillId: string; displayName: string; count: number }
   | { id: string; kind: 'multi-skill-choice'; xp: number; skillId: string; displayName: string; count: number }
-  | { id: string; kind: 'modeled-skill-choice'; xp: number; count: number; displayName: string; distinct: true }
+  | { id: string; kind: 'modeled-skill-choice'; xp: number; count: number; displayName: string; distinct: true; allowedDestinationKeys?: string[] }
   | { id: string; kind: 'flexible-xp'; xpPerGrant: number; count: number; allowedTargetTypes: AwardTargetType[]; allocationMode?: 'fixed-grants'; excludedTargetIds?: string[]; allowedTargetIds?: string[] }
   | { id: string; kind: 'flexible-xp'; totalXp: number; allowedTargetTypes: AwardTargetType[]; allocationMode: 'pool'; maxXpPerTarget?: Partial<Record<AwardTargetType, number>> }
   | { id: string; kind: 'choice-package'; description: string; options: LifeModuleDestination[][] }
@@ -32,6 +32,7 @@ export type LifeModulePrerequisite =
   | { id: string; kind: 'trait'; traitId: string; description: string }
   | { id: string; kind: 'trait-minimum'; traitId: string; minimum: number; description: string }
   | { id: string; kind: 'trait-absent'; traitId: string; description: string }
+  | { id: string; kind: 'trait-level-maximum'; traitId: string; maximumMagnitude: number; description: string }
   | { id: string; kind: 'skill-field'; fieldIds: string[]; description: string }
   | { id: string; kind: 'module-history'; moduleIds: string[]; description: string }
   | { id: string; kind: 'residence'; location: string; description: string }
@@ -48,7 +49,7 @@ export interface LifeModuleDefinition {
   costXp: number
   chronologyYears?: number
   repeatPolicy?: {
-    sameModuleRepeat: 'deferred'
+    sameModuleRepeat: 'allowed' | 'deferred'
     repeatCost: 'full-module-cost'
     repeatAwards: {
       skills: 'repeat'

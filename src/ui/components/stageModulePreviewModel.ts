@@ -1,6 +1,7 @@
 import type { CharacterDefinition } from '../../domain/character/model'
 import {
   AGITATOR_ID,
+  COMSTAR_WOB_SERVICE_ID,
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
   getLifeModule,
@@ -36,6 +37,7 @@ export type SupportedStageModuleId =
   | typeof FAMILY_TRAINING_ID
   | typeof OFFICER_TRAINING_SCHOOL_ID
   | typeof AGITATOR_ID
+  | typeof COMSTAR_WOB_SERVICE_ID
 
 export interface Stage3FieldSelectionStatus {
   state: 'available' | 'final-prerequisites-outstanding' | 'unavailable'
@@ -62,6 +64,7 @@ export function applySupportedStageModule(character: CharacterDefinition, module
     case OFFICER_TRAINING_SCHOOL_ID:
       return applyStage3School(character, moduleId, stage3FieldIds ?? defaultStage3FieldIds(moduleId), homeworld)
     case AGITATOR_ID:
+    case COMSTAR_WOB_SERVICE_ID:
       return applyStage4Module(character, moduleId)
   }
 }

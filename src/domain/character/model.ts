@@ -228,6 +228,7 @@ export interface ResolvedLifeModuleDestination {
 export interface PendingLifeModuleAward {
   id: string
   moduleId: string
+  provenanceId?: string
   awardId: string
   kind: 'language-choice' | 'affiliation-skill-choice' | 'any-skill-choice' | 'multi-skill-choice' | 'modeled-skill-choice' | 'flexible-xp' | 'related-skill-prerequisite'
   description: string
@@ -240,6 +241,7 @@ export interface PendingLifeModuleAward {
   excludedTargetIds?: string[]
   allowedTargetIds?: string[]
   distinctDestinations?: boolean
+  allowedDestinationKeys?: string[]
   choiceSource?: AffiliationLanguageSelectorGroupId
   requiredSkillId?: string
   skillFieldChoice?: {
@@ -268,6 +270,7 @@ export interface ResolvedLifeModuleAward {
 
 export interface LifeModuleChoiceGrantRequirement {
   moduleId: string
+  provenanceId?: string
   awardId: string
   requiredGrants: number
   requiredXp?: number
@@ -481,7 +484,7 @@ export interface LifeModuleHistoryEntry {
   fieldCostXp?: number
   chronologyYears?: number
   repeatPolicy?: {
-    sameModuleRepeat: 'deferred'
+    sameModuleRepeat: 'allowed' | 'deferred'
     repeatCost: 'full-module-cost'
     repeatAwards: {
       skills: 'repeat'

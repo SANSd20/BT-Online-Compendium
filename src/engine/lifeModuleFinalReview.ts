@@ -21,10 +21,10 @@ import { reevaluateLifeModulePrerequisites } from './lifeModuleEngine'
 export function enterLifeModuleFinalReview(character: CharacterDefinition): CharacterDefinition {
   const next = structuredClone(character)
   const state = requireLifeModules(next)
-  const hasStage4 = next.lifeModuleHistory.filter((entry) => entry.stage === 4).length === 1
+  const hasStage4 = next.lifeModuleHistory.some((entry) => entry.stage === 4)
   const resolvedStage4 = state.pendingAwards.length === 0 && (state.phase === 'alpha-stage-4-stop' || state.phase === 'stage-4-prerequisite-review')
   if (!hasStage4 || !resolvedStage4) {
-    throw new Error('Final review requires one Stage 4 module with every pending module award resolved.')
+    throw new Error('Final review requires at least one Stage 4 module with every pending module award resolved.')
   }
   if (state.finalReview) throw new Error('Life Module final review is already initialized.')
   const enteredAt = new Date().toISOString()

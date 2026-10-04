@@ -552,7 +552,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const provenanceIds = new Set(character.provenance.map((entry) => entry.id))
   let calculatedCost = 0
   for (const [index, entry] of character.lifeModuleHistory.entries()) {
-    if (selectedIds.has(entry.moduleId)) issues.push(issue('life-modules.module.duplicate', `lifeModuleHistory.${index}.moduleId`, 'A Life Module cannot be selected more than once in the current Alpha catalog.'))
+    if (selectedIds.has(entry.moduleId) && getLifeModule(entry.moduleId).repeatPolicy?.sameModuleRepeat !== 'allowed') issues.push(issue('life-modules.module.duplicate', `lifeModuleHistory.${index}.moduleId`, 'This Life Module cannot be selected more than once.'))
     selectedIds.add(entry.moduleId)
     try {
       const definition = getLifeModule(entry.moduleId)
@@ -649,8 +649,11 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   })
   if (state.currentStage === 3 && stage3Count === 0) issues.push(issue('life-modules.stage-3.outstanding', 'lifeModuleHistory', 'A Stage 3 school has not yet been selected for this continuation.', { severity: 'warning' }))
   validateSkillFieldGrants(character, issues, provenanceIds)
-  if (stage4Count > 1) issues.push(issue('life-modules.stage-4.multiple', 'lifeModuleHistory', 'Multiple Stage 4 modules are not supported in Alpha Slice 9.'))
-  if (new Set(stage4Entries.map((entry) => entry.moduleId)).size !== stage4Count) issues.push(issue('life-modules.stage-4.repeat.unsupported', 'lifeModuleHistory', 'Repeated Stage 4 execution is not supported in Alpha Slice 9.'))
+  const unsupportedRepeat = stage4Entries.find((entry, index) => stage4Entries.slice(0, index).some((prior) => prior.moduleId === entry.moduleId) && getLifeModule(entry.moduleId).repeatPolicy?.sameModuleRepeat !== 'allowed')
+  if (unsupportedRepeat) {
+    issues.push(issue('life-modules.stage-4.multiple', 'lifeModuleHistory', `${unsupportedRepeat.displayName} cannot be selected more than once.`))
+    issues.push(issue('life-modules.stage-4.repeat.unsupported', 'lifeModuleHistory', `${unsupportedRepeat.displayName} does not support repeated acquisition.`))
+  }
   if (state.currentStage === 4 && stage4Count === 0 && state.phase !== 'stage-4-selection') issues.push(issue('life-modules.stage-4.outstanding', 'lifeModuleHistory', 'A Stage 4 module has not yet been selected for this continuation.', { severity: 'warning' }))
   validateStage4(character, issues, provenanceIds, stage4Entries)
   validateFinalReview(character, issues, stage4Count)
@@ -725,7 +728,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
       ? getFinalReviewBlockers(character).length === 0 ? 'ready-for-final-touches' : 'alpha-final-review'
       : state.phase === 'stage-4-selection' && stage4Count === 0 && stage3Count > 0 && state.pendingAwards.length === 0
       ? 'stage-4-selection'
-      : stage4Count === 1
+      : stage4Count >= 1
         ? state.pendingAwards.length > 0
           ? 'stage-4-resolution'
           : 'alpha-stage-4-stop'
@@ -776,7 +779,7 @@ function validateFinalReview(
   if (
     review.version !== 1 ||
     !review.enteredAt ||
-    stage4Count !== 1 ||
+    stage4Count < 1 ||
     !Array.isArray(review.allocations) ||
     !Array.isArray(review.optimizations) ||
     !Number.isInteger(pool.starting) || pool.starting < 0 ||
@@ -893,18 +896,20 @@ function validateStage4(
   provenanceIds: Set<string>,
   stage4Entries: CharacterDefinition['lifeModuleHistory'],
 ): void {
-  if (stage4Entries.length !== 1) return
-  const entry = stage4Entries[0]
-  let definition: LifeModuleDefinition
-  try { definition = getLifeModule(entry.moduleId) } catch { return }
-  if (definition.stage !== 4) return
-  const expectedAge = 16 + (character.creation.lifeModules?.selectedSkillFields.reduce((total, grant) => total + grant.chronologyYears, 0) ?? 0) + (definition.chronologyYears ?? 0)
-  const chronology = character.chronology.find((item) => item.eventId === `${entry.moduleId}.complete`)
-  if (!chronology || chronology.date !== `age:${expectedAge}` || !provenanceIds.has(chronology.provenanceId)) {
-    issues.push(issue('life-modules.stage-4.age.malformed', 'chronology', 'Stage 4 chronology must equal age 16 plus Stage 3 and Stage 4 time and retain valid provenance.'))
-  }
-  if (!definition.repeatPolicy || JSON.stringify(entry.repeatPolicy) !== JSON.stringify(definition.repeatPolicy)) {
-    issues.push(issue('life-modules.stage-4.repeat-policy.malformed', 'lifeModuleHistory', 'Stage 4 history must preserve the published repeat-policy metadata for future implementation.'))
+  const stage3Years = character.creation.lifeModules?.selectedSkillFields.reduce((total, grant) => total + grant.chronologyYears, 0) ?? 0
+  let stage4Years = 0
+  for (const entry of stage4Entries) {
+    let definition: LifeModuleDefinition
+    try { definition = getLifeModule(entry.moduleId) } catch { continue }
+    if (definition.stage !== 4) continue
+    stage4Years += definition.chronologyYears ?? 0
+    const chronology = character.chronology.find((item) => item.eventId === `${entry.moduleId}.complete` && entry.provenanceIds.includes(item.provenanceId))
+    if (!chronology || chronology.date !== `age:${16 + stage3Years + stage4Years}` || !provenanceIds.has(chronology.provenanceId)) {
+      issues.push(issue('life-modules.stage-4.age.malformed', 'chronology', 'Stage 4 chronology must accumulate Stage 3 and Stage 4 time and retain occurrence provenance.'))
+    }
+    if (!definition.repeatPolicy || JSON.stringify(entry.repeatPolicy) !== JSON.stringify(definition.repeatPolicy)) {
+      issues.push(issue('life-modules.stage-4.repeat-policy.malformed', 'lifeModuleHistory', 'Stage 4 history must preserve the published repeat-policy metadata.'))
+    }
   }
 }
 
@@ -916,7 +921,7 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
     let module: LifeModuleDefinition | undefined
     try { module = getLifeModule(resolved.moduleId) } catch { /* reported below */ }
     const award = module?.awards.find((entry) => entry.id === resolved.awardId)
-    const key = `${resolved.moduleId}/${resolved.awardId}/${lifeModuleDestinationKey(resolved.destination)}`
+    const key = `${resolved.provenanceId}/${resolved.moduleId}/${resolved.awardId}/${lifeModuleDestinationKey(resolved.destination)}`
     if (seen.has(key) && !(award?.kind === 'flexible-xp' && award.allocationMode === 'pool')) issues.push(issue('life-modules.resolution.duplicate', `creation.lifeModules.resolvedAwards.${index}`, 'A required choice cannot use the same destination more than once.'))
     seen.add(key)
     if (!selectedIds.has(resolved.moduleId) || !award || award.kind === 'fixed' || award.kind === 'affiliation-bound-skill' || award.kind === 'choice-package' || award.kind === 'conditional' || award.kind === 'field-grant') {
@@ -1155,7 +1160,7 @@ function validateChoiceGrantBalance(character: CharacterDefinition, issues: Vali
   const state = character.creation.lifeModules!
   const seen = new Set<string>()
   for (const requirement of state.choiceGrantRequirements) {
-    const key = `${requirement.moduleId}/${requirement.awardId}`
+    const key = requirement.provenanceId ? `${requirement.provenanceId}/${requirement.moduleId}/${requirement.awardId}` : `${requirement.moduleId}/${requirement.awardId}`
     let module: LifeModuleDefinition | undefined
     try { module = getLifeModule(requirement.moduleId) } catch { /* handled below */ }
     const award = module?.awards.find((entry) => entry.id === requirement.awardId)
@@ -1165,9 +1170,9 @@ function validateChoiceGrantBalance(character: CharacterDefinition, issues: Vali
       continue
     }
     seen.add(key)
-    const matchingResolved = state.resolvedAwards.filter((entry) => entry.moduleId === requirement.moduleId && entry.awardId === requirement.awardId)
+    const matchingResolved = state.resolvedAwards.filter((entry) => entry.moduleId === requirement.moduleId && entry.awardId === requirement.awardId && (!requirement.provenanceId || entry.provenanceId === requirement.provenanceId))
     const resolved = matchingResolved.length
-    const matchingPending = state.pendingAwards.filter((entry) => entry.moduleId === requirement.moduleId && entry.awardId === requirement.awardId)
+    const matchingPending = state.pendingAwards.filter((entry) => entry.moduleId === requirement.moduleId && entry.awardId === requirement.awardId && (!requirement.provenanceId || entry.provenanceId === requirement.provenanceId))
     const pending = matchingPending.reduce((total, entry) => total + entry.remainingGrants, 0)
     const poolBalanced = requirement.allocationMode === 'pool'
       ? matchingResolved.reduce((total, entry) => total + entry.xp, 0) + matchingPending.reduce((total, entry) => total + (entry.remainingXp ?? 0), 0) === requirement.requiredXp
@@ -1180,6 +1185,7 @@ function validateChoiceGrantBalance(character: CharacterDefinition, issues: Vali
     for (const moduleId of state.selectedModuleIds) {
       let module: LifeModuleDefinition | undefined
       try { module = getLifeModule(moduleId) } catch { continue }
+      if (moduleId === 'stage4.comstar-word-of-blake-service') continue
       for (const award of module.awards) {
         if (state.stage0SubAffiliation === 'no' && (award.id.startsWith('commonality.') || award.id.startsWith('crucis.'))) continue
         if (lifeModuleAwardGrantCount(award) !== null && !seen.has(`${moduleId}/${award.id}`)) {

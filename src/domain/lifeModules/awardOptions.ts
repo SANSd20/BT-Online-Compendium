@@ -47,6 +47,9 @@ const VARIABLE_OPEN_DOMAINS = [
 ]
 
 const KNOWN_SUBSKILLS: Readonly<Record<string, readonly string[]>> = {
+  'skill.communications': ['Black Box', 'Conventional', 'HPG'],
+  'skill.language': ['Cantonese', 'English', 'French', 'German', 'Japanese', 'Russian', 'Spanish'],
+  'skill.protocol': ['Capellan Confederation', 'ComStar', 'Federated Suns', 'Word of Blake'],
   'skill.driving': ['Ground', 'Ground Car'],
   'skill.prestidigitation': ['Sleight of Hand'],
   'skill.art': ['Painting'],
@@ -88,7 +91,10 @@ export function pendingAwardOptions(pending: PendingLifeModuleAward, character: 
     const label = pending.requiredSkillId === 'skill.streetwise' ? context.streetwiseContextLabel : context.protocolContextLabel
     return [skillOption(pending.requiredSkillId, skillName(pending.requiredSkillId), label)]
   }
-  if (pending.kind === 'modeled-skill-choice') return modeledSkillChoiceOptions(character)
+  if (pending.kind === 'modeled-skill-choice') {
+    const options = modeledSkillChoiceOptions(character)
+    return pending.allowedDestinationKeys ? options.filter((option) => pending.allowedDestinationKeys!.includes(option.value)) : options
+  }
   if (pending.requiredSkillId) {
     return knownPendingChoiceValues(pending).map((parameter) => skillOption(pending.requiredSkillId!, skillName(pending.requiredSkillId!), parameter))
   }
@@ -124,7 +130,7 @@ function flexibleTargetOptions(pending: PendingLifeModuleAward, character: Chara
     const candidates = [
       ...character.traits.map((entry) => ({ targetId: entry.traitId, displayName: entry.displayName ?? entry.traitId, parameters: entry.parameters })),
       ...POINT_BUY_TRAITS.filter((entry) => !entry.parameter).map((entry) => ({ targetId: entry.id, displayName: entry.displayName, parameters: {} })),
-      ...(pending.allowedTargetIds ?? []).map((targetId) => ({ targetId, displayName: targetId === 'trait.equipped' ? 'Equipped' : targetId === 'trait.vehicle' ? 'Vehicle' : targetId, parameters: {} })),
+      ...(pending.allowedTargetIds ?? []).map((targetId) => ({ targetId, displayName: targetId === 'trait.equipped' ? 'Equipped' : targetId === 'trait.vehicle' ? 'Vehicle' : targetId === 'trait.wealth' ? 'Wealth' : targetId, parameters: {} })),
     ]
     return uniqueOptions(candidates.filter((entry) => !pending.allowedTargetIds || pending.allowedTargetIds.includes(entry.targetId)).map((entry) => ({ value: entry.targetId, type, ...entry })))
   }

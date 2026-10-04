@@ -54,6 +54,7 @@ export const MILITARY_ENLISTMENT_ID = 'stage3.military-enlistment'
 export const FAMILY_TRAINING_ID = 'stage3.family-training'
 export const SOLARIS_INTERNSHIP_ID = 'stage3.solaris-internship'
 export const AGITATOR_ID = 'stage4.agitator'
+export const COMSTAR_WOB_SERVICE_ID = 'stage4.comstar-word-of-blake-service'
 
 export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
   {
@@ -789,6 +790,71 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     deferredRules: [],
   },
   {
+    id: COMSTAR_WOB_SERVICE_ID,
+    displayName: 'ComStar/Word of Blake Service',
+    stage: 4,
+    kind: 'real-life',
+    source: source(85, 'stage-4-comstar-word-of-blake-service'),
+    costXp: 900,
+    chronologyYears: 5,
+    repeatPolicy: {
+      sameModuleRepeat: 'allowed', repeatCost: 'full-module-cost',
+      repeatAwards: { skills: 'repeat', flexibleXp: 'repeat', attributes: 'first-occurrence-only', traits: 'first-occurrence-only' },
+    },
+    prerequisites: [
+      { id: 'service.order', kind: 'any-of', description: 'ComStar or Word of Blake affiliation', options: [
+        { id: 'service.order.comstar', kind: 'affiliation', affiliationId: 'affiliation.comstar', description: 'ComStar affiliation' },
+        { id: 'service.order.wob', kind: 'affiliation', affiliationId: 'affiliation.word-of-blake', description: 'Word of Blake affiliation' },
+      ] },
+      ...[
+        ['trait.lost-limb', 'Lost Limb'], ['trait.poor-hearing', 'Poor Hearing'], ['trait.poor-vision', 'Poor Vision'], ['trait.tds', 'TDS'],
+      ].map(([traitId, name]) => ({ id: `service.${traitId}`, kind: 'trait-level-maximum' as const, traitId, maximumMagnitude: 1, description: `${name} may not exceed its lowest possible level` })),
+    ],
+    awards: [
+      fixed('service.shared.attribute.dex', 50, attribute('DEX')),
+      fixed('service.shared.attribute.int', 50, attribute('INT')),
+      fixed('service.shared.trait.combat-sense', 75, trait('trait.combat-sense', 'Combat Sense')),
+      fixed('service.shared.trait.in-for-life', -100, trait('trait.in-for-life', 'In For Life')),
+      fixed('service.shared.trait.tech-empathy', 35, trait('trait.tech-empathy', 'Tech Empathy')),
+      { id: 'service.shared.trait.choice', kind: 'flexible-xp', xpPerGrant: 100, count: 1, allowedTargetTypes: ['trait'], allowedTargetIds: ['trait.equipped', 'trait.vehicle', 'trait.wealth'] },
+      fixed('service.shared.skill.administration', 40, skill('skill.administration', 'Administration')),
+      fixed('service.shared.skill.communications-hpg', 55, skill('skill.communications', 'Communications/HPG', 'HPG')),
+      { id: 'service.shared.skill.communications-any', kind: 'any-skill-choice', xp: 35, skillId: 'skill.communications', displayName: 'Communications/Any', count: 1 },
+      fixed('service.shared.skill.computers', 35, skill('skill.computers', 'Computers')),
+      { id: 'service.shared.skill.language-any', kind: 'any-skill-choice', xp: 25, skillId: 'skill.language', displayName: 'Language/Any', count: 1 },
+      fixed('service.shared.skill.martial-arts', 45, skill('skill.martial-arts', 'Martial Arts')),
+      fixed('service.shared.skill.protocol-comstar', 35, skill('skill.protocol', 'Protocol/ComStar', 'ComStar')),
+      fixed('service.shared.skill.protocol-wob', 35, skill('skill.protocol', 'Protocol/Word of Blake', 'Word of Blake')),
+      { id: 'service.shared.skill.protocol-any', kind: 'any-skill-choice', xp: 20, skillId: 'skill.protocol', displayName: 'Protocol/Any', count: 1 },
+      fixed('service.comstar.attribute.wil', 25, attribute('WIL')),
+      fixed('service.comstar.attribute.edg', -25, attribute('EDG')),
+      fixed('service.comstar.trait.equipped', 80, trait('trait.equipped', 'Equipped')),
+      fixed('service.comstar.trait.rank', 80, trait('trait.rank', 'Rank')),
+      fixed('service.comstar.trait.compulsion-wob', -50, trait('trait.compulsion', 'Compulsion/Hatred of Word of Blake', { compulsion: 'Hatred of Word of Blake' })),
+      fixed('service.comstar.skill.communications-hpg', 15, skill('skill.communications', 'Communications/HPG', 'HPG')),
+      fixed('service.comstar.skill.leadership', 20, skill('skill.leadership', 'Leadership')),
+      fixed('service.comstar.skill.negotiation', 15, skill('skill.negotiation', 'Negotiation')),
+      { id: 'service.comstar.skill.technician-any', kind: 'any-skill-choice', xp: 15, skillId: 'skill.technician', displayName: 'Technician/Any', count: 1 },
+      fixed('service.comstar.skill.training', 15, skill('skill.training', 'Training')),
+      fixed('service.wob.attribute.int', 25, attribute('INT')),
+      fixed('service.wob.attribute.cha', -25, attribute('CHA')),
+      fixed('service.wob.trait.equipped', 70, trait('trait.equipped', 'Equipped')),
+      fixed('service.wob.trait.rank', 70, trait('trait.rank', 'Rank')),
+      fixed('service.wob.trait.compulsion-comstar', -75, trait('trait.compulsion', 'Compulsion/Hatred of ComStar', { compulsion: 'Hatred of ComStar' })),
+      fixed('service.wob.trait.compulsion-clans', -100, trait('trait.compulsion', 'Compulsion/Hatred of Clans', { compulsion: 'Hatred of Clans' })),
+      { id: 'service.wob.skill.communications-any', kind: 'any-skill-choice', xp: 50, skillId: 'skill.communications', displayName: 'Communications/Any', count: 1 },
+      fixed('service.wob.skill.computers', 35, skill('skill.computers', 'Computers')),
+      fixed('service.wob.skill.cryptography', 25, skill('skill.cryptography', 'Cryptography')),
+      fixed('service.wob.skill.interest-blake', 50, skill('skill.interest', 'Interest/Writings of Jerome Blake', 'Writings of Jerome Blake')),
+      fixed('service.wob.skill.interrogation', 40, skill('skill.interrogation', 'Interrogation')),
+      fixed('service.wob.skill.perception', 25, skill('skill.perception', 'Perception')),
+      { id: 'service.branch.skills.any-four', kind: 'modeled-skill-choice', xp: 40, count: 4, displayName: 'Any four Skills', distinct: true },
+      { id: 'service.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 50, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: ['Requires committed ComStar or Word of Blake affiliation.', 'Alternative intelligence, police, and military service modules remain outside this bounded slice.'],
+    deferredRules: [],
+  },
+  {
     id: AGITATOR_ID,
     displayName: 'Agitator',
     stage: 4,
@@ -868,7 +934,7 @@ export function validateLifeModuleCatalog(catalog: readonly LifeModuleDefinition
       }
     }
     if (module.repeatPolicy && (
-      module.repeatPolicy.sameModuleRepeat !== 'deferred' ||
+      !['allowed', 'deferred'].includes(module.repeatPolicy.sameModuleRepeat) ||
       module.repeatPolicy.repeatCost !== 'full-module-cost' ||
       module.repeatPolicy.repeatAwards.skills !== 'repeat' ||
       module.repeatPolicy.repeatAwards.flexibleXp !== 'repeat' ||

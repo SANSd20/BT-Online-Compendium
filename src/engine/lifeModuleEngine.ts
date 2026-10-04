@@ -14,6 +14,7 @@ import {
   BLUE_COLLAR_ID,
   CAPELLAN_COMMONALITY_ID,
   COMSTAR_ORDER_ID,
+  COMSTAR_WOB_SERVICE_ID,
   FEDERATED_SUNS_CRUCIS_MARCH_ID,
   FAMILY_TRAINING_ID,
   getLifeModule,
@@ -511,8 +512,8 @@ export function continueToStage4(character: CharacterDefinition): CharacterDefin
 export function applyAgitator(character: CharacterDefinition): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-4-selection') throw new Error('A Stage 4 module is not the current legal action.')
-  if (character.lifeModuleHistory.some((entry) => entry.stage === 4)) {
-    throw new Error('Repeated or multiple Stage 4 modules are not supported in Alpha Slice 9.')
+  if (character.lifeModuleHistory.some((entry) => entry.moduleId === AGITATOR_ID)) {
+    throw new Error('Repeated Agitator modules remain deferred.')
   }
   const module = getLifeModule(AGITATOR_ID)
   const next = applyModule(character, module, {})
@@ -526,8 +527,41 @@ export function applyAgitator(character: CharacterDefinition): CharacterDefiniti
 }
 
 export function applyStage4Module(character: CharacterDefinition, moduleId: string): CharacterDefinition {
-  if (moduleId !== AGITATOR_ID) throw new Error(`Unknown Alpha Stage 4 module: ${moduleId}`)
-  return applyAgitator(character)
+  if (moduleId === AGITATOR_ID) return applyAgitator(character)
+  if (moduleId !== COMSTAR_WOB_SERVICE_ID) throw new Error(`Unknown Alpha Stage 4 module: ${moduleId}`)
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-4-selection') throw new Error('A Stage 4 module is not the current legal action.')
+  const order = state.orderAffiliation
+  if (order !== 'comstar' && order !== 'word-of-blake') throw new Error('ComStar/Word of Blake Service requires a committed ComStar or Word of Blake affiliation.')
+  const published = getLifeModule(COMSTAR_WOB_SERVICE_ID)
+  const repeat = character.lifeModuleHistory.some((entry) => entry.moduleId === COMSTAR_WOB_SERVICE_ID)
+  const acquiredFieldProvenance = new Set(state.selectedSkillFields.map((field) => field.provenanceId))
+  const fieldSkillKeys = [...new Set(character.skills.filter((entry) => entry.sourceAwards.some((award) => acquiredFieldProvenance.has(award.provenanceId))).map((entry) => `${entry.address.skillId}/${entry.address.parameter?.value ?? ''}`))]
+  const module: LifeModuleDefinition = {
+    ...published,
+    awards: published.awards
+      .filter((award) => {
+        if (award.id === 'service.shared.skill.protocol-comstar') return order === 'comstar'
+        if (award.id === 'service.shared.skill.protocol-wob') return order === 'word-of-blake'
+        if (award.id.startsWith('service.comstar.') && order !== 'comstar') return false
+        if (award.id.startsWith('service.wob.') && order !== 'word-of-blake') return false
+        if (!repeat) return true
+        return award.kind === 'fixed' ? award.destination.type === 'skill' : award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' || award.kind === 'modeled-skill-choice' || (award.kind === 'flexible-xp' && award.allocationMode === 'pool')
+      })
+      .map((award) => award.id === 'service.branch.skills.any-four' && award.kind === 'modeled-skill-choice' && fieldSkillKeys.length > 0 ? { ...award, allowedDestinationKeys: fieldSkillKeys } : award),
+  }
+  const next = applyModule(character, module, {}, { allowRepeat: repeat })
+  const years = next.lifeModuleHistory.filter((entry) => entry.stage === 3 || entry.stage === 4).reduce((total, entry) => total + (entry.chronologyYears ?? 0), 0)
+  next.chronology.push({ date: `age:${16 + years}`, eventId: `${module.id}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })
+  return updateLifeModuleProgress(next)
+}
+
+export function continueStage4Modules(character: CharacterDefinition): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  if (state.phase !== 'alpha-stage-4-stop' || state.pendingAwards.length > 0) throw new Error('Another Stage 4 module requires a resolved Stage 4 stop.')
+  state.phase = 'stage-4-selection'; state.stopState = 'not-eligible'; state.currentStage = 4
+  return next
 }
 
 export function resolvePendingLifeModuleAward(
@@ -548,7 +582,7 @@ export function resolvePendingLifeModuleAward(
   validateResolutionDestination(next, pending, normalized)
   const destinationKey = resolvedDestinationKey(normalized)
   const isPool = pending.allocationMode === 'pool'
-  const duplicate = state.resolvedAwards.some((entry) => entry.moduleId === pending.moduleId && entry.awardId === pending.awardId && resolvedDestinationKey(entry.destination) === destinationKey)
+  const duplicate = state.resolvedAwards.some((entry) => (!pending.provenanceId || entry.provenanceId === pending.provenanceId) && entry.moduleId === pending.moduleId && entry.awardId === pending.awardId && resolvedDestinationKey(entry.destination) === destinationKey)
   if (duplicate && !isPool) throw new Error('This destination has already been selected for the pending award.')
   const appliedXp = isPool ? xpAmount : pending.xpPerGrant
   if (isPool && (!Number.isInteger(appliedXp) || appliedXp! <= 0)) throw new Error('Flexible pool allocations require a positive whole XP amount.')
@@ -557,11 +591,11 @@ export function resolvePendingLifeModuleAward(
     if (appliedXp! > (pending.remainingXp ?? 0)) throw new Error('Flexible allocation exceeds the remaining award XP.')
     const cap = pending.maxXpPerTarget?.[normalized.type]
     const alreadyAllocated = state.resolvedAwards
-      .filter((entry) => entry.moduleId === pending.moduleId && entry.awardId === pending.awardId && resolvedDestinationKey(entry.destination) === destinationKey)
+      .filter((entry) => (!pending.provenanceId || entry.provenanceId === pending.provenanceId) && entry.moduleId === pending.moduleId && entry.awardId === pending.awardId && resolvedDestinationKey(entry.destination) === destinationKey)
       .reduce((total, entry) => total + entry.xp, 0)
     if (cap !== undefined && alreadyAllocated + appliedXp! > cap) throw new Error(`This flexible award may allocate no more than ${cap} XP to one ${normalized.type}.`)
   }
-  const moduleHistory = next.lifeModuleHistory.find((entry) => entry.moduleId === pending.moduleId)
+  const moduleHistory = [...next.lifeModuleHistory].reverse().find((entry) => entry.moduleId === pending.moduleId && (!pending.provenanceId || entry.provenanceIds.includes(pending.provenanceId)))
   const fieldGrant = pending.skillFieldChoice
     ? state.selectedSkillFields.find((entry) => entry.schoolModuleId === pending.moduleId && entry.fieldId === pending.skillFieldChoice!.fieldId)
     : pending.skillFieldPrerequisiteChoice
@@ -570,7 +604,7 @@ export function resolvePendingLifeModuleAward(
   if (pending.skillFieldChoice && fieldGrant?.variableSkillChoices?.some((choice) => resolvedDestinationKey(choice.destination) === destinationKey)) {
     throw new Error('Each variable component in a Skill Field must use a distinct concrete destination.')
   }
-  const provenanceId = fieldGrant?.provenanceId ?? moduleHistory?.provenanceIds[0]
+  const provenanceId = fieldGrant?.provenanceId ?? pending.provenanceId ?? moduleHistory?.provenanceIds[0]
   if (!provenanceId) throw new Error('Pending award module provenance is missing.')
   const ledgerDestination = toLifeModuleDestination(normalized)
   if (pending.kind !== 'related-skill-prerequisite') applyDestinationAward(next, ledgerDestination, appliedXp!, provenanceId)
@@ -607,11 +641,11 @@ function applyModule(
   character: CharacterDefinition,
   module: LifeModuleDefinition,
   resolutions: Record<string, LifeModuleDestination>,
-  options: { totalCostXp?: number; fieldCostXp?: number } = {},
+  options: { totalCostXp?: number; fieldCostXp?: number; allowRepeat?: boolean } = {},
 ): CharacterDefinition {
   const next = structuredClone(character)
   const state = requireLifeModules(next)
-  if (state.selectedModuleIds.includes(module.id)) throw new Error(`Life Module already selected: ${module.id}`)
+  if (state.selectedModuleIds.includes(module.id) && !options.allowRepeat) throw new Error(`Life Module already selected: ${module.id}`)
   const totalCostXp = options.totalCostXp ?? module.costXp
   if (state.moduleXp.remaining < totalCostXp) throw new RangeError(`Selecting ${module.displayName} would overspend the Life Module XP pool.`)
   const selectedAt = new Date().toISOString()
@@ -623,6 +657,7 @@ function applyModule(
     const requiredGrants = awardGrantCount(award)
     if (requiredGrants !== null) state.choiceGrantRequirements.push({
       moduleId: module.id,
+      ...(module.repeatPolicy?.sameModuleRepeat === 'allowed' ? { provenanceId } : {}),
       awardId: award.id,
       requiredGrants,
       ...(award.kind === 'flexible-xp' && award.allocationMode === 'pool' ? { requiredXp: award.totalXp, allocationMode: 'pool' as const } : {}),
@@ -631,12 +666,12 @@ function applyModule(
     else if (award.kind === 'affiliation-bound-skill') applyDestinationAward(next, resolveAffiliationBoundLifeModuleDestination(next, award.skillId, award.displayName), award.xp, provenanceId)
     else if (award.kind === 'language-choice' && resolutions[award.id]) {
       applyDestinationAward(next, resolutions[award.id], award.xp, provenanceId)
-      const pendingShape = pendingAwardFrom(module, award)
+      const pendingShape = pendingAwardFrom(module, award, module.repeatPolicy?.sameModuleRepeat === 'allowed' ? provenanceId : undefined)
       const resolved = fromLifeModuleDestination(resolutions[award.id])
       recordResolvedAward(state.resolvedAwards, pendingShape, resolved, provenanceId)
       next.creation.resolvedChoiceIds.push(`${module.id}/${award.id}/${resolvedDestinationKey(resolved)}`)
     }
-    else addPendingAward(state.pendingAwards, module, award)
+    else addPendingAward(state.pendingAwards, module, award, module.repeatPolicy?.sameModuleRepeat === 'allowed' ? provenanceId : undefined)
   }
   state.moduleXp.spent += totalCostXp
   state.moduleXp.remaining -= totalCostXp
@@ -750,22 +785,22 @@ function applyDestinationAward(character: CharacterDefinition, destination: Life
   entry.sourceAwards.push(sourceAward)
 }
 
-function addPendingAward(pending: PendingLifeModuleAward[], module: LifeModuleDefinition, award: Exclude<LifeModuleAward, { kind: 'fixed' }>): void {
+function addPendingAward(pending: PendingLifeModuleAward[], module: LifeModuleDefinition, award: Exclude<LifeModuleAward, { kind: 'fixed' }>, provenanceId?: string): void {
   if (award.kind === 'affiliation-bound-skill') throw new Error('Affiliation-bound awards must resolve automatically from the established final affiliation.')
   if (award.kind === 'choice-package' || award.kind === 'conditional' || award.kind === 'field-grant') {
     throw new Error(`Award type ${award.kind} is modeled but not supported by the Alpha Slice 9 engine.`)
   }
-  pending.push(pendingAwardFrom(module, award))
+  pending.push(pendingAwardFrom(module, award, provenanceId))
 }
 
-function pendingAwardFrom(module: LifeModuleDefinition, award: Exclude<LifeModuleAward, { kind: 'fixed' | 'affiliation-bound-skill' | 'choice-package' | 'conditional' | 'field-grant' }>): PendingLifeModuleAward {
+function pendingAwardFrom(module: LifeModuleDefinition, award: Exclude<LifeModuleAward, { kind: 'fixed' | 'affiliation-bound-skill' | 'choice-package' | 'conditional' | 'field-grant' }>, provenanceId?: string): PendingLifeModuleAward {
   const kind = award.kind
   const isPool = kind === 'flexible-xp' && award.allocationMode === 'pool'
   const xpPerGrant = kind === 'flexible-xp' ? (isPool ? 0 : award.xpPerGrant) : award.xp
   const remainingGrants = kind === 'flexible-xp' ? (isPool ? 0 : award.count) : kind === 'language-choice' || kind === 'affiliation-skill-choice' ? 1 : award.count
   const allowedTargetTypes = kind === 'flexible-xp' ? award.allowedTargetTypes : ['skill' as const]
   return {
-    id: makeId(undefined, 'pending-award'), moduleId: module.id, awardId: award.id, kind,
+    id: makeId(undefined, 'pending-award'), moduleId: module.id, ...(provenanceId ? { provenanceId } : {}), awardId: award.id, kind,
     description: kind === 'language-choice' || kind === 'affiliation-skill-choice' ? award.description : kind === 'flexible-xp' ? (isPool ? `Allocate ${award.totalXp} flexible XP under its source restrictions.` : `Allocate ${remainingGrants} grants of ${xpPerGrant} XP.`) : `${award.displayName}: choose ${remainingGrants} concrete subskill${remainingGrants === 1 ? '' : 's'}.`,
     xpPerGrant,
     remainingGrants,
@@ -773,7 +808,7 @@ function pendingAwardFrom(module: LifeModuleDefinition, award: Exclude<LifeModul
     allowedTargetTypes: [...allowedTargetTypes],
     ...(kind === 'flexible-xp' && !isPool && award.excludedTargetIds ? { excludedTargetIds: [...award.excludedTargetIds] } : {}),
     ...(kind === 'flexible-xp' && !isPool && award.allowedTargetIds ? { allowedTargetIds: [...award.allowedTargetIds] } : {}),
-    ...(kind === 'modeled-skill-choice' ? { distinctDestinations: award.distinct } : {}),
+    ...(kind === 'modeled-skill-choice' ? { distinctDestinations: award.distinct, ...(award.allowedDestinationKeys ? { allowedDestinationKeys: [...award.allowedDestinationKeys] } : {}) } : {}),
     ...(kind === 'language-choice' ? { choiceSource: award.choicesFrom, requiredSkillId: 'skill.language' } : {}),
     ...(kind === 'affiliation-skill-choice' || kind === 'any-skill-choice' || kind === 'multi-skill-choice' ? { requiredSkillId: award.skillId } : {}),
     source: { ...module.source },
@@ -864,6 +899,7 @@ function evaluatePrerequisite(
   if (prerequisite.kind === 'trait') satisfied = character.traits.some((item) => item.traitId === prerequisite.traitId && item.active)
   if (prerequisite.kind === 'trait-minimum') satisfied = character.traits.some((item) => item.traitId === prerequisite.traitId && (item.attainedTp ?? 0) >= prerequisite.minimum)
   if (prerequisite.kind === 'trait-absent') satisfied = !character.traits.some((item) => item.traitId === prerequisite.traitId && item.active)
+  if (prerequisite.kind === 'trait-level-maximum') satisfied = !character.traits.some((item) => item.traitId === prerequisite.traitId && Math.abs(item.attainedTp ?? 0) > prerequisite.maximumMagnitude)
   if (prerequisite.kind === 'skill-field') satisfied = prerequisite.fieldIds.some((fieldId) => character.creation.lifeModules?.selectedSkillFields.some((grant) => grant.fieldId === fieldId))
   if (prerequisite.kind === 'module-history') satisfied = prerequisite.moduleIds.some((moduleId) => character.lifeModuleHistory.some((entry) => entry.moduleId === moduleId))
   if (prerequisite.kind === 'residence') satisfied = normalizeComparableLocation(character.personalDescription?.residence) === normalizeComparableLocation(prerequisite.location)
@@ -889,6 +925,7 @@ function prerequisiteSatisfied(character: CharacterDefinition, prerequisite: Exc
   if (prerequisite.kind === 'trait') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
   if (prerequisite.kind === 'trait-minimum') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && (entry.attainedTp ?? 0) >= prerequisite.minimum)
   if (prerequisite.kind === 'trait-absent') return !character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
+  if (prerequisite.kind === 'trait-level-maximum') return !character.traits.some((entry) => entry.traitId === prerequisite.traitId && Math.abs(entry.attainedTp ?? 0) > prerequisite.maximumMagnitude)
   if (prerequisite.kind === 'skill-field') return prerequisite.fieldIds.some((fieldId) => character.creation.lifeModules?.selectedSkillFields.some((grant) => grant.fieldId === fieldId))
   if (prerequisite.kind === 'module-history') return prerequisite.moduleIds.some((moduleId) => character.lifeModuleHistory.some((entry) => entry.moduleId === moduleId))
   if (prerequisite.kind === 'residence') return normalizeComparableLocation(character.personalDescription?.residence) === normalizeComparableLocation(prerequisite.location)
@@ -951,7 +988,7 @@ function validateResolutionDestination(character: CharacterDefinition, pending: 
   if (destination.type === 'skill' && pending.requiredSkillId && destination.targetId !== pending.requiredSkillId) throw new Error(`This award must resolve to ${pending.requiredSkillId}.`)
   if (pending.kind === 'modeled-skill-choice') {
     if (destination.type !== 'skill') throw new Error('This award must resolve to a Skill.')
-    const available = modeledSkillChoiceOptions(character)
+    const available = modeledSkillChoiceOptions(character).filter((option) => !pending.allowedDestinationKeys || pending.allowedDestinationKeys.includes(option.value))
     const key = `${destination.targetId}/${destination.parameter?.value ?? ''}`
     const exact = available.some((option) => option.value === key && option.displayName === destination.displayName)
     const open = isOpenSubjectSkillId(destination.targetId) && available.some((option) => option.value === `${destination.targetId}/__open__`)

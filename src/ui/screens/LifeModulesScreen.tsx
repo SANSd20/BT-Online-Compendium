@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, FAMILY_TRAINING_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, SOLARIS_INTERNSHIP_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, COMSTAR_WOB_SERVICE_ID, FAMILY_TRAINING_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, SOLARIS_INTERNSHIP_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
 import { getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
@@ -10,7 +10,7 @@ import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
 import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
-import { applyStage0Affiliation, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
+import { applyStage0Affiliation, applyUniversalStage0, continueStage3Schooling, continueStage4Modules, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
@@ -507,7 +507,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       <section className="hero compact">
         <LifeModulesVersionBadge />
         <h1>Life Modules</h1>
-        <p>Build through the audited Agitator branch, complete final review, and use the 84-item audited Core equipment catalog with affiliation-adjusted access or the manual inventory fallback. Full catalog coverage and finalization remain deferred.</p>
+        <p>Build through audited Core Life Modules including Agitator and ComStar/Word of Blake Service, complete final review, and use the 84-item audited equipment catalog with affiliation-adjusted access or manual fallback. Full catalog coverage and finalization remain deferred.</p>
       </section>
 
       {!character ? (
@@ -606,11 +606,19 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                   <p><strong>Expected age: {(currentAge(character) ?? 16) + 4}</strong></p>
                   <button className="button" type="button" aria-pressed={stageModulePreviewId === AGITATOR_ID} onClick={() => selectStageModule(AGITATOR_ID)}>Preview Agitator</button>
                 </article>
-              </div>{stageModulePreviewId === AGITATOR_ID && renderStageChoiceSlots('Real Life', 'Agitator and choices committed.')}</>
+                <article className={stageModulePreviewId === COMSTAR_WOB_SERVICE_ID ? 'preview-selected' : ''}>
+                  <h3>ComStar/Word of Blake Service</h3>
+                  <p>900 XP · Real Life module · +5 years · available to committed ComStar or Word of Blake characters.</p>
+                  <p>Includes the affiliation branch package, governed shared choices, four distinct +40 XP Skill awards, and 50 flexible XP.</p>
+                  {!state.orderAffiliation && <p className="field-status unavailable">Unavailable: requires a committed ComStar or Word of Blake affiliation.</p>}
+                  <p><strong>Expected age: {(currentAge(character) ?? 16) + 5}</strong></p>
+                  <button className="button" type="button" disabled={!state.orderAffiliation} aria-pressed={stageModulePreviewId === COMSTAR_WOB_SERVICE_ID} onClick={() => selectStageModule(COMSTAR_WOB_SERVICE_ID)}>Preview ComStar/WoB Service</button>
+                </article>
+              </div>{(stageModulePreviewId === AGITATOR_ID || stageModulePreviewId === COMSTAR_WOB_SERVICE_ID) && renderStageChoiceSlots('Real Life', 'Stage 4 module and choices committed.')}</>
             )}
-            {state.phase === 'stage-4-resolution' && <p className="notice">Agitator is selected. Resolve Driving/Any, Prestidigitation/Any, Streetwise/Affiliation, and all flexible XP below.</p>}
+            {state.phase === 'stage-4-resolution' && <p className="notice">Stage 4 is selected. Resolve every source-bound choice and flexible XP allocation below.</p>}
             {state.phase === 'stage-4-prerequisite-review' && <div className="life-action"><p className="notice">All Stage 4 awards are resolved, but one or more prerequisites remain outstanding. Enter final review to allocate XP and re-evaluate them.</p><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened with outstanding prerequisites.')}>Enter final review</button></div>}
-            {state.phase === 'alpha-stage-4-stop' && <div className="life-action"><p className="notice">The minimal Agitator Stage 4 branch is complete at age {currentAge(character) ?? 'unknown'}. Enter final review to allocate remaining XP and explicitly apply Optimization.</p><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened.')}>Enter final review</button></div>}
+            {state.phase === 'alpha-stage-4-stop' && <div className="life-action"><p className="notice">Stage 4 is complete at age {currentAge(character) ?? 'unknown'}. You may take another source-legal Stage 4 module or enter final review.</p><button className="button secondary" type="button" onClick={() => operate(() => continueStage4Modules(character), 'Another Stage 4 selection opened.')}>Choose another Stage 4 module</button><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened.')}>Enter final review</button></div>}
             {state.phase === 'alpha-final-review' && <><LifeModuleReviewSummary character={character} /><p className="notice">Final review is in progress. Resolve every blocker below before the character can be marked ready for Final Touches.</p></>}
             {state.phase === 'ready-for-final-touches' && !character.creation.finalTouches && <div className="life-action"><p className="notice">This draft passed final review and may enter the Alpha Final Touches/equipment foundation.</p><button className="button" type="button" onClick={() => operate(() => enterFinalTouches(character), 'Final Touches opened with Wealth-derived funds and Equipped-derived limits.')}>Enter Final Touches</button></div>}
             {state.phase === 'ready-for-final-touches' && character.creation.finalTouches && <p className="notice">Final Touches equipment state: {formatPhase(character.creation.finalTouches.equipmentReviewState)}. This is not a finalized or ready-for-play character.</p>}
