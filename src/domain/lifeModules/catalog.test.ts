@@ -12,6 +12,7 @@ import {
   MILITARY_ENLISTMENT_ID,
   OFFICER_TRAINING_SCHOOL_ID,
   POLICE_ACADEMY_ID,
+  SOLARIS_INTERNSHIP_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   TECHNICAL_COLLEGE_ID,
@@ -23,7 +24,7 @@ import {
 import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, OFFICER_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 
 describe('Life Module Alpha catalog', () => {
-  it('contains the seventeen audited Core entries through the minimal Stage 4 branch', () => {
+  it('contains the eighteen audited Core entries through the minimal Stage 4 branch', () => {
     expect(LIFE_MODULE_CATALOG.map((entry) => entry.id)).toEqual([
       UNIVERSAL_STAGE_0_ID,
       CAPELLAN_COMMONALITY_ID,
@@ -35,6 +36,7 @@ describe('Life Module Alpha catalog', () => {
       TECHNICAL_COLLEGE_ID,
       TRADE_SCHOOL_ID,
       UNIVERSITY_ID,
+      SOLARIS_INTERNSHIP_ID,
       POLICE_ACADEMY_ID,
       INTELLIGENCE_OPERATIVE_TRAINING_ID,
       MILITARY_ACADEMY_ID,
@@ -47,6 +49,7 @@ describe('Life Module Alpha catalog', () => {
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === TECHNICAL_COLLEGE_ID)).toMatchObject({ stage3School: { classification: 'general', family: 'civilian' } })
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === TRADE_SCHOOL_ID)).toMatchObject({ costXp: 560, stage3School: { classification: 'general', family: 'civilian' } })
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === UNIVERSITY_ID)).toMatchObject({ costXp: 710, stage3School: { classification: 'general', family: 'civilian' } })
+    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === SOLARIS_INTERNSHIP_ID)).toMatchObject({ costXp: 700, stage3School: { classification: 'general', family: 'civilian' }, skillFieldSelection: { exactlyBasic: 1, minimumAdvanced: 1, maximumTotal: 3 } })
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === POLICE_ACADEMY_ID)).toMatchObject({ costXp: 680, stage3School: { classification: 'general', family: 'intelligence-police' } })
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === INTELLIGENCE_OPERATIVE_TRAINING_ID)).toMatchObject({
       costXp: 760,

@@ -22,6 +22,7 @@ import {
   MILITARY_ENLISTMENT_ID,
   OFFICER_TRAINING_SCHOOL_ID,
   POLICE_ACADEMY_ID,
+  SOLARIS_INTERNSHIP_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   TECHNICAL_COLLEGE_ID,
@@ -35,7 +36,7 @@ import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/ski
 import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
-import { BASIC_TRAINING_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
 
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
@@ -277,14 +278,19 @@ export function applyMilitaryEnlistment(
   return applyStage3SchoolDefinition(character, MILITARY_ENLISTMENT_ID, fieldIds)
 }
 
-function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: string, fieldIds: string[], homeworld?: string): CharacterDefinition {
+function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: string, fieldIds: string[], personalDetail?: string): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-3-selection') throw new Error('A Stage 3 school is not the current legal action.')
   const preparedCharacter = structuredClone(character)
   if (moduleId === FAMILY_TRAINING_ID) {
-    const normalizedHomeworld = normalizeHomeworld(homeworld ?? preparedCharacter.personalDescription?.homeworld ?? '')
+    const normalizedHomeworld = normalizeHomeworld(personalDetail ?? preparedCharacter.personalDescription?.homeworld ?? '')
     preparedCharacter.personalDescription ??= { physicalDescription: '', backgroundNotes: '', homeworld: '' }
     preparedCharacter.personalDescription.homeworld = normalizedHomeworld
+  }
+  if (moduleId === SOLARIS_INTERNSHIP_ID) {
+    const residence = normalizeResidence(personalDetail ?? preparedCharacter.personalDescription?.residence ?? '')
+    preparedCharacter.personalDescription ??= { physicalDescription: '', backgroundNotes: '', homeworld: '' }
+    preparedCharacter.personalDescription.residence = residence
   }
   const publishedSchool = getLifeModule(moduleId)
   if (publishedSchool.stage !== 3 || !publishedSchool.skillFieldSelection) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
@@ -312,6 +318,7 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
     for (const component of field.affiliationBoundComponentSkills ?? []) {
       applyDestinationAward(next, resolveAffiliationBoundLifeModuleDestination(next, component.skillId, component.displayName), offer.awardedXpPerSkill, provenanceId)
     }
+    const prerequisiteWaivers = solarisPrerequisiteWaivers(school.id, field.id)
     requireLifeModules(next).selectedSkillFields.push({
       id: makeId(undefined, 'field-grant'),
       schoolModuleId: school.id,
@@ -326,6 +333,7 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
       source: { ...field.source },
       variableSkillChoices: [],
       prerequisiteSkillChoices: [],
+      ...(prerequisiteWaivers.length > 0 ? { prerequisiteWaivers } : {}),
     })
     if (field.relatedSkillPrerequisite) {
       const eligibleSkillKeys = character.skills
@@ -370,9 +378,9 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
   return updateLifeModuleProgress(next)
 }
 
-export function applyStage3School(character: CharacterDefinition, moduleId: string, fieldIds: string[], homeworld?: string): CharacterDefinition {
-  if (![TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, FAMILY_TRAINING_ID, OFFICER_TRAINING_SCHOOL_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
-  return applyStage3SchoolDefinition(character, moduleId, fieldIds, homeworld)
+export function applyStage3School(character: CharacterDefinition, moduleId: string, fieldIds: string[], personalDetail?: string): CharacterDefinition {
+  if (![TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, SOLARIS_INTERNSHIP_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, FAMILY_TRAINING_ID, OFFICER_TRAINING_SCHOOL_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
+  return applyStage3SchoolDefinition(character, moduleId, fieldIds, personalDetail)
 }
 
 export function continueStage3Schooling(character: CharacterDefinition): CharacterDefinition {
@@ -382,7 +390,7 @@ export function continueStage3Schooling(character: CharacterDefinition): Charact
     throw new Error('Additional Stage 3 schooling requires a resolved, prerequisite-satisfied Stage 3 Alpha stop.')
   }
   const completed = next.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId)
-  const implementedSchools = [TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, FAMILY_TRAINING_ID, OFFICER_TRAINING_SCHOOL_ID]
+  const implementedSchools = [TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, SOLARIS_INTERNSHIP_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, FAMILY_TRAINING_ID, OFFICER_TRAINING_SCHOOL_ID]
   const completedFieldCategories = state.selectedSkillFields.map((grant) => grant.category)
   if (!implementedSchools.some((moduleId) => stage3SchoolEligibility(completed, moduleId, { completedFieldCategories }).eligible)) {
     throw new Error('No additional implemented Stage 3 school family is available.')
@@ -671,6 +679,7 @@ function pendingAwardFrom(module: LifeModuleDefinition, award: Exclude<LifeModul
     ...(isPool ? { allocationMode: 'pool' as const, remainingXp: award.totalXp, ...(award.maxXpPerTarget ? { maxXpPerTarget: { ...award.maxXpPerTarget } } : {}) } : { allocationMode: 'fixed-grants' as const }),
     allowedTargetTypes: [...allowedTargetTypes],
     ...(kind === 'flexible-xp' && !isPool && award.excludedTargetIds ? { excludedTargetIds: [...award.excludedTargetIds] } : {}),
+    ...(kind === 'flexible-xp' && !isPool && award.allowedTargetIds ? { allowedTargetIds: [...award.allowedTargetIds] } : {}),
     ...(kind === 'modeled-skill-choice' ? { distinctDestinations: award.distinct } : {}),
     ...(kind === 'language-choice' ? { choiceSource: award.choicesFrom, requiredSkillId: 'skill.language' } : {}),
     ...(kind === 'affiliation-skill-choice' || kind === 'any-skill-choice' || kind === 'multi-skill-choice' ? { requiredSkillId: award.skillId } : {}),
@@ -708,12 +717,17 @@ function updateLifeModuleProgress(character: CharacterDefinition): CharacterDefi
 
 export function reevaluateLifeModulePrerequisites(character: CharacterDefinition): CharacterDefinition {
   const state = requireLifeModules(character)
-  state.prerequisiteIssues = state.selectedModuleIds.flatMap((moduleId) => {
+  const moduleIssues: LifeModulePrerequisiteIssue[] = state.selectedModuleIds.flatMap((moduleId) => {
     const module = getLifeModule(moduleId)
     return module.prerequisites.map((entry) => evaluatePrerequisite(character, moduleId, entry, state.prerequisiteIssues))
-  }).concat(state.selectedSkillFields.flatMap((grant) => {
+  })
+  const fieldIssues: LifeModulePrerequisiteIssue[] = state.selectedSkillFields.flatMap((grant) => {
     const field = getSkillField(grant.fieldId)
-    const ordinary = field.prerequisites.map((entry) => evaluatePrerequisite(character, grant.fieldId, entry, state.prerequisiteIssues))
+    const ordinary = field.prerequisites.map((entry) => {
+      const issue = evaluatePrerequisite(character, grant.fieldId, entry, state.prerequisiteIssues)
+      const waiver = grant.prerequisiteWaivers?.find((candidate) => candidate.prerequisiteId === entry.id)
+      return waiver && issue.status === 'outstanding' ? { ...issue, description: `${entry.description} — waived only for this Solaris Internship Field acquisition`, status: 'waived' as const } : issue
+    })
     if (!field.relatedSkillPrerequisite) return ordinary
     const selected = grant.prerequisiteSkillChoices?.find((entry) => entry.prerequisiteId === field.relatedSkillPrerequisite?.id)
     const selectedSkillKey = selected?.destination.type === 'skill'
@@ -728,7 +742,8 @@ export function reevaluateLifeModulePrerequisites(character: CharacterDefinition
       status: satisfied ? 'satisfied' as const : 'outstanding' as const,
       finalValidationRequired: true,
     }]
-  }))
+  })
+  state.prerequisiteIssues = [...moduleIssues, ...fieldIssues]
   return character
 }
 
@@ -756,6 +771,7 @@ function evaluatePrerequisite(
   if (prerequisite.kind === 'trait-absent') satisfied = !character.traits.some((item) => item.traitId === prerequisite.traitId && item.active)
   if (prerequisite.kind === 'skill-field') satisfied = prerequisite.fieldIds.some((fieldId) => character.creation.lifeModules?.selectedSkillFields.some((grant) => grant.fieldId === fieldId))
   if (prerequisite.kind === 'module-history') satisfied = prerequisite.moduleIds.some((moduleId) => character.lifeModuleHistory.some((entry) => entry.moduleId === moduleId))
+  if (prerequisite.kind === 'residence') satisfied = normalizeComparableLocation(character.personalDescription?.residence) === normalizeComparableLocation(prerequisite.location)
   if (prerequisite.kind === 'any-of') satisfied = prerequisite.options.some((option) => prerequisiteSatisfied(character, option))
   return {
     id: `${moduleId}/${prerequisite.id}`,
@@ -775,6 +791,7 @@ function prerequisiteSatisfied(character: CharacterDefinition, prerequisite: Exc
   if (prerequisite.kind === 'trait-absent') return !character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
   if (prerequisite.kind === 'skill-field') return prerequisite.fieldIds.some((fieldId) => character.creation.lifeModules?.selectedSkillFields.some((grant) => grant.fieldId === fieldId))
   if (prerequisite.kind === 'module-history') return prerequisite.moduleIds.some((moduleId) => character.lifeModuleHistory.some((entry) => entry.moduleId === moduleId))
+  if (prerequisite.kind === 'residence') return normalizeComparableLocation(character.personalDescription?.residence) === normalizeComparableLocation(prerequisite.location)
   return false
 }
 
@@ -789,6 +806,25 @@ function normalizeHomeworld(value: string): string {
   return normalized
 }
 
+function normalizeResidence(value: string): string {
+  const normalized = value.trim().replace(/\s+/g, ' ')
+  if (!normalized) return ''
+  if (normalized.length > 100) throw new Error('Residence must be 100 characters or fewer.')
+  if ([...normalized].some((character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127)) throw new Error('Residence contains unsupported control characters.')
+  return normalized
+}
+
+function normalizeComparableLocation(value: string | undefined): string {
+  return (value ?? '').trim().replace(/\s+/g, ' ').toLocaleLowerCase()
+}
+
+function solarisPrerequisiteWaivers(schoolModuleId: string, fieldId: string) {
+  if (schoolModuleId !== SOLARIS_INTERNSHIP_ID) return []
+  if (fieldId === CAVALRY_FIELD_ID) return [{ prerequisiteId: 'cavalry.field', sourceModuleId: schoolModuleId, description: 'Solaris Cavalry does not require Basic Training.' }]
+  if (fieldId === MECHWARRIOR_FIELD_ID) return [{ prerequisiteId: 'mechwarrior.field', sourceModuleId: schoolModuleId, description: 'Solaris MechWarrior does not require Basic Training.' }]
+  return []
+}
+
 function homeworldHistoryDestination(character: CharacterDefinition): Extract<LifeModuleDestination, { type: 'skill' }> {
   const homeworld = normalizeHomeworld(character.personalDescription?.homeworld ?? '')
   const subject = `${homeworld} History`
@@ -798,6 +834,7 @@ function homeworldHistoryDestination(character: CharacterDefinition): Extract<Li
 function validateResolutionDestination(character: CharacterDefinition, pending: PendingLifeModuleAward, destination: ResolvedLifeModuleDestination): void {
   if (!pending.allowedTargetTypes.includes(destination.type)) throw new Error(`${destination.type} is not an allowed target for this award.`)
   if (pending.excludedTargetIds?.includes(destination.targetId)) throw new Error(`${destination.targetId} is not a legal destination for this award.`)
+  if (pending.allowedTargetIds && !pending.allowedTargetIds.includes(destination.targetId)) throw new Error(`${destination.targetId} is not a legal destination for this award.`)
   if (destination.type === 'attribute') {
     if (!ATTRIBUTE_IDS.includes(destination.targetId as (typeof ATTRIBUTE_IDS)[number]) || destination.parameter) throw new Error('Flexible Attribute awards require a valid Attribute ID and no parameter.')
     return

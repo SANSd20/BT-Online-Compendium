@@ -1,7 +1,7 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
-import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
+import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 
 export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
@@ -49,6 +49,7 @@ export const INTELLIGENCE_OPERATIVE_TRAINING_ID = 'stage3.intelligence-operative
 export const MILITARY_ACADEMY_ID = 'stage3.military-academy'
 export const MILITARY_ENLISTMENT_ID = 'stage3.military-enlistment'
 export const FAMILY_TRAINING_ID = 'stage3.family-training'
+export const SOLARIS_INTERNSHIP_ID = 'stage3.solaris-internship'
 export const AGITATOR_ID = 'stage4.agitator'
 
 export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
@@ -386,6 +387,51 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     ],
     notes: ['Civilian Stage 3 school. Base cost is 710 XP plus selected Skill Field costs.'],
     deferredRules: ['HPG Technician remains reference-only because its required affiliation is not implemented.'],
+  },
+  {
+    id: SOLARIS_INTERNSHIP_ID,
+    displayName: 'Solaris Internship',
+    stage: 3,
+    kind: 'higher-education',
+    stage3School: stage3SchoolClassification(SOLARIS_INTERNSHIP_ID),
+    source: source(82, 'stage-3-solaris-internship'),
+    costXp: 700,
+    prerequisites: [
+      { id: 'solaris-internship.residence', kind: 'residence', location: 'Solaris VII', description: 'Resident of Solaris VII' },
+      { id: 'solaris-internship.connections', kind: 'trait-minimum', traitId: 'trait.connections', minimum: 2, description: 'Connections +2 TP or higher' },
+    ],
+    skillFieldSelection: {
+      offers: [
+        { fieldId: COMMUNICATIONS_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: MANAGER_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: TECHNICIAN_MILITARY_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: CAVALRY_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: JOURNALIST_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: MECHWARRIOR_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: POLITICIAN_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: TECHNICIAN_MECH_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+      ],
+      exactlyBasic: 1,
+      minimumAdvanced: 1,
+      maximumTotal: 3,
+      referenceOnlyOffers: [{ displayName: 'Pilot/Battle Armor', category: 'advanced', chronologyYears: 2, reason: 'The source waiver is audited, but the Field is not yet present in the mechanical Field catalog.' }],
+    },
+    awards: [
+      fixed('solaris-internship.attribute.cha', 150, attribute('CHA')),
+      fixed('solaris-internship.attribute.edg', 50, attribute('EDG')),
+      { id: 'solaris-internship.attribute.other', kind: 'flexible-xp', xpPerGrant: 50, count: 1, allowedTargetTypes: ['attribute'], excludedTargetIds: ['CHA', 'EDG'] },
+      fixed('solaris-internship.trait.connections', 100, trait('trait.connections', 'Connections')),
+      fixed('solaris-internship.trait.enemy', -50, trait('trait.enemy', 'Enemy')),
+      fixed('solaris-internship.trait.reputation', 100, trait('trait.reputation', 'Reputation')),
+      { id: 'solaris-internship.trait.equipped-or-vehicle', kind: 'flexible-xp', xpPerGrant: 100, count: 1, allowedTargetTypes: ['trait'], allowedTargetIds: ['trait.equipped', 'trait.vehicle'] },
+      fixed('solaris-internship.skill.acting', 25, skill('skill.acting', 'Acting')),
+      fixed('solaris-internship.skill.solaris-games', 30, skill('skill.interest', 'Interest/Solaris Games', 'Solaris Games')),
+      fixed('solaris-internship.skill.perception', 20, skill('skill.perception', 'Perception')),
+      { id: 'solaris-internship.skill.streetwise', kind: 'affiliation-skill-choice', xp: 25, skillId: 'skill.streetwise', displayName: 'Streetwise/Any', description: 'Choose the applicable governed affiliation-context Streetwise subskill.' },
+      { id: 'solaris-internship.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 100, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: ['Civilian Stage 3 school. Base cost is 700 XP plus selected Skill Field costs.', 'Solaris Cavalry and MechWarrior waive only their Basic Training Field prerequisite for this acquisition.'],
+    deferredRules: ['Pilot/Battle Armor remains reference-only; its audited Solaris waiver cannot substitute for missing Field mechanics.'],
   },
   {
     id: POLICE_ACADEMY_ID,

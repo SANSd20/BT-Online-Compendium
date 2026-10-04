@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, FAMILY_TRAINING_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, FAMILY_TRAINING_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, SOLARIS_INTERNSHIP_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
@@ -25,7 +25,7 @@ interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
 }
 
-const STAGE_3_SCHOOL_IDS = [TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, FAMILY_TRAINING_ID, OFFICER_TRAINING_SCHOOL_ID] as const
+const STAGE_3_SCHOOL_IDS = [TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, SOLARIS_INTERNSHIP_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, FAMILY_TRAINING_ID, OFFICER_TRAINING_SCHOOL_ID] as const
 type Stage3SchoolId = (typeof STAGE_3_SCHOOL_IDS)[number]
 
 interface ResolutionDraft {
@@ -71,6 +71,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const [stageModulePreviewId, setStageModulePreviewId] = useState<SupportedStageModuleId | ''>('')
   const [stage3FieldIds, setStage3FieldIds] = useState<string[]>([TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID])
   const [stage3Homeworld, setStage3Homeworld] = useState('')
+  const [stage3Residence, setStage3Residence] = useState('')
   const [stageChoiceSlotValues, setStageChoiceSlotValues] = useState<StageChoiceSlotValues>({})
   const [character, setCharacter] = useState<CharacterDefinition | null>(null)
   const [resolutionDrafts, setResolutionDrafts] = useState<Record<string, ResolutionDraft>>({})
@@ -141,12 +142,13 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     ...(affiliationLanguage ? [`Affiliation language: ${affiliationLanguage}`] : []),
     ...(secondaryLanguage ? [`Secondary language: ${secondaryLanguage}`] : []),
   ] : []
+  const stage3PersonalDetail = stageModulePreviewId === SOLARIS_INTERNSHIP_ID ? stage3Residence : stage3Homeworld
   const stageModuleBasePreview = useMemo(() => character
-    ? previewSupportedStageModule(character, stageModulePreviewId, stage3FieldIds, stage3Homeworld)
-    : null, [character, stageModulePreviewId, stage3FieldIds, stage3Homeworld])
+    ? previewSupportedStageModule(character, stageModulePreviewId, stage3FieldIds, stage3PersonalDetail)
+    : null, [character, stageModulePreviewId, stage3FieldIds, stage3PersonalDetail])
   const stageModulePreview = useMemo(() => character
-    ? previewStageModuleChoiceSlots(character, stageModulePreviewId, stageChoiceSlotValues, stage3FieldIds, stage3Homeworld)
-    : null, [character, stageModulePreviewId, stageChoiceSlotValues, stage3FieldIds, stage3Homeworld])
+    ? previewStageModuleChoiceSlots(character, stageModulePreviewId, stageChoiceSlotValues, stage3FieldIds, stage3PersonalDetail)
+    : null, [character, stageModulePreviewId, stageChoiceSlotValues, stage3FieldIds, stage3PersonalDetail])
   const activePreview = stage0Preview ?? stageModulePreview?.character ?? null
   const activePreviewSelections = stage0PreviewSelections.length > 0
     ? stage0PreviewSelections
@@ -170,6 +172,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       setStage3FieldIds(defaultStage3FieldIds(moduleId as Stage3SchoolId))
     }
     if (moduleId === FAMILY_TRAINING_ID) setStage3Homeworld(character?.personalDescription?.homeworld ?? '')
+    if (moduleId === SOLARIS_INTERNSHIP_ID) setStage3Residence(character?.personalDescription?.residence ?? '')
     setStageModulePreviewId(moduleId)
     setStageChoiceSlotValues({})
   }
@@ -255,7 +258,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       <fieldset><legend>Basic Field</legend>
         {offers.filter((offer) => offer.category === 'basic').map((offer) => {
           const field = getSkillField(offer.fieldId)
-          const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3Homeworld)
+          const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3PersonalDetail)
           const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
           return <label key={field.id}><input type="radio" name={`${schoolId}-basic`} checked={isSelected && stage3FieldIds.includes(field.id)} disabled={!isSelected || availability.state === 'unavailable'} onChange={() => selectStage3BasicField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
         })}
@@ -264,7 +267,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
         {offers.filter((offer) => offer.category === 'advanced').map((offer) => {
           const field = getSkillField(offer.fieldId)
           const selected = isSelected && stage3FieldIds.includes(field.id)
-          const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3Homeworld)
+          const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3PersonalDetail)
           const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
           return <label key={field.id}><input type="checkbox" checked={selected} disabled={!isSelected || (selected ? advancedCount <= 1 : availability.state === 'unavailable' || selectedFieldCount >= 3)} onChange={() => toggleStage3AdvancedField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
         })}
@@ -273,7 +276,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
         {offers.filter((offer) => offer.category === 'special').map((offer) => {
           const field = getSkillField(offer.fieldId)
           const selected = isSelected && stage3FieldIds.includes(field.id)
-          const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3Homeworld)
+          const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3PersonalDetail)
           const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
           return <label key={field.id}><input type="checkbox" checked={selected} disabled={!isSelected || (selected ? false : advancedCount === 0 || availability.state === 'unavailable' || selectedFieldCount >= 3)} onChange={() => toggleStage3AdvancedField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} years <span>{status}</span></label>
         })}
@@ -282,6 +285,10 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       {schoolId === FAMILY_TRAINING_ID && isSelected && <label htmlFor="family-training-homeworld">Homeworld
         <input id="family-training-homeworld" value={stage3Homeworld} onChange={(event) => { setStage3Homeworld(event.target.value); setStageChoiceSlotValues({}) }} placeholder="Named planet, e.g. Sian" maxLength={100} />
         <span>Required to resolve Interest/Homeworld History. This value and the school remain unsaved until Continue.</span>
+      </label>}
+      {schoolId === SOLARIS_INTERNSHIP_ID && isSelected && <label htmlFor="solaris-residence">Current residence
+        <input id="solaris-residence" value={stage3Residence} onChange={(event) => { setStage3Residence(event.target.value); setStageChoiceSlotValues({}) }} placeholder="Solaris VII" maxLength={100} />
+        <span>The source requires actual Solaris VII residency. Residence is distinct from homeworld and affiliation, and remains unsaved until Continue.</span>
       </label>}
       {school.skillFieldSelection!.referenceOnlyOffers && <details><summary>Source-offered reference-only Fields</summary><ul>{school.skillFieldSelection!.referenceOnlyOffers!.map((offer) => <li key={`${offer.category}/${offer.displayName}`}><strong>{offer.displayName}</strong> ({offer.category}, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'}): {offer.reason}</li>)}</ul></details>}
       {!schoolEligibility.eligible && <p className="notice" id={availabilityId}>{schoolEligibility.reason}</p>}

@@ -105,19 +105,20 @@ export function pendingAwardUnsupportedMessage(pending: PendingLifeModuleAward, 
 
 function flexibleTargetOptions(pending: PendingLifeModuleAward, character: CharacterDefinition): PendingAwardOption[] {
   const type = pending.allowedTargetTypes[0]
-  if (type === 'attribute') return character.attributes.filter((entry) => !pending.excludedTargetIds?.includes(entry.attributeId)).map((entry) => ({ value: entry.attributeId, type, targetId: entry.attributeId, displayName: entry.attributeId }))
+  if (type === 'attribute') return character.attributes.filter((entry) => !pending.excludedTargetIds?.includes(entry.attributeId) && (!pending.allowedTargetIds || pending.allowedTargetIds.includes(entry.attributeId))).map((entry) => ({ value: entry.attributeId, type, targetId: entry.attributeId, displayName: entry.attributeId }))
   if (type === 'trait') {
     const candidates = [
       ...character.traits.map((entry) => ({ targetId: entry.traitId, displayName: entry.displayName ?? entry.traitId, parameters: entry.parameters })),
       ...POINT_BUY_TRAITS.filter((entry) => !entry.parameter).map((entry) => ({ targetId: entry.id, displayName: entry.displayName, parameters: {} })),
+      ...(pending.allowedTargetIds ?? []).map((targetId) => ({ targetId, displayName: targetId === 'trait.equipped' ? 'Equipped' : targetId === 'trait.vehicle' ? 'Vehicle' : targetId, parameters: {} })),
     ]
-    return uniqueOptions(candidates.map((entry) => ({ value: entry.targetId, type, ...entry })))
+    return uniqueOptions(candidates.filter((entry) => !pending.allowedTargetIds || pending.allowedTargetIds.includes(entry.targetId)).map((entry) => ({ value: entry.targetId, type, ...entry })))
   }
   const candidates = [
     ...character.skills.map((entry) => ({ targetId: entry.address.skillId, displayName: entry.displayName ?? entry.address.skillId, parameter: entry.address.parameter })),
     ...POINT_BUY_SKILLS.filter((entry) => !entry.parameter).map((entry) => ({ targetId: entry.id, displayName: entry.displayName, parameter: undefined })),
   ]
-  return uniqueOptions(candidates.map((entry) => ({ value: `${entry.targetId}/${entry.parameter?.value ?? ''}`, type, ...entry })))
+  return uniqueOptions(candidates.filter((entry) => !pending.allowedTargetIds || pending.allowedTargetIds.includes(entry.targetId)).map((entry) => ({ value: `${entry.targetId}/${entry.parameter?.value ?? ''}`, type, ...entry })))
 }
 
 export function modeledSkillChoiceOptions(character: CharacterDefinition): PendingAwardOption[] {

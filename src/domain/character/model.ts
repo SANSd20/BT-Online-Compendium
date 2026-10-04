@@ -143,6 +143,7 @@ export interface PersonalDescription {
   physicalDescription: string
   backgroundNotes: string
   homeworld: string
+  residence?: string
   heightCm?: number
   weightKg?: number
   hairColor?: string
@@ -237,6 +238,7 @@ export interface PendingLifeModuleAward {
   maxXpPerTarget?: Partial<Record<'attribute' | 'trait' | 'skill', number>>
   allowedTargetTypes: Array<'attribute' | 'trait' | 'skill'>
   excludedTargetIds?: string[]
+  allowedTargetIds?: string[]
   distinctDestinations?: boolean
   choiceSource?: AffiliationLanguageSelectorGroupId
   requiredSkillId?: string
@@ -277,7 +279,7 @@ export interface LifeModulePrerequisiteIssue {
   moduleId: string
   prerequisiteId: string
   description: string
-  status: 'outstanding' | 'satisfied' | 'gm-override'
+  status: 'outstanding' | 'satisfied' | 'waived' | 'gm-override'
   finalValidationRequired: boolean
 }
 
@@ -301,6 +303,11 @@ export interface SkillFieldGrantRecord {
     prerequisiteId: string
     destination: ResolvedLifeModuleDestination
     gmApprovalRequired: true
+  }>
+  prerequisiteWaivers?: Array<{
+    prerequisiteId: string
+    sourceModuleId: string
+    description: string
   }>
 }
 
