@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID } from '../../domain/lifeModules/catalog'
 import { applyStage0Affiliation, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
-import { encodeCharacter } from '../../persistence/characterCodec'
-import { lifeModulesAffiliationTheme, previewStage0Affiliation } from './stage0PreviewModel'
+import { decodeCharacter, encodeCharacter } from '../../persistence/characterCodec'
+import { committedLifeModulesThemeIdentity, lifeModulesAffiliationTheme, lifeModulesThemeIdentity, previewStage0Affiliation } from './stage0PreviewModel'
 
 type Stage0Character = ReturnType<typeof createLifeModuleCharacter>
 
@@ -58,6 +58,48 @@ describe('Stage 0 preview model', () => {
     expect(preview?.attributes.find((entry) => entry.attributeId === 'WIL')?.accumulatedXp).toBe(150)
     expect(preview?.skills.find((entry) => entry.displayName === 'Protocol/FedSuns')?.accumulatedXp).toBe(25)
     expect(preview?.creation.lifeModules?.pendingAwards.map((entry) => entry.awardId)).toEqual(expect.arrayContaining(['fedsuns.trait.natural-aptitude', 'crucis.skill.art']))
+  })
+
+  it('gives canonical Order affiliation priority while retaining birth identity as secondary', () => {
+    expect(lifeModulesThemeIdentity(FEDERATED_SUNS_CRUCIS_MARCH_ID, 'no')).toEqual({ className: 'davion-theme', dominantLabel: 'Federated Suns', birthLabel: 'Federated Suns' })
+    expect(lifeModulesThemeIdentity(CAPELLAN_COMMONALITY_ID, 'no')).toEqual({ className: 'capellan-theme', dominantLabel: 'Capellan Confederation', birthLabel: 'Capellan Confederation' })
+    expect(lifeModulesThemeIdentity(FEDERATED_SUNS_CRUCIS_MARCH_ID, 'comstar')).toEqual({ className: 'order-theme comstar-theme birth-davion', dominantLabel: 'ComStar', birthLabel: 'Federated Suns' })
+    expect(lifeModulesThemeIdentity(CAPELLAN_COMMONALITY_ID, 'comstar')).toEqual({ className: 'order-theme comstar-theme birth-capellan', dominantLabel: 'ComStar', birthLabel: 'Capellan Confederation' })
+    expect(lifeModulesThemeIdentity(FEDERATED_SUNS_CRUCIS_MARCH_ID, 'word-of-blake')).toEqual({ className: 'order-theme wob-theme birth-davion', dominantLabel: 'Word of Blake', birthLabel: 'Federated Suns' })
+    expect(lifeModulesThemeIdentity(CAPELLAN_COMMONALITY_ID, 'word-of-blake')).toEqual({ className: 'order-theme wob-theme birth-capellan', dominantLabel: 'Word of Blake', birthLabel: 'Capellan Confederation' })
+  })
+
+  it('switches Order themes without stale palette classes and restores the birth theme', () => {
+    const transitions = ['no', 'comstar', 'word-of-blake', 'comstar', 'no'] as const
+    expect(transitions.map((order) => lifeModulesAffiliationTheme(FEDERATED_SUNS_CRUCIS_MARCH_ID, order))).toEqual([
+      'davion-theme',
+      'order-theme comstar-theme birth-davion',
+      'order-theme wob-theme birth-davion',
+      'order-theme comstar-theme birth-davion',
+      'davion-theme',
+    ])
+    expect(lifeModulesAffiliationTheme(CAPELLAN_COMMONALITY_ID, 'word-of-blake')).toBe('order-theme wob-theme birth-capellan')
+  })
+
+  it('derives the dominant theme from committed canonical state after persistence', () => {
+    const committed = applyStage0Affiliation(
+      createLifeModuleCharacter('Persistent ComStar theme'),
+      FEDERATED_SUNS_CRUCIS_MARCH_ID,
+      'English',
+      undefined,
+      'Strategy',
+      undefined,
+      'comstar',
+      CAPELLAN_COMMONALITY_ID,
+      'Russian',
+      'Electronic',
+      'no',
+    )
+    const decoded = decodeCharacter(encodeCharacter(committed, '2026-10-04T00:00:00.000Z'))
+    expect(committedLifeModulesThemeIdentity(decoded)).toEqual({ className: 'order-theme comstar-theme birth-davion', dominantLabel: 'ComStar', birthLabel: 'Federated Suns' })
+    const legacyNoOrder = structuredClone(decoded)
+    delete legacyNoOrder.creation.lifeModules!.orderAffiliation
+    expect(committedLifeModulesThemeIdentity(legacyNoOrder).className).toBe('davion-theme')
   })
 
   it('previews through the existing engine without mutating the committed character', () => {

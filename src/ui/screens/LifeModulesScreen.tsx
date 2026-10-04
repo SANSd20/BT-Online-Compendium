@@ -18,7 +18,7 @@ import { validateCharacter } from '../../validation/validateCharacter'
 import { LifeModuleAuditDrawer, LifeModuleDashboard, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from '../components/LifeModulesWizard'
 import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
-import { lifeModulesAffiliationTheme, previewStage0Affiliation } from '../components/stage0PreviewModel'
+import { lifeModulesThemeIdentity, previewStage0Affiliation } from '../components/stage0PreviewModel'
 import { defaultStage3FieldIds, previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
 import { emptyStageChoiceSlot, filterSiblingDestinationOptions, modeledOpenSubjectStageChoiceSlot, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoicePresentationPending, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
@@ -177,6 +177,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const completedStage3ModuleIds = character?.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId) ?? []
   const completedStage3FieldCategories = state?.selectedSkillFields.map((grant) => grant.category) ?? []
   const additionalStage3Available = STAGE_3_SCHOOL_IDS.some((moduleId) => stage3SchoolEligibility(completedStage3ModuleIds, moduleId, { completedFieldCategories: completedStage3FieldCategories }).eligible)
+  const activeBirthContext = state?.phase === 'stage-0-affiliation' ? stage0AffiliationContext : state?.stage0AffiliationContext ?? stage0AffiliationContext
+  const activeOrderAffiliation: OrderAffiliationSelection = state?.phase === 'stage-0-affiliation' ? orderAffiliation : state?.orderAffiliation ?? 'no'
+  const themeIdentity = lifeModulesThemeIdentity(activeBirthContext, activeOrderAffiliation)
 
   function selectStageModule(moduleId: SupportedStageModuleId) {
     if (STAGE_3_SCHOOL_IDS.includes(moduleId as Stage3SchoolId)) {
@@ -503,11 +506,12 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   }
 
   return (
-    <main className={`creation-page life-modules-page ${lifeModulesAffiliationTheme(stage0AffiliationContext)}`.trim()}>
+    <main className={`creation-page life-modules-page ${themeIdentity.className}`.trim()} data-theme-identity={themeIdentity.dominantLabel || 'Default'}>
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
         <LifeModulesVersionBadge />
         <h1>Life Modules</h1>
+        {activeOrderAffiliation !== 'no' && <p className="life-theme-identity" aria-label={`Dominant affiliation theme: ${themeIdentity.dominantLabel}. Birth affiliation: ${themeIdentity.birthLabel || 'Not selected'}.`}><strong>{themeIdentity.dominantLabel}</strong><span>Order identity · dominant theme</span>{themeIdentity.birthLabel && <small>Birth affiliation · {themeIdentity.birthLabel}</small>}</p>}
         <p>Build through audited Core Life Modules including Agitator and ComStar/Word of Blake Service, complete final review, and use the 84-item audited equipment catalog with affiliation-adjusted access or manual fallback. Full catalog coverage and finalization remain deferred.</p>
       </section>
 

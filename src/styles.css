@@ -158,7 +158,7 @@ tbody th { color: #e8edf2; font-weight: 650; }
 :where(button, a, input, select, textarea, summary):focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .life-modules-page { width: min(1760px, 96vw); max-width: none; padding-top: 28px; }
-/* Government/faction UI_ADAPTATION roles from SANSd20/battletech-faction-colors government-ui.yaml at f5ce62194c57e28d3d8a7a31d69b01f901c0672f. */
+/* Government/faction themes use PROVISIONAL UI_ADAPTATION roles. Slice 86 synchronizes ComStar/WoB from SANSd20/battletech-faction-colors palettes/government-ui.yaml at 8fb1dde0e10c2f455fef7d822b6bd6e2ae43d760. Exact hex values are not official BattleTech digital specifications. */
 .life-modules-page.capellan-theme {
   --faction-primary: #00a86b;
   --faction-primary-deep: #0b3a2b;
@@ -245,6 +245,70 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .life-modules-page.davion-theme .life-summary-preview-status > strong { color: var(--faction-accent); }
 .life-modules-page.davion-theme .stage0-choice-grid select,
 .life-modules-page.davion-theme .stage0-secondary-action select { border-color: var(--faction-border); background: var(--faction-panel); }
+.life-modules-page.comstar-theme {
+  --faction-primary: #aab5bf;
+  --faction-primary-deep: #4b555e;
+  --faction-primary-surface: #737d86;
+  --faction-panel: #394249;
+  --faction-panel-alt: #596771;
+  --faction-border: #beccd4;
+  --faction-secondary: #22272b;
+  --faction-accent: #bfc9ce;
+  --faction-foreground: #f1f6f8;
+  --faction-ink: #111111;
+  --faction-on-current: var(--faction-ink);
+}
+.life-modules-page.wob-theme {
+  --faction-primary: #22272b;
+  --faction-primary-deep: #121a20;
+  --faction-primary-surface: #191f25;
+  --faction-panel: #131a1f;
+  --faction-panel-alt: #1c272e;
+  --faction-border: #bca752;
+  --faction-secondary: #b9c2c8;
+  --faction-accent: #765a99;
+  --faction-foreground: #f1f6f8;
+  --faction-ink: #111111;
+  --faction-on-current: var(--faction-foreground);
+}
+.life-modules-page.order-theme {
+  --panel: var(--faction-panel);
+  --panel-light: var(--faction-panel-alt);
+  --line: var(--faction-border);
+  --muted: var(--faction-foreground);
+  --amber: var(--faction-accent);
+  --amber-dark: var(--faction-primary-deep);
+  --success: var(--faction-primary);
+}
+.life-modules-page.order-theme .life-dashboard { padding: 12px; border: 1px solid var(--faction-border); background: linear-gradient(145deg, var(--faction-primary-deep), var(--faction-panel)); }
+.life-modules-page.order-theme .life-progress,
+.life-modules-page.order-theme .life-summary-xp,
+.life-modules-page.order-theme .life-review-summary { background: var(--faction-border); }
+.life-modules-page.order-theme .life-progress li,
+.life-modules-page.order-theme .life-summary,
+.life-modules-page.order-theme .life-stage-panel,
+.life-modules-page.order-theme .life-dashboard-details { color: var(--faction-foreground); border-color: var(--faction-border); background: var(--faction-panel); }
+.life-modules-page.order-theme .life-progress li.complete,
+.life-modules-page.order-theme .life-summary-xp div,
+.life-modules-page.order-theme .life-stage-status section,
+.life-modules-page.order-theme .life-review-summary > div,
+.life-modules-page.order-theme .life-review-summary li,
+.life-modules-page.order-theme .stage0-package-section { color: var(--faction-foreground); background: var(--faction-primary-deep); }
+.life-modules-page.order-theme .life-progress li.current { color: var(--faction-on-current); background: var(--faction-primary-surface); box-shadow: inset 0 -3px 0 var(--faction-accent); }
+.life-modules-page.order-theme .life-progress li.current > span { color: var(--faction-ink); border-color: var(--faction-primary); background: var(--faction-primary); }
+.life-modules-page.order-theme .life-summary-preview-status,
+.life-modules-page.order-theme .stage0-package-section.current { color: var(--faction-foreground); border-color: var(--faction-accent); background: var(--faction-panel-alt); }
+.life-modules-page.order-theme .life-summary .preview-row strong,
+.life-modules-page.order-theme .life-summary-preview-status > strong { color: var(--faction-accent); }
+.life-modules-page.order-theme .stage0-choice-grid select,
+.life-modules-page.order-theme .stage0-secondary-action select { color: var(--faction-foreground); border-color: var(--faction-border); background: var(--faction-primary-deep); }
+.life-modules-page.order-theme .stage0-requirements { border-left-color: var(--faction-secondary); background: var(--faction-panel-alt); }
+.life-theme-identity { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; width: fit-content; margin: 8px 0 2px; padding: 8px 11px; border: 1px solid var(--faction-border); border-left: 5px solid var(--birth-accent, var(--faction-accent)); background: var(--faction-panel); }
+.life-theme-identity strong { color: var(--faction-foreground); }
+.life-theme-identity span { color: var(--faction-foreground); font-size: .76rem; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; }
+.life-theme-identity small { grid-column: 1 / -1; color: var(--faction-foreground); }
+.life-modules-page.birth-davion { --birth-accent: #d6ae3d; }
+.life-modules-page.birth-capellan { --birth-accent: #00a86b; }
 .goal-contributions { padding: 9px 12px; border-left: 3px solid var(--amber); color: var(--muted); background: color-mix(in srgb, var(--panel) 84%, var(--amber)); font-size: .78rem; }
 .goal-review { margin: 18px 0; padding: 14px; border: 1px solid var(--amber); background: color-mix(in srgb, var(--panel) 88%, var(--amber)); }
 .goal-satisfied strong { color: var(--success); }
