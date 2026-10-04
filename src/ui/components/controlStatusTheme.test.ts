@@ -13,6 +13,6 @@ describe('generic required-control visual treatment', () => {
     expect(css).toContain('border-color: var(--control-error) !important')
     expect(css).toContain('[data-control-status="required-unresolved"]:focus-visible')
     expect(css).toContain('[data-control-status="invalid"]:focus-visible')
-    expect(css).toContain('outline: 3px solid var(--amber)')
+    expect(css).toContain('outline: 3px solid var(--faction-accent, var(--amber))')
   })
 })

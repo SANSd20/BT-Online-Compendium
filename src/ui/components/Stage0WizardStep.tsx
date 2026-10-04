@@ -75,7 +75,6 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
       <header className="stage0-package-heading">
         <div><p className="eyebrow">Affiliation and sub-affiliation</p><h3 id="stage0-affiliation-heading">Affiliation Package</h3></div>
         <div className="stage0-package-controls">
-          <strong className="stage0-package-status">{universalComplete ? 'Current' : 'Next'}</strong>
           {universalComplete && <button className="button" type="button" disabled={!affiliationReady} onClick={props.onApplyAffiliation}>Continue</button>}
         </div>
       </header>

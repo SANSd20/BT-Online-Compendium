@@ -11,7 +11,7 @@ import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkill
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
 import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyStage0Affiliation, applyUniversalStage0, continueStage3Schooling, continueStage4Modules, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
-import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, resolveLifeModuleOpposedTraits } from '../../engine/lifeModuleFinalReview'
+import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, removeFinalReviewAllocation, resolveLifeModuleOpposedTraits } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
@@ -764,6 +764,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <label>XP<input type="number" min="1" max={state.finalReview.allocationPool.remaining} step="1" {...controlStatusProps(controlStatus({ required: state.finalReview.allocationPool.remaining > 0, resolved: finalAllocationXp >= 1 && finalAllocationXp <= state.finalReview.allocationPool.remaining, invalid: state.finalReview.allocationPool.remaining > 0 && (finalAllocationXp < 1 || finalAllocationXp > state.finalReview.allocationPool.remaining), disabled: state.finalReview.allocationPool.remaining === 0 }))} disabled={state.finalReview.allocationPool.remaining === 0} value={finalAllocationXp} onChange={(event) => setFinalAllocationXp(Number(event.target.value))} /></label>
               <button className="button" type="button" disabled={state.finalReview.allocationPool.remaining === 0} onClick={allocateFinalXp}>Allocate XP</button>
             </div>
+            {state.finalReview.allocations.length > 0 && <ul className="purchase-list" aria-label="Proposed final improvements">{state.finalReview.allocations.map((allocation) => <li key={allocation.id}><div><strong>{allocation.destination.displayName}</strong><span>Proposed +{allocation.xp} XP · {allocation.destination.type}</span></div><button className="button secondary danger" type="button" onClick={() => operate(() => removeFinalReviewAllocation(character, allocation.id), 'Proposed final improvement removed and XP returned.')}>Remove</button></li>)}</ul>}
             {goalStatus && <section className="goal-review" aria-labelledby="goal-review-heading">
               <h3 id="goal-review-heading">{goalStatus.displayName} goal gaps</h3>
               <p>{goalStatus.satisfied} / {goalStatus.total} guidance requirements satisfied. Goal gaps are shown before ordinary Optimization; selecting a goal never grants the Field.</p>

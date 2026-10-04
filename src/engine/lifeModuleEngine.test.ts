@@ -5,7 +5,7 @@ import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BA
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
-import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, resolveLifeModuleOpposedTraits } from './lifeModuleFinalReview'
+import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, removeFinalReviewAllocation, resolveLifeModuleOpposedTraits } from './lifeModuleFinalReview'
 import { createPointBuyCharacter } from './pointBuyEngine'
 
 function completeStage0(startingXp = 5000) {
@@ -1312,6 +1312,16 @@ describe('Life Module engine', () => {
     expect(character.traits.find((entry) => entry.traitId === 'trait.patient')).toMatchObject({ accumulatedXp: 100, attainedTp: 1, active: true })
     expect(() => allocateFinalReviewXp(character, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 1595)).toThrow('overspend')
     expect(character.creation.lifeModules!.finalReview!.allocations.every((entry) => character.provenance.some((provenance) => provenance.id === entry.provenanceId))).toBe(true)
+  })
+
+  it('removes a proposed final improvement without XP drift', () => {
+    let character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    character = allocateFinalReviewXp(character, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 25)
+    const allocationId = character.creation.lifeModules!.finalReview!.allocations[0].id
+    character = removeFinalReviewAllocation(character, allocationId)
+    expect(character.creation.lifeModules!.finalReview!.allocationPool).toMatchObject({ allocated: 0, remaining: 1674 })
+    expect(character.attributes.find((entry) => entry.attributeId === 'STR')).toMatchObject({ accumulatedXp: 205 })
+    expect(character.creation.lifeModules!.finalReview!.allocations).toHaveLength(0)
   })
 
   it('derives only fully attained levels and previews supported Optimization', () => {

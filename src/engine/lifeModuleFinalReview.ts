@@ -86,6 +86,27 @@ export function allocateFinalReviewXp(
   return refreshFinalReview(next)
 }
 
+/** Remove one preview allocation and return its XP to the same finalization pool. */
+export function removeFinalReviewAllocation(character: CharacterDefinition, allocationId: string): CharacterDefinition {
+  const next = structuredClone(character)
+  const review = requireFinalReview(next)
+  const index = review.allocations.findIndex((entry) => entry.id === allocationId)
+  if (index < 0) throw new Error(`Unknown final allocation: ${allocationId}`)
+  const allocation = review.allocations[index]
+  const target = findLedgerTarget(next, allocation.destination)
+  if (target.accumulatedXp < allocation.xp) throw new Error('Final allocation ledger is inconsistent.')
+  const provenanceId = makeId('final-allocation-reversal-provenance')
+  next.provenance.push({ id: provenanceId, kind: 'derived', description: `Removed Life Module final allocation: ${allocation.destination.displayName} -${allocation.xp} XP`, source: { ...FINAL_REVIEW_RULES_SOURCE } })
+  applyLedgerDelta(target, -allocation.xp, provenanceId)
+  review.allocations.splice(index, 1)
+  review.allocationPool.allocated -= allocation.xp
+  review.allocationPool.remaining += allocation.xp
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  next.xp.creation.remaining = review.allocationPool.remaining
+  next.updatedAt = new Date().toISOString()
+  return refreshFinalReview(next)
+}
+
 export function previewLifeModuleOptimization(character: CharacterDefinition): OptimizationOpportunity[] {
   requireFinalReview(character)
   return getOptimizationPreview(character)

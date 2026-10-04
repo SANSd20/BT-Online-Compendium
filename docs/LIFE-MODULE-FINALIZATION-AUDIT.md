@@ -40,3 +40,15 @@ The present catalog cannot yet safely provide exhaustive Trait purchase, Trait p
 - Patient 200 XP with maximum +1 → 100 XP → recover 100 XP.
 - Career/Soldier 115 XP (Standard) → level 3 at 80 XP → recover 35 XP.
 - Strategy 10 XP → below level 0 → remove and recover 10 XP.
+
+## Alpha Slice 89 checkpoint
+
+Slice 89 exposes final improvements only for existing concrete ledger entries. Optimization recovers XP into the separate finalization pool; final allocations reduce that working pool and add player-choice provenance. Removing a proposed allocation reverses its ledger delta and returns the exact XP without changing Life Module award provenance.
+
+Attributes use the cumulative 100-XP-per-score model and the governed Point Buy maxima (`STR/BOD/DEX/RFL/INT/WIL 8`, `CHA/EDG 9`). The current catalog supports Normal Human creation and preserves phenotype modifiers on imported/archetype entries. Exhaustive phenotype-specific maxima and Exceptional Attribute are not represented by the governed creation catalog, so unsupported phenotype cases remain deferred rather than guessed or permitted.
+
+Existing Traits are bounded to concrete ledger instances with catalog-defined TP ranges. Fixed-level Traits cannot be raised beyond their modeled maximum; variable/ranged Traits use the catalog range. New Traits, incomplete prerequisite/conflict metadata, and optional negative-Trait Additional XP purchases remain deferred.
+
+Existing concrete Skills can receive final XP only on the exact ledger address already possessed, using Standard, Fast Learner, or Slow Learner cumulative thresholds and a hard Level +10 maximum. Arbitrary new Skills and specialties remain deferred.
+
+The Stage 0 package status badge was audited as redundant presentation-only state and removed. Keyboard focus remains visible and uses the active faction/Order accent while required and invalid borders remain independent. Slice 89 preserves the 56 Reference Fields, 50 Mechanical Fields, and 84-record equipment catalog.
