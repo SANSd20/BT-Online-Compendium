@@ -45,6 +45,9 @@ export const COMMUNICATIONS_FIELD_ID = 'field.communications'
 export const ENGINEER_FIELD_ID = 'field.engineer'
 export const MERCHANT_MARINE_FIELD_ID = 'field.merchant-marine'
 export const PILOT_AIRCRAFT_CIVILIAN_FIELD_ID = 'field.pilot-aircraft-civilian'
+export const PILOT_AEROSPACE_CIVILIAN_FIELD_ID = 'field.pilot-aerospace-civilian'
+export const PILOT_AEROSPACE_COMBAT_FIELD_ID = 'field.pilot-aerospace-combat'
+export const PILOT_AIRCRAFT_COMBAT_FIELD_ID = 'field.pilot-aircraft-combat'
 export const MEDICAL_ASSISTANT_FIELD_ID = 'field.medical-assistant'
 export const DOCTOR_FIELD_ID = 'field.doctor'
 export const ANALYSIS_FIELD_ID = 'field.analysis'
@@ -646,6 +649,63 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
     prerequisites: [{ id: 'pilot-aircraft-civilian.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 3, description: 'DEX 3+' }, { id: 'pilot-aircraft-civilian.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 3, description: 'RFL 3+' }],
     componentSkills: [skill('skill.career', 'Career/Aircraft Pilot', 'Aircraft Pilot'), skill('skill.communications', 'Comms/Conventional', 'Conventional'), skill('skill.navigation', 'Navigation/Air', 'Air'), skill('skill.sensor-operations', 'Sensor Operations')],
     variableComponentSkills: [variableSkill('pilot-aircraft-civilian.piloting', 'Aircraft Piloting subskill', VARIABLE_SKILL_DOMAINS.aircraftPiloting)],
+  },
+  {
+    id: PILOT_AEROSPACE_CIVILIAN_FIELD_ID,
+    displayName: 'Pilot/Aerospace (Civilian)',
+    category: 'basic',
+    source: { ...source('skill-field-pilot-aerospace-civilian'), page: 92 },
+    prerequisites: [
+      { id: 'pilot-aerospace-civilian.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 3, description: 'DEX 3+' },
+      { id: 'pilot-aerospace-civilian.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 4, description: 'RFL 4+' },
+      { id: 'pilot-aerospace-civilian.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 3, description: 'INT 3+' },
+    ],
+    componentSkills: [
+      skill('skill.career', 'Career/Aerospace Pilot', 'Aerospace Pilot'),
+      skill('skill.communications', 'Comms/Conventional', 'Conventional'),
+      skill('skill.navigation', 'Navigation/Air', 'Air'),
+      skill('skill.navigation', 'Navigation/Space', 'Space'),
+      skill('skill.piloting', 'Piloting/Aerospace', 'Aerospace'),
+      skill('skill.sensor-operations', 'Sensor Operations'),
+    ],
+  },
+  {
+    id: PILOT_AEROSPACE_COMBAT_FIELD_ID,
+    displayName: 'Pilot/Aerospace (Combat)',
+    category: 'advanced',
+    source: { ...source('skill-field-pilot-aerospace-combat'), page: 94 },
+    prerequisites: [
+      { id: 'pilot-aerospace-combat.field', kind: 'skill-field', fieldIds: [BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID], description: 'Basic Training or Basic Training (Naval) Field' },
+      { id: 'pilot-aerospace-combat.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 4, description: 'DEX 4+' },
+      { id: 'pilot-aerospace-combat.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 4, description: 'RFL 4+' },
+    ],
+    componentSkills: [
+      skill('skill.gunnery', 'Gunnery/Aerospace', 'Aerospace'),
+      skill('skill.navigation', 'Navigation/Air', 'Air'),
+      skill('skill.navigation', 'Navigation/Space', 'Space'),
+      skill('skill.piloting', 'Piloting/Aerospace', 'Aerospace'),
+      skill('skill.sensor-operations', 'Sensor Operations'),
+      skill('skill.tactics', 'Tactics/Space', 'Space'),
+      skill('skill.zero-g-operations', 'Zero-G Operations'),
+    ],
+  },
+  {
+    id: PILOT_AIRCRAFT_COMBAT_FIELD_ID,
+    displayName: 'Pilot/Aircraft (Combat)',
+    category: 'advanced',
+    source: { ...source('skill-field-pilot-aircraft-combat'), page: 94 },
+    prerequisites: [
+      { id: 'pilot-aircraft-combat.field', kind: 'skill-field', fieldIds: [BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID], description: 'Basic Training or Basic Training (Naval) Field' },
+      { id: 'pilot-aircraft-combat.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 4, description: 'DEX 4+' },
+      { id: 'pilot-aircraft-combat.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 3, description: 'RFL 3+' },
+    ],
+    componentSkills: [
+      skill('skill.gunnery', 'Gunnery/Air Vehicle', 'Air Vehicle'),
+      skill('skill.navigation', 'Navigation/Air', 'Air'),
+      skill('skill.piloting', 'Piloting/Air Vehicle', 'Air Vehicle'),
+      skill('skill.sensor-operations', 'Sensor Operations'),
+      skill('skill.tactics', 'Tactics/Air', 'Air'),
+    ],
   },
   {
     id: MEDICAL_ASSISTANT_FIELD_ID, displayName: 'Medical Assistant', category: 'advanced', source: { ...source('skill-field-medical-assistant'), page: 92 },

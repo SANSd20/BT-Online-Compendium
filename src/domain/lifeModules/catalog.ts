@@ -4,6 +4,7 @@ import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_C
 import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, PILOT_DROPSHIP_FIELD_ID, PILOT_JUMPSHIP_FIELD_ID, PILOT_WARSHIP_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 import { INFANTRY_ANTI_MECH_FIELD_ID } from '../skillFields/catalog'
+import { PILOT_AEROSPACE_CIVILIAN_FIELD_ID, PILOT_AEROSPACE_COMBAT_FIELD_ID, PILOT_AIRCRAFT_COMBAT_FIELD_ID } from '../skillFields/catalog'
 
 export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
 export { OFFICER_TRAINING_SCHOOL_ID } from './stage3Schooling'
@@ -255,6 +256,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       offers: [
         { fieldId: COMMUNICATIONS_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: PILOT_AEROSPACE_CIVILIAN_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: PILOT_DROPSHIP_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: 'field.technician-civilian', category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: 'field.pilot-exoskeleton', category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
@@ -270,9 +272,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
-      referenceOnlyOffers: [
-        { displayName: 'Pilot/Aerospace (Civilian)', category: 'basic', chronologyYears: 1, reason: 'Source-ready Field not included in this bounded Pilot/Battle Armor promotion.' },
-      ],
+      referenceOnlyOffers: [],
     },
     awards: [
       fixed('technical-college.attribute.dex', 100, attribute('DEX')),
@@ -560,6 +560,8 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: ANALYSIS_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: SCIENTIST_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: PILOT_DROPSHIP_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: PILOT_AEROSPACE_COMBAT_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
+        { fieldId: PILOT_AIRCRAFT_COMBAT_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 },
         { fieldId: DOCTOR_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: MILITARY_SCIENTIST_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: SPECIAL_FORCES_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
@@ -571,9 +573,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
-      referenceOnlyOffers: [
-        ...['Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1, reason: 'Source-ready Field not included in this bounded spacecraft-pilot promotion.' })),
-      ],
+      referenceOnlyOffers: [],
     },
     awards: [
       fixed('military-academy.attribute.str', 50, attribute('STR')),
@@ -668,15 +668,15 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: SHIPS_CREW_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
         { fieldId: PILOT_BATTLE_ARMOR_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: PILOT_DROPSHIP_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
+        { fieldId: PILOT_AEROSPACE_COMBAT_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
+        { fieldId: PILOT_AIRCRAFT_COMBAT_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
         { fieldId: PILOT_JUMPSHIP_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: INFANTRY_ANTI_MECH_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
       ],
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
-      referenceOnlyOffers: [
-        ...['Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1.5, reason: 'Source-ready Field not included in this bounded spacecraft-pilot promotion.' })),
-      ],
+      referenceOnlyOffers: [],
     },
     awards: [
       fixed('family-training.attribute.str', 75, attribute('STR')),

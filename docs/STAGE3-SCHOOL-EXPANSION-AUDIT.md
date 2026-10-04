@@ -63,3 +63,7 @@ Pilot/DropShip, Pilot/JumpShip, and Pilot/WarShip are mechanical through every i
 ## Slice 77 Infantry/Anti-Mech update
 
 Infantry/Anti-Mech is mechanical through every implemented source-authorized school: Military Academy and Family Training offer it as Special for two years, and Military Enlistment offers it as Special for one year. It requires actual Infantry and WIL 5+, costs 144 XP, and grants its six fixed Skills +30 XP each. A complete same-school selection may satisfy the Infantry dependency within the single Continue transaction. No Solaris waiver exists. Mechanical Fields increase to 46; reference Fields remain 56 and equipment remains 84 unique stable IDs.
+
+## Slice 78 civilian and combat pilot update
+
+Pilot/Aerospace (Civilian) is mechanical as a Technical College Basic one-year Field. Pilot/Aerospace (Combat) and Pilot/Aircraft (Combat) are mechanical as Military Academy Advanced one-year and Family Training Advanced 1.5-year Fields. The combat pair depends on Basic Training or Basic Training (Naval), not on either Civilian pilot Field; same-school Basic Training satisfies the dependency within the single Stage 3 transaction. No Solaris offer or waiver applies. Mechanical Fields increase to 49; reference Fields remain 56 and equipment remains 84 unique stable IDs.

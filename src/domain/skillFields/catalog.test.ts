@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, CAVALRY_TACTICS_SUBSKILLS, DETECTIVE_FIELD_ID, DRIVING_SUBSKILLS, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MERCHANT_FIELD_ID, NAVAL_CAREER_SUBSKILLS, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, PILOT_DROPSHIP_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, PILOT_JUMPSHIP_FIELD_ID, PILOT_WARSHIP_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCOUT_FIELD_ID, SCOUT_STREETWISE_SUBSKILLS, SECURITY_SYSTEMS_SUBSKILLS, SHIPS_CREW_FIELD_ID, SKILL_FIELD_CATALOG, skillFieldCost, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID, TRACKING_SUBSKILLS, validateSkillFieldCatalog, VEHICLE_GUNNERY_SUBSKILLS } from './catalog'
 import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
 import { INFANTRY_ANTI_MECH_FIELD_ID } from './catalog'
+import { PILOT_AEROSPACE_CIVILIAN_FIELD_ID, PILOT_AEROSPACE_COMBAT_FIELD_ID, PILOT_AIRCRAFT_COMBAT_FIELD_ID } from './catalog'
 
 describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
-  it('contains the forty-six source-audited Fields with calculated reduced costs', () => {
+  it('contains the forty-nine source-audited Fields with calculated reduced costs', () => {
     expect(SKILL_FIELD_CATALOG.map((entry) => entry.id)).toEqual([
       BASIC_TRAINING_FIELD_ID,
       BASIC_TRAINING_NAVAL_FIELD_ID,
@@ -35,6 +36,9 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       'field.engineer',
       'field.merchant-marine',
       'field.pilot-aircraft-civilian',
+      PILOT_AEROSPACE_CIVILIAN_FIELD_ID,
+      PILOT_AEROSPACE_COMBAT_FIELD_ID,
+      PILOT_AIRCRAFT_COMBAT_FIELD_ID,
       'field.medical-assistant',
       'field.doctor',
       'field.analysis',
@@ -82,6 +86,9 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       'field.engineer': 120,
       'field.merchant-marine': 120,
       'field.pilot-aircraft-civilian': 120,
+      [PILOT_AEROSPACE_CIVILIAN_FIELD_ID]: 144,
+      [PILOT_AEROSPACE_COMBAT_FIELD_ID]: 168,
+      [PILOT_AIRCRAFT_COMBAT_FIELD_ID]: 120,
       'field.medical-assistant': 120,
       'field.doctor': 120,
       'field.analysis': 168,
