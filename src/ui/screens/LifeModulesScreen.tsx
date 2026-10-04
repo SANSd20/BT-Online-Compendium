@@ -312,7 +312,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     const count = stageChoiceSlotCount(pending, stageChoiceSlotValues)
     const poolProgress = pending.allocationMode === 'pool' ? stageChoicePoolProgress(pending, values) : null
     return <div className="stage-choice-award" key={pending.id}>
-          <p aria-live="polite"><strong>{pending.description}</strong> · {poolProgress ? stageChoicePoolProgressLabel(poolProgress) : pending.kind === 'related-skill-prerequisite' ? 'Prerequisite selection · 0 XP' : `${count} separate slot${count === 1 ? '' : 's'} · ${signed(pending.xpPerGrant)} XP each`}</p>
+          <p className="stage-choice-audit" aria-live="polite"><strong>Source award:</strong> {pending.description} · {poolProgress ? stageChoicePoolProgressLabel(poolProgress) : pending.kind === 'related-skill-prerequisite' ? 'Prerequisite selection · 0 XP' : `${count} separate slot${count === 1 ? '' : 's'} · ${signed(pending.xpPerGrant)} XP each`}</p>
           {Array.from({ length: count }, (_, index) => {
             const value = { ...emptyStageChoiceSlot(presentationPending), ...values[index] }
             const optionPending = presentationPending.kind === 'flexible-xp' && value.targetType
@@ -330,9 +330,17 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             const unsupported = value.targetType ? pendingAwardUnsupportedMessage(optionPending, options) : null
             const slotLabel = stageChoiceSlotLabel(pending, index)
             const slotId = `${pending.id.replace(/[^a-zA-Z0-9_-]/g, '-')}-${index}`
+            const complete = slotValueComplete(value)
+            const slotHelp = pending.kind === 'related-skill-prerequisite' ? 'Choose an already possessed concrete Skill. The relationship remains subject to GM approval and grants no XP.' : pending.allocationMode === 'pool' ? 'Choose a legal destination and XP amount.' : `${signed(pending.xpPerGrant)} XP`
             return <div className="stage-choice-slot" key={`${pending.id}/${index}`}>
-              <strong id={`${slotId}-label`}>{slotLabel}</strong>
-              <span id={`${slotId}-help`}>{pending.kind === 'related-skill-prerequisite' ? 'Choose an already possessed concrete Skill. The relationship remains subject to GM approval and grants no XP.' : pending.allocationMode === 'pool' ? 'Choose a legal destination and XP amount.' : `${signed(pending.xpPerGrant)} XP`}</span>
+              <div className="stage-choice-slot-header">
+                <div className="stage-choice-slot-title">
+                  <strong id={`${slotId}-label`}>{slotLabel}</strong>
+                  <span id={`${slotId}-help`}> · {slotHelp}</span>
+                </div>
+                {!complete && <span className="slot-pending">Pending</span>}
+              </div>
+              <div className="stage-choice-slot-controls">
               {presentationPending.kind === 'flexible-xp' && presentationPending.allowedTargetTypes.length > 1 && <label htmlFor={`${slotId}-type`}>Target type
                 <select id={`${slotId}-type`} aria-describedby={`${slotId}-label ${slotId}-help`} value={value.targetType} onChange={(event) => updateStageChoiceSlot(pending, index, { targetType: event.target.value as StageChoiceSlotValue['targetType'], targetId: '', parameter: '', displayName: '' })}>
                   <option value="">Choose a target type…</option>
@@ -377,8 +385,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                   {options.map((option) => <option key={option.value} value={option.value}>{option.displayName}</option>)}
                 </select>
               </label>}
-              {unsupported && <p className="notice">{unsupported}</p>}
-              {!slotValueComplete(value) && <span className="slot-pending">Pending</span>}
+                {unsupported && <p className="notice">{unsupported}</p>}
+              </div>
             </div>
           })}
           {pending.allocationMode === 'pool' && <div className="row-actions">

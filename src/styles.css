@@ -396,8 +396,15 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .existing-pending-choices { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid var(--amber); }
 .existing-pending-choices > h3 { color: var(--amber); }
 .stage-choice-award { display: grid; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
-.stage-choice-slot { display: grid; grid-template-columns: minmax(150px, .7fr) minmax(110px, .45fr) repeat(3, minmax(140px, 1fr)); gap: 12px; align-items: end; padding: 14px; border: 1px solid var(--line); background: #0d151d; }
-.stage-choice-slot label { display: grid; gap: 6px; color: var(--muted); font-size: .78rem; }
+.stage-choice-audit { margin: 0; color: var(--muted); font-size: .82rem; }
+.stage-choice-slot { display: grid; gap: 14px; width: min(100%, 44rem); padding: 16px; border: 1px solid var(--line); background: #0d151d; }
+.stage-choice-slot-header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.stage-choice-slot-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px; }
+.stage-choice-slot-title span { color: var(--muted); font-size: .82rem; }
+.stage-choice-slot-controls { display: grid; gap: 12px; width: min(100%, 36rem); }
+.stage-choice-slot-controls label { display: grid; gap: 6px; color: var(--muted); font-size: .78rem; }
+.stage-choice-slot-controls label span { line-height: 1.45; }
+.stage-choice-slot-controls .notice { margin: 0; }
 .stage-choice-slot input, .stage-choice-slot select { width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); color: #fff; background: #091017; }
 .stage-choice-slot input, .stage-choice-slot select { min-height: 46px; }
 .slot-complete { color: var(--success); font-weight: 700; }
@@ -446,7 +453,8 @@ footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--mute
   .life-review-summary { grid-template-columns: 1fr 1fr; }
   .stage-options, .award-columns { grid-template-columns: 1fr; }
   .pending-awards article { grid-template-columns: 1fr; }
-  .stage-choice-slot { grid-template-columns: 1fr; }
+  .stage-choice-slot { width: 100%; }
+  .stage-choice-slot-header { align-items: flex-start; flex-wrap: wrap; }
   .form-grid { grid-template-columns: 1fr; }
   .adjustment-heading { align-items: stretch; flex-direction: column; }
   .adjustment-form, .skill-swap-panel .adjustment-form, .adjustment-balance { grid-template-columns: 1fr; }
