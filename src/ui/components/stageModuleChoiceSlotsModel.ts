@@ -89,11 +89,23 @@ export function previewStageModuleChoiceSlots(
   moduleId: SupportedStageModuleId | '',
   values: StageChoiceSlotValues,
   stage3FieldIds?: string[],
+  homeworld?: string,
 ): StageChoiceSlotPreview | null {
   if (!moduleId) return null
   const initialExistingAwards = character.creation.lifeModules!.pendingAwards.map((entry) => structuredClone(entry))
   const existingAwardIds = new Set(initialExistingAwards.map((entry) => entry.id))
-  let preview = applySupportedStageModule(character, moduleId, stage3FieldIds)
+  let preview: CharacterDefinition
+  try {
+    preview = applySupportedStageModule(character, moduleId, stage3FieldIds, homeworld)
+  } catch (error) {
+    return {
+      character,
+      existingPendingAwards: initialExistingAwards,
+      pendingAwards: [],
+      complete: false,
+      error: error instanceof Error ? error.message : 'The selected module preview is not ready.',
+    }
+  }
   const existingPending = () => preview.creation.lifeModules!.pendingAwards.filter((entry) => existingAwardIds.has(entry.id))
   const modulePending = () => preview.creation.lifeModules!.pendingAwards.filter((entry) => entry.moduleId === moduleId)
 

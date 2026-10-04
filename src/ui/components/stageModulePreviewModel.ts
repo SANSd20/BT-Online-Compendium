@@ -5,6 +5,7 @@ import {
   BLUE_COLLAR_ID,
   getLifeModule,
   INTELLIGENCE_OPERATIVE_TRAINING_ID,
+  FAMILY_TRAINING_ID,
   MILITARY_ACADEMY_ID,
   MILITARY_ENLISTMENT_ID,
   OFFICER_TRAINING_SCHOOL_ID,
@@ -30,6 +31,7 @@ export type SupportedStageModuleId =
   | typeof INTELLIGENCE_OPERATIVE_TRAINING_ID
   | typeof MILITARY_ACADEMY_ID
   | typeof MILITARY_ENLISTMENT_ID
+  | typeof FAMILY_TRAINING_ID
   | typeof OFFICER_TRAINING_SCHOOL_ID
   | typeof AGITATOR_ID
 
@@ -38,7 +40,7 @@ export interface Stage3FieldSelectionStatus {
   reasons: string[]
 }
 
-export function applySupportedStageModule(character: CharacterDefinition, moduleId: SupportedStageModuleId, stage3FieldIds?: string[]): CharacterDefinition {
+export function applySupportedStageModule(character: CharacterDefinition, moduleId: SupportedStageModuleId, stage3FieldIds?: string[], homeworld?: string): CharacterDefinition {
   switch (moduleId) {
     case BLUE_COLLAR_ID:
     case BACK_WOODS_ID:
@@ -53,23 +55,24 @@ export function applySupportedStageModule(character: CharacterDefinition, module
     case INTELLIGENCE_OPERATIVE_TRAINING_ID:
     case MILITARY_ACADEMY_ID:
     case MILITARY_ENLISTMENT_ID:
+    case FAMILY_TRAINING_ID:
     case OFFICER_TRAINING_SCHOOL_ID:
-      return applyStage3School(character, moduleId, stage3FieldIds ?? defaultStage3FieldIds(moduleId))
+      return applyStage3School(character, moduleId, stage3FieldIds ?? defaultStage3FieldIds(moduleId), homeworld)
     case AGITATOR_ID:
       return applyStage4Module(character, moduleId)
   }
 }
 
-export function previewSupportedStageModule(character: CharacterDefinition, moduleId: SupportedStageModuleId | '', stage3FieldIds?: string[]): CharacterDefinition | null {
+export function previewSupportedStageModule(character: CharacterDefinition, moduleId: SupportedStageModuleId | '', stage3FieldIds?: string[], homeworld?: string): CharacterDefinition | null {
   if (!moduleId) return null
   try {
-    return applySupportedStageModule(character, moduleId, stage3FieldIds)
+    return applySupportedStageModule(character, moduleId, stage3FieldIds, homeworld)
   } catch {
     return null
   }
 }
 
-export function defaultStage3FieldIds(moduleId: typeof TECHNICAL_COLLEGE_ID | typeof TRADE_SCHOOL_ID | typeof UNIVERSITY_ID | typeof POLICE_ACADEMY_ID | typeof INTELLIGENCE_OPERATIVE_TRAINING_ID | typeof MILITARY_ACADEMY_ID | typeof MILITARY_ENLISTMENT_ID | typeof OFFICER_TRAINING_SCHOOL_ID): string[] {
+export function defaultStage3FieldIds(moduleId: typeof TECHNICAL_COLLEGE_ID | typeof TRADE_SCHOOL_ID | typeof UNIVERSITY_ID | typeof POLICE_ACADEMY_ID | typeof INTELLIGENCE_OPERATIVE_TRAINING_ID | typeof MILITARY_ACADEMY_ID | typeof MILITARY_ENLISTMENT_ID | typeof FAMILY_TRAINING_ID | typeof OFFICER_TRAINING_SCHOOL_ID): string[] {
   if (moduleId === TECHNICAL_COLLEGE_ID) return [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID]
   if (moduleId === TRADE_SCHOOL_ID) return [MERCHANT_FIELD_ID, JOURNALIST_FIELD_ID]
   if (moduleId === UNIVERSITY_ID) return [TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID]
@@ -79,14 +82,14 @@ export function defaultStage3FieldIds(moduleId: typeof TECHNICAL_COLLEGE_ID | ty
   return [BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID]
 }
 
-export function stage3FieldSelectionStatus(character: CharacterDefinition, moduleId: typeof TECHNICAL_COLLEGE_ID | typeof TRADE_SCHOOL_ID | typeof UNIVERSITY_ID | typeof POLICE_ACADEMY_ID | typeof INTELLIGENCE_OPERATIVE_TRAINING_ID | typeof MILITARY_ACADEMY_ID | typeof MILITARY_ENLISTMENT_ID | typeof OFFICER_TRAINING_SCHOOL_ID, fieldId: string, selectedFieldIds: string[]): Stage3FieldSelectionStatus {
+export function stage3FieldSelectionStatus(character: CharacterDefinition, moduleId: typeof TECHNICAL_COLLEGE_ID | typeof TRADE_SCHOOL_ID | typeof UNIVERSITY_ID | typeof POLICE_ACADEMY_ID | typeof INTELLIGENCE_OPERATIVE_TRAINING_ID | typeof MILITARY_ACADEMY_ID | typeof MILITARY_ENLISTMENT_ID | typeof FAMILY_TRAINING_ID | typeof OFFICER_TRAINING_SCHOOL_ID, fieldId: string, selectedFieldIds: string[], homeworld?: string): Stage3FieldSelectionStatus {
   const field = getSkillField(fieldId)
   const offers = getLifeModule(moduleId).skillFieldSelection!.offers
   const offeredCategory = offers.find((entry) => entry.fieldId === fieldId)!.category
   const proposed = offeredCategory === 'basic'
     ? [fieldId, ...selectedFieldIds.filter((id) => offers.find((entry) => entry.fieldId === id)?.category !== 'basic')]
     : selectedFieldIds.includes(fieldId) ? selectedFieldIds : [...selectedFieldIds, fieldId]
-  const candidate = previewSupportedStageModule(character, moduleId, proposed)
+  const candidate = previewSupportedStageModule(character, moduleId, proposed, homeworld)
   if (!candidate) return { state: 'unavailable', reasons: ['School selection limits are not satisfied.'] }
   const outstanding = candidate.creation.lifeModules!.prerequisiteIssues.filter((issue) => issue.moduleId === fieldId && issue.status === 'outstanding')
   const blockingIds = new Set(moduleId === OFFICER_TRAINING_SCHOOL_ID ? [] : field.prerequisites.filter((entry) => entry.kind === 'skill-field').map((entry) => entry.id))

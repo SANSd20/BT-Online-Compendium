@@ -1,7 +1,7 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
-import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
+import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 
 export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
@@ -48,6 +48,7 @@ export const POLICE_ACADEMY_ID = 'stage3.police-academy'
 export const INTELLIGENCE_OPERATIVE_TRAINING_ID = 'stage3.intelligence-operative-training'
 export const MILITARY_ACADEMY_ID = 'stage3.military-academy'
 export const MILITARY_ENLISTMENT_ID = 'stage3.military-enlistment'
+export const FAMILY_TRAINING_ID = 'stage3.family-training'
 export const AGITATOR_ID = 'stage4.agitator'
 
 export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
@@ -582,6 +583,59 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     ],
     notes: ['Military Stage 3 school. Base cost is 720 XP plus selected Skill Field costs.'],
     deferredRules: ['Reference-only Fields remain deferred.'],
+  },
+  {
+    id: FAMILY_TRAINING_ID,
+    displayName: 'Family Training',
+    stage: 3,
+    kind: 'higher-education',
+    stage3School: stage3SchoolClassification(FAMILY_TRAINING_ID),
+    source: source(83, 'stage-3-family-training'),
+    costXp: 570,
+    prerequisites: [{
+      id: 'family-training.entry',
+      kind: 'any-of',
+      description: 'Preparatory School or Military School as a Stage 2 module, or Connections +1 TP or higher',
+      options: [
+        { id: 'family-training.prior-stage2-school', kind: 'module-history', moduleIds: ['stage2.preparatory-school', 'stage2.military-school'], description: 'Preparatory School or Military School as a Stage 2 module' },
+        { id: 'family-training.connections', kind: 'trait-minimum', traitId: 'trait.connections', minimum: 1, description: 'Connections +1 TP or higher' },
+      ],
+    }],
+    skillFieldSelection: {
+      offers: [
+        { fieldId: BASIC_TRAINING_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 0.5 },
+        { fieldId: BASIC_TRAINING_NAVAL_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 0.5 },
+        { fieldId: CAVALRY_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
+        { fieldId: INFANTRY_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
+        { fieldId: MARINE_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
+        { fieldId: 'field.mechwarrior', category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
+        { fieldId: SCOUT_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
+        { fieldId: SHIPS_CREW_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
+      ],
+      exactlyBasic: 1,
+      minimumAdvanced: 1,
+      maximumTotal: 3,
+      referenceOnlyOffers: [
+        ...['Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)', 'Pilot/DropShip'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1.5, reason: 'Source-ready Field not included in this bounded Family Training implementation.' })),
+        ...['Infantry/Anti-Mech', 'Pilot/Battle Armor'].map((displayName) => ({ displayName, category: 'special' as const, chronologyYears: 2, reason: 'Source-ready Field not included in this bounded Family Training implementation.' })),
+        { displayName: 'Pilot/JumpShip', category: 'special', chronologyYears: 2, reason: 'Requires Pilot/DropShip, which remains reference-only.' },
+      ],
+    },
+    awards: [
+      fixed('family-training.attribute.str', 75, attribute('STR')),
+      fixed('family-training.attribute.bod', 75, attribute('BOD')),
+      fixed('family-training.attribute.rfl', 50, attribute('RFL')),
+      fixed('family-training.attribute.wil', 50, attribute('WIL')),
+      fixed('family-training.trait.equipped', 50, trait('trait.equipped', 'Equipped')),
+      fixed('family-training.trait.rank', 100, trait('trait.rank', 'Rank')),
+      { id: 'family-training.skill.driving', kind: 'any-skill-choice', xp: 15, skillId: 'skill.driving', displayName: 'Driving/Any', count: 1 },
+      fixed('family-training.skill.homeworld-history', 20, skill('skill.interest', 'Interest/Homeworld History', 'Homeworld History')),
+      { id: 'family-training.skill.protocol-affiliation', kind: 'affiliation-bound-skill', xp: 15, skillId: 'skill.protocol', displayName: 'Protocol/Affiliation' },
+      { id: 'family-training.skill.survival', kind: 'any-skill-choice', xp: 20, skillId: 'skill.survival', displayName: 'Survival/Any', count: 1 },
+      { id: 'family-training.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 100, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: ['Military Stage 3 school. Base cost is 570 XP plus selected Skill Field costs. Homeworld History resolves from the explicitly recorded character homeworld.'],
+    deferredRules: ['Source-listed reference-only Fields remain deferred.'],
   },
   {
     id: OFFICER_TRAINING_SCHOOL_ID,
