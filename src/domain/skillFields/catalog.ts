@@ -26,6 +26,7 @@ export const PILOT_INDUSTRIALMECH_FIELD_ID = 'field.pilot-industrialmech'
 export const TECHNICIAN_AEROSPACE_FIELD_ID = 'field.technician-aerospace'
 export const TECHNICIAN_MECH_FIELD_ID = 'field.technician-mech'
 export const INFANTRY_FIELD_ID = 'field.infantry'
+export const INFANTRY_ANTI_MECH_FIELD_ID = 'field.infantry-anti-mech'
 export const PILOT_BATTLE_ARMOR_FIELD_ID = 'field.pilot-battle-armor'
 export const PILOT_DROPSHIP_FIELD_ID = 'field.pilot-dropship'
 export const PILOT_JUMPSHIP_FIELD_ID = 'field.pilot-jumpship'
@@ -350,6 +351,24 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       skill('skill.communications', 'Comms/Conventional', 'Conventional'),
       skill('skill.support-weapons', 'Support Weapons'),
       skill('skill.tactics', 'Tactics/Infantry', 'Infantry'),
+    ],
+  },
+  {
+    id: INFANTRY_ANTI_MECH_FIELD_ID,
+    displayName: 'Infantry/Anti-Mech',
+    category: 'special',
+    source: { ...source('skill-field-infantry-anti-mech'), page: 94 },
+    prerequisites: [
+      { id: 'infantry-anti-mech.field', kind: 'skill-field', fieldIds: [INFANTRY_FIELD_ID], description: 'Infantry Field' },
+      { id: 'infantry-anti-mech.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 5, description: 'WIL 5+' },
+    ],
+    componentSkills: [
+      skill('skill.acrobatics', 'Acrobatics/Gymnastics', 'Gymnastics'),
+      skill('skill.demolitions', 'Demolitions'),
+      skill('skill.perception', 'Perception'),
+      skill('skill.security-systems', 'Security Systems/Electronic', 'Electronic'),
+      skill('skill.technician', 'Technician/Mechanical', 'Mechanical'),
+      skill('skill.technician', 'Technician/Myomer', 'Myomer'),
     ],
   },
   {

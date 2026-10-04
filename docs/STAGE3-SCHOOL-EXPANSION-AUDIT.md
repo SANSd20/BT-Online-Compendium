@@ -59,3 +59,7 @@ Solaris waives only the Infantry Field prerequisite for this acquisition. Milita
 ## Slice 76 spacecraft Pilot update
 
 Pilot/DropShip, Pilot/JumpShip, and Pilot/WarShip are mechanical through every implemented source-authorized school. Technical College offers DropShip Basic for one year and JumpShip Advanced for two years. Military Academy offers DropShip Advanced for one year and JumpShip plus corrected WarShip Special for two years. Family Training offers DropShip Advanced for 1.5 years and JumpShip Special for two years. Both dependent Fields require actual DropShip ownership; the complete same-school preview selection may satisfy that dependency because it commits as one Stage 3 transaction. Mechanical Fields increase to 45; reference Fields remain 56 and equipment remains 84 unique stable IDs.
+
+## Slice 77 Infantry/Anti-Mech update
+
+Infantry/Anti-Mech is mechanical through every implemented source-authorized school: Military Academy and Family Training offer it as Special for two years, and Military Enlistment offers it as Special for one year. It requires actual Infantry and WIL 5+, costs 144 XP, and grants its six fixed Skills +30 XP each. A complete same-school selection may satisfy the Infantry dependency within the single Continue transaction. No Solaris waiver exists. Mechanical Fields increase to 46; reference Fields remain 56 and equipment remains 84 unique stable IDs.

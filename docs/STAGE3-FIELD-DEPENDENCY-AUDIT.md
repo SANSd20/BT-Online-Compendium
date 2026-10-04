@@ -35,3 +35,11 @@ DropShip is offered by Technical College as Basic for one year, Military Academy
 The strongest bounded next target is Infantry - Anti-Mech. It is source-ready, uses a represented Infantry prerequisite plus fixed Skills, and is offered by three implemented schools. That recommendation is not implementation authority.
 
 Existing open-subject, closed-domain, affiliation-bound, named-option, family, preview/Continue, persistence, and prerequisite-governance decisions remain unchanged. Stable IDs are preserved; no equipment or affiliation data changed.
+
+## Slice 77 Infantry/Anti-Mech audit and current remaining state
+
+Infantry/Anti-Mech requires the actual Infantry Field and WIL 5+. Its six fixed Skills are Acrobatics/Gymnastics, Demolitions, Perception, Security Systems/Electronic, Technician/Mechanical, and Technician/Myomer. At the Stage 3 rate it costs 144 XP and grants +30 XP to each Skill. Military Academy and Family Training offer it as Special for two years; Military Enlistment offers it as Special for one year. Solaris does not offer or waive it. The v4.0 errata contains no applicable correction.
+
+The complete staged school selection is evaluated together, so Infantry selected in the same school transaction satisfies the prerequisite when Continue commits the selection. Component Skills and a Master Skill Field goal do not substitute for acquired Field state. Tactical Anti-'Mech attack and conversion rules are outside Field acquisition.
+
+The reference catalog remains 56 and the mechanical catalog is now 46. The ten current reference-only Fields are HPG Technician; Pilot - Aerospace (Civilian); Pilot - Aerospace (Combat); Pilot - Aircraft (Combat); Clan Aerospace Warrior; Clan Basic Training; Clan Cavalry; Clan Elemental; Clan MechWarrior; and Clan ProtoMech Warrior. Their Slice 76 classifications and blockers remain unchanged except that Infantry - Anti-Mech is no longer reference-only. The queued Ready Fields remain the three Pilot Fields. Pilot - Aerospace (Civilian), the sole Technical College basic offer, is the recommended next bounded target; this recommendation is not implementation authority.

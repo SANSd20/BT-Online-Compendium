@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { INFANTRY_ANTI_MECH_FIELD_ID } from '../skillFields/catalog'
 import {
   AGITATOR_ID,
   BACK_WOODS_ID,
@@ -81,6 +82,7 @@ describe('Life Module Alpha catalog', () => {
     const academyOffers = LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ACADEMY_ID)?.skillFieldSelection?.offers ?? []
     const enlistmentOffers = LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ENLISTMENT_ID)?.skillFieldSelection?.offers ?? []
     expect(academyOffers).toEqual(expect.arrayContaining([
+      expect.objectContaining({ fieldId: INFANTRY_ANTI_MECH_FIELD_ID, category: 'special', chronologyYears: 2 }),
       expect.objectContaining({ fieldId: BASIC_TRAINING_NAVAL_FIELD_ID, category: 'basic', chronologyYears: 1 }),
       expect.objectContaining({ fieldId: CAVALRY_FIELD_ID, category: 'advanced', chronologyYears: 1 }),
       expect.objectContaining({ fieldId: MARINE_FIELD_ID, category: 'advanced', chronologyYears: 1 }),
@@ -89,6 +91,7 @@ describe('Life Module Alpha catalog', () => {
     ]))
     expect(academyOffers.some((entry) => entry.fieldId === TECHNICIAN_MILITARY_FIELD_ID)).toBe(false)
     expect(enlistmentOffers).toEqual(expect.arrayContaining([
+      expect.objectContaining({ fieldId: INFANTRY_ANTI_MECH_FIELD_ID, category: 'special', chronologyYears: 1 }),
       expect.objectContaining({ fieldId: BASIC_TRAINING_NAVAL_FIELD_ID, category: 'basic', chronologyYears: 0.5 }),
       expect.objectContaining({ fieldId: CAVALRY_FIELD_ID, category: 'advanced', chronologyYears: 1.5 }),
       expect.objectContaining({ fieldId: MARINE_FIELD_ID, category: 'advanced', chronologyYears: 1.5 }),
