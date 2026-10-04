@@ -121,11 +121,14 @@ export function applyStage0Affiliation(
   orderNearestStateContext?: string,
   orderSecondaryLanguage?: string,
   orderTechnicianSubskill?: string,
+  subAffiliationSelection?: string,
 ): CharacterDefinition {
   const withUniversal = applyUniversalStage0(character, affiliationContextModuleId, affiliationLanguage)
+  const includeSubAffiliation = subAffiliationSelection === undefined || subAffiliationSelection === affiliationContextModuleId
   const withBirth = affiliationContextModuleId === FEDERATED_SUNS_CRUCIS_MARCH_ID
-    ? applyFederatedSunsCrucisMarch(withUniversal, davionNaturalAptitude, davionArt)
-    : applyCapellanCommonality(withUniversal, capellanSecondaryLanguage)
+    ? applyFederatedSunsCrucisMarch(withUniversal, davionNaturalAptitude, davionArt, includeSubAffiliation)
+    : applyCapellanCommonality(withUniversal, capellanSecondaryLanguage, includeSubAffiliation)
+  requireLifeModules(withBirth).stage0SubAffiliation = includeSubAffiliation ? affiliationContextModuleId : 'no'
   return applyOrderAffiliation(withBirth, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
 }
 
@@ -196,7 +199,7 @@ export function previewOrderAffiliation(
   }
 }
 
-export function applyCapellanCommonality(character: CharacterDefinition, capellanSecondaryLanguage?: string): CharacterDefinition {
+export function applyCapellanCommonality(character: CharacterDefinition, capellanSecondaryLanguage?: string, includeSubAffiliation = true): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-0-affiliation') throw new Error('The Stage 0 affiliation is not the current legal action.')
   if (state.stage0AffiliationContext !== CAPELLAN_COMMONALITY_CONTEXT.id) {
@@ -212,7 +215,13 @@ export function applyCapellanCommonality(character: CharacterDefinition, capella
       type: 'skill', address: { skillId: 'skill.language', parameter: { kind: 'subskill', value: language } }, displayName: `Language/${language}`,
     }
   }
-  const next = applyModule(character, getLifeModule(CAPELLAN_COMMONALITY_ID), resolutions)
+  const published = getLifeModule(CAPELLAN_COMMONALITY_ID)
+  const module = includeSubAffiliation ? published : {
+    ...published,
+    displayName: CAPELLAN_COMMONALITY_CONTEXT.affiliationName,
+    awards: published.awards.filter((award) => award.id.startsWith('capellan.')),
+  }
+  const next = applyModule(character, module, resolutions)
   const nextState = requireLifeModules(next)
   const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
   if (!provenanceId) throw new Error('Affiliation provenance was not recorded.')
@@ -225,18 +234,20 @@ export function applyCapellanCommonality(character: CharacterDefinition, capella
   return next
 }
 
-export function applyFederatedSunsCrucisMarch(character: CharacterDefinition, naturalAptitude?: 'Protocol' | 'Strategy', art?: string): CharacterDefinition {
+export function applyFederatedSunsCrucisMarch(character: CharacterDefinition, naturalAptitude?: 'Protocol' | 'Strategy', art?: string, includeSubAffiliation = true): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-0-affiliation') throw new Error('The Stage 0 affiliation is not the current legal action.')
   if (state.stage0AffiliationContext !== FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.id) throw new Error('The selected Stage 0 affiliation package must match the explicit Universal affiliation context.')
   if (naturalAptitude !== 'Protocol' && naturalAptitude !== 'Strategy') throw new Error('Choose the published Federated Suns Natural Aptitude option.')
-  if (art !== 'Painting') throw new Error('Choose a supported Crucis March Art subskill.')
+  if (includeSubAffiliation && art !== 'Painting') throw new Error('Choose a supported Crucis March Art subskill.')
   const published = getLifeModule(FEDERATED_SUNS_CRUCIS_MARCH_ID)
   const module: LifeModuleDefinition = {
     ...published,
+    displayName: includeSubAffiliation ? published.displayName : FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.affiliationName,
     awards: published.awards.flatMap((award): LifeModuleAward[] => {
+      if (!includeSubAffiliation && award.id.startsWith('crucis.')) return []
       if (award.id === 'fedsuns.trait.natural-aptitude') return [{ id: award.id, kind: 'fixed', xp: 100, destination: { type: 'trait', traitId: 'trait.natural-aptitude', displayName: `Natural Aptitude/${naturalAptitude}`, parameters: { skill: naturalAptitude } } }]
-      if (award.id === 'crucis.skill.art') return [{ id: award.id, kind: 'fixed', xp: 10, destination: { type: 'skill', address: { skillId: 'skill.art', parameter: { kind: 'subskill', value: art } }, displayName: `Art/${art}` } }]
+      if (award.id === 'crucis.skill.art') return [{ id: award.id, kind: 'fixed', xp: 10, destination: { type: 'skill', address: { skillId: 'skill.art', parameter: { kind: 'subskill', value: art! } }, displayName: `Art/${art}` } }]
       return [award]
     }),
   }
@@ -244,21 +255,23 @@ export function applyFederatedSunsCrucisMarch(character: CharacterDefinition, na
   const nextState = requireLifeModules(next)
   const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
   if (!provenanceId) throw new Error('Affiliation provenance was not recorded.')
-  const artDestination: ResolvedLifeModuleDestination = {
+  if (includeSubAffiliation) {
+    const artDestination: ResolvedLifeModuleDestination = {
     type: 'skill',
     targetId: 'skill.art',
     displayName: 'Art/Painting',
-    parameter: { kind: 'subskill', value: art },
+    parameter: { kind: 'subskill', value: art! },
   }
-  nextState.choiceGrantRequirements.push({ moduleId: published.id, awardId: 'crucis.skill.art', requiredGrants: 1 })
-  recordResolvedAward(nextState.resolvedAwards, {
+    nextState.choiceGrantRequirements.push({ moduleId: published.id, awardId: 'crucis.skill.art', requiredGrants: 1 })
+    recordResolvedAward(nextState.resolvedAwards, {
     moduleId: published.id,
     awardId: 'crucis.skill.art',
     kind: 'any-skill-choice',
     xpPerGrant: 10,
     source: { ...published.source },
-  }, artDestination, provenanceId, 10)
-  next.creation.resolvedChoiceIds.push(`${published.id}/crucis.skill.art/${resolvedDestinationKey(artDestination)}`)
+    }, artDestination, provenanceId, 10)
+    next.creation.resolvedChoiceIds.push(`${published.id}/crucis.skill.art/${resolvedDestinationKey(artDestination)}`)
+  }
   next.affiliations.push(
     { affiliationId: FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.affiliationId, role: 'birth', provenanceId },
     { affiliationId: FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.affiliationId, role: 'final', provenanceId },
@@ -268,17 +281,15 @@ export function applyFederatedSunsCrucisMarch(character: CharacterDefinition, na
   return next
 }
 
-export function previewFederatedSunsCrucisMarch(character: CharacterDefinition): CharacterDefinition {
+export function previewFederatedSunsCrucisMarch(character: CharacterDefinition, includeSubAffiliation = true): CharacterDefinition {
   const preview = structuredClone(character)
   requireLifeModules(preview).stage0AffiliationContext = FEDERATED_SUNS_CRUCIS_MARCH_ID
   const published = getLifeModule(FEDERATED_SUNS_CRUCIS_MARCH_ID)
-  const fixedOnly = { ...published, awards: published.awards.filter((award) => award.kind === 'fixed') }
+  const fixedOnly = { ...published, displayName: includeSubAffiliation ? published.displayName : FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.affiliationName, awards: published.awards.filter((award) => award.kind === 'fixed' && (includeSubAffiliation || !award.id.startsWith('crucis.'))) }
   const next = applyModule(preview, fixedOnly, {})
   const state = requireLifeModules(next)
-  state.pendingAwards.push(
-    { id: 'preview-fedsuns-natural-aptitude', moduleId: published.id, awardId: 'fedsuns.trait.natural-aptitude', kind: 'flexible-xp', description: 'Choose Natural Aptitude/Protocol or Natural Aptitude/Strategy.', xpPerGrant: 100, remainingGrants: 1, allocationMode: 'fixed-grants', allowedTargetTypes: ['trait'], source: { ...published.source } },
-    { id: 'preview-crucis-art', moduleId: published.id, awardId: 'crucis.skill.art', kind: 'any-skill-choice', description: 'Art/Any: choose 1 concrete subskill.', xpPerGrant: 10, remainingGrants: 1, allocationMode: 'fixed-grants', allowedTargetTypes: ['skill'], requiredSkillId: 'skill.art', source: { ...published.source } },
-  )
+  state.pendingAwards.push({ id: 'preview-fedsuns-natural-aptitude', moduleId: published.id, awardId: 'fedsuns.trait.natural-aptitude', kind: 'flexible-xp', description: 'Choose Natural Aptitude/Protocol or Natural Aptitude/Strategy.', xpPerGrant: 100, remainingGrants: 1, allocationMode: 'fixed-grants', allowedTargetTypes: ['trait'], source: { ...published.source } })
+  if (includeSubAffiliation) state.pendingAwards.push({ id: 'preview-crucis-art', moduleId: published.id, awardId: 'crucis.skill.art', kind: 'any-skill-choice', description: 'Art/Any: choose 1 concrete subskill.', xpPerGrant: 10, remainingGrants: 1, allocationMode: 'fixed-grants', allowedTargetTypes: ['skill'], requiredSkillId: 'skill.art', source: { ...published.source } })
   return next
 }
 

@@ -3,7 +3,7 @@ import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalo
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, FAMILY_TRAINING_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, SOLARIS_INTERNSHIP_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
-import type { OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
+import { getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { getFinalReviewBlockers } from '../../domain/lifeModules/finalReview'
@@ -65,6 +65,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const [startingXp, setStartingXp] = useState(5000)
   const [masterSkillFieldGoalId, setMasterSkillFieldGoalId] = useState('')
   const [stage0AffiliationContext, setStage0AffiliationContext] = useState('')
+  const [stage0SubAffiliation, setStage0SubAffiliation] = useState('no')
   const [birthAffiliationId, setBirthAffiliationId] = useState('')
   const [affiliationLanguage, setAffiliationLanguage] = useState('')
   const [secondaryLanguage, setSecondaryLanguage] = useState('')
@@ -141,10 +142,11 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const stageExistingFallbackAwards = genericPendingAwards.filter((pending) => !stageExistingSlotAwards.some((candidate) => candidate.id === pending.id))
   const stagePresentation = state ? lifeModuleStagePresentation(state.phase) : null
   const stage0Preview = useMemo(() => character && state?.phase === 'stage-0-affiliation'
-    ? previewStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude, davionArt, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
-    : null, [character, state?.phase, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude, davionArt, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill])
+    ? previewStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude, davionArt, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill, stage0SubAffiliation)
+    : null, [character, state?.phase, stage0AffiliationContext, stage0SubAffiliation, affiliationLanguage, secondaryLanguage, davionNaturalAptitude, davionArt, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill])
   const stage0PreviewSelections = state?.phase === 'stage-0-affiliation' ? [
     ...(stage0AffiliationContext ? ['Affiliation context selected'] : []),
+    ...(stage0AffiliationContext ? [`Affiliation Sub: ${stage0SubAffiliation === 'no' ? 'No' : 'Selected'}`] : []),
     ...(affiliationLanguage ? [`Affiliation language: ${affiliationLanguage}`] : []),
     ...(secondaryLanguage ? [`Secondary language: ${secondaryLanguage}`] : []),
     ...(orderAffiliation !== 'no' ? [`Order affiliation: ${orderAffiliation === 'comstar' ? 'ComStar' : 'Word of Blake'}`] : []),
@@ -498,6 +500,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <Stage0WizardStep
                 phase={state.phase}
                 affiliationContext={stage0AffiliationContext}
+                subAffiliation={stage0SubAffiliation}
                 birthAffiliationId={birthAffiliationId}
                 affiliationLanguage={affiliationLanguage}
                 secondaryLanguage={secondaryLanguage}
@@ -507,8 +510,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 orderNearestStateContext={orderNearestStateContext}
                 orderSecondaryLanguage={orderSecondaryLanguage}
                 orderTechnicianSubskill={orderTechnicianSubskill}
-                onBirthAffiliationChange={(value) => { setBirthAffiliationId(value); setStage0AffiliationContext(''); setAffiliationLanguage(''); setSecondaryLanguage(''); setDavionNaturalAptitude(''); setDavionArt(''); setOrderNearestStateContext(''); setOrderSecondaryLanguage('') }}
+                onBirthAffiliationChange={(value) => { const context = getLifeModuleAffiliationContextByAffiliationId(value); setBirthAffiliationId(value); setStage0AffiliationContext(context?.id ?? ''); setStage0SubAffiliation('no'); setAffiliationLanguage(''); setSecondaryLanguage(''); setDavionNaturalAptitude(''); setDavionArt(''); setOrderNearestStateContext(''); setOrderSecondaryLanguage('') }}
                 onContextChange={(value) => { setStage0AffiliationContext(value); setAffiliationLanguage(''); setSecondaryLanguage(''); setDavionNaturalAptitude(''); setDavionArt('') }}
+                onSubAffiliationChange={(value) => { setStage0SubAffiliation(value); setDavionArt('') }}
                 onLanguageChange={setAffiliationLanguage}
                 onSecondaryLanguageChange={setSecondaryLanguage}
                 onDavionNaturalAptitudeChange={setDavionNaturalAptitude}
@@ -518,7 +522,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 onOrderSecondaryLanguageChange={setOrderSecondaryLanguage}
                 onOrderTechnicianSubskillChange={setOrderTechnicianSubskill}
                 onApplyUniversal={() => operate(() => applyUniversalStage0(character, stage0AffiliationContext, affiliationLanguage), 'Universal Stage 0 package applied with explicit affiliation context.')}
-                onApplyAffiliation={() => operate(() => applyStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude ? davionNaturalAptitude as 'Protocol' | 'Strategy' : undefined, davionArt || undefined, orderAffiliation, orderNearestStateContext || undefined, orderSecondaryLanguage || undefined, orderTechnicianSubskill || undefined), 'Stage 0 birth and optional order affiliation packages applied with explicit choices.')}
+                onApplyAffiliation={() => operate(() => applyStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude ? davionNaturalAptitude as 'Protocol' | 'Strategy' : undefined, davionArt || undefined, orderAffiliation, orderNearestStateContext || undefined, orderSecondaryLanguage || undefined, orderTechnicianSubskill || undefined, stage0SubAffiliation), 'Stage 0 birth, optional sub-affiliation, and optional order affiliation packages applied with explicit choices.')}
               />
             )}
             {state.phase === 'stage-1-selection' && (

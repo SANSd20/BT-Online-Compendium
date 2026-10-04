@@ -7,6 +7,7 @@ export const FEDERATED_SUNS_CRUCIS_MARCH_ID = 'stage0.federated-suns.crucis-marc
 export const COMSTAR_ORDER_ID = 'stage0.comstar-word-of-blake.comstar'
 export const WORD_OF_BLAKE_ORDER_ID = 'stage0.comstar-word-of-blake.word-of-blake'
 export type OrderAffiliationSelection = 'no' | 'comstar' | 'word-of-blake'
+export type SubAffiliationSelection = 'no' | string
 
 export type AffiliationLanguageSelectorGroupId =
   | 'affiliation-languages'

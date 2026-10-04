@@ -1176,6 +1176,7 @@ function validateChoiceGrantBalance(character: CharacterDefinition, issues: Vali
       let module: LifeModuleDefinition | undefined
       try { module = getLifeModule(moduleId) } catch { continue }
       for (const award of module.awards) {
+        if (state.stage0SubAffiliation === 'no' && (award.id.startsWith('commonality.') || award.id.startsWith('crucis.'))) continue
         if (lifeModuleAwardGrantCount(award) !== null && !seen.has(`${moduleId}/${award.id}`)) {
           issues.push(issue('life-modules.choice-requirement.missing', 'creation.lifeModules.choiceGrantRequirements', `${module.displayName}: ${award.id} is missing its required grant record.`))
         }

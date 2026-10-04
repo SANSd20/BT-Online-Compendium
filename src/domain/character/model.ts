@@ -361,6 +361,8 @@ export interface LifeModuleCreationState {
   selectedSkillFields: SkillFieldGrantRecord[]
   masterSkillFieldGoalId?: string
   stage0AffiliationContext?: string
+  /** Explicit UI selection. Absent preserves pre-Slice-80 saves, whose combined context includes its sub-affiliation. */
+  stage0SubAffiliation?: string
   affiliationLanguage?: string
   orderAffiliation?: 'comstar' | 'word-of-blake'
   orderNearestStateContext?: string

@@ -41,7 +41,7 @@ describe('merged Stage 0 wizard step', () => {
   })
 
   it('hides the Universal card for a normal draft and requires a real secondary language', () => {
-    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} affiliationLanguage="Mandarin Chinese" secondaryLanguage="" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation={CAPELLAN_COMMONALITY_ID} affiliationLanguage="Mandarin Chinese" secondaryLanguage="" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
     expect(markup).not.toContain('Universal Package')
     expect(markup).not.toContain('Mandatory baseline')
     expect(markup).toContain('Capellan Confederation / Capellan Commonality')
@@ -54,9 +54,18 @@ describe('merged Stage 0 wizard step', () => {
   })
 
   it('previews complete choices and enables Continue', () => {
-    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation={CAPELLAN_COMMONALITY_ID} affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
     expect(markup).toContain('Previewing selected Stage 0 choices')
     expect(markup).toContain('Continue to apply them and advance to Stage 1')
     expect(markup).toContain('<button class="button" type="button">Continue</button>')
+  })
+
+  it('uses No as the optional sub-affiliation default and preserves the approved hierarchy', () => {
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation="no" affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
+    expect(markup).toContain('stage0-birth-affiliation-region')
+    expect(markup).toContain('stage0-birth-affiliation-details')
+    expect(markup).toContain('stage0-order-region')
+    expect(markup).toContain('<option value="no" selected="">No</option>')
+    expect(markup).toContain('full affiliation cost with no sub-affiliation awards')
   })
 })

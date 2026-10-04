@@ -195,3 +195,7 @@ Corrected-printing pp. 83 and 94 independently define both combat Fields. Pilot/
 ## Alpha Slice 79 — ComStar / Word of Blake affiliation
 
 Corrected-printing p. 74 defines the 50-XP ComStar/Word of Blake affiliation module as an overlay requiring a normal birth affiliation. Unlike ordinary affiliation changes, it preserves the full XP cost and effects of that birth affiliation. The same entry governs the shared English primary language, nearest-state secondary language, shared awards, exact ComStar and Word of Blake branches, Technician/Any and Protocol destinations, and the prohibition on Extra Income and Property. The v4.0 errata contains no applicable affiliation-package correction; its ComStar/Word of Blake references concern equipment ratings only. The source does not define a geographic nearest-state algorithm, so Slice 79 records an explicit choice among modeled states rather than silently equating birth affiliation with nearest state.
+
+## Alpha Slice 80 — optional sub-affiliation correction
+
+Corrected-printing pp. 62–63 require a Stage 0 affiliation but explicitly label sub-affiliation optional. Omitting the sub-affiliation omits its listed XP/effects without reducing the affiliation module cost; the text notes this wastes potential character experience. The v4.0 errata has no correction to that rule. Its only sub-affiliation-related correction concerns Astrokaszy Streetwise/Periphery and is outside the currently modeled contexts.
