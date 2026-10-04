@@ -1,7 +1,7 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
-import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
+import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 
 export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
@@ -267,6 +267,11 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
+      referenceOnlyOffers: [
+        { displayName: 'Pilot/Aerospace (Civilian)', category: 'basic', chronologyYears: 1, reason: 'Source-ready Field not included in this bounded Pilot/Battle Armor promotion.' },
+        { displayName: 'Pilot/DropShip', category: 'basic', chronologyYears: 1, reason: 'Source-ready Field not included in this bounded Pilot/Battle Armor promotion.' },
+        { displayName: 'Pilot/JumpShip', category: 'advanced', chronologyYears: 2, reason: 'Requires Pilot/DropShip, which remains reference-only.' },
+      ],
     },
     awards: [
       fixed('technical-college.attribute.dex', 100, attribute('DEX')),
@@ -408,13 +413,13 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: CAVALRY_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: JOURNALIST_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: MECHWARRIOR_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: PILOT_BATTLE_ARMOR_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: POLITICIAN_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: TECHNICIAN_MECH_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
       ],
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
-      referenceOnlyOffers: [{ displayName: 'Pilot/Battle Armor', category: 'advanced', chronologyYears: 2, reason: 'The source waiver is audited, but the Field is not yet present in the mechanical Field catalog.' }],
     },
     awards: [
       fixed('solaris-internship.attribute.cha', 150, attribute('CHA')),
@@ -430,8 +435,8 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'solaris-internship.skill.streetwise', kind: 'affiliation-skill-choice', xp: 25, skillId: 'skill.streetwise', displayName: 'Streetwise/Any', description: 'Choose the applicable governed affiliation-context Streetwise subskill.' },
       { id: 'solaris-internship.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 100, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
     ],
-    notes: ['Civilian Stage 3 school. Base cost is 700 XP plus selected Skill Field costs.', 'Solaris Cavalry and MechWarrior waive only their Basic Training Field prerequisite for this acquisition.'],
-    deferredRules: ['Pilot/Battle Armor remains reference-only; its audited Solaris waiver cannot substitute for missing Field mechanics.'],
+    notes: ['Civilian Stage 3 school. Base cost is 700 XP plus selected Skill Field costs.', 'Solaris Cavalry and MechWarrior waive only their Basic Training Field prerequisite for this acquisition. Solaris-trained Pilot/Battle Armor waives only its Infantry Field prerequisite.'],
+    deferredRules: [],
   },
   {
     id: POLICE_ACADEMY_ID,
@@ -556,13 +561,16 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: DOCTOR_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: MILITARY_SCIENTIST_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
         { fieldId: SPECIAL_FORCES_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
+        { fieldId: PILOT_BATTLE_ARMOR_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
       ],
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
       referenceOnlyOffers: [
-        ...['Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)', 'Pilot/DropShip'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1, reason: 'Not included in this dependency-driven bounded promotion.' })),
-        ...['Infantry/Anti-Mech', 'Pilot/Battle Armor', 'Pilot/JumpShip', 'Pilot/WarShip'].map((displayName) => ({ displayName, category: 'special' as const, chronologyYears: 2, reason: 'Not included in this dependency-driven bounded promotion.' })),
+        ...['Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)', 'Pilot/DropShip'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1, reason: 'Source-ready Field not included in this bounded Pilot/Battle Armor promotion.' })),
+        { displayName: 'Infantry/Anti-Mech', category: 'special', chronologyYears: 2, reason: 'Source-ready Field not included in this bounded Pilot/Battle Armor promotion.' },
+        { displayName: 'Pilot/JumpShip', category: 'special', chronologyYears: 2, reason: 'Requires Pilot/DropShip, which remains reference-only.' },
+        { displayName: 'Pilot/WarShip', category: 'special', chronologyYears: 2, reason: 'Requires Pilot/DropShip, which remains reference-only.' },
       ],
     },
     awards: [
@@ -613,7 +621,7 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       minimumAdvanced: 1,
       maximumTotal: 3,
       referenceOnlyOffers: [
-        { displayName: 'Infantry/Anti-Mech', category: 'special', chronologyYears: 1, reason: 'Not included in this dependency-driven bounded promotion.' },
+        { displayName: 'Infantry/Anti-Mech', category: 'special', chronologyYears: 1, reason: 'Source-ready Field not included in this bounded Pilot/Battle Armor promotion.' },
       ],
     },
     awards: [
@@ -657,13 +665,14 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
         { fieldId: 'field.mechwarrior', category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
         { fieldId: SCOUT_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
         { fieldId: SHIPS_CREW_FIELD_ID, category: 'advanced', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1.5 },
+        { fieldId: PILOT_BATTLE_ARMOR_FIELD_ID, category: 'special', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 2 },
       ],
       exactlyBasic: 1,
       minimumAdvanced: 1,
       maximumTotal: 3,
       referenceOnlyOffers: [
-        ...['Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)', 'Pilot/DropShip'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1.5, reason: 'Source-ready Field not included in this bounded Family Training implementation.' })),
-        ...['Infantry/Anti-Mech', 'Pilot/Battle Armor'].map((displayName) => ({ displayName, category: 'special' as const, chronologyYears: 2, reason: 'Source-ready Field not included in this bounded Family Training implementation.' })),
+        ...['Pilot/Aerospace (Combat)', 'Pilot/Aircraft (Combat)', 'Pilot/DropShip'].map((displayName) => ({ displayName, category: 'advanced' as const, chronologyYears: 1.5, reason: 'Source-ready Field not included in this bounded Pilot/Battle Armor promotion.' })),
+        { displayName: 'Infantry/Anti-Mech', category: 'special', chronologyYears: 2, reason: 'Source-ready Field not included in this bounded Pilot/Battle Armor promotion.' },
         { displayName: 'Pilot/JumpShip', category: 'special', chronologyYears: 2, reason: 'Requires Pilot/DropShip, which remains reference-only.' },
       ],
     },

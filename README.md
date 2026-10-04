@@ -4,7 +4,7 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 74 is implemented.** Version `0.1.0-alpha.74`. The public product title is **AToW Online Character Creator**. Solaris Internship is now available as a Civilian Stage 3 school with distinct Solaris VII residence, Connections +2, its exact package and choices, 100 flexible XP, and acquisition-specific Basic Training waivers for Solaris Cavalry and MechWarrior. The mechanically acquirable catalog remains forty-one entries while the independent 56-entry reference catalog and 84-item equipment catalog remain unchanged.
+**Alpha Slice 75 is implemented.** Version `0.1.0-alpha.75`. The public product title is **AToW Online Character Creator**. Pilot/Battle Armor is now a canonical mechanical Field in Solaris Internship, Military Academy, and Family Training. Solaris applies only its source-authorized Infantry prerequisite waiver; other prerequisites and schools remain unchanged. The mechanically acquirable catalog contains forty-two entries while the independent 56-entry reference catalog and 84-item equipment catalog remain unchanged.
 
 All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit remains the evidence record; Slice 28 governs its conflicts without silently correcting Tanker, Elemental, or Scout values, adding `REF`, renaming stable IDs, or activating back-sheet combat fields. Point Buy, Life Modules, Final Touches, and the 84-item audited Core equipment catalog are unchanged.
 

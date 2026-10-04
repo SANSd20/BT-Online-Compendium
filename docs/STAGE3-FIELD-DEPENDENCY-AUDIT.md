@@ -1,59 +1,34 @@
 # Stage 3 Skill Field dependency audit
 
-Alpha Slice 68 audits every entry that was reference-only at the Alpha Slice 67 checkpoint against the Corrected Third Printing Master Skill Fields list (pp. 92–95), the implemented Stage 3 school offers (pp. 82–83), and the v4.0 errata. “Modeled bounded” means the UI presents only concrete values already governed by current character-creation data; it is not a claim that those values exhaust the setting.
+Alpha Slice 75 re-audits every Field that remains reference-only against the Corrected Third Printing Master Skill Fields (pp. 92–95), implemented Stage 3 school offers (pp. 82–83), and v4.0 errata. The independent reference catalog remains 56 entries. Pilot/Battle Armor is the only Slice 75 promotion, increasing the mechanical catalog from 41 to 42. Equipment remains 84 unique stable IDs.
 
-## Governance decisions
+“Ready” means the Field's current source prerequisites and Skill awards fit established mechanics; it does not authorize mass promotion. “Blocked” names the dependency still absent from the implemented character-creation scope. All variable destinations remain explicit and no-default.
 
-| Choice family | Classification | Mechanical policy |
-|---|---|---|
-| Technician, Security Systems, Driving, Tactics, Tracking, Thrown Weapons, MedTech, Surgery | Closed canonical | Present the complete published subskill set; never preselect. |
-| Language/Any | Modeled bounded subset | Present the ten concrete languages already sourced by current character creation; never preselect. |
-| Protocol/Any, Streetwise/Any | Affiliation-constrained modeled subset | Derive choices from supported affiliation contexts (currently Capellan and FedSuns); never bind `/Any` automatically. |
-| Protocol/Affiliation, Streetwise/Affiliation | Affiliation-bound | Resolve from the character’s committed affiliation. |
-| Piloting/Air Vehicle or VTOL; Career/Pilot or Ship’s Crew | Named source option set | Present only the choices named by the Field. |
-| Career/Any, Interest/Any, Science/Any, Survival/Any | Open / GM-defined | Accept a validated explicit subject with a fixed parent Skill; examples are not converted into a fabricated exhaustive list. |
+## Slice 75 Pilot/Battle Armor audit
 
-## Exhaustive prior reference-only audit (36)
+Pilot/Battle Armor requires the Infantry Field, STR 6+, and BOD 5+. It has six fixed Field Skills: Climbing, Gunnery/Battlesuit, Martial Arts, Piloting/Battlesuit, Sensor Operations, and Tactics/Land. At the Stage 3 rate it costs 144 XP and grants +30 XP to each Skill. It is offered by Solaris Internship as Advanced (two years), Military Academy as Special (two years), and Family Training as Special (two years); Military Enlistment does not offer it.
 
-| Field | Category | Implemented school offer(s) | Dependency assessment | Slice 68 result |
-|---|---|---|---|---|
-| Anthropologist | Civilian | University advanced | General Studies prerequisite remains unsupported | Reference-only: blocked |
-| Archaeologist | Civilian | University advanced | General Studies prerequisite remains unsupported | Reference-only: blocked |
-| Communications | Civilian | Technical basic; Police advanced | Protocol/Any is affiliation-constrained and modeled | Mechanical |
-| Doctor | Civilian | Military Academy special | Medical Assistant dependency is promoted; MedTech and Surgery are closed; Protocol/Affiliation is automatic | Mechanical |
-| Engineer | Civilian | Technical advanced | Technician prerequisite is implemented; Technician/Any is closed | Mechanical |
-| General Studies | Civilian | University basic | Career/Any and Interest/Any are governed; cross-Skill structural prerequisite remains unsupported | Reference-only: blocked |
-| HPG Technician | Civilian | University advanced | Communications is supported, but the ComStar/Word of Blake/Clan affiliation restriction cannot be met | Reference-only: blocked |
-| Journalist | Civilian | Trade School advanced | Fixed Skills and prerequisites are representable | Mechanical in Slice 72 |
-| Lawyer | Civilian | University special | General Studies prerequisite remains unsupported | Reference-only: blocked |
-| Manager | Civilian | University basic | Fixed and affiliation-bound Skills are representable | Mechanical in Slice 70 |
-| Medical Assistant | Civilian | Military Enlistment advanced | MedTech/Any is closed | Mechanical |
-| Merchant | Civilian | Trade School basic | Protocol/Any and Streetwise/Any reuse affiliation-constrained governance | Mechanical in Slice 72 |
-| Merchant Marine | Civilian | Technical advanced | Protocol/Any modeled; Technician/Any closed | Mechanical |
-| Pilot - Aerospace (Civilian) | Civilian | Technical basic | Fixed data is representable; excluded from this dependency-driven promotion | Reference-only: ready |
-| Pilot - Aircraft (Civilian) | Civilian | Technical basic | Source names Air Vehicle or VTOL as a finite choice | Mechanical |
-| Pilot - DropShip | Civilian | Technical basic; Military Academy advanced | Fixed data is representable; excluded from this dependency-driven promotion | Reference-only: ready |
-| Pilot - JumpShip | Civilian | Military Academy special | Requires Pilot - DropShip, which remains reference-only | Reference-only: blocked |
-| Planetary Surveyor | Civilian | University advanced | Scientist, Driving/Any, and Survival/Any are represented | Mechanical in Slice 70 |
-| Politician | Civilian | University advanced | Manager is promoted; fixed and affiliation-bound Skills are represented | Mechanical in Slice 70 |
-| Scientist | Civilian | Military Academy advanced | Interest/Any and Science/Any use validated open subjects | Mechanical in Slice 69 |
-| Analysis | Intelligence/Police | Police advanced; Intelligence advanced; Military Academy advanced | Two distinct modeled Language choices plus closed Tactics choice | Mechanical |
-| Covert Operations | Intelligence/Police | Police special; Intelligence advanced | Modeled Language, Protocol and Streetwise choices; Tracking closed | Mechanical |
-| Police Tactical Officer | Intelligence/Police | Police special; Intelligence special; Military Enlistment special | Police Officer prerequisite implemented; Thrown Weapons closed | Mechanical |
-| Infantry - Anti-Mech | Military | Military Academy/Enlistment special | Fixed data is representable; excluded from this dependency-driven promotion | Reference-only: ready |
-| Military Scientist | Military | Military Academy special | Analysis dependency promoted; Tactics/Any closed | Mechanical |
-| Pilot - Aerospace (Combat) | Military | Military Academy advanced | Fixed data is representable; excluded from this dependency-driven promotion | Reference-only: ready |
-| Pilot - Aircraft (Combat) | Military | Military Academy advanced | Fixed data is representable; excluded from this dependency-driven promotion | Reference-only: ready |
-| Pilot - Battle Armor | Military | Military Academy special | Fixed data is representable; excluded from this dependency-driven promotion | Reference-only: ready |
-| Pilot - WarShip | Military | Military Academy special | Requires Pilot - DropShip, which remains reference-only | Reference-only: blocked |
-| Special Forces | Military | Police/Intelligence/Military schools | Survival/Any uses a validated open environment; Tracking/Any is closed | Mechanical in Slice 69 |
-| Clan Aerospace Warrior | Clan | None | Clan affiliation and phenotype systems not implemented | Reference-only: blocked |
-| Clan Basic Training | Clan | None | Clan affiliation system not implemented | Reference-only: blocked |
-| Clan Cavalry | Clan | None | Clan affiliation plus source branching not implemented | Reference-only: blocked |
-| Clan Elemental | Clan | None | Clan affiliation and phenotype systems not implemented | Reference-only: blocked |
-| Clan MechWarrior | Clan | None | Clan affiliation and phenotype systems not implemented | Reference-only: blocked |
-| Clan ProtoMech Warrior | Clan | None | Clan affiliation, phenotype, and implant systems not implemented | Reference-only: blocked |
+The Solaris school note waives only the Infantry Field prerequisite for this acquisition. It neither grants Infantry nor changes the STR/BOD requirements. The waiver is durable, source-module-scoped provenance and is rejected on any other school or Field. The Companion's untrained battlesuit-operation rule governs tactical play by characters without Piloting/Battlesuit; it does not alter Field acquisition. The Companion errata's Advanced Battle Armor Combat Record Sheet correction likewise does not change this Field.
 
-The independent reference catalog remains 56 entries. Slice 68 promoted ten Fields, Slice 69 promoted Scientist and Special Forces, and Slice 70 promoted Manager, Planetary Surveyor, and Politician through University, bringing the mechanical catalog to 35. Slice 71 resolves the GM-arbitrated General Studies related-Skill prerequisite and promotes General Studies, Anthropologist, Archaeologist, and Lawyer, bringing the mechanical catalog to 39. No existing stable IDs, equipment data, affiliation defaults, persistence boundary, XP rule, or OCS behavior changed.
+## Exhaustive remaining reference-only audit (14)
 
-Slice 72 implements Trade School and promotes its dependency-ready Merchant and Journalist offers. Merchant requires CHA 3 and WIL 3 and carries Administration, Appraisal, Career/Merchant, Negotiation, Protocol/Any, and Streetwise/Any. Journalist requires INT 3, CHA 4, and WIL 4 and carries Acting, Art/Writing, Career/Journalist, Computers, Investigation, and Perception. Each has six Skills, costs 144 XP, and awards +30 XP per Skill. The mechanical catalog is now 41; the reference catalog remains 56 and equipment remains 84.
+| Field | Source school offer(s) | Classification | Current reason |
+|---|---|---|---|
+| HPG Technician | Trade School advanced; University advanced | Blocked by affiliation | Requires ComStar, Word of Blake, or Clan affiliation; no supported Stage 0 context can satisfy it. |
+| Pilot - Aerospace (Civilian) | Technical College basic | Ready | Fixed prerequisites and six fixed Skills are representable. |
+| Pilot - DropShip | Technical College basic; Military Academy advanced; Family Training advanced | Ready | Fixed prerequisites and six fixed Skills are representable. |
+| Pilot - JumpShip | Technical College advanced; Military Academy special; Family Training special | Blocked by prerequisite Field | Requires Pilot - DropShip, which remains reference-only. |
+| Infantry - Anti-Mech | Military Academy special; Military Enlistment special; Family Training special | Ready | Infantry, WIL, and fixed Skill dependencies are represented. |
+| Pilot - Aerospace (Combat) | Military Academy advanced; Family Training advanced | Ready | Basic Training alternative, Attributes, and fixed Skills are represented. |
+| Pilot - Aircraft (Combat) | Military Academy advanced; Family Training advanced | Ready | Basic Training alternative, Attributes, and fixed Skills are represented. |
+| Pilot - WarShip | Military Academy special | Blocked by prerequisite Field | Requires Pilot - DropShip, which remains reference-only. |
+| Clan Aerospace Warrior | No implemented school | Blocked by affiliation/phenotype | Clan affiliation and phenotype path are outside the implemented scope. |
+| Clan Basic Training | No implemented school | Blocked by affiliation | Clan affiliation and schooling are outside the implemented scope. |
+| Clan Cavalry | No implemented school | Blocked by affiliation/branching | Clan affiliation and source branch rules are outside the implemented scope. |
+| Clan Elemental | No implemented school | Blocked by affiliation/phenotype | Clan affiliation and Elemental phenotype are outside the implemented scope. |
+| Clan MechWarrior | No implemented school | Blocked by affiliation/phenotype | Clan affiliation and phenotype path are outside the implemented scope. |
+| Clan ProtoMech Warrior | No implemented school | Blocked by affiliation/phenotype/implants | Clan affiliation, phenotype, and implant systems are outside the implemented scope. |
+
+The strongest bounded next target is Pilot - DropShip. It is source-ready, uses fixed Skills, is offered by three already implemented schools, and unlocks the separately audited Pilot - JumpShip and Pilot - WarShip dependency chain. That recommendation is not implementation authority.
+
+Existing open-subject, closed-domain, affiliation-bound, named-option, family, preview/Continue, persistence, and prerequisite-governance decisions remain unchanged. Stable IDs are preserved; no equipment or affiliation data changed.

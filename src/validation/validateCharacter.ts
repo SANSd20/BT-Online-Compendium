@@ -1046,11 +1046,30 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
         issues.push(issue('life-modules.skill-field.affiliation-award.malformed', `creation.lifeModules.selectedSkillFields.${index}`, `${field.displayName} affiliation-bound Skill is missing or malformed.`))
       }
     }
+    const waiverRules: Record<string, string> = {
+      'field.cavalry': 'cavalry.field',
+      'field.mechwarrior': 'mechwarrior.field',
+      'field.pilot-battle-armor': 'pilot-battle-armor.field',
+    }
+    const prerequisiteWaivers = grant.prerequisiteWaivers ?? []
+    for (const waiver of prerequisiteWaivers) {
+      if (
+        grant.schoolModuleId !== 'stage3.solaris-internship' ||
+        waiver.sourceModuleId !== grant.schoolModuleId ||
+        waiver.prerequisiteId !== waiverRules[grant.fieldId] ||
+        !waiver.description
+      ) {
+        issues.push(issue('life-modules.skill-field.prerequisite-waiver.malformed', `creation.lifeModules.selectedSkillFields.${index}.prerequisiteWaivers`, `${field.displayName} has an unauthorized or malformed prerequisite waiver.`))
+      }
+    }
     for (const prerequisite of field.prerequisites) {
       const tracked = state.prerequisiteIssues.find((entry) => entry.moduleId === field.id && entry.prerequisiteId === prerequisite.id)
-      if (!tracked || tracked.description !== prerequisite.description) {
+      const waiver = prerequisiteWaivers.find((entry) => entry.prerequisiteId === prerequisite.id)
+      const expectedStatus = waiver ? 'waived' : (skillFieldPrerequisiteSatisfied(character, prerequisite) ? 'satisfied' : 'outstanding')
+      const descriptionMatches = waiver ? tracked?.description.startsWith(`${prerequisite.description} — waived only`) : tracked?.description === prerequisite.description
+      if (!tracked || !descriptionMatches) {
         issues.push(issue('life-modules.skill-field.prerequisite.missing', 'creation.lifeModules.prerequisiteIssues', `${field.displayName} prerequisite ${prerequisite.description} is not tracked durably.`))
-      } else if (tracked.status !== 'gm-override' && tracked.status !== (skillFieldPrerequisiteSatisfied(character, prerequisite) ? 'satisfied' : 'outstanding')) {
+      } else if (tracked.status !== 'gm-override' && tracked.status !== expectedStatus) {
         issues.push(issue('life-modules.skill-field.prerequisite.malformed', 'creation.lifeModules.prerequisiteIssues', `${field.displayName} prerequisite ${prerequisite.description} has an incorrect status.`))
       }
     }

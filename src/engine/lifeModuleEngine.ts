@@ -36,7 +36,7 @@ import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/ski
 import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
 import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
-import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
 
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
@@ -822,6 +822,7 @@ function solarisPrerequisiteWaivers(schoolModuleId: string, fieldId: string) {
   if (schoolModuleId !== SOLARIS_INTERNSHIP_ID) return []
   if (fieldId === CAVALRY_FIELD_ID) return [{ prerequisiteId: 'cavalry.field', sourceModuleId: schoolModuleId, description: 'Solaris Cavalry does not require Basic Training.' }]
   if (fieldId === MECHWARRIOR_FIELD_ID) return [{ prerequisiteId: 'mechwarrior.field', sourceModuleId: schoolModuleId, description: 'Solaris MechWarrior does not require Basic Training.' }]
+  if (fieldId === PILOT_BATTLE_ARMOR_FIELD_ID) return [{ prerequisiteId: 'pilot-battle-armor.field', sourceModuleId: schoolModuleId, description: 'Solaris-trained Pilot/Battle Armor does not require the Infantry Field.' }]
   return []
 }
 

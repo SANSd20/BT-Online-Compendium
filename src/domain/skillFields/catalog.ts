@@ -26,6 +26,7 @@ export const PILOT_INDUSTRIALMECH_FIELD_ID = 'field.pilot-industrialmech'
 export const TECHNICIAN_AEROSPACE_FIELD_ID = 'field.technician-aerospace'
 export const TECHNICIAN_MECH_FIELD_ID = 'field.technician-mech'
 export const INFANTRY_FIELD_ID = 'field.infantry'
+export const PILOT_BATTLE_ARMOR_FIELD_ID = 'field.pilot-battle-armor'
 export const MECHWARRIOR_FIELD_ID = 'field.mechwarrior'
 export const MARINE_FIELD_ID = 'field.marine'
 export const SHIPS_CREW_FIELD_ID = 'field.ships-crew'
@@ -346,6 +347,25 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
       skill('skill.communications', 'Comms/Conventional', 'Conventional'),
       skill('skill.support-weapons', 'Support Weapons'),
       skill('skill.tactics', 'Tactics/Infantry', 'Infantry'),
+    ],
+  },
+  {
+    id: PILOT_BATTLE_ARMOR_FIELD_ID,
+    displayName: 'Pilot/Battle Armor',
+    category: 'special',
+    source: { ...source('skill-field-pilot-battle-armor'), page: 94 },
+    prerequisites: [
+      { id: 'pilot-battle-armor.field', kind: 'skill-field', fieldIds: [INFANTRY_FIELD_ID], description: 'Infantry Field' },
+      { id: 'pilot-battle-armor.str', kind: 'attribute-minimum', attributeId: 'STR', minimum: 6, description: 'STR 6+' },
+      { id: 'pilot-battle-armor.bod', kind: 'attribute-minimum', attributeId: 'BOD', minimum: 5, description: 'BOD 5+' },
+    ],
+    componentSkills: [
+      skill('skill.climbing', 'Climbing'),
+      skill('skill.gunnery', 'Gunnery/Battlesuit', 'Battlesuit'),
+      skill('skill.martial-arts', 'Martial Arts'),
+      skill('skill.piloting', 'Piloting/Battlesuit', 'Battlesuit'),
+      skill('skill.sensor-operations', 'Sensor Operations'),
+      skill('skill.tactics', 'Tactics/Land', 'Land'),
     ],
   },
   {

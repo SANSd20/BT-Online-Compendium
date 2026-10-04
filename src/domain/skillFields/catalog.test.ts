@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, CAVALRY_TACTICS_SUBSKILLS, DETECTIVE_FIELD_ID, DRIVING_SUBSKILLS, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MERCHANT_FIELD_ID, NAVAL_CAREER_SUBSKILLS, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCOUT_FIELD_ID, SCOUT_STREETWISE_SUBSKILLS, SECURITY_SYSTEMS_SUBSKILLS, SHIPS_CREW_FIELD_ID, SKILL_FIELD_CATALOG, skillFieldCost, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID, TRACKING_SUBSKILLS, validateSkillFieldCatalog, VEHICLE_GUNNERY_SUBSKILLS } from './catalog'
+import { ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, CAVALRY_TACTICS_SUBSKILLS, DETECTIVE_FIELD_ID, DRIVING_SUBSKILLS, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MERCHANT_FIELD_ID, NAVAL_CAREER_SUBSKILLS, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCOUT_FIELD_ID, SCOUT_STREETWISE_SUBSKILLS, SECURITY_SYSTEMS_SUBSKILLS, SHIPS_CREW_FIELD_ID, SKILL_FIELD_CATALOG, skillFieldCost, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID, TRACKING_SUBSKILLS, validateSkillFieldCatalog, VEHICLE_GUNNERY_SUBSKILLS } from './catalog'
 import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
 
 describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
-  it('contains the forty-one source-audited Fields with calculated reduced costs', () => {
+  it('contains the forty-two source-audited Fields with calculated reduced costs', () => {
     expect(SKILL_FIELD_CATALOG.map((entry) => entry.id)).toEqual([
       BASIC_TRAINING_FIELD_ID,
       BASIC_TRAINING_NAVAL_FIELD_ID,
@@ -19,6 +19,7 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       TECHNICIAN_AEROSPACE_FIELD_ID,
       TECHNICIAN_MECH_FIELD_ID,
       INFANTRY_FIELD_ID,
+      PILOT_BATTLE_ARMOR_FIELD_ID,
       CAVALRY_FIELD_ID,
       MECHWARRIOR_FIELD_ID,
       SCOUT_FIELD_ID,
@@ -61,6 +62,7 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       [TECHNICIAN_AEROSPACE_FIELD_ID]: 120,
       [TECHNICIAN_MECH_FIELD_ID]: 120,
       [INFANTRY_FIELD_ID]: 144,
+      [PILOT_BATTLE_ARMOR_FIELD_ID]: 144,
       [CAVALRY_FIELD_ID]: 144,
       [MECHWARRIOR_FIELD_ID]: 120,
       [SCOUT_FIELD_ID]: 168,
@@ -120,6 +122,24 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       prerequisites: [expect.objectContaining({ kind: 'skill-field', fieldIds: [BASIC_TRAINING_FIELD_ID] })],
     })
     expect(skillFieldCost(SKILL_FIELD_CATALOG.find((entry) => entry.id === INFANTRY_FIELD_ID)!, 24)).toBe(144)
+    expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === PILOT_BATTLE_ARMOR_FIELD_ID)).toMatchObject({
+      displayName: 'Pilot/Battle Armor',
+      category: 'special',
+      prerequisites: [
+        expect.objectContaining({ kind: 'skill-field', fieldIds: [INFANTRY_FIELD_ID] }),
+        expect.objectContaining({ kind: 'attribute-minimum', attributeId: 'STR', minimum: 6 }),
+        expect.objectContaining({ kind: 'attribute-minimum', attributeId: 'BOD', minimum: 5 }),
+      ],
+      componentSkills: [
+        expect.objectContaining({ displayName: 'Climbing' }),
+        expect.objectContaining({ displayName: 'Gunnery/Battlesuit' }),
+        expect.objectContaining({ displayName: 'Martial Arts' }),
+        expect.objectContaining({ displayName: 'Piloting/Battlesuit' }),
+        expect.objectContaining({ displayName: 'Sensor Operations' }),
+        expect.objectContaining({ displayName: 'Tactics/Land' }),
+      ],
+    })
+    expect(skillFieldCost(SKILL_FIELD_CATALOG.find((entry) => entry.id === PILOT_BATTLE_ARMOR_FIELD_ID)!, 24)).toBe(144)
     expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === CAVALRY_FIELD_ID)).toMatchObject({
       category: 'advanced',
       prerequisites: [
