@@ -449,6 +449,11 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .life-action label { display: grid; gap: 7px; color: var(--muted); font-size: .82rem; }
 .life-action select { min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); color: #fff; background: #091017; }
 .stage-options { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.catalog-selector { display: grid; gap: 8px; max-width: 44rem; color: var(--muted); font-weight: 750; }
+.catalog-selector select { min-height: 46px; padding: 9px 38px 9px 12px; border: 1px solid var(--line); color: #fff; background: #091017; }
+.catalog-selector span { color: var(--muted); font-size: .8rem; font-weight: 400; }
+.selected-module-detail { margin-top: 16px; padding: 18px; border: 1px solid var(--line); background: var(--panel); }
+.selected-module-detail > h3 { margin-bottom: 6px; }
 .stage-options article { display: flex; flex-direction: column; align-items: start; padding: 22px; border: 1px solid var(--line); background: #0d151d; }
 .stage-options article p { flex: 1; }
 .module-history { list-style: none; padding: 0; display: grid; gap: 8px; }

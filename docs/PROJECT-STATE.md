@@ -425,3 +425,7 @@ Alpha Slice 88 refines the shared control status model: required-but-unresolved 
 ## Alpha Slice 90 checkpoint
 
 Optional Additional Experience Points are now available in Life Module final review after Optimization. Governed negative Traits may be added or enhanced at fully attained legal negative TP levels, subject to an aggregate 10% cap of the original design allotment. Transactions are reversible, provenance-backed, persistence-safe, and feed the ordinary finalization Pool. Unsupported Trait metadata remains blocked. Required-unresolved controls use the refined generic `#9B5555` 1px border; invalid and theme-aware focus semantics remain separate. Reference Fields remain 56, Mechanical Fields 50, and equipment remains 84 unique stable IDs.
+
+## Alpha Slice 91 checkpoint
+
+Life Module catalog selection is now dropdown-first for Stage 1 Early Childhood, Stage 2 Late Childhood, Stage 3 Higher Education schools, and Stage 4 Real Life. The selected item alone opens its detail and choice area; existing preview/Continue transaction boundaries, chronology, prerequisites, flexible XP, Field selection, OCS, and repeat behavior remain engine-backed. A reusable availability policy distinguishes available, ineligible, and unsupported entries, keeps unsupported entries visible in Public Alpha, and supports future production hiding without changing catalog identity or rules. Required selectors retain the generic `#9B5555` treatment and theme-aware focus.

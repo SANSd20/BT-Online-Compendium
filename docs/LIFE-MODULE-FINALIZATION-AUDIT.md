@@ -60,3 +60,7 @@ The optional Additional Experience Points rule is implemented after Optimization
 The current governed catalog safely exposes only negative Traits with modeled ranges and complete parameters; unsupported negative Traits, incomplete prerequisite/conflict metadata, and GM approval workflows remain blocked/deferred. Attributes and Skills cannot be reduced to create Additional XP. Illiterate remains subject to its existing special opposed-Trait handling and maximum. Additional XP is spent through the ordinary final-improvement Pool and cannot be purchased while Optimization opportunities remain.
 
 Slice 90 also refines required-unresolved controls to a generic 1px `#9B5555` border. Invalid `#FF6B6B`, disabled, resolved active-theme borders, and theme-aware focus remain separate.
+
+## Alpha Slice 91 checkpoint
+
+Life Module catalogs use a reusable dropdown-first presentation policy for one-of-many selection. Available entries are selectable; supported but ineligible entries remain visible and disabled with engine-derived reasons; source items not mechanically supported are represented by the separate unsupported state and remain visible during Public Alpha. The policy can hide unsupported entries in a future production mode without changing canonical IDs or catalogs. Stage 3 school selection adopts the same selector while preserving the specialized Field, staged dependency, school-family, and OCS workflows in the selected detail panel. Presentation state is not persisted separately; committed module/school history remains the save authority.

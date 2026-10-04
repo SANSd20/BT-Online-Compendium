@@ -22,6 +22,7 @@ import { genericPendingAwardsForPhase, lifeModuleStagePresentation, nonControlPe
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesThemeIdentity, previewStage0Affiliation } from '../components/stage0PreviewModel'
 import { defaultStage3FieldIds, previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
+import { catalogAvailability, catalogAvailabilityLabel } from '../components/catalogAvailability'
 import { emptyStageChoiceSlot, filterSiblingDestinationOptions, modeledOpenSubjectStageChoiceSlot, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoicePresentationPending, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
 interface LifeModulesScreenProps {
@@ -312,7 +313,6 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
       </label>}
       {school.skillFieldSelection!.referenceOnlyOffers && <details><summary>Source-offered reference-only Fields</summary><ul>{school.skillFieldSelection!.referenceOnlyOffers!.map((offer) => <li key={`${offer.category}/${offer.displayName}`}><strong>{offer.displayName}</strong> ({offer.category}, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'}): {offer.reason}</li>)}</ul></details>}
       {!schoolEligibility.eligible && <p className="notice" id={availabilityId}>{schoolEligibility.reason}</p>}
-      <button className="button" type="button" aria-pressed={isSelected} aria-describedby={!schoolEligibility.eligible ? availabilityId : undefined} disabled={!schoolEligibility.eligible} onClick={() => selectStageModule(schoolId)}>Preview {school.displayName} path</button>
     </article>
   }
 
@@ -588,50 +588,46 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               />
             )}
             {state.phase === 'stage-1-selection' && (
-              <><div className="stage-options">
-                <article className={stageModulePreviewId === BLUE_COLLAR_ID ? 'preview-selected' : ''}><h3>Blue Collar</h3><p>210 XP · fixed Attribute awards plus unresolved Career, Interest, and flexible awards.</p>{goalGuidance(BLUE_COLLAR_ID)}<button className="button" type="button" aria-pressed={stageModulePreviewId === BLUE_COLLAR_ID} onClick={() => selectStageModule(BLUE_COLLAR_ID)}>Preview Blue Collar</button></article>
-                <article className={stageModulePreviewId === BACK_WOODS_ID ? 'preview-selected' : ''}><h3>Back Woods</h3><p>290 XP · fixed Attribute, Trait, and Skill awards; STR 4+ and BOD 5+ are checked for final validation.</p>{goalGuidance(BACK_WOODS_ID)}<button className="button" type="button" aria-pressed={stageModulePreviewId === BACK_WOODS_ID} onClick={() => selectStageModule(BACK_WOODS_ID)}>Preview Back Woods</button></article>
-              </div>{stageModulePreviewId && renderStageChoiceSlots('Early Childhood', 'Stage 1 module and choices committed.')}</>
-            )}
+              <><label className="catalog-selector" htmlFor="stage1-module">Early Childhood module
+                <select id="stage1-module" value={stageModulePreviewId.startsWith('stage1.') ? stageModulePreviewId : ''} onChange={(event) => event.target.value && selectStageModule(event.target.value as SupportedStageModuleId)}>
+                  <option value="">Choose an Early Childhood module…</option>
+                  {[BLUE_COLLAR_ID, BACK_WOODS_ID].map((moduleId) => <option key={moduleId} value={moduleId}>{getLifeModule(moduleId).displayName} · Available</option>)}
+                </select>
+              </label>{stageModulePreviewId.startsWith('stage1.') && <section className="selected-module-detail"><h3>{getLifeModule(stageModulePreviewId).displayName}</h3><p>{getLifeModule(stageModulePreviewId).costXp} XP · selected module preview. Pending choices and source details appear below.</p>{goalGuidance(stageModulePreviewId)}{renderStageChoiceSlots('Early Childhood', 'Stage 1 module and choices committed.')}</section>}</>)}
             {state.phase === 'stage-1-resolution' && <p className="notice">Stage 1 is selected. Resolve every source-bound choice and flexible grant below before reaching an Alpha partial stop.</p>}
             {state.phase === 'stage-1-prerequisite-review' && <p className="notice">All awards are resolved, but one or more module prerequisites remain outstanding for eventual final validation.</p>}
             {state.phase === 'alpha-partial-stop' && <div className="life-action"><p className="notice">Stage 0 and Stage 1 are complete. This is a valid Alpha partial stop—not a finalized Beta 1 character.</p><button className="button" type="button" onClick={() => operate(() => continueToStage2(character), 'Stage 2 continuation opened.')}>Continue to Stage 2</button></div>}
             {state.phase === 'stage-2-selection' && (
-              <><div className="stage-options">
-                <article className={stageModulePreviewId === STAGE_2_BACK_WOODS_ID ? 'preview-selected' : ''}><h3>Back Woods</h3><p>500 XP · fixed awards, Protocol/Affiliation, and a 125 XP flexible pool.</p>{goalGuidance(STAGE_2_BACK_WOODS_ID)}<button className="button" type="button" aria-pressed={stageModulePreviewId === STAGE_2_BACK_WOODS_ID} onClick={() => selectStageModule(STAGE_2_BACK_WOODS_ID)}>Preview Back Woods</button></article>
-                <article className={stageModulePreviewId === STAGE_2_HIGH_SCHOOL_ID ? 'preview-selected' : ''}><h3>High School</h3><p>400 XP · requires a non-Clan affiliation and no active Illiterate Trait; includes Interest, affiliation, and 185 flexible XP awards.</p>{goalGuidance(STAGE_2_HIGH_SCHOOL_ID)}<button className="button" type="button" aria-pressed={stageModulePreviewId === STAGE_2_HIGH_SCHOOL_ID} onClick={() => selectStageModule(STAGE_2_HIGH_SCHOOL_ID)}>Preview High School</button></article>
-              </div>{stageModulePreviewId && renderStageChoiceSlots('Late Childhood', 'Stage 2 module and choices committed.')}</>
-            )}
+              <><label className="catalog-selector" htmlFor="stage2-module">Late Childhood module
+                <select id="stage2-module" value={stageModulePreviewId.startsWith('stage2.') ? stageModulePreviewId : ''} onChange={(event) => event.target.value && selectStageModule(event.target.value as SupportedStageModuleId)}>
+                  <option value="">Choose a Late Childhood module…</option>
+                  {[STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID].map((moduleId) => <option key={moduleId} value={moduleId}>{getLifeModule(moduleId).displayName} · Available</option>)}
+                </select>
+              </label>{stageModulePreviewId.startsWith('stage2.') && <section className="selected-module-detail"><h3>{getLifeModule(stageModulePreviewId).displayName}</h3><p>{getLifeModule(stageModulePreviewId).costXp} XP · selected module preview. Flexible XP limits remain enforced by the existing slot engine.</p>{goalGuidance(stageModulePreviewId)}{renderStageChoiceSlots('Late Childhood', 'Stage 2 module and choices committed.')}</section>}</>)}
             {state.phase === 'stage-2-resolution' && <p className="notice">Stage 2 is selected. Resolve all Stage 2 source-bound choices and flexible XP below.</p>}
             {state.phase === 'stage-2-prerequisite-review' && <p className="notice">All Stage 2 awards are resolved, but one or more prerequisites remain outstanding for eventual final validation.</p>}
             {state.phase === 'alpha-stage-2-stop' && <div className="life-action"><p className="notice">Stage 0 through Stage 2 are complete. This is a valid Alpha partial stop—not a finalized Beta 1 character.</p><button className="button" type="button" onClick={() => operate(() => continueToStage3(character), 'Stage 3 continuation opened.')}>Continue to Stage 3</button></div>}
             {state.phase === 'stage-3-selection' && (
-              <><div className="stage-options">
-                {STAGE_3_SCHOOL_IDS.map(renderStage3School)}
-              </div>{STAGE_3_SCHOOL_IDS.includes(stageModulePreviewId as Stage3SchoolId) && renderStageChoiceSlots('Higher Education', 'Stage 3 school, Fields, and choices committed.')}</>
+              <><label className="catalog-selector" htmlFor="stage3-school">Higher Education school
+                <select id="stage3-school" value={STAGE_3_SCHOOL_IDS.includes(stageModulePreviewId as Stage3SchoolId) ? stageModulePreviewId : ''} onChange={(event) => event.target.value && selectStageModule(event.target.value as SupportedStageModuleId)}>
+                  <option value="">Choose a Higher Education school…</option>
+                  {STAGE_3_SCHOOL_IDS.map((schoolId) => { const eligibility = stage3SchoolEligibility(completedStage3ModuleIds, schoolId, { completedFieldCategories: completedStage3FieldCategories }); return <option key={schoolId} value={schoolId} disabled={!eligibility.eligible}>{getLifeModule(schoolId).displayName} · {eligibility.eligible ? 'Available' : `Unavailable · ${eligibility.reason}`}</option> })}
+                </select>
+                <span>School selection is dropdown-first; the selected school’s specialized Basic/Advanced/Special Field workflow remains below.</span>
+              </label>{STAGE_3_SCHOOL_IDS.includes(stageModulePreviewId as Stage3SchoolId) && <section className="selected-module-detail">{renderStage3School(stageModulePreviewId as Stage3SchoolId)}{renderStageChoiceSlots('Higher Education', 'Stage 3 school, Fields, and choices committed.')}</section>}</>
             )}
             {state.phase === 'stage-3-resolution' && <p className="notice">A Stage 3 school is selected. Resolve all source-bound choices and flexible XP below.</p>}
             {state.phase === 'stage-3-prerequisite-review' && <p className="notice">All Stage 3 awards are resolved, but one or more Skill Field prerequisites remain outstanding for eventual final validation.</p>}
             {state.phase === 'alpha-stage-3-stop' && <div className="life-action"><p className="notice">The selected Stage 3 schooling is complete. You may continue to Stage 4 or choose another implemented school from an unused general family.</p>{additionalStage3Available && <button className="button secondary" type="button" onClick={() => operate(() => continueStage3Schooling(character), 'Additional Stage 3 schooling opened.')}>Choose another Stage 3 school</button>}<button className="button" type="button" onClick={() => operate(() => continueToStage4(character), 'Stage 4 continuation opened.')}>Continue to Stage 4</button></div>}
             {state.phase === 'stage-4-selection' && (
-              <><div className="stage-options">
-                <article>
-                  <h3>Agitator</h3>
-                  <p>900 XP · Real Life module · +4 years.</p>
-                  <p>Includes fixed Attribute, Trait, and Skill awards; three concrete subskill choices; and 125 flexible XP with a 50-XP cap per Attribute.</p>
-                  <p><strong>Expected age: {(currentAge(character) ?? 16) + 4}</strong></p>
-                  <button className="button" type="button" aria-pressed={stageModulePreviewId === AGITATOR_ID} onClick={() => selectStageModule(AGITATOR_ID)}>Preview Agitator</button>
-                </article>
-                <article className={stageModulePreviewId === COMSTAR_WOB_SERVICE_ID ? 'preview-selected' : ''}>
-                  <h3>ComStar/Word of Blake Service</h3>
-                  <p>900 XP · Real Life module · +5 years · available to committed ComStar or Word of Blake characters.</p>
-                  <p>Includes the affiliation branch package, governed shared choices, four distinct +40 XP Skill awards, and 50 flexible XP.</p>
-                  {!state.orderAffiliation && <p className="field-status unavailable">Unavailable: requires a committed ComStar or Word of Blake affiliation.</p>}
-                  <p><strong>Expected age: {(currentAge(character) ?? 16) + 5}</strong></p>
-                  <button className="button" type="button" disabled={!state.orderAffiliation} aria-pressed={stageModulePreviewId === COMSTAR_WOB_SERVICE_ID} onClick={() => selectStageModule(COMSTAR_WOB_SERVICE_ID)}>Preview ComStar/WoB Service</button>
-                </article>
-              </div>{(stageModulePreviewId === AGITATOR_ID || stageModulePreviewId === COMSTAR_WOB_SERVICE_ID) && renderStageChoiceSlots('Real Life', 'Stage 4 module and choices committed.')}</>
-            )}
+              <><label className="catalog-selector" htmlFor="stage4-module">Real Life module
+                <select id="stage4-module" value={stageModulePreviewId.startsWith('stage4.') ? stageModulePreviewId : ''} onChange={(event) => event.target.value && selectStageModule(event.target.value as SupportedStageModuleId)}>
+                  <option value="">Choose a Real Life module…</option>
+                  <option value={AGITATOR_ID}>{getLifeModule(AGITATOR_ID).displayName} · Available</option>
+                  <option value={COMSTAR_WOB_SERVICE_ID} disabled={!state.orderAffiliation}>{getLifeModule(COMSTAR_WOB_SERVICE_ID).displayName} · {state.orderAffiliation ? 'Available' : catalogAvailabilityLabel(catalogAvailability('ineligible', 'Requires ComStar or Word of Blake'))}</option>
+                </select>
+                <span>Unavailable options remain visible during Public Alpha with their current eligibility reason.</span>
+              </label>{(stageModulePreviewId === AGITATOR_ID || stageModulePreviewId === COMSTAR_WOB_SERVICE_ID) && <section className="selected-module-detail"><h3>{getLifeModule(stageModulePreviewId).displayName}</h3><p>{getLifeModule(stageModulePreviewId).costXp} XP · selected module preview · chronology and repetition remain governed by the existing engine.</p>{renderStageChoiceSlots('Real Life', 'Stage 4 module and choices committed.')}</section>}</>)}
             {state.phase === 'stage-4-resolution' && <p className="notice">Stage 4 is selected. Resolve every source-bound choice and flexible XP allocation below.</p>}
             {state.phase === 'stage-4-prerequisite-review' && <div className="life-action"><p className="notice">All Stage 4 awards are resolved, but one or more prerequisites remain outstanding. Enter final review to allocate XP and re-evaluate them.</p><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened with outstanding prerequisites.')}>Enter final review</button></div>}
             {state.phase === 'alpha-stage-4-stop' && <div className="life-action"><p className="notice">Stage 4 is complete at age {currentAge(character) ?? 'unknown'}. You may take another source-legal Stage 4 module or enter final review.</p><button className="button secondary" type="button" onClick={() => operate(() => continueStage4Modules(character), 'Another Stage 4 selection opened.')}>Choose another Stage 4 module</button><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened.')}>Enter final review</button></div>}
