@@ -10,6 +10,7 @@
   --muted: #9aabb9;
   --amber: #f5b942;
   --amber-dark: #1f1809;
+  --control-error: #ff6b6b;
 }
 
 * { box-sizing: border-box; }
@@ -156,6 +157,9 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .button:disabled { opacity: .45; cursor: not-allowed; }
 .button, select, input, summary, a { touch-action: manipulation; }
 :where(button, a, input, select, textarea, summary):focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+:where(input, select, textarea)[data-control-status="error"] { border-color: var(--control-error) !important; box-shadow: 0 0 0 1px var(--control-error); }
+:where(input, select, textarea)[data-control-status="error"]:focus-visible { border-color: var(--control-error) !important; outline: 3px solid var(--amber); outline-offset: 3px; box-shadow: 0 0 0 1px var(--control-error); }
+:where(input, select, textarea)[data-control-status="disabled"] { box-shadow: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .life-modules-page { width: min(1760px, 96vw); max-width: none; padding-top: 28px; }
 /* Government/faction themes use PROVISIONAL UI_ADAPTATION roles. Slice 86 synchronizes ComStar/WoB from SANSd20/battletech-faction-colors palettes/government-ui.yaml at 8fb1dde0e10c2f455fef7d822b6bd6e2ae43d760. Exact hex values are not official BattleTech digital specifications. */

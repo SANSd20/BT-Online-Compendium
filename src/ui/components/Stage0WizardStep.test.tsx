@@ -31,6 +31,28 @@ const orderChoices = {
 }
 
 describe('merged Stage 0 wizard step', () => {
+  it('marks only the most specific enabled unresolved Stage 0 control invalid', () => {
+    const initial = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext="" affiliationLanguage="" secondaryLanguage="" {...davionChoices} {...orderChoices} {...handlers} />)
+    expect(initial).toContain('id="stage0-affiliation" data-control-status="error" aria-invalid="true"')
+    expect(initial).toContain('id="stage0-affiliation-language" data-control-status="disabled"')
+    expect(initial).not.toContain('id="stage0-affiliation-language" data-control-status="disabled" aria-invalid')
+    expect(initial).toContain('id="stage0-affiliation-context" data-control-status="disabled"')
+
+    const selected = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation="no" affiliationLanguage="" secondaryLanguage="" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
+    expect(selected).toContain('id="stage0-affiliation" data-control-status="valid"')
+    expect(selected).toContain('id="stage0-affiliation-language" data-control-status="error" aria-invalid="true"')
+    expect(selected).toContain('id="stage0-affiliation-context" data-control-status="valid"')
+  })
+
+  it('keeps the Order selector valid while marking its specific unresolved children', () => {
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation="no" affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...davionChoices} {...orderChoices} orderAffiliation="comstar" birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
+    expect(markup).toContain('id="stage0-order-affiliation" data-control-status="valid"')
+    expect(markup).toContain('id="stage0-order-nearest-state" data-control-status="error" aria-invalid="true"')
+    expect(markup).toContain('id="stage0-order-language" data-control-status="disabled"')
+    expect(markup).not.toContain('id="stage0-order-language" data-control-status="disabled" aria-invalid')
+    expect(markup).toContain('id="stage0-order-technician" data-control-status="error" aria-invalid="true"')
+  })
+
   it('shows both packages while Universal is active without a silent default', () => {
     const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-universal" affiliationContext="" affiliationLanguage="" secondaryLanguage="" {...davionChoices} {...orderChoices} {...handlers} />)
     expect(markup).toContain('Universal Package')

@@ -1,5 +1,6 @@
 import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getBirthAffiliationOptions, getBirthSubAffiliationOptions, getLifeModuleLanguageSelectorOptions, getNearestStateOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { TECHNICIAN_SUBSKILLS } from '../../domain/skillFields/catalog'
+import { controlStatus, controlStatusProps } from './controlStatus'
 import { Stage0UniversalStep } from './Stage0UniversalStep'
 
 interface Stage0WizardStepProps {
@@ -47,6 +48,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
   const nearestState = getNearestStateOptions().find((entry) => entry.id === props.orderNearestStateContext)
   const nearestLanguages = nearestState ? getLifeModuleLanguageSelectorOptions(nearestState.affiliationLanguageSelector) : []
   const orderReady = !orderSelected || Boolean(nearestState && nearestLanguages.includes(props.orderSecondaryLanguage) && TECHNICIAN_SUBSKILLS.includes(props.orderTechnicianSubskill as (typeof TECHNICIAN_SUBSKILLS)[number]))
+  const requirementDescriptionId = 'stage0-requirements-summary'
   const affiliationReady = Boolean(
     context &&
     props.affiliationLanguage &&
@@ -94,20 +96,20 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
             <div className="stage0-affiliation-order-grid">
               <div className="stage0-birth-affiliation-region">
               <label htmlFor="stage0-affiliation">Affiliation
-                <select id="stage0-affiliation" value={effectiveBirthAffiliationId} onChange={(event) => props.onBirthAffiliationChange?.(event.target.value)}>
+                <select id="stage0-affiliation" {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(context) }), requirementDescriptionId)} value={effectiveBirthAffiliationId} onChange={(event) => props.onBirthAffiliationChange?.(event.target.value)}>
                   <option value="">Choose an affiliation…</option>
                   {birthAffiliations.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
                 </select>
               </label>
               <div className="stage0-birth-affiliation-details">
               <label htmlFor="stage0-affiliation-language">Affiliation language
-                <select id="stage0-affiliation-language" value={props.affiliationLanguage} disabled={!context} onChange={(event) => props.onLanguageChange(event.target.value)}>
+                <select id="stage0-affiliation-language" {...controlStatusProps(controlStatus({ required: true, resolved: affiliationLanguages.includes(props.affiliationLanguage), disabled: !context }), requirementDescriptionId)} value={props.affiliationLanguage} disabled={!context} onChange={(event) => props.onLanguageChange(event.target.value)}>
                   <option value="">{context ? 'Choose a language…' : 'Choose a context first…'}</option>
                   {affiliationLanguages.map((language) => <option key={language}>{language}</option>)}
                 </select>
               </label>
               <label htmlFor="stage0-affiliation-context">Affiliation Sub
-                <select id="stage0-affiliation-context" value={effectiveSubAffiliation} disabled={!effectiveBirthAffiliationId} onChange={(event) => props.onSubAffiliationChange?.(event.target.value)} title={subSelected ? context?.displayName : 'No sub-affiliation'}>
+                <select id="stage0-affiliation-context" {...controlStatusProps(controlStatus({ resolved: Boolean(effectiveBirthAffiliationId), disabled: !effectiveBirthAffiliationId }))} value={effectiveSubAffiliation} disabled={!effectiveBirthAffiliationId} onChange={(event) => props.onSubAffiliationChange?.(event.target.value)} title={subSelected ? context?.displayName : 'No sub-affiliation'}>
                   <option value="no">No</option>
                   {birthSubs.map((entry) => <option key={entry.id} value={entry.id}>{entry.subAffiliationName}</option>)}
                 </select>
@@ -116,7 +118,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
               </div>
               <div className="stage0-order-region">
                 <label htmlFor="stage0-order-affiliation">ComStar / Word of Blake?
-                  <select id="stage0-order-affiliation" value={effectiveOrderAffiliation} onChange={(event) => props.onOrderAffiliationChange?.(event.target.value as OrderAffiliationSelection)}>
+                  <select id="stage0-order-affiliation" {...controlStatusProps(controlStatus({ resolved: true }))} value={effectiveOrderAffiliation} onChange={(event) => props.onOrderAffiliationChange?.(event.target.value as OrderAffiliationSelection)}>
                     <option value="no">No</option><option value="comstar">ComStar</option><option value="word-of-blake">Word of Blake</option>
                   </select>
                 </label>
@@ -124,13 +126,13 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
               <div><h4>{effectiveOrderAffiliation === 'comstar' ? 'ComStar' : 'Word of Blake'} affiliation layer</h4><p>50 XP in addition to the full birth-affiliation package. Nearest state is an explicit bounded choice because geographic resolution remains deferred.</p></div>
               <div className="stage0-choice-grid">
                 <label htmlFor="stage0-order-nearest-state">Nearest modeled state
-                  <select id="stage0-order-nearest-state" value={props.orderNearestStateContext} onChange={(event) => props.onOrderNearestStateChange(event.target.value)}><option value="">Choose a state…</option>{getNearestStateOptions().map((entry) => <option key={entry.id} value={entry.id}>{entry.affiliationName}</option>)}</select>
+                  <select id="stage0-order-nearest-state" {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(nearestState) }), requirementDescriptionId)} value={props.orderNearestStateContext} onChange={(event) => props.onOrderNearestStateChange(event.target.value)}><option value="">Choose a state…</option>{getNearestStateOptions().map((entry) => <option key={entry.id} value={entry.id}>{entry.affiliationName}</option>)}</select>
                 </label>
                 <label htmlFor="stage0-order-language">Nearest-state language
-                  <select id="stage0-order-language" value={props.orderSecondaryLanguage} disabled={!nearestState} onChange={(event) => props.onOrderSecondaryLanguageChange(event.target.value)}><option value="">{nearestState ? 'Choose a language…' : 'Choose a state first…'}</option>{nearestLanguages.map((language) => <option key={language}>{language}</option>)}</select>
+                  <select id="stage0-order-language" {...controlStatusProps(controlStatus({ required: true, resolved: nearestLanguages.includes(props.orderSecondaryLanguage), disabled: !nearestState }), requirementDescriptionId)} value={props.orderSecondaryLanguage} disabled={!nearestState} onChange={(event) => props.onOrderSecondaryLanguageChange(event.target.value)}><option value="">{nearestState ? 'Choose a language…' : 'Choose a state first…'}</option>{nearestLanguages.map((language) => <option key={language}>{language}</option>)}</select>
                 </label>
                 <label htmlFor="stage0-order-technician">Technician subskill
-                  <select id="stage0-order-technician" value={props.orderTechnicianSubskill} onChange={(event) => props.onOrderTechnicianSubskillChange(event.target.value)}><option value="">Choose a Technician subskill…</option>{TECHNICIAN_SUBSKILLS.map((skill) => <option key={skill}>{skill}</option>)}</select>
+                  <select id="stage0-order-technician" {...controlStatusProps(controlStatus({ required: true, resolved: TECHNICIAN_SUBSKILLS.includes(props.orderTechnicianSubskill as (typeof TECHNICIAN_SUBSKILLS)[number]) }), requirementDescriptionId)} value={props.orderTechnicianSubskill} onChange={(event) => props.onOrderTechnicianSubskillChange(event.target.value)}><option value="">Choose a Technician subskill…</option>{TECHNICIAN_SUBSKILLS.map((skill) => <option key={skill}>{skill}</option>)}</select>
                 </label>
               </div>
               <small>Characters with this affiliation may not possess Extra Income or Property.</small>
@@ -140,7 +142,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
             {capellanSelected && <div className="stage0-secondary-action">
               <div><h4>{subSelected ? 'Capellan Confederation / Capellan Commonality' : 'Capellan Confederation'}</h4><p>150 XP · full affiliation cost{subSelected ? ' with the selected sub-affiliation package' : ' with no sub-affiliation awards'}.</p></div>
               <label htmlFor="stage0-secondary-language">Capellan secondary-language award
-                <select id="stage0-secondary-language" value={props.secondaryLanguage} onChange={(event) => props.onSecondaryLanguageChange(event.target.value)}>
+                <select id="stage0-secondary-language" {...controlStatusProps(controlStatus({ required: true, resolved: secondaryLanguages.includes(props.secondaryLanguage) }), requirementDescriptionId)} value={props.secondaryLanguage} onChange={(event) => props.onSecondaryLanguageChange(event.target.value)}>
                   <option value="" disabled>Choose a secondary language…</option>
                   {secondaryLanguages.map((language) => <option key={language}>{language}</option>)}
                 </select>
@@ -151,18 +153,18 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
               <div><h4>{subSelected ? 'Federated Suns / Crucis March' : 'Federated Suns'}</h4><p>150 XP · full affiliation cost{subSelected ? ' with the Crucis March package' : ' with no sub-affiliation awards'}.</p></div>
               <div className="stage0-choice-grid">
                 <label htmlFor="stage0-davion-aptitude">Natural Aptitude award
-                  <select id="stage0-davion-aptitude" value={props.davionNaturalAptitude} onChange={(event) => props.onDavionNaturalAptitudeChange(event.target.value)}>
+                  <select id="stage0-davion-aptitude" {...controlStatusProps(controlStatus({ required: true, resolved: ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) }), requirementDescriptionId)} value={props.davionNaturalAptitude} onChange={(event) => props.onDavionNaturalAptitudeChange(event.target.value)}>
                     <option value="">Choose an aptitude…</option><option>Protocol</option><option>Strategy</option>
                   </select>
                 </label>
                 {subSelected && <label htmlFor="stage0-davion-art">Crucis March Art award
-                  <select id="stage0-davion-art" value={props.davionArt} onChange={(event) => props.onDavionArtChange(event.target.value)}>
+                  <select id="stage0-davion-art" {...controlStatusProps(controlStatus({ required: true, resolved: props.davionArt === 'Painting' }), requirementDescriptionId)} value={props.davionArt} onChange={(event) => props.onDavionArtChange(event.target.value)}>
                     <option value="">Choose a supported Art subskill…</option><option>Painting</option>
                   </select>
                 </label>}
               </div>
             </div>}
-            <div className={affiliationReady ? 'stage0-requirements ready' : 'stage0-requirements'} role="status">
+            <div id={requirementDescriptionId} className={affiliationReady ? 'stage0-requirements ready' : 'stage0-requirements'} role="status">
               {affiliationReady
                 ? <p>Previewing selected Stage 0 choices. Continue to apply them and advance to Stage 1.</p>
                 : <><strong>Required before continuing:</strong><ul>{missingChoices.map((choice) => <li key={choice}>{choice}</li>)}</ul></>}

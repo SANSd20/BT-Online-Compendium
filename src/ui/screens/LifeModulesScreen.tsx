@@ -16,6 +16,7 @@ import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, mar
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 import { LifeModuleAuditDrawer, LifeModuleDashboard, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from '../components/LifeModulesWizard'
+import { controlStatus, controlStatusProps } from '../components/controlStatus'
 import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesThemeIdentity, previewStage0Affiliation } from '../components/stage0PreviewModel'
@@ -346,16 +347,16 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               </div>
               <div className="stage-choice-slot-controls">
               {presentationPending.kind === 'flexible-xp' && presentationPending.allowedTargetTypes.length > 1 && <label htmlFor={`${slotId}-type`}>Target type
-                <select id={`${slotId}-type`} aria-describedby={`${slotId}-label ${slotId}-help`} value={value.targetType} onChange={(event) => updateStageChoiceSlot(pending, index, { targetType: event.target.value as StageChoiceSlotValue['targetType'], targetId: '', parameter: '', displayName: '' })}>
+                <select id={`${slotId}-type`} {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(value.targetType) }), `${slotId}-label ${slotId}-help`)} value={value.targetType} onChange={(event) => updateStageChoiceSlot(pending, index, { targetType: event.target.value as StageChoiceSlotValue['targetType'], targetId: '', parameter: '', displayName: '' })}>
                   <option value="">Choose a target type…</option>
                   {presentationPending.allowedTargetTypes.map((type) => <option key={type} value={type}>{type}</option>)}
                 </select>
               </label>}
               {pending.allocationMode === 'pool' && <label htmlFor={`${slotId}-xp`}>XP
-                <input id={`${slotId}-xp`} type="number" min="1" max={pending.remainingXp} step="1" aria-describedby={`${slotId}-label ${slotId}-help`} value={value.xpAmount} onChange={(event) => updateStageChoiceSlot(pending, index, { xpAmount: Number(event.target.value) })} />
+                <input id={`${slotId}-xp`} type="number" min="1" max={pending.remainingXp} step="1" {...controlStatusProps(controlStatus({ required: true, resolved: value.xpAmount >= 1 && value.xpAmount <= (pending.remainingXp ?? 0), invalid: value.xpAmount < 1 || value.xpAmount > (pending.remainingXp ?? 0) }), `${slotId}-label ${slotId}-help`)} value={value.xpAmount} onChange={(event) => updateStageChoiceSlot(pending, index, { xpAmount: Number(event.target.value) })} />
               </label>}
               {openSubject && <label htmlFor={`${slotId}-subject-choice`}>{openSubject.parentLabel}
-                <select id={`${slotId}-subject-choice`} aria-describedby={`${slotId}-label ${slotId}-help`} value={optionValue(value)} onChange={(event) => {
+                <select id={`${slotId}-subject-choice`} {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(optionValue(value)) }), `${slotId}-label ${slotId}-help`)} value={optionValue(value)} onChange={(event) => {
                   const option = openSubjectOptions.find((candidate) => candidate.value === event.target.value)
                   if (option?.inputMode === 'open-subject') updateStageChoiceSlot(pending, index, { ...emptyStageChoiceSlot(presentationPending), choiceOptionValue: option.value, subjectInput: '' })
                   else if (option) updateStageChoiceSlot(pending, index, { ...optionDraft(option, value.xpAmount), choiceOptionValue: undefined, subjectInput: undefined })
@@ -366,20 +367,20 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 </select>
               </label>}
               {openSubjectOtherSelected && <label htmlFor={`${slotId}-subject`}>Custom {openSubject!.parentLabel} subject
-                <input id={`${slotId}-subject`} type="text" value={value.subjectInput ?? ''} maxLength={60} aria-describedby={`${slotId}-label ${slotId}-help ${slotId}-subject-help`} onChange={(event) => {
+                <input id={`${slotId}-subject`} type="text" value={value.subjectInput ?? ''} maxLength={60} {...controlStatusProps(controlStatus({ required: true, resolved: !openSubjectResult?.error, invalid: Boolean(openSubjectResult?.error) }), `${slotId}-label ${slotId}-help ${slotId}-subject-help${openSubjectResult?.error ? ` ${slotId}-subject-error` : ''}`)} onChange={(event) => {
                   const result = openSubjectStageChoiceSlot(pending, event.target.value)
                   updateStageChoiceSlot(pending, index, { ...result.value, choiceOptionValue: `${openSubject!.skillId}/__open__` })
                 }} />
                 <span id={`${slotId}-subject-help`}>{openSubject!.description} Examples are illustrative, not a closed list.</span>
               </label>}
-              {openSubjectResult?.error && <p className="notice" role="alert">{openSubjectResult.error}</p>}
+              {openSubjectResult?.error && <p id={`${slotId}-subject-error`} className="notice" role="alert">{openSubjectResult.error}</p>}
               {modeledOpenOption && <label htmlFor={`${slotId}-modeled-subject`}>{modeledOpenOption.displayName.replace('/Other…', '')} subject
-                <input id={`${slotId}-modeled-subject`} type="text" value={value.subjectInput ?? ''} maxLength={60} aria-describedby={`${slotId}-label ${slotId}-help ${slotId}-modeled-subject-help`} onChange={(event) => updateStageChoiceSlot(pending, index, modeledOpenSubjectStageChoiceSlot(pending, modeledOpenOption.targetId, modeledOpenOption.value, event.target.value).value)} />
+                <input id={`${slotId}-modeled-subject`} type="text" value={value.subjectInput ?? ''} maxLength={60} {...controlStatusProps(controlStatus({ required: true, resolved: !modeledOpenResult?.error, invalid: Boolean(modeledOpenResult?.error) }), `${slotId}-label ${slotId}-help ${slotId}-modeled-subject-help${modeledOpenResult?.error ? ` ${slotId}-modeled-subject-error` : ''}`)} onChange={(event) => updateStageChoiceSlot(pending, index, modeledOpenSubjectStageChoiceSlot(pending, modeledOpenOption.targetId, modeledOpenOption.value, event.target.value).value)} />
                 <span id={`${slotId}-modeled-subject-help`}>{modeledOpenOption.description} Examples are illustrative, not a closed list.</span>
               </label>}
-              {modeledOpenResult?.error && <p className="notice" role="alert">{modeledOpenResult.error}</p>}
+              {modeledOpenResult?.error && <p id={`${slotId}-modeled-subject-error`} className="notice" role="alert">{modeledOpenResult.error}</p>}
               {!openSubject && options.length > 0 && <label htmlFor={`${slotId}-destination`}>{pending.kind === 'related-skill-prerequisite' ? 'Related existing Skill' : pending.skillFieldChoice ? 'Field Skill subskill' : pending.kind === 'language-choice' ? 'Language' : value.targetType === 'trait' ? 'Trait' : value.targetType === 'attribute' ? 'Attribute' : 'Skill'}
-                <select id={`${slotId}-destination`} aria-describedby={`${slotId}-label ${slotId}-help`} value={optionValue(value)} onChange={(event) => {
+                <select id={`${slotId}-destination`} {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(optionValue(value)) }), `${slotId}-label ${slotId}-help`)} value={optionValue(value)} onChange={(event) => {
                   const option = options.find((candidate) => candidate.value === event.target.value)
                   if (option?.inputMode === 'open-subject') updateStageChoiceSlot(pending, index, { ...emptyStageChoiceSlot(presentationPending), choiceOptionValue: option.value, subjectInput: '' })
                   else if (option) updateStageChoiceSlot(pending, index, { ...optionDraft(option, value.xpAmount), choiceOptionValue: undefined, subjectInput: undefined })
@@ -416,13 +417,13 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           <div><strong>{entry.description}</strong><p>{entry.allocationMode === 'pool' ? `${entry.remainingXp} XP remaining` : `${entry.remainingGrants} grant${entry.remainingGrants === 1 ? '' : 's'} remaining · ${signed(entry.xpPerGrant)} XP each`}</p>{entry.kind === 'flexible-xp' && <span className="award-type-badge">Flexible XP</span>}</div>
           {entry.kind === 'flexible-xp' && (
             <><label>Target type
-              <select value={draft.targetType} onChange={(event) => updateResolutionDraft(entry, { targetType: event.target.value as ResolutionDraft['targetType'], targetId: '', parameter: '', displayName: '' })}>
+              <select {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(draft.targetType) }))} value={draft.targetType} onChange={(event) => updateResolutionDraft(entry, { targetType: event.target.value as ResolutionDraft['targetType'], targetId: '', parameter: '', displayName: '' })}>
                 {entry.allowedTargetTypes.map((type) => <option key={type}>{type}</option>)}
               </select>
-            </label>{entry.allocationMode === 'pool' && <label>XP to allocate<input type="number" min="1" max={entry.remainingXp} step="1" value={draft.xpAmount} onChange={(event) => updateResolutionDraft(entry, { xpAmount: Number(event.target.value) })} /></label>}</>
+            </label>{entry.allocationMode === 'pool' && <label>XP to allocate<input type="number" min="1" max={entry.remainingXp} step="1" {...controlStatusProps(controlStatus({ required: true, resolved: draft.xpAmount >= 1 && draft.xpAmount <= (entry.remainingXp ?? 0), invalid: draft.xpAmount < 1 || draft.xpAmount > (entry.remainingXp ?? 0) }))} value={draft.xpAmount} onChange={(event) => updateResolutionDraft(entry, { xpAmount: Number(event.target.value) })} /></label>}</>
           )}
           {openSubject && <label>{openSubject.parentLabel}
-            <select value={selectedOption} onChange={(event) => {
+            <select {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(selectedOption) }))} value={selectedOption} onChange={(event) => {
               const option = openSubjectOptions.find((candidate) => candidate.value === event.target.value)
               if (option?.inputMode === 'open-subject') updateResolutionDraft(entry, { targetType: 'skill', targetId: '', parameter: '', displayName: '', choiceOptionValue: option.value, subjectInput: '' })
               else if (option) updateResolutionDraft(entry, { ...optionDraft(option, draft.xpAmount), choiceOptionValue: undefined, subjectInput: undefined })
@@ -433,7 +434,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             </select>
           </label>}
           {openSubjectOtherSelected && <label>Custom {openSubject!.parentLabel} subject
-            <input type="text" value={draft.subjectInput ?? ''} maxLength={60} onChange={(event) => {
+            <input type="text" {...controlStatusProps(controlStatus({ required: true, resolved: !openSubjectResult?.error, invalid: Boolean(openSubjectResult?.error) }))} value={draft.subjectInput ?? ''} maxLength={60} onChange={(event) => {
               const result = openSubjectStageChoiceSlot(entry, event.target.value)
               updateResolutionDraft(entry, { ...result.value, targetType: 'skill', choiceOptionValue: `${openSubject!.skillId}/__open__` })
             }} />
@@ -441,7 +442,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           </label>}
           {openSubjectResult?.error && <p className="notice" role="alert">{openSubjectResult.error}</p>}
           {!openSubject && options.length > 0 && <label>{entry.kind === 'language-choice' ? 'Language' : draft.targetType === 'trait' ? 'Trait' : draft.targetType === 'attribute' ? 'Attribute' : 'Skill'}
-            <select value={selectedOption} onChange={(event) => {
+            <select {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(selectedOption), invalid: Boolean(unsupported) }))} value={selectedOption} onChange={(event) => {
               const option = options.find((candidate) => candidate.value === event.target.value)
               if (option) updateResolutionDraft(entry, optionDraft(option, draft.xpAmount))
               else updateResolutionDraft(entry, { targetId: '', parameter: '', displayName: '' })
@@ -754,7 +755,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                   {character.skills.map((entry, index) => <option key={`skill:${index}`} value={`skill:${index}`}>Skill · {entry.displayName}</option>)}
                 </select>
               </label>
-              <label>XP<input type="number" min="1" max={state.finalReview.allocationPool.remaining} step="1" value={finalAllocationXp} onChange={(event) => setFinalAllocationXp(Number(event.target.value))} /></label>
+              <label>XP<input type="number" min="1" max={state.finalReview.allocationPool.remaining} step="1" {...controlStatusProps(controlStatus({ required: state.finalReview.allocationPool.remaining > 0, resolved: finalAllocationXp >= 1 && finalAllocationXp <= state.finalReview.allocationPool.remaining, invalid: state.finalReview.allocationPool.remaining > 0 && (finalAllocationXp < 1 || finalAllocationXp > state.finalReview.allocationPool.remaining), disabled: state.finalReview.allocationPool.remaining === 0 }))} disabled={state.finalReview.allocationPool.remaining === 0} value={finalAllocationXp} onChange={(event) => setFinalAllocationXp(Number(event.target.value))} /></label>
               <button className="button" type="button" disabled={state.finalReview.allocationPool.remaining === 0} onClick={allocateFinalXp}>Allocate XP</button>
             </div>
             {goalStatus && <section className="goal-review" aria-labelledby="goal-review-heading">

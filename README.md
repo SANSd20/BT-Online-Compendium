@@ -4,7 +4,7 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 86 is implemented.** Version `0.1.0-alpha.86`. The public product title is **AToW Online Character Creator**. ComStar and Word of Blake Order affiliations now take global theme priority using the shared BattleTech Faction Colors government UI palettes, while the birth affiliation remains visible as a subordinate identity. The mechanically acquirable catalog remains fifty entries while the independent 56-entry reference catalog and 84-item equipment catalog remain unchanged.
+**Alpha Slice 87 is implemented.** Version `0.1.0-alpha.87`. The public product title is **AToW Online Character Creator**. Enabled required unresolved or invalid controls now use one generic accessible attention treatment across Stage 0, Life Module choices, governed and open subjects, Flexible XP, Fields, Stage 4, and modeled final allocation; active theme borders return as soon as choices resolve. The mechanically acquirable catalog remains fifty entries while the independent 56-entry reference catalog and 84-item equipment catalog remain unchanged.
 
 All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit remains the evidence record; Slice 28 governs its conflicts without silently correcting Tanker, Elemental, or Scout values, adding `REF`, renaming stable IDs, or activating back-sheet combat fields. Point Buy, Life Modules, Final Touches, and the 84-item audited Core equipment catalog are unchanged.
 
