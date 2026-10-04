@@ -1,4 +1,4 @@
-export type ControlStatus = 'valid' | 'error' | 'disabled' | 'optional'
+export type ControlStatus = 'valid' | 'required-unresolved' | 'invalid' | 'disabled' | 'optional-empty'
 
 export function controlStatus({
   required = false,
@@ -12,15 +12,17 @@ export function controlStatus({
   disabled?: boolean
 }): ControlStatus {
   if (disabled) return 'disabled'
-  if (invalid || (required && !resolved)) return 'error'
-  if (!required && !resolved) return 'optional'
+  if (invalid) return 'invalid'
+  if (required && !resolved) return 'required-unresolved'
+  if (!required && !resolved) return 'optional-empty'
   return 'valid'
 }
 
 export function controlStatusProps(status: ControlStatus, describedBy?: string) {
   return {
     'data-control-status': status,
-    'aria-invalid': status === 'error' ? true : undefined,
+    'aria-invalid': status === 'invalid' ? true : undefined,
+    'aria-required': status === 'required-unresolved' ? true : undefined,
     'aria-describedby': describedBy || undefined,
   } as const
 }

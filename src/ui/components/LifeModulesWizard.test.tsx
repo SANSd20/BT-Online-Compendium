@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { BACK_WOODS_ID, CAPELLAN_COMMONALITY_ID } from '../../domain/lifeModules/catalog'
 import { applyCapellanCommonality, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { LifeModuleAuditDrawer, LifeModuleCharacterSummary, LifeModuleDashboard, LifeModuleProgress, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from './LifeModulesWizard'
-import { genericPendingAwardsForPhase, LIFE_MODULE_WIZARD_STEPS, lifeModuleStagePresentation, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
+import { genericPendingAwardsForPhase, LIFE_MODULE_WIZARD_STEPS, lifeModuleStagePresentation, lifeModuleWizardStepIndex, nonControlPendingAwards } from './lifeModulesWizardModel'
 import { previewStage0Affiliation } from './stage0PreviewModel'
 import { previewSupportedStageModule } from './stageModulePreviewModel'
 
@@ -17,7 +17,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · Slice 87 · v0.1.0-alpha.87')
+    expect(markup).toContain('Public Alpha · Slice 88 · v0.1.0-alpha.88')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -46,6 +46,13 @@ describe('Life Modules wizard presentation', () => {
     expect(genericPendingAwardsForPhase('stage-1-resolution', pending)).toEqual(pending)
     const unsupported = { ...pending[0], id: 'unsupported', awardId: 'stage0.unsupported' }
     expect(genericPendingAwardsForPhase('stage-0-affiliation', [...pending, unsupported])).toEqual([unsupported])
+  })
+
+  it('deduplicates only control-mappable blockers and preserves mixed non-control blockers', () => {
+    const pending = createLifeModuleCharacter('Mixed blockers').creation.lifeModules!.pendingAwards
+    const controlMapped = pending[0]
+    const nonMappable = { ...controlMapped, id: 'character-wide-blocker', awardId: 'character-wide-blocker', description: 'Missing prerequisite Field' }
+    expect(nonControlPendingAwards([controlMapped, nonMappable], new Set([controlMapped.id]))).toEqual([nonMappable])
   })
 
   it('gives Stages 1–4 and Review a clear current action', () => {

@@ -55,17 +55,6 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
     affiliationLanguages.includes(props.affiliationLanguage) &&
     (capellanSelected ? secondaryLanguages.includes(props.secondaryLanguage) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && (!subSelected || props.davionArt === 'Painting')) && orderReady,
   )
-  const missingChoices = [
-    ...(!context ? ['Choose an affiliation context.'] : []),
-    ...(!props.affiliationLanguage || !affiliationLanguages.includes(props.affiliationLanguage) ? ['Choose an affiliation language.'] : []),
-    ...(capellanSelected && !secondaryLanguages.includes(props.secondaryLanguage) ? ['Choose a Capellan secondary language.'] : []),
-    ...(davionSelected && !['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) ? ['Choose a Federated Suns Natural Aptitude.'] : []),
-    ...(davionSelected && subSelected && props.davionArt !== 'Painting' ? ['Choose a supported Crucis March Art subskill.'] : []),
-    ...(orderSelected && !nearestState ? ['Choose the nearest modeled state.'] : []),
-    ...(orderSelected && !nearestLanguages.includes(props.orderSecondaryLanguage) ? ['Choose a nearest-state language.'] : []),
-    ...(orderSelected && !TECHNICIAN_SUBSKILLS.includes(props.orderTechnicianSubskill as (typeof TECHNICIAN_SUBSKILLS)[number]) ? ['Choose a Technician subskill.'] : []),
-  ]
-
   return <div className="stage0-package-stack">
     {!universalComplete && <section className="stage0-package-section current" aria-labelledby="stage0-universal-heading">
       <header className="stage0-package-heading">
@@ -164,11 +153,8 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
                 </label>}
               </div>
             </div>}
-            <div id={requirementDescriptionId} className={affiliationReady ? 'stage0-requirements ready' : 'stage0-requirements'} role="status">
-              {affiliationReady
-                ? <p>Previewing selected Stage 0 choices. Continue to apply them and advance to Stage 1.</p>
-                : <><strong>Required before continuing:</strong><ul>{missingChoices.map((choice) => <li key={choice}>{choice}</li>)}</ul></>}
-            </div>
+            <p id={requirementDescriptionId} className="sr-only">Complete each marked required control before continuing. Disabled controls become available after their prerequisite selection.</p>
+            {affiliationReady && <div className="stage0-requirements ready" role="status"><p>Previewing selected Stage 0 choices. Continue to apply them and advance to Stage 1.</p></div>}
           </div>
         : <p className="stage0-package-pending">Complete the legacy compatibility step above to unlock the affiliation package.</p>}
     </section>

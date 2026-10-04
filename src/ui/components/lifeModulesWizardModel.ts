@@ -38,6 +38,10 @@ export function genericPendingAwardsForPhase(phase: string, pendingAwards: Pendi
   ))
 }
 
+export function nonControlPendingAwards(pendingAwards: PendingLifeModuleAward[], controlMappedIds: ReadonlySet<string>): PendingLifeModuleAward[] {
+  return pendingAwards.filter((entry) => !controlMappedIds.has(entry.id))
+}
+
 export function lifeModuleStagePresentation(phase: string): LifeModuleStagePresentation {
   if (phase.startsWith('stage-0')) return { stage: 'Stage 0 · Affiliation', title: 'Choose affiliation details', instruction: 'Complete every required affiliation and language choice, then apply and continue.' }
   if (phase.includes('stage-1') || phase === 'alpha-partial-stop') return { stage: 'Stage 1 · Early Childhood', title: phase === 'stage-1-selection' ? 'Choose one early childhood module' : 'Complete early childhood', instruction: phase === 'stage-1-selection' ? 'Compare the supported modules and select one path.' : 'Resolve this stage’s choices and review any final-validation warnings.' }

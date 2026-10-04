@@ -31,26 +31,27 @@ const orderChoices = {
 }
 
 describe('merged Stage 0 wizard step', () => {
-  it('marks only the most specific enabled unresolved Stage 0 control invalid', () => {
+  it('marks only the most specific enabled unresolved Stage 0 control required', () => {
     const initial = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext="" affiliationLanguage="" secondaryLanguage="" {...davionChoices} {...orderChoices} {...handlers} />)
-    expect(initial).toContain('id="stage0-affiliation" data-control-status="error" aria-invalid="true"')
+    expect(initial).toContain('id="stage0-affiliation" data-control-status="required-unresolved" aria-required="true"')
     expect(initial).toContain('id="stage0-affiliation-language" data-control-status="disabled"')
     expect(initial).not.toContain('id="stage0-affiliation-language" data-control-status="disabled" aria-invalid')
     expect(initial).toContain('id="stage0-affiliation-context" data-control-status="disabled"')
+    expect(initial).not.toContain('Required before continuing:')
 
     const selected = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation="no" affiliationLanguage="" secondaryLanguage="" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
     expect(selected).toContain('id="stage0-affiliation" data-control-status="valid"')
-    expect(selected).toContain('id="stage0-affiliation-language" data-control-status="error" aria-invalid="true"')
+    expect(selected).toContain('id="stage0-affiliation-language" data-control-status="required-unresolved" aria-required="true"')
     expect(selected).toContain('id="stage0-affiliation-context" data-control-status="valid"')
   })
 
   it('keeps the Order selector valid while marking its specific unresolved children', () => {
     const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation="no" affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...davionChoices} {...orderChoices} orderAffiliation="comstar" birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
     expect(markup).toContain('id="stage0-order-affiliation" data-control-status="valid"')
-    expect(markup).toContain('id="stage0-order-nearest-state" data-control-status="error" aria-invalid="true"')
+    expect(markup).toContain('id="stage0-order-nearest-state" data-control-status="required-unresolved" aria-required="true"')
     expect(markup).toContain('id="stage0-order-language" data-control-status="disabled"')
     expect(markup).not.toContain('id="stage0-order-language" data-control-status="disabled" aria-invalid')
-    expect(markup).toContain('id="stage0-order-technician" data-control-status="error" aria-invalid="true"')
+    expect(markup).toContain('id="stage0-order-technician" data-control-status="required-unresolved" aria-required="true"')
   })
 
   it('shows both packages while Universal is active without a silent default', () => {
@@ -70,8 +71,8 @@ describe('merged Stage 0 wizard step', () => {
     expect(markup).not.toContain('Leave pending')
     expect(markup).toContain('Choose a secondary language…')
     expect(markup).toContain('award remains unresolved until you choose a listed language')
-    expect(markup).toContain('Required before continuing:')
-    expect(markup).toContain('Choose a Capellan secondary language.')
+    expect(markup).not.toContain('Required before continuing:')
+    expect(markup).not.toContain('Choose a Capellan secondary language.')
     expect(markup).toContain('<button class="button" type="button" disabled="">Continue</button>')
   })
 

@@ -17,7 +17,7 @@ import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
 import { LifeModuleAuditDrawer, LifeModuleDashboard, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from '../components/LifeModulesWizard'
 import { controlStatus, controlStatusProps } from '../components/controlStatus'
-import { genericPendingAwardsForPhase, lifeModuleStagePresentation } from '../components/lifeModulesWizardModel'
+import { genericPendingAwardsForPhase, lifeModuleStagePresentation, nonControlPendingAwards } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesThemeIdentity, previewStage0Affiliation } from '../components/stage0PreviewModel'
 import { defaultStage3FieldIds, previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
@@ -166,6 +166,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     : stageModulePreviewId ? [`Selected module: ${stageModulePreview?.character.lifeModuleHistory.at(-1)?.displayName ?? stageModulePreviewId}`] : []
   const previewState = activePreview?.creation.lifeModules
   const visiblePendingAwards = stageModulePreview ? stageSlotPendingAwards(stageModulePreview) : genericPendingAwards
+  const controlMappedPendingIds = new Set(character ? visiblePendingAwards.filter((pending) => pendingAwardSupportsSlot(pending, stageModulePreview?.character ?? character)).map((pending) => pending.id) : [])
+  const sectionPendingAwards = nonControlPendingAwards(visiblePendingAwards, controlMappedPendingIds)
   const validation = character ? validateCharacter(character) : null
   const optimizationPreview = character && state?.finalReview ? previewLifeModuleOptimization(character) : []
   const goalStatus = character ? masterSkillFieldGoalStatus(character) : null
@@ -367,7 +369,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 </select>
               </label>}
               {openSubjectOtherSelected && <label htmlFor={`${slotId}-subject`}>Custom {openSubject!.parentLabel} subject
-                <input id={`${slotId}-subject`} type="text" value={value.subjectInput ?? ''} maxLength={60} {...controlStatusProps(controlStatus({ required: true, resolved: !openSubjectResult?.error, invalid: Boolean(openSubjectResult?.error) }), `${slotId}-label ${slotId}-help ${slotId}-subject-help${openSubjectResult?.error ? ` ${slotId}-subject-error` : ''}`)} onChange={(event) => {
+                <input id={`${slotId}-subject`} type="text" value={value.subjectInput ?? ''} maxLength={60} {...controlStatusProps(controlStatus({ required: true, resolved: !openSubjectResult?.error, invalid: Boolean((value.subjectInput ?? '').trim() && openSubjectResult?.error) }), `${slotId}-label ${slotId}-help ${slotId}-subject-help${openSubjectResult?.error ? ` ${slotId}-subject-error` : ''}`)} onChange={(event) => {
                   const result = openSubjectStageChoiceSlot(pending, event.target.value)
                   updateStageChoiceSlot(pending, index, { ...result.value, choiceOptionValue: `${openSubject!.skillId}/__open__` })
                 }} />
@@ -375,7 +377,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               </label>}
               {openSubjectResult?.error && <p id={`${slotId}-subject-error`} className="notice" role="alert">{openSubjectResult.error}</p>}
               {modeledOpenOption && <label htmlFor={`${slotId}-modeled-subject`}>{modeledOpenOption.displayName.replace('/Other…', '')} subject
-                <input id={`${slotId}-modeled-subject`} type="text" value={value.subjectInput ?? ''} maxLength={60} {...controlStatusProps(controlStatus({ required: true, resolved: !modeledOpenResult?.error, invalid: Boolean(modeledOpenResult?.error) }), `${slotId}-label ${slotId}-help ${slotId}-modeled-subject-help${modeledOpenResult?.error ? ` ${slotId}-modeled-subject-error` : ''}`)} onChange={(event) => updateStageChoiceSlot(pending, index, modeledOpenSubjectStageChoiceSlot(pending, modeledOpenOption.targetId, modeledOpenOption.value, event.target.value).value)} />
+                <input id={`${slotId}-modeled-subject`} type="text" value={value.subjectInput ?? ''} maxLength={60} {...controlStatusProps(controlStatus({ required: true, resolved: !modeledOpenResult?.error, invalid: Boolean((value.subjectInput ?? '').trim() && modeledOpenResult?.error) }), `${slotId}-label ${slotId}-help ${slotId}-modeled-subject-help${modeledOpenResult?.error ? ` ${slotId}-modeled-subject-error` : ''}`)} onChange={(event) => updateStageChoiceSlot(pending, index, modeledOpenSubjectStageChoiceSlot(pending, modeledOpenOption.targetId, modeledOpenOption.value, event.target.value).value)} />
                 <span id={`${slotId}-modeled-subject-help`}>{modeledOpenOption.description} Examples are illustrative, not a closed list.</span>
               </label>}
               {modeledOpenResult?.error && <p id={`${slotId}-modeled-subject-error`} className="notice" role="alert">{modeledOpenResult.error}</p>}
@@ -434,7 +436,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             </select>
           </label>}
           {openSubjectOtherSelected && <label>Custom {openSubject!.parentLabel} subject
-            <input type="text" {...controlStatusProps(controlStatus({ required: true, resolved: !openSubjectResult?.error, invalid: Boolean(openSubjectResult?.error) }))} value={draft.subjectInput ?? ''} maxLength={60} onChange={(event) => {
+            <input type="text" {...controlStatusProps(controlStatus({ required: true, resolved: !openSubjectResult?.error, invalid: Boolean((draft.subjectInput ?? '').trim() && openSubjectResult?.error) }))} value={draft.subjectInput ?? ''} maxLength={60} onChange={(event) => {
               const result = openSubjectStageChoiceSlot(entry, event.target.value)
               updateResolutionDraft(entry, { ...result.value, targetType: 'skill', choiceOptionValue: `${openSubject!.skillId}/__open__` })
             }} />
@@ -442,7 +444,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           </label>}
           {openSubjectResult?.error && <p className="notice" role="alert">{openSubjectResult.error}</p>}
           {!openSubject && options.length > 0 && <label>{entry.kind === 'language-choice' ? 'Language' : draft.targetType === 'trait' ? 'Trait' : draft.targetType === 'attribute' ? 'Attribute' : 'Skill'}
-            <select {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(selectedOption), invalid: Boolean(unsupported) }))} value={selectedOption} onChange={(event) => {
+            <select {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(selectedOption), invalid: Boolean(selectedOption && unsupported) }))} value={selectedOption} onChange={(event) => {
               const option = options.find((candidate) => candidate.value === event.target.value)
               if (option) updateResolutionDraft(entry, optionDraft(option, draft.xpAmount))
               else updateResolutionDraft(entry, { targetId: '', parameter: '', displayName: '' })
@@ -629,8 +631,12 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.phase === 'ready-for-final-touches' && !character.creation.finalTouches && <div className="life-action"><p className="notice">This draft passed final review and may enter the Alpha Final Touches/equipment foundation.</p><button className="button" type="button" onClick={() => operate(() => enterFinalTouches(character), 'Final Touches opened with Wealth-derived funds and Equipped-derived limits.')}>Enter Final Touches</button></div>}
             {state.phase === 'ready-for-final-touches' && character.creation.finalTouches && <p className="notice">Final Touches equipment state: {formatPhase(character.creation.finalTouches.equipmentReviewState)}. This is not a finalized or ready-for-play character.</p>}
             <LifeModuleStageStatus
-              pendingAwards={visiblePendingAwards}
-              specializedPendingMessage={state.phase === 'stage-0-affiliation' && (previewState ?? state).pendingAwards.length > 0 ? 'Complete the required language choices in the Affiliation Package above.' : undefined}
+              pendingAwards={sectionPendingAwards}
+              emptyBlockerMessage={state.phase === 'stage-0-affiliation'
+                ? 'No additional non-control blockers. Complete the marked required controls above.'
+                : visiblePendingAwards.length > 0 && sectionPendingAwards.length === 0
+                  ? 'No additional non-control blockers. Complete the marked required controls above.'
+                  : undefined}
               showResolutionLink={!stageModulePreviewId || stageExistingFallbackAwards.length > 0}
               warnings={(previewState ?? state).prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => `${moduleName(activePreview ?? character, entry.moduleId)}: ${entry.description}`)}
             />
