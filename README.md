@@ -4,7 +4,7 @@ Durable project authority for a web-based BattleTech *A Time of War* compendium 
 
 ## Current state
 
-**Alpha Slice 78 is implemented.** Version `0.1.0-alpha.78`. The public product title is **AToW Online Character Creator**. Pilot/Aerospace (Civilian), Pilot/Aerospace (Combat), and Pilot/Aircraft (Combat) are canonical mechanical Fields in every implemented source-authorized school. The combat Fields require Basic Training or Basic Training (Naval), not a Civilian pilot Field. The mechanically acquirable catalog contains forty-nine entries while the independent 56-entry reference catalog and 84-item equipment catalog remain unchanged.
+**Alpha Slice 79 is implemented.** Version `0.1.0-alpha.79`. The public product title is **AToW Online Character Creator**. Stage 0 now preserves a normal birth affiliation while optionally layering ComStar or Word of Blake with explicit nearest-state language, Protocol, and Technician choices. Existing saves decode as no order affiliation. The mechanically acquirable catalog remains forty-nine entries while the independent 56-entry reference catalog and 84-item equipment catalog remain unchanged.
 
 All eight published Core archetypes can create, display, adjust, save, export, and import characters with durable foundation provenance. Attribute and existing-Skill level changes remain separate, Point Buy-accounted records. Skill swaps retain Slice 24's exact, bounded same-XP behavior. The Slice 25 audit remains the evidence record; Slice 28 governs its conflicts without silently correcting Tanker, Elemental, or Scout values, adding `REF`, renaming stable IDs, or activating back-sheet combat fields. Point Buy, Life Modules, Final Touches, and the 84-item audited Core equipment catalog are unchanged.
 

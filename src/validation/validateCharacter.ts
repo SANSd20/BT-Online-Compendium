@@ -23,7 +23,14 @@ import { getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues, modeledSkillChoiceOptions, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
 import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
-import { getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
+import {
+  COMSTAR_ORDER_ID,
+  ORDER_AFFILIATION_IDS,
+  WORD_OF_BLAKE_ORDER_ID,
+  getLifeModuleAffiliationContextByAffiliationId,
+  getLifeModuleLanguageSelectorOptions,
+  resolveLifeModuleAffiliationContext,
+} from '../domain/lifeModules/affiliations'
 import { stage3SchoolClassification, stage3SchoolEligibility, usedStage3SchoolFamilies } from '../domain/lifeModules/stage3Schooling'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
 import { getMasterSkillFieldGoal } from '../domain/skillFields/goalCatalog'
@@ -574,7 +581,10 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
     issues.push(issue('life-modules.selection.balance', 'creation.lifeModules.selectedModuleIds', 'Selected module state does not match module history.'))
   }
   const hasUniversal = selectedIds.has('stage0.universal-fixed-xp')
-  const affiliationModuleIds = character.lifeModuleHistory.filter((entry) => entry.stage === 0 && entry.moduleId !== 'stage0.universal-fixed-xp').map((entry) => entry.moduleId)
+  const orderModuleIds = new Set([COMSTAR_ORDER_ID, WORD_OF_BLAKE_ORDER_ID])
+  const affiliationModuleIds = character.lifeModuleHistory
+    .filter((entry) => entry.stage === 0 && entry.moduleId !== 'stage0.universal-fixed-xp' && !orderModuleIds.has(entry.moduleId))
+    .map((entry) => entry.moduleId)
   const hasAffiliation = affiliationModuleIds.length === 1
   const universalAffiliationResolution = state.resolvedAwards?.find((entry) => entry.moduleId === 'stage0.universal-fixed-xp' && entry.awardId === 'universal.language.affiliation')
   const universalAffiliationPending = state.pendingAwards?.some((entry) => entry.moduleId === 'stage0.universal-fixed-xp' && entry.awardId === 'universal.language.affiliation')
@@ -596,6 +606,27 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   }
   if (hasAffiliation && state.stage0AffiliationContext !== affiliationModuleIds[0]) {
     issues.push(issue('life-modules.stage-0.affiliation-context.mismatch', 'creation.lifeModules.stage0AffiliationContext', 'The selected Stage 0 affiliation must match the explicit Universal affiliation context.'))
+  }
+  const selectedOrderModules = character.lifeModuleHistory.filter((entry) => orderModuleIds.has(entry.moduleId))
+  const expectedOrderModule = state.orderAffiliation === 'comstar'
+    ? COMSTAR_ORDER_ID
+    : state.orderAffiliation === 'word-of-blake'
+      ? WORD_OF_BLAKE_ORDER_ID
+      : undefined
+  if (selectedOrderModules.length > 1 || (expectedOrderModule && selectedOrderModules[0]?.moduleId !== expectedOrderModule) || (!expectedOrderModule && selectedOrderModules.length > 0)) {
+    issues.push(issue('life-modules.stage-0.order-affiliation.mismatch', 'creation.lifeModules.orderAffiliation', 'ComStar/Word of Blake state must match the committed order affiliation package.'))
+  }
+  if (state.orderAffiliation) {
+    const expectedAffiliationId = ORDER_AFFILIATION_IDS[state.orderAffiliation]
+    if (!character.affiliations.some((entry) => entry.role === 'order' && entry.affiliationId === expectedAffiliationId)) {
+      issues.push(issue('life-modules.stage-0.order-affiliation.record', 'affiliations', 'The committed order affiliation record is missing or does not match the selected package.'))
+    }
+    if (!state.orderNearestStateContext || !state.orderSecondaryLanguage || !state.orderTechnicianSubskill) {
+      issues.push(issue('life-modules.stage-0.order-affiliation.choices', 'creation.lifeModules', 'Committed ComStar/Word of Blake state requires resolved nearest-state, language, and Technician choices.'))
+    }
+    if (character.traits.some((entry) => entry.active && (entry.traitId === 'trait.extra-income' || entry.traitId === 'trait.property'))) {
+      issues.push(issue('life-modules.stage-0.order-affiliation.restriction', 'traits', 'ComStar/Word of Blake characters cannot have Extra Income or Property.'))
+    }
   }
   if (stage1Count !== 1) issues.push(issue('life-modules.stage-1.outstanding', 'lifeModuleHistory', 'Exactly one Stage 1 module is required.', { severity: stage1Count === 0 ? 'warning' : 'error' }))
   if (stage2Count > 1) issues.push(issue('life-modules.stage-2.multiple', 'lifeModuleHistory', 'No more than one Stage 2 module may be selected.'))

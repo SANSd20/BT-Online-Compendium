@@ -4,6 +4,9 @@ import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
 export const UNIVERSAL_STAGE_0_ID = 'stage0.universal-fixed-xp'
 export const CAPELLAN_COMMONALITY_ID = 'stage0.capellan-confederation.capellan-commonality'
 export const FEDERATED_SUNS_CRUCIS_MARCH_ID = 'stage0.federated-suns.crucis-march'
+export const COMSTAR_ORDER_ID = 'stage0.comstar-word-of-blake.comstar'
+export const WORD_OF_BLAKE_ORDER_ID = 'stage0.comstar-word-of-blake.word-of-blake'
+export type OrderAffiliationSelection = 'no' | 'comstar' | 'word-of-blake'
 
 export type AffiliationLanguageSelectorGroupId =
   | 'affiliation-languages'
@@ -104,6 +107,23 @@ export const FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT: LifeModuleAffiliationContext =
 }
 
 export const SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT]
+
+export const ORDER_AFFILIATION_IDS = {
+  comstar: 'affiliation.comstar',
+  'word-of-blake': 'affiliation.word-of-blake',
+} as const
+
+export function getBirthAffiliationOptions(): readonly { id: string; name: string }[] {
+  return [...new Map(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.map((entry) => [entry.affiliationId, { id: entry.affiliationId, name: entry.affiliationName }])).values()]
+}
+
+export function getBirthSubAffiliationOptions(affiliationId: string): readonly LifeModuleAffiliationContext[] {
+  return SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.filter((entry) => entry.affiliationId === affiliationId)
+}
+
+export function getNearestStateOptions(): readonly LifeModuleAffiliationContext[] {
+  return SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS
+}
 
 export type AffiliationContextResolution =
   | { support: 'supported'; context: LifeModuleAffiliationContext }

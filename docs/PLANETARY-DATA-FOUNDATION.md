@@ -11,7 +11,7 @@ This supporting workstream began because four affiliations use “Any from neare
 
 ComStar/Word of Blake also uses `Protocol/Nearest state`.
 
-The AToW meaning of “nearest state” is unresolved. No origin location, date, definition of state, or resolver algorithm has been approved. The planetary layer must provide objective data primitives without deciding AToW semantics.
+The AToW meaning of “nearest state” remains unresolved for automatic geographic derivation. No origin location, date, definition of state, or resolver algorithm has been approved. The planetary layer must provide objective data primitives without deciding AToW semantics. Alpha Slice 79 uses an explicit governed player choice among currently modeled states for the ComStar/Word of Blake affiliation layer; that bounded choice is not an automatic nearest-state resolver.
 
 ## Two-layer architecture
 

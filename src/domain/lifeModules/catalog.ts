@@ -1,12 +1,12 @@
 import type { SourceCitation } from '../rules/model'
 import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
-import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID } from './affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
 import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, PILOT_DROPSHIP_FIELD_ID, PILOT_JUMPSHIP_FIELD_ID, PILOT_WARSHIP_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 import { INFANTRY_ANTI_MECH_FIELD_ID } from '../skillFields/catalog'
 import { PILOT_AEROSPACE_CIVILIAN_FIELD_ID, PILOT_AEROSPACE_COMBAT_FIELD_ID, PILOT_AIRCRAFT_COMBAT_FIELD_ID } from '../skillFields/catalog'
 
-export { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './affiliations'
+export { CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
 export { OFFICER_TRAINING_SCHOOL_ID } from './stage3Schooling'
 
 export const LIFE_MODULE_RULES_SOURCE: SourceCitation = {
@@ -124,6 +124,64 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     ],
     notes: ['Natural Aptitude requires INT 4 at final validation.'],
     deferredRules: [],
+  },
+  {
+    id: COMSTAR_ORDER_ID,
+    displayName: 'ComStar affiliation layer',
+    stage: 0,
+    kind: 'affiliation',
+    source: source(74, 'stage-0-comstar-word-of-blake-comstar'),
+    costXp: 50,
+    primaryLanguage: 'English',
+    prerequisites: [],
+    awards: [
+      fixed('order.shared.trait.enemy', -100, trait('trait.enemy', 'Enemy', { enemy: 'Order opposition' })),
+      fixed('order.shared.trait.equipped', 100, trait('trait.equipped', 'Equipped')),
+      fixed('order.shared.trait.rank', 50, trait('trait.rank', 'Rank')),
+      fixed('order.shared.trait.reputation', -50, trait('trait.reputation', 'Reputation')),
+      fixed('order.shared.skill.communications-conventional', 10, skill('skill.communications', 'Communications/Conventional', 'Conventional')),
+      fixed('order.shared.skill.interest-jerome-blake', 10, skill('skill.interest', 'Interest/Writings of Jerome Blake', 'Writings of Jerome Blake')),
+      fixed('order.shared.skill.negotiation', 10, skill('skill.negotiation', 'Negotiation')),
+      fixed('comstar.attribute.int', 25, attribute('INT')),
+      fixed('comstar.attribute.wil', -15, attribute('WIL')),
+      fixed('comstar.trait.connections', 50, trait('trait.connections', 'Connections')),
+      fixed('comstar.trait.enemy-word-of-blake', -100, trait('trait.enemy', 'Enemy/Word of Blake', { enemy: 'Word of Blake' })),
+      fixed('comstar.trait.reputation', 20, trait('trait.reputation', 'Reputation')),
+      fixed('comstar.skill.protocol', 15, skill('skill.protocol', 'Protocol/ComStar', 'ComStar')),
+    ],
+    notes: ['Optional order affiliation layered over the full birth affiliation. Primary language is English.'],
+    deferredRules: ['Nearest-state language and Protocol plus Technician/Any require explicit governed choices.'],
+  },
+  {
+    id: WORD_OF_BLAKE_ORDER_ID,
+    displayName: 'Word of Blake affiliation layer',
+    stage: 0,
+    kind: 'affiliation',
+    source: source(74, 'stage-0-comstar-word-of-blake-word-of-blake'),
+    costXp: 50,
+    primaryLanguage: 'English',
+    prerequisites: [],
+    awards: [
+      fixed('order.shared.trait.enemy', -100, trait('trait.enemy', 'Enemy', { enemy: 'Order opposition' })),
+      fixed('order.shared.trait.equipped', 100, trait('trait.equipped', 'Equipped')),
+      fixed('order.shared.trait.rank', 50, trait('trait.rank', 'Rank')),
+      fixed('order.shared.trait.reputation', -50, trait('trait.reputation', 'Reputation')),
+      fixed('order.shared.skill.communications-conventional', 10, skill('skill.communications', 'Communications/Conventional', 'Conventional')),
+      fixed('order.shared.skill.interest-jerome-blake', 10, skill('skill.interest', 'Interest/Writings of Jerome Blake', 'Writings of Jerome Blake')),
+      fixed('order.shared.skill.negotiation', 10, skill('skill.negotiation', 'Negotiation')),
+      fixed('wob.attribute.wil', 50, attribute('WIL')),
+      fixed('wob.attribute.cha', -50, attribute('CHA')),
+      fixed('wob.trait.compulsion-paranoid', -50, trait('trait.compulsion', 'Compulsion/Paranoid', { compulsion: 'Paranoid' })),
+      fixed('wob.trait.connections', 75, trait('trait.connections', 'Connections')),
+      fixed('wob.trait.enemy-comstar', -100, trait('trait.enemy', 'Enemy/ComStar', { enemy: 'ComStar' })),
+      fixed('wob.trait.equipped', 30, trait('trait.equipped', 'Equipped')),
+      fixed('wob.skill.interest-jerome-blake', 15, skill('skill.interest', 'Interest/Writings of Jerome Blake', 'Writings of Jerome Blake')),
+      fixed('wob.skill.interest-master', 15, skill('skill.interest', 'Interest/Writings of the Master', 'Writings of the Master')),
+      fixed('wob.skill.negotiation', 10, skill('skill.negotiation', 'Negotiation')),
+      fixed('wob.skill.protocol', 10, skill('skill.protocol', 'Protocol/Word of Blake', 'Word of Blake')),
+    ],
+    notes: ['Optional order affiliation layered over the full birth affiliation. Primary language is English.'],
+    deferredRules: ['Nearest-state language and Protocol plus Technician/Any require explicit governed choices.'],
   },
   {
     id: BLUE_COLLAR_ID,

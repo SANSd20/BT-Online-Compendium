@@ -18,8 +18,16 @@ The three selector groups already present in Alpha are centralized without chang
 
 An unknown context resolves as `deferred`; it does not become a selectable option and does not authorize a raw internal ID or free-text substitute. Pending awards continue to stay pending when the current source-backed data supplies no safe choice.
 
-Full Great House, Periphery, Clan, ComStar, sub-affiliation, Changing Affiliations, and affiliation-language expansion remain deferred. Broad Life Modules Workflow/UI Review, random name generation, Beta 1, and PDF export also remain future work.
+Full Great House, Periphery, Clan, Changing Affiliations, and broader affiliation-language expansion remain deferred. Broad Life Modules Workflow/UI Review, random name generation, Beta 1, and PDF export also remain future work.
 
 ## Compatibility
 
 Existing module IDs, affiliation IDs, selector-group strings, award records, and saved JSON fields are unchanged, so no Slice 29 save migration is required. Stage 1–4 behavior, Archetype, Point Buy, Final Touches, and the 84-item equipment catalog are unchanged. The public title is `AToW Online Character Creator`, and the deployment target remains `https://sansd20.github.io/BT-Online-Compendium/`.
+
+## Alpha Slice 79 — birth affiliation plus order affiliation
+
+ComStar/Word of Blake is an optional order-affiliation layer, not a replacement for the normal birth affiliation. Stage 0 presents the existing combined stable birth-context IDs through separate Affiliation, Affiliation Language, and Affiliation Sub controls, preserving save compatibility. A fourth selector offers exactly No, ComStar, and Word of Blake; old saves and new ordinary characters behave as No.
+
+The order layer costs 50 XP in addition to the birth package's full cost and effects. It commits in the same Stage 0 transaction and records a distinct `order` affiliation history role. Branch data, shared awards, explicit nearest-state language and Protocol resolution, canonical Technician selection, and Extra Income/Property conflicts are previewed without mutating committed state. Switching branch or birth context rebuilds preview from committed state, so prior effects and dependent choices cannot leak.
+
+The rules say “nearest state” but do not define a geographic resolver. Slice 79 therefore requires an explicit governed choice from the currently modeled states and constrains the secondary language to that state's existing language selector. It does not infer that the birth affiliation is nearest or claim a complete setting-wide geography model.

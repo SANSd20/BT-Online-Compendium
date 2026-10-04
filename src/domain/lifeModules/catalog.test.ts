@@ -5,6 +5,7 @@ import {
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
   CAPELLAN_COMMONALITY_ID,
+  COMSTAR_ORDER_ID,
   FEDERATED_SUNS_CRUCIS_MARCH_ID,
   FAMILY_TRAINING_ID,
   INTELLIGENCE_OPERATIVE_TRAINING_ID,
@@ -20,16 +21,19 @@ import {
   TRADE_SCHOOL_ID,
   UNIVERSITY_ID,
   UNIVERSAL_STAGE_0_ID,
+  WORD_OF_BLAKE_ORDER_ID,
   validateLifeModuleCatalog,
 } from './catalog'
 import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, OFFICER_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 
 describe('Life Module Alpha catalog', () => {
-  it('contains the eighteen audited Core entries through the minimal Stage 4 branch', () => {
+  it('contains the twenty audited Core entries through the minimal Stage 4 branch', () => {
     expect(LIFE_MODULE_CATALOG.map((entry) => entry.id)).toEqual([
       UNIVERSAL_STAGE_0_ID,
       CAPELLAN_COMMONALITY_ID,
       FEDERATED_SUNS_CRUCIS_MARCH_ID,
+      COMSTAR_ORDER_ID,
+      WORD_OF_BLAKE_ORDER_ID,
       BLUE_COLLAR_ID,
       BACK_WOODS_ID,
       STAGE_2_BACK_WOODS_ID,

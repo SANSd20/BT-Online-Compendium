@@ -51,3 +51,7 @@ Pilot/Aerospace (Civilian) requires DEX 3+, RFL 4+, and INT 3+. It has six fixed
 The similarly named Civilian Fields are not prerequisites for either combat Field. Actual Basic Training ownership is required, while component Skills and a Master Skill Field goal do not substitute. A Basic Training Field selected in the same school transaction satisfies the dependency under the established staged-selection semantics.
 
 The reference catalog remains 56 and the mechanical catalog is now 49. The seven current reference-only Fields are HPG Technician; Clan Aerospace Warrior; Clan Basic Training; Clan Cavalry; Clan Elemental; Clan MechWarrior; and Clan ProtoMech Warrior. All remain blocked by unimplemented affiliation, Clan-schooling, phenotype, branching, or implant dependencies. No further non-Clan Ready Field remains in the audited reference-only set.
+
+## Alpha Slice 79 affiliation re-evaluation
+
+Committed ComStar and Word of Blake order affiliations now satisfy exact generic affiliation predicates. HPG Technician's prior affiliation blocker is therefore removed for those characters, but the Field remains reference-only because Slice 79 does not authorize its Field/school implementation. It is the next bounded non-Clan dependency target. The six Clan Fields remain blocked. Reference Fields remain 56 and mechanical Fields remain 49.

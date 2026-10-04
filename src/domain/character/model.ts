@@ -68,7 +68,7 @@ export interface Identity {
 
 export interface AffiliationHistoryEntry {
   affiliationId: string
-  role: 'birth' | 'final' | 'historical'
+  role: 'birth' | 'final' | 'historical' | 'order'
   effectiveDate?: string
   provenanceId: string
 }
@@ -362,6 +362,10 @@ export interface LifeModuleCreationState {
   masterSkillFieldGoalId?: string
   stage0AffiliationContext?: string
   affiliationLanguage?: string
+  orderAffiliation?: 'comstar' | 'word-of-blake'
+  orderNearestStateContext?: string
+  orderSecondaryLanguage?: string
+  orderTechnicianSubskill?: string
   pendingAwards: PendingLifeModuleAward[]
   resolvedAwards: ResolvedLifeModuleAward[]
   choiceGrantRequirements: LifeModuleChoiceGrantRequirement[]

@@ -13,6 +13,7 @@ import {
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
   CAPELLAN_COMMONALITY_ID,
+  COMSTAR_ORDER_ID,
   FEDERATED_SUNS_CRUCIS_MARCH_ID,
   FAMILY_TRAINING_ID,
   getLifeModule,
@@ -29,14 +30,15 @@ import {
   TRADE_SCHOOL_ID,
   UNIVERSITY_ID,
   UNIVERSAL_STAGE_0_ID,
+  WORD_OF_BLAKE_ORDER_ID,
 } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues, modeledSkillChoiceOptions, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
 import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
-import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, resolveLifeModuleAffiliationContext } from '../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
 import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
-import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
 
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
@@ -115,11 +117,83 @@ export function applyStage0Affiliation(
   capellanSecondaryLanguage?: string,
   davionNaturalAptitude?: 'Protocol' | 'Strategy',
   davionArt?: string,
+  orderAffiliation: OrderAffiliationSelection = 'no',
+  orderNearestStateContext?: string,
+  orderSecondaryLanguage?: string,
+  orderTechnicianSubskill?: string,
 ): CharacterDefinition {
   const withUniversal = applyUniversalStage0(character, affiliationContextModuleId, affiliationLanguage)
-  return affiliationContextModuleId === FEDERATED_SUNS_CRUCIS_MARCH_ID
+  const withBirth = affiliationContextModuleId === FEDERATED_SUNS_CRUCIS_MARCH_ID
     ? applyFederatedSunsCrucisMarch(withUniversal, davionNaturalAptitude, davionArt)
     : applyCapellanCommonality(withUniversal, capellanSecondaryLanguage)
+  return applyOrderAffiliation(withBirth, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
+}
+
+export function applyOrderAffiliation(
+  character: CharacterDefinition,
+  selection: OrderAffiliationSelection,
+  nearestStateContextId?: string,
+  secondaryLanguage?: string,
+  technicianSubskill?: string,
+): CharacterDefinition {
+  if (selection === 'no') return character
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-1-selection') throw new Error('The ComStar/Word of Blake layer commits with the Stage 0 birth affiliation.')
+  if (character.traits.some((entry) => entry.active && (entry.traitId === 'trait.extra-income' || entry.traitId === 'trait.property'))) {
+    throw new Error('ComStar/Word of Blake affiliation conflicts with active Extra Income or Property.')
+  }
+  const nearest = resolveLifeModuleAffiliationContext(nearestStateContextId?.trim() ?? '')
+  if (nearest.support !== 'supported') throw new Error('Choose a supported nearest state for the ComStar/Word of Blake affiliation layer.')
+  const language = secondaryLanguage?.trim() ?? ''
+  const languages = getLifeModuleLanguageSelectorOptions(nearest.context.affiliationLanguageSelector)
+  if (!languages.includes(language)) throw new Error('Choose a modeled language from the declared nearest state.')
+  const technician = technicianSubskill?.trim() ?? ''
+  if (!TECHNICIAN_SUBSKILLS.includes(technician as (typeof TECHNICIAN_SUBSKILLS)[number])) throw new Error('Choose a canonical Technician subskill.')
+  const moduleId = selection === 'comstar' ? COMSTAR_ORDER_ID : WORD_OF_BLAKE_ORDER_ID
+  const published = getLifeModule(moduleId)
+  const nearestProtocol = nearest.context.protocolContextLabel
+  const module: LifeModuleDefinition = {
+    ...published,
+    awards: [
+      ...published.awards,
+      { id: 'order.language.nearest-state', kind: 'fixed', xp: 0, destination: { type: 'skill', address: { skillId: 'skill.language', parameter: { kind: 'subskill', value: language } }, displayName: `Language/${language}` } },
+      { id: 'order.skill.protocol-nearest-state', kind: 'fixed', xp: selection === 'comstar' ? 15 : 5, destination: { type: 'skill', address: { skillId: 'skill.protocol', parameter: { kind: 'subskill', value: nearestProtocol } }, displayName: `Protocol/${nearestProtocol}` } },
+      { id: 'order.skill.technician', kind: 'fixed', xp: 10, destination: { type: 'skill', address: { skillId: 'skill.technician', parameter: { kind: 'subskill', value: technician } }, displayName: `Technician/${technician}` } },
+    ],
+  }
+  const next = applyModule(character, module, {})
+  const nextState = requireLifeModules(next)
+  const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
+  if (!provenanceId) throw new Error('Order affiliation provenance was not recorded.')
+  next.affiliations.push({ affiliationId: ORDER_AFFILIATION_IDS[selection], role: 'order', provenanceId })
+  nextState.orderAffiliation = selection
+  nextState.orderNearestStateContext = nearest.context.id
+  nextState.orderSecondaryLanguage = language
+  nextState.orderTechnicianSubskill = technician
+  return next
+}
+
+export function previewOrderAffiliation(
+  character: CharacterDefinition,
+  selection: OrderAffiliationSelection,
+  nearestStateContextId?: string,
+  secondaryLanguage?: string,
+  technicianSubskill?: string,
+): CharacterDefinition {
+  if (selection === 'no') return character
+  try {
+    return applyOrderAffiliation(character, selection, nearestStateContextId, secondaryLanguage, technicianSubskill)
+  } catch {
+    const moduleId = selection === 'comstar' ? COMSTAR_ORDER_ID : WORD_OF_BLAKE_ORDER_ID
+    const next = applyModule(character, getLifeModule(moduleId), {})
+    const state = requireLifeModules(next)
+    state.orderAffiliation = selection
+    const source = getLifeModule(moduleId).source
+    if (!nearestStateContextId) state.pendingAwards.push({ id: `preview-${moduleId}-nearest`, moduleId, awardId: 'order.nearest-state', kind: 'affiliation-skill-choice', description: 'Choose the nearest modeled state.', xpPerGrant: 0, remainingGrants: 1, allowedTargetTypes: ['skill'], requiredSkillId: 'skill.protocol', source: { ...source } })
+    if (!secondaryLanguage) state.pendingAwards.push({ id: `preview-${moduleId}-language`, moduleId, awardId: 'order.language.nearest-state', kind: 'language-choice', description: 'Choose a modeled language from the nearest state.', xpPerGrant: 0, remainingGrants: 1, allowedTargetTypes: ['skill'], choiceSource: 'affiliation-languages', requiredSkillId: 'skill.language', source: { ...source } })
+    if (!technicianSubskill) state.pendingAwards.push({ id: `preview-${moduleId}-technician`, moduleId, awardId: 'order.skill.technician', kind: 'any-skill-choice', description: 'Technician/Any: choose 1 concrete subskill.', xpPerGrant: 10, remainingGrants: 1, allowedTargetTypes: ['skill'], requiredSkillId: 'skill.technician', source: { ...source } })
+    return next
+  }
 }
 
 export function applyCapellanCommonality(character: CharacterDefinition, capellanSecondaryLanguage?: string): CharacterDefinition {
@@ -759,7 +833,9 @@ function evaluatePrerequisite(
   }
   let satisfied = false
   if (prerequisite.kind === 'affiliation') {
-    satisfied = character.affiliations.length > 0
+    satisfied = prerequisite.affiliationId
+      ? character.affiliations.some((entry) => entry.affiliationId === prerequisite.affiliationId)
+      : character.affiliations.length > 0
     if (satisfied && prerequisite.classification === 'non-clan') satisfied = character.affiliations.every((entry) => !entry.affiliationId.startsWith('affiliation.clan'))
   }
   if (prerequisite.kind === 'attribute-minimum') {
@@ -784,7 +860,12 @@ function evaluatePrerequisite(
 }
 
 function prerequisiteSatisfied(character: CharacterDefinition, prerequisite: Exclude<LifeModulePrerequisite, { kind: 'any-of' }>): boolean {
-  if (prerequisite.kind === 'affiliation') return character.affiliations.length > 0 && (prerequisite.classification !== 'non-clan' || character.affiliations.every((entry) => !entry.affiliationId.startsWith('affiliation.clan')))
+  if (prerequisite.kind === 'affiliation') {
+    const matchesIdentity = prerequisite.affiliationId
+      ? character.affiliations.some((entry) => entry.affiliationId === prerequisite.affiliationId)
+      : character.affiliations.length > 0
+    return matchesIdentity && (prerequisite.classification !== 'non-clan' || character.affiliations.every((entry) => !entry.affiliationId.startsWith('affiliation.clan')))
+  }
   if (prerequisite.kind === 'attribute-minimum') return (character.attributes.find((entry) => entry.attributeId === prerequisite.attributeId)?.purchasedLevel ?? 0) >= prerequisite.minimum
   if (prerequisite.kind === 'trait') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
   if (prerequisite.kind === 'trait-minimum') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && (entry.attainedTp ?? 0) >= prerequisite.minimum)

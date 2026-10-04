@@ -1,18 +1,29 @@
-import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleLanguageSelectorOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS } from '../../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getBirthAffiliationOptions, getBirthSubAffiliationOptions, getLifeModuleLanguageSelectorOptions, getNearestStateOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
+import { TECHNICIAN_SUBSKILLS } from '../../domain/skillFields/catalog'
 import { Stage0UniversalStep } from './Stage0UniversalStep'
 
 interface Stage0WizardStepProps {
   phase: 'stage-0-universal' | 'stage-0-affiliation'
   affiliationContext: string
+  birthAffiliationId: string
   affiliationLanguage: string
   secondaryLanguage: string
   davionNaturalAptitude: string
   davionArt: string
+  orderAffiliation: OrderAffiliationSelection
+  orderNearestStateContext: string
+  orderSecondaryLanguage: string
+  orderTechnicianSubskill: string
+  onBirthAffiliationChange: (value: string) => void
   onContextChange: (value: string) => void
   onLanguageChange: (value: string) => void
   onSecondaryLanguageChange: (value: string) => void
   onDavionNaturalAptitudeChange: (value: string) => void
   onDavionArtChange: (value: string) => void
+  onOrderAffiliationChange: (value: OrderAffiliationSelection) => void
+  onOrderNearestStateChange: (value: string) => void
+  onOrderSecondaryLanguageChange: (value: string) => void
+  onOrderTechnicianSubskillChange: (value: string) => void
   onApplyUniversal: () => void
   onApplyAffiliation: () => void
 }
@@ -20,15 +31,23 @@ interface Stage0WizardStepProps {
 export function Stage0WizardStep(props: Stage0WizardStepProps) {
   const universalComplete = props.phase === 'stage-0-affiliation'
   const context = SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.find((entry) => entry.id === props.affiliationContext)
+  const effectiveBirthAffiliationId = props.birthAffiliationId || context?.affiliationId || ''
+  const effectiveOrderAffiliation = props.orderAffiliation ?? 'no'
+  const birthAffiliations = getBirthAffiliationOptions()
+  const birthSubs = getBirthSubAffiliationOptions(effectiveBirthAffiliationId)
   const affiliationLanguages = context ? getLifeModuleLanguageSelectorOptions(context.affiliationLanguageSelector) : []
   const capellanSelected = context?.id === CAPELLAN_COMMONALITY_CONTEXT.id
   const davionSelected = context?.id === FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.id
   const secondaryLanguages = capellanSelected ? getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector) : []
+  const orderSelected = effectiveOrderAffiliation !== 'no'
+  const nearestState = getNearestStateOptions().find((entry) => entry.id === props.orderNearestStateContext)
+  const nearestLanguages = nearestState ? getLifeModuleLanguageSelectorOptions(nearestState.affiliationLanguageSelector) : []
+  const orderReady = !orderSelected || Boolean(nearestState && nearestLanguages.includes(props.orderSecondaryLanguage) && TECHNICIAN_SUBSKILLS.includes(props.orderTechnicianSubskill as (typeof TECHNICIAN_SUBSKILLS)[number]))
   const affiliationReady = Boolean(
     context &&
     props.affiliationLanguage &&
     affiliationLanguages.includes(props.affiliationLanguage) &&
-    (capellanSelected ? secondaryLanguages.includes(props.secondaryLanguage) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && props.davionArt === 'Painting'),
+    (capellanSelected ? secondaryLanguages.includes(props.secondaryLanguage) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && props.davionArt === 'Painting') && orderReady,
   )
   const missingChoices = [
     ...(!context ? ['Choose an affiliation context.'] : []),
@@ -36,6 +55,9 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
     ...(capellanSelected && !secondaryLanguages.includes(props.secondaryLanguage) ? ['Choose a Capellan secondary language.'] : []),
     ...(davionSelected && !['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) ? ['Choose a Federated Suns Natural Aptitude.'] : []),
     ...(davionSelected && props.davionArt !== 'Painting' ? ['Choose a supported Crucis March Art subskill.'] : []),
+    ...(orderSelected && !nearestState ? ['Choose the nearest modeled state.'] : []),
+    ...(orderSelected && !nearestLanguages.includes(props.orderSecondaryLanguage) ? ['Choose a nearest-state language.'] : []),
+    ...(orderSelected && !TECHNICIAN_SUBSKILLS.includes(props.orderTechnicianSubskill as (typeof TECHNICIAN_SUBSKILLS)[number]) ? ['Choose a Technician subskill.'] : []),
   ]
 
   return <div className="stage0-package-stack">
@@ -65,11 +87,12 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
       {universalComplete
         ? <div className="stage0-affiliation-form">
             <p>Choose the affiliation context and language explicitly, then apply the audited affiliation and sub-affiliation package.</p>
-            <div className="stage0-choice-grid">
-              <label htmlFor="stage0-affiliation-context">Affiliation context
-                <select id="stage0-affiliation-context" value={props.affiliationContext} onChange={(event) => props.onContextChange(event.target.value)} title={context?.displayName ?? 'Choose an affiliation context'}>
-                  <option value="">Choose an affiliation context…</option>
-                  {SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.map((entry) => <option key={entry.id} value={entry.id} title={entry.displayName}>{entry.id === CAPELLAN_COMMONALITY_CONTEXT.id ? 'Capellan Confederation / Commonality' : entry.displayName}</option>)}
+            <div className="stage0-affiliation-order-grid">
+              <div className="stage0-birth-affiliation-grid">
+              <label htmlFor="stage0-affiliation">Affiliation
+                <select id="stage0-affiliation" value={effectiveBirthAffiliationId} onChange={(event) => props.onBirthAffiliationChange?.(event.target.value)}>
+                  <option value="">Choose an affiliation…</option>
+                  {birthAffiliations.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
                 </select>
               </label>
               <label htmlFor="stage0-affiliation-language">Affiliation language
@@ -78,7 +101,34 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
                   {affiliationLanguages.map((language) => <option key={language}>{language}</option>)}
                 </select>
               </label>
+              <label htmlFor="stage0-affiliation-context">Affiliation Sub
+                <select id="stage0-affiliation-context" value={props.affiliationContext} disabled={!effectiveBirthAffiliationId} onChange={(event) => props.onContextChange(event.target.value)} title={context?.displayName ?? 'Choose an affiliation sub-affiliation'}>
+                  <option value="">{effectiveBirthAffiliationId ? 'Choose a sub-affiliation…' : 'Choose an affiliation first…'}</option>
+                  {birthSubs.map((entry) => <option key={entry.id} value={entry.id}>{entry.subAffiliationName}</option>)}
+                </select>
+              </label>
+              </div>
+              <label htmlFor="stage0-order-affiliation">ComStar / Word of Blake?
+                <select id="stage0-order-affiliation" value={effectiveOrderAffiliation} onChange={(event) => props.onOrderAffiliationChange?.(event.target.value as OrderAffiliationSelection)}>
+                  <option value="no">No</option><option value="comstar">ComStar</option><option value="word-of-blake">Word of Blake</option>
+                </select>
+              </label>
             </div>
+            {orderSelected && <div className="stage0-secondary-action order-affiliation-choices">
+              <div><h4>{effectiveOrderAffiliation === 'comstar' ? 'ComStar' : 'Word of Blake'} affiliation layer</h4><p>50 XP in addition to the full birth-affiliation package. Nearest state is an explicit bounded choice because geographic resolution remains deferred.</p></div>
+              <div className="stage0-choice-grid">
+                <label htmlFor="stage0-order-nearest-state">Nearest modeled state
+                  <select id="stage0-order-nearest-state" value={props.orderNearestStateContext} onChange={(event) => props.onOrderNearestStateChange(event.target.value)}><option value="">Choose a state…</option>{getNearestStateOptions().map((entry) => <option key={entry.id} value={entry.id}>{entry.affiliationName}</option>)}</select>
+                </label>
+                <label htmlFor="stage0-order-language">Nearest-state language
+                  <select id="stage0-order-language" value={props.orderSecondaryLanguage} disabled={!nearestState} onChange={(event) => props.onOrderSecondaryLanguageChange(event.target.value)}><option value="">{nearestState ? 'Choose a language…' : 'Choose a state first…'}</option>{nearestLanguages.map((language) => <option key={language}>{language}</option>)}</select>
+                </label>
+                <label htmlFor="stage0-order-technician">Technician subskill
+                  <select id="stage0-order-technician" value={props.orderTechnicianSubskill} onChange={(event) => props.onOrderTechnicianSubskillChange(event.target.value)}><option value="">Choose a Technician subskill…</option>{TECHNICIAN_SUBSKILLS.map((skill) => <option key={skill}>{skill}</option>)}</select>
+                </label>
+              </div>
+              <small>Characters with this affiliation may not possess Extra Income or Property.</small>
+            </div>}
             {capellanSelected && <div className="stage0-secondary-action">
               <div><h4>Capellan Confederation / Capellan Commonality</h4><p>150 XP · the audited Alpha affiliation and sub-affiliation package.</p></div>
               <label htmlFor="stage0-secondary-language">Capellan secondary-language award
