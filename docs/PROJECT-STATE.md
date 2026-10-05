@@ -433,3 +433,7 @@ Life Module catalog selection is now dropdown-first for Stage 1 Early Childhood,
 ## Alpha Slice 92 checkpoint
 
 Stage 3 Higher Education now presents the selected school as the primary context and replaces the dense Field checkbox catalog with compact Basic, Advanced, and Special Field selectors. The selected Field summary retains category, XP, chronology, and the existing availability/final-prerequisite distinction. Field legality, same-transaction dependencies, school-specific details, OCS, Solaris, University, military, chronology, XP, preview/Continue, persistence, and backward compatibility remain governed by the existing rules and transaction models. Public Alpha catalog availability remains explicit and unsupported entries remain visible under the reusable policy. Release metadata is `0.1.0-alpha.92`.
+
+## Alpha Slice 93 checkpoint
+
+Slice 93 fixes the in-place action focus regression in Life Modules. The stage heading now receives focus only when the Life Module phase changes, including initial draft creation and intentional stage entry; same-phase mutations such as Optimization, final-improvement changes, Additional XP changes, and Stage 3 Field changes retain their current working context. Rules, calculations, persistence, provenance, Stage 3 selectors, status borders, theme-aware focus, and navigation behavior remain unchanged. Focus-policy tests cover phase entry versus same-phase local mutation. Release metadata is `0.1.0-alpha.93`.

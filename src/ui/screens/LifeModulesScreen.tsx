@@ -23,6 +23,7 @@ import { Stage0WizardStep } from '../components/Stage0WizardStep'
 import { lifeModulesThemeIdentity, previewStage0Affiliation } from '../components/stage0PreviewModel'
 import { defaultStage3FieldIds, previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
 import { catalogAvailability, catalogAvailabilityLabel } from '../components/catalogAvailability'
+import { shouldFocusLifeModuleStageHeading } from '../components/lifeModulesFocusBehavior'
 import { emptyStageChoiceSlot, filterSiblingDestinationOptions, modeledOpenSubjectStageChoiceSlot, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoicePresentationPending, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
 interface LifeModulesScreenProps {
@@ -65,6 +66,7 @@ const EQUIPMENT_RATINGS: EquipmentRatingCode[] = ['A', 'B', 'C', 'D', 'E', 'F']
 
 export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const stageHeadingRef = useRef<HTMLHeadingElement>(null)
+  const previousPhaseRef = useRef<string | undefined>(undefined)
   const [name, setName] = useState('')
   const [startingXp, setStartingXp] = useState(5000)
   const [masterSkillFieldGoalId, setMasterSkillFieldGoalId] = useState('')
@@ -139,7 +141,8 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
 
   const state = character?.creation.lifeModules
   useEffect(() => {
-    if (character && state?.phase) stageHeadingRef.current?.focus()
+    if (shouldFocusLifeModuleStageHeading(previousPhaseRef.current, state?.phase, Boolean(character))) stageHeadingRef.current?.focus()
+    previousPhaseRef.current = state?.phase
   }, [character, state?.phase])
   const genericPendingAwards = state ? genericPendingAwardsForPhase(state.phase, state.pendingAwards) : []
   const stageExistingSlotAwards = stageModulePreviewId && character

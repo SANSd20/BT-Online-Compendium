@@ -1,5 +1,9 @@
 # Verification Requirements
 
+## Alpha Slice 93 regression verification
+
+The Slice 93 regression was reproduced from the current implementation path: `LifeModulesScreen` focused the stage heading whenever `character` changed, so every same-phase local mutation—including Optimization—could move the viewport to the top. The fix compares the previous and current Life Module phase and focuses only on an actual phase transition. This preserves initial/stage-entry navigation behavior while keeping same-phase Optimization, final-improvement, Optional Additional XP, and Stage 3 Field mutations local. Focus-policy tests cover both cases. Manual browser verification exercises the live Final Review Optimization workflow and representative local mutations after deployment.
+
 This file records both verified implementation checkpoints and requirements for later slices.
 
 ## Alpha Slice 1 verification
