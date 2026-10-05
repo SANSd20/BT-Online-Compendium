@@ -429,3 +429,7 @@ Optional Additional Experience Points are now available in Life Module final rev
 ## Alpha Slice 91 checkpoint
 
 Life Module catalog selection is now dropdown-first for Stage 1 Early Childhood, Stage 2 Late Childhood, Stage 3 Higher Education schools, and Stage 4 Real Life. The selected item alone opens its detail and choice area; existing preview/Continue transaction boundaries, chronology, prerequisites, flexible XP, Field selection, OCS, and repeat behavior remain engine-backed. A reusable availability policy distinguishes available, ineligible, and unsupported entries, keeps unsupported entries visible in Public Alpha, and supports future production hiding without changing catalog identity or rules. Required selectors retain the generic `#9B5555` treatment and theme-aware focus.
+
+## Alpha Slice 92 checkpoint
+
+Stage 3 Higher Education now presents the selected school as the primary context and replaces the dense Field checkbox catalog with compact Basic, Advanced, and Special Field selectors. The selected Field summary retains category, XP, chronology, and the existing availability/final-prerequisite distinction. Field legality, same-transaction dependencies, school-specific details, OCS, Solaris, University, military, chronology, XP, preview/Continue, persistence, and backward compatibility remain governed by the existing rules and transaction models. Public Alpha catalog availability remains explicit and unsupported entries remain visible under the reusable policy. Release metadata is `0.1.0-alpha.92`.

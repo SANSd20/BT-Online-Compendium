@@ -198,17 +198,6 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     setStageChoiceSlotValues({})
   }
 
-  function selectStage3BasicField(fieldId: string) {
-    const school = stageModulePreviewId && STAGE_3_SCHOOL_IDS.includes(stageModulePreviewId as Stage3SchoolId) ? getLifeModule(stageModulePreviewId) : null
-    setStage3FieldIds((current) => [fieldId, ...current.filter((id) => school?.skillFieldSelection?.offers.find((offer) => offer.fieldId === id)?.category !== 'basic')])
-    setStageChoiceSlotValues({})
-  }
-
-  function toggleStage3AdvancedField(fieldId: string) {
-    setStage3FieldIds((current) => current.includes(fieldId) ? current.filter((id) => id !== fieldId) : [...current, fieldId])
-    setStageChoiceSlotValues({})
-  }
-
   function updateStageChoiceSlot(pending: PendingLifeModuleAward, index: number, change: Partial<StageChoiceSlotValue>) {
     setStageChoiceSlotValues((current) => {
       const values = [...(current[pending.awardId] ?? [])]
@@ -266,6 +255,12 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     const defaultFieldIds = defaultStage3FieldIds(schoolId)
     const candidateFieldIds = isSelected ? stage3FieldIds : defaultFieldIds
     const selectedOffers = offers.filter((offer) => candidateFieldIds.includes(offer.fieldId))
+    const basicOffers = offers.filter((offer) => offer.category === 'basic')
+    const advancedOffers = offers.filter((offer) => offer.category === 'advanced')
+    const specialOffers = offers.filter((offer) => offer.category === 'special')
+    const selectedBasicId = candidateFieldIds.find((id) => basicOffers.some((offer) => offer.fieldId === id)) ?? ''
+    const selectedAdvancedIds = candidateFieldIds.filter((id) => advancedOffers.some((offer) => offer.fieldId === id))
+    const selectedSpecialId = candidateFieldIds.find((id) => specialOffers.some((offer) => offer.fieldId === id)) ?? ''
     const advancedCount = selectedOffers.filter((entry) => entry.category === 'advanced').length
     const selectedFieldCount = selectedOffers.length
     const years = selectedOffers.reduce((total, offer) => total + offer.chronologyYears, 0)
@@ -276,32 +271,70 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
         ? `${school.costXp} XP base cost · includes the required Officer Field. Each of its five Skills receives +30 XP at a cost of 24 XP.`
         : `${school.costXp} XP base cost · choose exactly one Basic Field, at least one Advanced Field, and no more than three Fields total. Special Fields require an Advanced Field. Each Field Skill receives +30 XP at a cost of 24 XP.`}</p>
       {school.conditionalPriorModuleAwards && <p><strong>Conditional entry adjustment:</strong> {school.conditionalPriorModuleAwards.description}</p>}
-      <fieldset><legend>Basic Field</legend>
-        {offers.filter((offer) => offer.category === 'basic').map((offer) => {
-          const field = getSkillField(offer.fieldId)
-          const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3PersonalDetail)
-          const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
-          return <label key={field.id}><input type="radio" name={`${schoolId}-basic`} checked={isSelected && stage3FieldIds.includes(field.id)} disabled={!isSelected || availability.state === 'unavailable'} onChange={() => selectStage3BasicField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
-        })}
-      </fieldset>
-      {offers.some((offer) => offer.category === 'advanced') && <fieldset><legend>Advanced Fields</legend>
-        {offers.filter((offer) => offer.category === 'advanced').map((offer) => {
-          const field = getSkillField(offer.fieldId)
-          const selected = isSelected && stage3FieldIds.includes(field.id)
-          const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3PersonalDetail)
-          const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
-          return <label key={field.id}><input type="checkbox" checked={selected} disabled={!isSelected || (selected ? advancedCount <= 1 : availability.state === 'unavailable' || selectedFieldCount >= 3)} onChange={() => toggleStage3AdvancedField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} <span>{status}</span></label>
-        })}
-      </fieldset>}
-      {offers.some((offer) => offer.category === 'special') && <fieldset><legend>Special Fields</legend>
-        {offers.filter((offer) => offer.category === 'special').map((offer) => {
-          const field = getSkillField(offer.fieldId)
-          const selected = isSelected && stage3FieldIds.includes(field.id)
-          const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3PersonalDetail)
-          const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
-          return <label key={field.id}><input type="checkbox" checked={selected} disabled={!isSelected || (selected ? false : advancedCount === 0 || availability.state === 'unavailable' || selectedFieldCount >= 3)} onChange={() => toggleStage3AdvancedField(field.id)} /> {field.displayName} — {skillFieldCost(field, offer.costXpPerSkill)} XP, +{offer.chronologyYears} years <span>{status}</span></label>
-        })}
-      </fieldset>}
+      {isSelected && <section className="field-selector-group" aria-label="Stage 3 Field selectors">
+        <label className="field-selector-row" htmlFor={`${schoolId}-basic`}><strong>Basic Field</strong>
+          <select id={`${schoolId}-basic`} value={selectedBasicId} onChange={(event) => {
+            const next = event.target.value
+            setStage3FieldIds((current) => [...(next ? [next] : []), ...current.filter((id) => !basicOffers.some((offer) => offer.fieldId === id))])
+            setStageChoiceSlotValues({})
+          }}>
+            <option value="">Choose a Basic Field…</option>
+            {basicOffers.map((offer) => {
+              const field = getSkillField(offer.fieldId)
+              const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3PersonalDetail)
+              return <option key={field.id} value={field.id} disabled={availability.state === 'unavailable'}>{field.displayName}</option>
+            })}
+          </select>
+        </label>
+        {advancedOffers.length > 0 && <div className="field-selector-row"><strong>Advanced Fields</strong>
+          {Array.from({ length: Math.min(2, advancedOffers.length, Math.max(1, selectedAdvancedIds.length + 1)) }, (_, index) => {
+            const selectedId = selectedAdvancedIds[index] ?? ''
+            return <select key={`${schoolId}-advanced-${index}`} aria-label={`Advanced Field ${index + 1}`} value={selectedId} onChange={(event) => {
+              const next = event.target.value
+              setStage3FieldIds((current) => {
+                const selected = current.filter((id) => advancedOffers.some((offer) => offer.fieldId === id))
+                const replacement = [...selected]
+                if (next) replacement[index] = next
+                else replacement.splice(index, 1)
+                const unique = replacement.filter((id, position) => id && replacement.indexOf(id) === position)
+                return [...current.filter((id) => !advancedOffers.some((offer) => offer.fieldId === id)), ...unique]
+              })
+              setStageChoiceSlotValues({})
+            }}>
+              <option value="">{index === 0 ? 'Choose an Advanced Field…' : 'Add another Advanced Field…'}</option>
+              {advancedOffers.map((offer) => {
+                const field = getSkillField(offer.fieldId)
+                const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3PersonalDetail)
+                const alreadySelected = selectedAdvancedIds.includes(field.id) && field.id !== selectedId
+                const atMaximum = selectedFieldCount >= 3 && !selectedId
+                return <option key={field.id} value={field.id} disabled={alreadySelected || atMaximum || availability.state === 'unavailable'}>{field.displayName}</option>
+              })}
+            </select>
+          })}
+        </div>}
+        {specialOffers.length > 0 && <label className="field-selector-row" htmlFor={`${schoolId}-special`}><strong>Special Field</strong>
+          <select id={`${schoolId}-special`} value={selectedSpecialId} onChange={(event) => {
+            const next = event.target.value
+            setStage3FieldIds((current) => [...current.filter((id) => !specialOffers.some((offer) => offer.fieldId === id)), ...(next ? [next] : [])])
+            setStageChoiceSlotValues({})
+          }}>
+            <option value="">{advancedCount > 0 ? 'Choose a Special Field…' : 'Requires an Advanced Field…'}</option>
+            {specialOffers.map((offer) => {
+              const field = getSkillField(offer.fieldId)
+              const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3PersonalDetail)
+              return <option key={field.id} value={field.id} disabled={selectedFieldCount >= 3 && field.id !== selectedSpecialId || advancedCount === 0 || availability.state === 'unavailable'}>{field.displayName}</option>
+            })}
+          </select>
+        </label>}
+        <ul className="selected-field-details" aria-label="Selected Field details">
+          {selectedOffers.map((offer) => {
+            const field = getSkillField(offer.fieldId)
+            const availability = stage3FieldSelectionStatus(character!, schoolId, field.id, candidateFieldIds, stage3PersonalDetail)
+            const status = availability.state === 'available' ? 'Available' : availability.state === 'unavailable' ? `Unavailable: ${availability.reasons.join('; ')}` : `Available · final prerequisites outstanding: ${availability.reasons.join('; ')}`
+            return <li key={field.id}><strong>{field.displayName}</strong> · {offer.category} · {skillFieldCost(field, offer.costXpPerSkill)} XP · +{offer.chronologyYears} year{offer.chronologyYears === 1 ? '' : 's'} · {status}</li>
+          })}
+        </ul>
+      </section>}
       {isSelected && <p><strong>Total: {cost} XP · +{years} years · expected age {(currentAge(character!) ?? 16) + years}</strong></p>}
       {schoolId === FAMILY_TRAINING_ID && isSelected && <label htmlFor="family-training-homeworld">Homeworld
         <input id="family-training-homeworld" value={stage3Homeworld} onChange={(event) => { setStage3Homeworld(event.target.value); setStageChoiceSlotValues({}) }} placeholder="Named planet, e.g. Sian" maxLength={100} />
