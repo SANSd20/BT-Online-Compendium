@@ -1,5 +1,6 @@
 import type { CharacterDefinition, EquipmentAccessProfile, EquipmentOwnership, EquipmentRatingCode, PersonalDescription } from '../domain/character/model'
 import { getEquipmentCatalogItem } from '../domain/equipment/catalog'
+import { FAMILY_TRAINING_ID } from '../domain/lifeModules/catalog'
 import {
   effectivePrimaryTraitTp,
   equipmentLimitsForEquipped,
@@ -74,6 +75,9 @@ export function updatePersonalDescription(character: CharacterDefinition, patch:
   requireFinalTouches(next)
   const current = next.personalDescription ?? { physicalDescription: '', backgroundNotes: '', homeworld: '' }
   const updated = { ...current, ...patch }
+  if (patch.homeworld !== undefined && patch.homeworld !== current.homeworld && next.lifeModuleHistory.some((entry) => entry.moduleId === FAMILY_TRAINING_ID)) {
+    throw new Error('Homeworld was used to resolve Family Training and cannot be changed during Final Touches.')
+  }
   if (updated.heightCm !== undefined && (!Number.isFinite(updated.heightCm) || updated.heightCm <= 0)) throw new RangeError('Height must be a positive metric value when supplied.')
   if (updated.weightKg !== undefined && (!Number.isFinite(updated.weightKg) || updated.weightKg <= 0)) throw new RangeError('Weight must be a positive metric value when supplied.')
   next.personalDescription = updated

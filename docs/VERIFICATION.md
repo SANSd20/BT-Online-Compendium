@@ -4,6 +4,10 @@
 
 The Slice 93 regression was reproduced from the current implementation path: `LifeModulesScreen` focused the stage heading whenever `character` changed, so every same-phase local mutation—including Optimization—could move the viewport to the top. The fix compares the previous and current Life Module phase and focuses only on an actual phase transition. This preserves initial/stage-entry navigation behavior while keeping same-phase Optimization, final-improvement, Optional Additional XP, and Stage 3 Field mutations local. Focus-policy tests cover both cases. Manual browser verification exercises the live Final Review Optimization workflow and representative local mutations after deployment.
 
+## Alpha Slice 94 verification
+
+Slice 94 verifies the existing canonical `ready-for-final-touches` boundary and extends its presentation with descriptive readiness context. Mechanical readiness remains based on the existing final-review blockers, prerequisite state, Optimization state, opposed-Trait state, Attribute minimums, and final XP pool; descriptive fields do not create XP effects. Personal description uses metric height/weight, preserves player-written background separately from committed Life Module history, displays canonical affiliation/order, and protects a Family Training homeworld from unsafe late editing. The current 84-item catalog is a partial current catalog rather than exhaustive AToW equipment coverage; manual inventory remains the explicit fallback. Full equipment purchasing, Vehicle Trait ownership, PDF record-sheet output, combat-derived record data, specialties, aging expansion, final lock, and ready-for-play status remain deferred. Persistence and old-save compatibility are covered through the existing Character codec and Final Touches tests.
+
 This file records both verified implementation checkpoints and requirements for later slices.
 
 ## Alpha Slice 1 verification

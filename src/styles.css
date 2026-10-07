@@ -356,6 +356,10 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .life-summary-xp dd { margin: 0; color: var(--amber); font-weight: 800; }
 .life-summary details { padding: 8px 0; border-top: 1px solid var(--line); }
 .life-summary summary { cursor: pointer; font-weight: 750; }
+.life-summary-details { display: grid; gap: 7px; margin: 8px 0 0; font-size: .78rem; }
+.life-summary-details div { display: grid; gap: 2px; }
+.life-summary-details dt { color: var(--muted); font-weight: 750; }
+.life-summary-details dd { margin: 0; }
 .life-summary ul, .life-summary ol { display: grid; gap: 5px; padding: 8px 0 0; margin: 0; list-style: none; font-size: .78rem; }
 .life-summary li { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); }
 .life-summary-attributes ul { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; }

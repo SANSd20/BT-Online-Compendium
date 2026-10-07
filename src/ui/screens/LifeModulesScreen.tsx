@@ -707,7 +707,9 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <label>Eye color<input value={character.personalDescription?.eyeColor ?? ''} onChange={(event) => updateDescription({ eyeColor: event.target.value })} /></label>
               <label>Height (cm)<input type="number" min="1" value={character.personalDescription?.heightCm ?? ''} onChange={(event) => updateDescription({ heightCm: event.target.value ? Number(event.target.value) : undefined })} /></label>
               <label>Weight (kg)<input type="number" min="1" value={character.personalDescription?.weightKg ?? ''} onChange={(event) => updateDescription({ weightKg: event.target.value ? Number(event.target.value) : undefined })} /></label>
-              <label>Homeworld<input value={character.personalDescription?.homeworld ?? ''} onChange={(event) => updateDescription({ homeworld: event.target.value })} /></label>
+              <label>Homeworld<input value={character.personalDescription?.homeworld ?? ''} readOnly={character.lifeModuleHistory.some((entry) => entry.moduleId === FAMILY_TRAINING_ID)} onChange={(event) => updateDescription({ homeworld: event.target.value })} /></label>
+              {character.lifeModuleHistory.some((entry) => entry.moduleId === FAMILY_TRAINING_ID) && <p className="scope-note">Homeworld is read-only because Family Training used it to create a source-bound History Skill.</p>}
+              <p className="scope-note"><strong>Affiliation:</strong> {displayAffiliation(character)}{displayOrderAffiliation(character) ? ` · Order: ${displayOrderAffiliation(character)}` : ''} (established in Stage 0; not editable here)</p>
               <label>Physical description<textarea value={character.personalDescription?.physicalDescription ?? ''} onChange={(event) => updateDescription({ physicalDescription: event.target.value })} /></label>
               <label>Background notes<textarea value={character.personalDescription?.backgroundNotes ?? ''} onChange={(event) => updateDescription({ backgroundNotes: event.target.value })} /></label>
             </div>
@@ -945,6 +947,16 @@ function moduleName(character: CharacterDefinition, moduleId: string): string {
 function currentAge(character: CharacterDefinition): number | null {
   const ages = character.chronology.map((entry) => Number(entry.date.match(/^age:(\d+)$/)?.[1])).filter(Number.isFinite)
   return ages.length > 0 ? Math.max(...ages) : null
+}
+
+function displayAffiliation(character: CharacterDefinition): string {
+  const entry = character.affiliations.find((candidate) => candidate.role === 'final')
+  return entry ? getLifeModuleAffiliationContextByAffiliationId(entry.affiliationId)?.affiliationName ?? entry.affiliationId : 'Not established'
+}
+
+function displayOrderAffiliation(character: CharacterDefinition): string | null {
+  const entry = character.affiliations.find((candidate) => candidate.role === 'order')
+  return entry ? getLifeModuleAffiliationContextByAffiliationId(entry.affiliationId)?.affiliationName ?? entry.affiliationId : null
 }
 
 function finalReviewDestination(character: CharacterDefinition, selection: string): ResolvedLifeModuleDestination {

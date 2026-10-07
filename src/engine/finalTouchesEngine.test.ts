@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
+import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FAMILY_TRAINING_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
 import { equipmentLimitsForEquipped, getEquipmentFoundationIssues, startingCBillsForWealth } from '../domain/finalTouches/rules'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
@@ -112,6 +112,14 @@ describe('Final Touches and equipment foundation', () => {
     character = updatePersonalDescription(character, { hairColor: 'Black', eyeColor: 'Brown', heightCm: 178, weightKg: 77, homeworld: 'Sian', physicalDescription: 'Compact build.', backgroundNotes: 'Technical College graduate.' })
     expect(character.personalDescription).toMatchObject({ homeworld: 'Sian', heightCm: 178, weightKg: 77 })
     expect(() => updatePersonalDescription(character, { heightCm: 0 })).toThrow('positive metric')
+  })
+
+  it('protects a homeworld already used by Family Training', () => {
+    const character = enterFinalTouches(readyForFinalTouches())
+    character.personalDescription = { physicalDescription: '', backgroundNotes: '', homeworld: 'Sian' }
+    character.lifeModuleHistory[0].moduleId = FAMILY_TRAINING_ID
+    expect(() => updatePersonalDescription(character, { homeworld: 'Terra' })).toThrow('used to resolve Family Training')
+    expect(updatePersonalDescription(character, { backgroundNotes: 'Player-written detail.' }).personalDescription?.backgroundNotes).toBe('Player-written detail.')
   })
 
   it('subtracts only Owned equipment and carries unspent C-bills', () => {

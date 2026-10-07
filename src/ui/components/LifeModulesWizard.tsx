@@ -2,6 +2,7 @@ import type { ReactNode, Ref } from 'react'
 import type { CharacterDefinition, PendingLifeModuleAward } from '../../domain/character/model'
 import { APP_PUBLIC_ALPHA_LABEL, APP_VERSION } from '../../appMetadata'
 import { masterSkillFieldGoalStatus, type MasterSkillFieldGoalRequirementStatus, type MasterSkillFieldReferenceStatus } from '../../domain/skillFields/goals'
+import { getLifeModuleAffiliationContextByAffiliationId } from '../../domain/lifeModules/affiliations'
 import { LIFE_MODULE_WIZARD_STEPS, lifeModuleStagePresentation, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
 
 export function LifeModulesVersionBadge() {
@@ -78,6 +79,11 @@ export function LifeModuleCharacterSummary({ character, previewCharacter, previe
     ? effectiveState.pendingAwards
     : []
   const goalStatus = masterSkillFieldGoalStatus(effectiveCharacter)
+  const finalAffiliation = effectiveCharacter.affiliations.find((entry) => entry.role === 'final')
+  const orderAffiliation = effectiveCharacter.affiliations.find((entry) => entry.role === 'order')
+  const affiliationName = finalAffiliation ? getLifeModuleAffiliationContextByAffiliationId(finalAffiliation.affiliationId)?.affiliationName ?? finalAffiliation.affiliationId : 'Not established'
+  const orderName = orderAffiliation ? getLifeModuleAffiliationContextByAffiliationId(orderAffiliation.affiliationId)?.affiliationName ?? orderAffiliation.affiliationId : null
+  const currentAge = effectiveCharacter.chronology.map((entry) => Number(entry.date.match(/^age:(\d+)$/)?.[1])).filter(Number.isFinite).at(-1)
   return <aside className="life-summary" aria-label="Current character summary">
     <p className="eyebrow">Character summary</p>
     <h2>{character.displayName || 'Unnamed character'}</h2>
@@ -97,6 +103,16 @@ export function LifeModuleCharacterSummary({ character, previewCharacter, previe
     <details open><summary>Traits ({effectiveCharacter.traits.length})</summary><ul>{effectiveCharacter.traits.map((entry, index) => <li key={`${entry.traitId}-${index}`} className={isPreviewTrait(entry.traitId, entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.traitId}{entry.active && entry.attainedTp !== null ? ` (${entry.attainedTp})` : ''}</span><strong>{entry.active ? `${entry.accumulatedXp.toLocaleString()} XP` : entry.accumulatedXp !== 0 ? `pending · ${entry.accumulatedXp.toLocaleString()} XP` : 'pending'}</strong></li>)}</ul></details>
     <details open><summary>Skills ({effectiveCharacter.skills.length})</summary><ul>{effectiveCharacter.skills.map((entry, index) => <li key={`${entry.address.skillId}-${index}`} className={isPreviewSkill(entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.address.skillId}</span><strong>{entry.accumulatedXp.toLocaleString()} XP</strong></li>)}</ul></details>
     <details open><summary>Chosen modules</summary>{effectiveCharacter.lifeModuleHistory.length === 0 ? <p>None yet.</p> : <ol>{effectiveCharacter.lifeModuleHistory.map((entry) => <li key={entry.moduleId} className={!committedModules.has(entry.moduleId) ? 'preview-row' : ''}>{entry.displayName}</li>)}</ol>}{previewPendingAwards.length > 0 && <div className="life-summary-pending"><h3>Pending preview choices</h3><ul>{previewPendingAwards.map((entry) => <li key={entry.id} className="preview-row pending-row"><span>{entry.description}</span><strong>pending · {(entry.allocationMode === 'pool' ? entry.remainingXp : entry.xpPerGrant * entry.remainingGrants)?.toLocaleString()} XP</strong></li>)}</ul></div>}</details>
+    <details><summary>Defining features and background</summary>
+      <dl className="life-summary-details">
+        <div><dt>Affiliation</dt><dd>{affiliationName}{orderName ? ` · Order: ${orderName}` : ''}</dd></div>
+        <div><dt>Homeworld</dt><dd>{effectiveCharacter.personalDescription?.homeworld || 'Not recorded'}</dd></div>
+        <div><dt>Age</dt><dd>{currentAge ?? 'Not established'}</dd></div>
+        <div><dt>Appearance</dt><dd>{[effectiveCharacter.personalDescription?.hairColor, effectiveCharacter.personalDescription?.eyeColor, effectiveCharacter.personalDescription?.heightCm ? `${effectiveCharacter.personalDescription.heightCm} cm` : '', effectiveCharacter.personalDescription?.weightKg ? `${effectiveCharacter.personalDescription.weightKg} kg` : ''].filter(Boolean).join(' · ') || 'Not recorded'}</dd></div>
+        <div><dt>Background</dt><dd>{effectiveCharacter.personalDescription?.backgroundNotes || 'No player-written background yet.'}</dd></div>
+      </dl>
+    </details>
+    {effectiveCharacter.creation.finalTouches && <details><summary>Final Touches readiness</summary><p>{effectiveCharacter.creation.finalTouches.equipmentReviewState === 'ready-for-equipment-review' ? 'Equipment draft ready for equipment review.' : 'Mechanical character creation complete; Final Touches remains an editable draft.'}</p><p>{effectiveCharacter.inventory.length} inventory item{effectiveCharacter.inventory.length === 1 ? '' : 's'} · {effectiveCharacter.creation.finalTouches.remainingCBillTotal.toLocaleString()} C-bills remaining.</p></details>}
   </aside>
 }
 
