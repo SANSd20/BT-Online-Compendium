@@ -170,7 +170,7 @@ const tanker: ArchetypeDefinition = {
   skills: [
     skill('skill.artillery', 'Artillery', 2, 50),
     skill('skill.career', 'Career/Soldier', 3, 80, { subskill: 'Soldier' }),
-    skill('skill.driving', 'Driving/Ground', 3, 80, { subskill: 'Ground' }),
+    skill('skill.driving', 'Driving/Ground Vehicles', 3, 80, { subskill: 'Ground Vehicles' }),
     skill('skill.gunnery', 'Gunnery/Ground', 3, 80, { subskill: 'Ground' }),
     skill('skill.language', 'Language/English', 1, 30, { subskill: 'English' }),
     skill('skill.language', 'Language/Romanian', 1, 30, { subskill: 'Romanian' }),

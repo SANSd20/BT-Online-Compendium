@@ -1237,7 +1237,7 @@ describe('Life Module engine', () => {
     expect(() => resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 51)).toThrow('no more than 50 XP')
     character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 50)
     character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'skill', targetId: 'skill.acting', displayName: 'Acting' }, 75)
-    expect(character.skills.find((entry) => entry.displayName === 'Driving/Ground Car')?.accumulatedXp).toBe(65)
+    expect(character.skills.find((entry) => entry.displayName === 'Driving/Ground Vehicles')?.accumulatedXp).toBe(65)
     expect(character.skills.find((entry) => entry.displayName === 'Prestidigitation/Sleight of Hand')?.accumulatedXp).toBe(100)
     expect(character.skills.find((entry) => entry.displayName === 'Streetwise/Capellan')?.accumulatedXp).toBe(95)
     expect(character.creation.lifeModules!.pendingAwards).toEqual([])

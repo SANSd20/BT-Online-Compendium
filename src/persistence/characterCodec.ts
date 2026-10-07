@@ -2,7 +2,7 @@ import type { CharacterDefinition, CreationMethod } from '../domain/character/mo
 import { APP_PUBLIC_TITLE, APP_VERSION } from '../appMetadata'
 import { getCoreArchetype } from '../domain/archetypes/coreArchetypes'
 import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, getLifeModule, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
-import { XP_COST_TABLE_SOURCE } from '../domain/pointBuy/catalog'
+import { STANDARD_SKILL_XP_COSTS, XP_COST_TABLE_SOURCE } from '../domain/pointBuy/catalog'
 import { calculateArchetypeAdjustmentNetXp, evaluateSharedXpAccounting } from '../domain/pointBuy/calculations'
 import { validateCharacter } from '../validation/validateCharacter'
 import {
@@ -87,11 +87,58 @@ export function decodeCharacter(json: string): CharacterDefinition {
   assertEnvelope(parsed)
   migrateAlphaArchetypeState(parsed.character)
   migrateAlphaLifeModuleState(parsed.character)
+  migrateDrivingAliases(parsed.character)
   const validation = validateCharacter(parsed.character)
   if (!validation.valid) {
     throw new Error(`Character file failed validation: ${validation.issues.map((item) => item.message).join(' ')}`)
   }
   return parsed.character
+}
+
+const DRIVING_ALIASES: Record<string, string> = {
+  Ground: 'Ground Vehicles',
+  'Ground Car': 'Ground Vehicles',
+  'Ground Vehicle': 'Ground Vehicles',
+}
+
+function canonicalDrivingSubject(value: string): string {
+  return DRIVING_ALIASES[value] ?? value
+}
+
+function migrateDrivingAliases(character: CharacterDefinition): void {
+  const canonicalizeDestination = (destination: { targetId: string; displayName: string; parameter?: { value: string } }) => {
+    if (destination.targetId !== 'skill.driving' || !destination.parameter) return
+    const value = canonicalDrivingSubject(destination.parameter.value)
+    destination.parameter.value = value
+    destination.displayName = `Driving/${value}`
+  }
+  const merged = new Map<string, CharacterDefinition['skills'][number]>()
+  for (const entry of character.skills) {
+    if (entry.address.skillId === 'skill.driving' && entry.address.parameter) {
+      entry.address.parameter.value = canonicalDrivingSubject(entry.address.parameter.value)
+      entry.displayName = `Driving/${entry.address.parameter.value}`
+    }
+    const key = `${entry.address.skillId}/${entry.address.parameter?.kind ?? ''}/${entry.address.parameter?.value.toLowerCase() ?? ''}`
+    const existing = merged.get(key)
+    if (!existing) merged.set(key, entry)
+    else {
+      existing.accumulatedXp += entry.accumulatedXp
+      existing.sourceAwards.push(...entry.sourceAwards)
+      existing.level = existing.accumulatedXp < STANDARD_SKILL_XP_COSTS[0]
+        ? null
+        : STANDARD_SKILL_XP_COSTS.reduce((level, threshold, index) => existing.accumulatedXp >= threshold ? index : level, 0)
+    }
+  }
+  character.skills = [...merged.values()]
+  const state = character.creation.lifeModules
+  state?.resolvedAwards.forEach((entry) => canonicalizeDestination(entry.destination))
+  state?.selectedSkillFields.forEach((field) => {
+    field.variableSkillChoices?.forEach((choice) => canonicalizeDestination(choice.destination))
+    field.prerequisiteSkillChoices?.forEach((choice) => canonicalizeDestination(choice.destination))
+  })
+  state?.pendingAwards.forEach((pending) => {
+    pending.allowedDestinationKeys = pending.allowedDestinationKeys?.map((key) => key.replace(/^skill\.driving\/(?:Ground|Ground Car|Ground Vehicle)(?=\/|$)/, 'skill.driving/Ground Vehicles'))
+  })
 }
 
 function migrateAlphaArchetypeState(character: CharacterDefinition): void {

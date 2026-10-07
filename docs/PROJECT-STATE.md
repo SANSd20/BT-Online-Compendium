@@ -440,4 +440,8 @@ Slice 93 fixes the in-place action focus regression in Life Modules. The stage h
 
 ## Alpha Slice 94 checkpoint
 
+## Alpha Slice 95 checkpoint
+
+Driving is canonicalized to Ground Vehicles, Rail Vehicles, and Sea Vehicles with legacy alias migration and duplicate-ledger preservation. Flexible XP pool allocations accept either sign while pool budgets and caps consume absolute magnitude. Character Summary Traits and Skills are alphabetized for presentation only. Release metadata is `0.1.0-alpha.95`.
+
 Final Touches now has an explicit ready-for-final-touches gate followed by an editable descriptive/equipment foundation. Review readiness continues to derive from the canonical Life Module final-review blockers; the UI does not duplicate mechanical legality. Final Touches presents metric appearance fields, player-written background, derived Life Module history, canonical affiliation/order display, and Wealth/Equipped equipment limits. Homeworld is read-only after Family Training because it is already part of a source-bound History Skill resolution. The 84-item equipment catalog is classified as a partial current catalog, so manual inventory and explicit coverage wording remain available without implying exhaustive purchasing. Equipment purchasing, vehicles, complete record-sheet output, combat-derived data, specialty editing, aging expansion, final lock, and ready-for-play status remain deferred. Release metadata is `0.1.0-alpha.94`.

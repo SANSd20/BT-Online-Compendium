@@ -8,6 +8,8 @@ interface CharacterSummaryProps {
 export function CharacterSummary({ character }: CharacterSummaryProps) {
   const source = character.creation.archetype?.source
   const adjustmentBalance = character.creation.archetype ? getArchetypeAdjustmentBalance(character) : null
+  const sortedTraits = [...character.traits].sort((a, b) => (a.displayName ?? a.traitId).localeCompare(b.displayName ?? b.traitId, undefined, { sensitivity: 'base' }))
+  const sortedSkills = [...character.skills].sort((a, b) => (a.displayName ?? a.address.skillId).localeCompare(b.displayName ?? b.address.skillId, undefined, { sensitivity: 'base' }))
 
   return (
     <section className="character-sheet" aria-labelledby="character-result-heading">
@@ -69,7 +71,7 @@ export function CharacterSummary({ character }: CharacterSummaryProps) {
             <table>
               <thead><tr><th>Trait</th><th>TP</th><th>XP</th><th>Scope</th></tr></thead>
               <tbody>
-                {character.traits.map((trait, index) => (
+                {sortedTraits.map((trait, index) => (
                   <tr key={`${trait.traitId}-${index}`}>
                     <th>{trait.displayName ?? formatRuleName(trait.traitId, trait.parameters)}</th>
                     <td>{trait.attainedTp}</td>
@@ -89,7 +91,7 @@ export function CharacterSummary({ character }: CharacterSummaryProps) {
           <table>
             <thead><tr><th>Skill</th><th>Specialty</th><th>Level</th><th>XP</th></tr></thead>
             <tbody>
-              {character.skills.map((skill) => (
+              {sortedSkills.map((skill) => (
                 <tr key={`${skill.address.skillId}-${skill.address.parameter?.value ?? ''}`}>
                   <th>{skill.displayName ?? formatSkill(skill.address.skillId, skill.address.parameter?.value)}</th>
                   <td>{skill.specialty ?? '—'}</td>

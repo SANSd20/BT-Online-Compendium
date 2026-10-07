@@ -50,7 +50,7 @@ const KNOWN_SUBSKILLS: Readonly<Record<string, readonly string[]>> = {
   'skill.communications': ['Black Box', 'Conventional', 'HPG'],
   'skill.language': ['Cantonese', 'English', 'French', 'German', 'Japanese', 'Russian', 'Spanish'],
   'skill.protocol': ['Capellan Confederation', 'ComStar', 'Federated Suns', 'Word of Blake'],
-  'skill.driving': ['Ground', 'Ground Car'],
+  'skill.driving': ['Ground Vehicles', 'Rail Vehicles', 'Sea Vehicles'],
   'skill.prestidigitation': ['Sleight of Hand'],
   'skill.art': ['Painting'],
   'skill.technician': TECHNICIAN_SUBSKILLS,

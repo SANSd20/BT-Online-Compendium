@@ -996,7 +996,7 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
       if (award.kind !== 'flexible-xp' || award.allocationMode !== 'pool') continue
       const resolved = state.resolvedAwards.filter((entry) => entry.moduleId === moduleId && entry.awardId === award.id)
       for (const target of resolved) {
-        const total = resolved.filter((entry) => lifeModuleDestinationKey(entry.destination) === lifeModuleDestinationKey(target.destination)).reduce((sum, entry) => sum + entry.xp, 0)
+        const total = resolved.filter((entry) => lifeModuleDestinationKey(entry.destination) === lifeModuleDestinationKey(target.destination)).reduce((sum, entry) => sum + Math.abs(entry.xp), 0)
         const cap = award.maxXpPerTarget?.[target.destination.type]
         if (cap !== undefined && total > cap) issues.push(issue('life-modules.flexible-cap.exceeded', 'creation.lifeModules.resolvedAwards', `${module.displayName} flexible XP exceeds the ${cap} XP cap for one ${target.destination.type}.`))
       }
@@ -1182,7 +1182,7 @@ function validateChoiceGrantBalance(character: CharacterDefinition, issues: Vali
     const matchingPending = state.pendingAwards.filter((entry) => entry.moduleId === requirement.moduleId && entry.awardId === requirement.awardId && (!requirement.provenanceId || entry.provenanceId === requirement.provenanceId))
     const pending = matchingPending.reduce((total, entry) => total + entry.remainingGrants, 0)
     const poolBalanced = requirement.allocationMode === 'pool'
-      ? matchingResolved.reduce((total, entry) => total + entry.xp, 0) + matchingPending.reduce((total, entry) => total + (entry.remainingXp ?? 0), 0) === requirement.requiredXp
+      ? matchingResolved.reduce((total, entry) => total + Math.abs(entry.xp), 0) + matchingPending.reduce((total, entry) => total + (entry.remainingXp ?? 0), 0) === requirement.requiredXp
       : resolved + pending === requirement.requiredGrants
     if (!poolBalanced || matchingPending.length > 1) {
       issues.push(issue('life-modules.choice-count.malformed', 'creation.lifeModules', `${module?.displayName ?? requirement.moduleId}: ${requirement.awardId} does not preserve its required choice count.`))

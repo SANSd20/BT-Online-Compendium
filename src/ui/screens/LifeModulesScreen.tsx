@@ -394,7 +394,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
                 </select>
               </label>}
               {pending.allocationMode === 'pool' && <label htmlFor={`${slotId}-xp`}>XP
-                <input id={`${slotId}-xp`} type="number" min="1" max={pending.remainingXp} step="1" {...controlStatusProps(controlStatus({ required: true, resolved: value.xpAmount >= 1 && value.xpAmount <= (pending.remainingXp ?? 0), invalid: value.xpAmount < 1 || value.xpAmount > (pending.remainingXp ?? 0) }), `${slotId}-label ${slotId}-help`)} value={value.xpAmount} onChange={(event) => updateStageChoiceSlot(pending, index, { xpAmount: Number(event.target.value) })} />
+                <input id={`${slotId}-xp`} type="number" min={-(pending.remainingXp ?? 0)} max={pending.remainingXp} step="1" {...controlStatusProps(controlStatus({ required: true, resolved: Number.isInteger(value.xpAmount) && value.xpAmount !== 0 && Math.abs(value.xpAmount) <= (pending.remainingXp ?? 0), invalid: value.xpAmount === 0 || Math.abs(value.xpAmount) > (pending.remainingXp ?? 0) }), `${slotId}-label ${slotId}-help`)} value={value.xpAmount} onChange={(event) => updateStageChoiceSlot(pending, index, { xpAmount: Number(event.target.value) })} />
               </label>}
               {openSubject && <label htmlFor={`${slotId}-subject-choice`}>{openSubject.parentLabel}
                 <select id={`${slotId}-subject-choice`} {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(optionValue(value)) }), `${slotId}-label ${slotId}-help`)} value={optionValue(value)} onChange={(event) => {
@@ -461,7 +461,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <select {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(draft.targetType) }))} value={draft.targetType} onChange={(event) => updateResolutionDraft(entry, { targetType: event.target.value as ResolutionDraft['targetType'], targetId: '', parameter: '', displayName: '' })}>
                 {entry.allowedTargetTypes.map((type) => <option key={type}>{type}</option>)}
               </select>
-            </label>{entry.allocationMode === 'pool' && <label>XP to allocate<input type="number" min="1" max={entry.remainingXp} step="1" {...controlStatusProps(controlStatus({ required: true, resolved: draft.xpAmount >= 1 && draft.xpAmount <= (entry.remainingXp ?? 0), invalid: draft.xpAmount < 1 || draft.xpAmount > (entry.remainingXp ?? 0) }))} value={draft.xpAmount} onChange={(event) => updateResolutionDraft(entry, { xpAmount: Number(event.target.value) })} /></label>}</>
+            </label>{entry.allocationMode === 'pool' && <label>XP to allocate<input type="number" min={-(entry.remainingXp ?? 0)} max={entry.remainingXp} step="1" {...controlStatusProps(controlStatus({ required: true, resolved: Number.isInteger(draft.xpAmount) && draft.xpAmount !== 0 && Math.abs(draft.xpAmount) <= (entry.remainingXp ?? 0), invalid: draft.xpAmount === 0 || Math.abs(draft.xpAmount) > (entry.remainingXp ?? 0) }))} value={draft.xpAmount} onChange={(event) => updateResolutionDraft(entry, { xpAmount: Number(event.target.value) })} /></label>}</>
           )}
           {openSubject && <label>{openSubject.parentLabel}
             <select {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(selectedOption) }))} value={selectedOption} onChange={(event) => {

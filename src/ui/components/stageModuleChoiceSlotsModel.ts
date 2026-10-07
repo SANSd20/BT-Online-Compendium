@@ -44,7 +44,7 @@ export function stageChoiceSlotCount(pending: PendingLifeModuleAward, values: St
 }
 
 export function stageChoicePoolProgress(pending: PendingLifeModuleAward, values: readonly StageChoiceSlotValue[]): StageChoicePoolProgress {
-  const assigned = values.filter(slotValueComplete).reduce((total, value) => total + value.xpAmount, 0)
+  const assigned = values.filter(slotValueComplete).reduce((total, value) => total + Math.abs(value.xpAmount), 0)
   const limit = pending.remainingXp ?? 0
   return {
     assigned,

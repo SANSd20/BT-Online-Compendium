@@ -585,15 +585,16 @@ export function resolvePendingLifeModuleAward(
   const duplicate = state.resolvedAwards.some((entry) => (!pending.provenanceId || entry.provenanceId === pending.provenanceId) && entry.moduleId === pending.moduleId && entry.awardId === pending.awardId && resolvedDestinationKey(entry.destination) === destinationKey)
   if (duplicate && !isPool) throw new Error('This destination has already been selected for the pending award.')
   const appliedXp = isPool ? xpAmount : pending.xpPerGrant
-  if (isPool && (!Number.isInteger(appliedXp) || appliedXp! <= 0)) throw new Error('Flexible pool allocations require a positive whole XP amount.')
+  if (isPool && (!Number.isInteger(appliedXp) || appliedXp === 0)) throw new Error('Flexible pool allocations require a non-zero whole XP amount.')
   if (!isPool && xpAmount !== undefined && xpAmount !== pending.xpPerGrant) throw new Error('Fixed grants must use their published XP amount.')
   if (isPool) {
-    if (appliedXp! > (pending.remainingXp ?? 0)) throw new Error('Flexible allocation exceeds the remaining award XP.')
+    const allocationMagnitude = Math.abs(appliedXp!)
+    if (allocationMagnitude > (pending.remainingXp ?? 0)) throw new Error('Flexible allocation exceeds the remaining award XP.')
     const cap = pending.maxXpPerTarget?.[normalized.type]
     const alreadyAllocated = state.resolvedAwards
       .filter((entry) => (!pending.provenanceId || entry.provenanceId === pending.provenanceId) && entry.moduleId === pending.moduleId && entry.awardId === pending.awardId && resolvedDestinationKey(entry.destination) === destinationKey)
-      .reduce((total, entry) => total + entry.xp, 0)
-    if (cap !== undefined && alreadyAllocated + appliedXp! > cap) throw new Error(`This flexible award may allocate no more than ${cap} XP to one ${normalized.type}.`)
+      .reduce((total, entry) => total + Math.abs(entry.xp), 0)
+    if (cap !== undefined && alreadyAllocated + allocationMagnitude > cap) throw new Error(`This flexible award may allocate no more than ${cap} XP to one ${normalized.type}.`)
   }
   const moduleHistory = [...next.lifeModuleHistory].reverse().find((entry) => entry.moduleId === pending.moduleId && (!pending.provenanceId || entry.provenanceIds.includes(pending.provenanceId)))
   const fieldGrant = pending.skillFieldChoice
@@ -626,7 +627,7 @@ export function resolvePendingLifeModuleAward(
     next.creation.resolvedChoiceIds.push(`${pending.moduleId}/${pending.awardId}/${destinationKey}/${appliedXp}`)
   }
   if (isPool) {
-    pending.remainingXp = (pending.remainingXp ?? 0) - appliedXp!
+    pending.remainingXp = (pending.remainingXp ?? 0) - Math.abs(appliedXp!)
     if (pending.remainingXp === 0) state.pendingAwards.splice(pendingIndex, 1)
   } else {
     pending.remainingGrants -= 1
@@ -1028,6 +1029,11 @@ function normalizeResolvedDestination(destination: ResolvedLifeModuleDestination
     ? { kind: destination.parameter.kind.trim(), value: destination.parameter.value.trim() }
     : undefined
   if (!targetId || !displayName || (parameter && (!parameter.kind || !parameter.value))) throw new Error('Award destination ID, name, and any parameter must be non-empty.')
+  if (targetId === 'skill.driving' && parameter) {
+    const aliases: Record<string, string> = { Ground: 'Ground Vehicles', 'Ground Car': 'Ground Vehicles', 'Ground Vehicle': 'Ground Vehicles' }
+    const value = aliases[parameter.value] ?? parameter.value
+    return { ...destination, targetId, displayName: `Driving/${value}`, parameter: { ...parameter, value } }
+  }
   return { ...destination, targetId, displayName, ...(parameter ? { parameter } : {}) }
 }
 
