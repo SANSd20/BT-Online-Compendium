@@ -4,7 +4,8 @@ import type {
   SkillLedgerEntry,
   TraitLedgerEntry,
 } from '../character/model'
-import { POINT_BUY_ATTRIBUTE_MAXIMUMS, POINT_BUY_TRAITS, STANDARD_SKILL_XP_COSTS } from '../pointBuy/catalog'
+import { POINT_BUY_TRAITS, STANDARD_SKILL_XP_COSTS } from '../pointBuy/catalog'
+import { attributeLegality } from '../character/attributeLegality'
 import type { SourceCitation } from '../rules/model'
 
 export const FINAL_REVIEW_RULES_SOURCE: SourceCitation = {
@@ -81,6 +82,11 @@ export function deriveTraitPoints(xp: number): number | null {
   return points === 0 ? null : points
 }
 
+export function deriveTraitPointsForTrait(traitId: string, xp: number): number | null {
+  if (traitId === 'trait.exceptional-attribute' && xp < 200) return null
+  return deriveTraitPoints(xp)
+}
+
 export type SkillProgression = 'standard' | 'fast' | 'slow'
 
 export function skillXpCosts(progression: SkillProgression): readonly number[] {
@@ -121,14 +127,14 @@ export function getOptimizationPreview(character: CharacterDefinition): Optimiza
 
   for (const attribute of character.attributes) {
     if (attribute.accumulatedXp <= 0) continue
-    const maximum = POINT_BUY_ATTRIBUTE_MAXIMUMS[attribute.attributeId]
+    const legality = attributeLegality(character, attribute.attributeId)
     const attainedXp = deriveAttributeLevel(attribute.accumulatedXp)! * 100
-    const targetXp = maximum === undefined ? attainedXp : Math.min(attainedXp, maximum * 100)
+    const targetXp = Math.min(attainedXp, legality.effectiveMaximum * 100)
     if (targetXp < attribute.accumulatedXp) opportunities.push(opportunity(
       { type: 'attribute', targetId: attribute.attributeId, displayName: attribute.attributeId },
       attribute.accumulatedXp,
       targetXp,
-      maximum !== undefined && attainedXp > maximum * 100 ? 'modeled-maximum' : 'excess-xp',
+      attainedXp > legality.effectiveMaximum * 100 ? 'modeled-maximum' : 'excess-xp',
     ))
   }
 
@@ -194,6 +200,7 @@ export function getFinalReviewBlockers(character: CharacterDefinition): FinalRev
   if (getOptimizationPreview(character).length > 0) blockers.push({ id: 'optimization', message: 'Optimization opportunities remain unresolved.' })
   if (getModeledOpposedTraitConflicts(character).length > 0) blockers.push({ id: 'opposed-traits', message: 'Modeled opposed Traits must be resolved before Optimization is complete.' })
   if (character.attributes.some((entry) => (deriveAttributeLevel(entry.accumulatedXp) ?? 0) < 1)) blockers.push({ id: 'attribute-minimum', message: 'Every Attribute must attain a score of at least 1.' })
+  if (character.attributes.some((entry) => !attributeLegality(character, entry.attributeId).legal)) blockers.push({ id: 'attribute-legality', message: 'One or more Attributes exceed the legal phenotype or Exceptional Attribute maximum.' })
   if (character.traits.some((entry) => isModeledNegativeTrait(entry.traitId) && entry.accumulatedXp > 0)) blockers.push({ id: 'negative-trait-positive-xp', message: 'A modeled negative Trait has positive XP and must be removed through explicit Optimization.' })
   return blockers
 }

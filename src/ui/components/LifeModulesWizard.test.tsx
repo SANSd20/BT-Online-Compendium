@@ -17,7 +17,7 @@ function stage1Draft() {
 describe('Life Modules wizard presentation', () => {
   it('derives the Life Modules page badge from the current application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · Slice 95 · v0.1.0-alpha.95')
+    expect(markup).toContain('Public Alpha · Slice 97 · v0.1.0-alpha.97')
     expect(markup).not.toContain('Slice 22')
   })
 
@@ -129,7 +129,7 @@ describe('Life Modules wizard presentation', () => {
     const character = createLifeModuleCharacter('XP Summary')
     const preview = previewStage0Affiliation(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese', 'Russian')
     const markup = renderToStaticMarkup(<LifeModuleCharacterSummary character={character} previewCharacter={preview} />)
-    expect(markup).toContain('<span>Exceptional Attribute/EDG (1)</span><strong>100 XP</strong>')
+    expect(markup).toContain('<span>Exceptional Attribute/EDG</span><strong>pending · 100 XP</strong>')
     expect(markup).toContain('<span>Compulsion/Paranoia (-1)</span><strong>-100 XP</strong>')
     expect(markup).toContain('<span>Wealth</span><strong>pending · 15 XP</strong>')
     expect(markup).not.toContain(' TP · ')

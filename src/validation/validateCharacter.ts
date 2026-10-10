@@ -39,7 +39,7 @@ import {
   SLOW_SKILL_XP_COSTS,
   deriveAttributeLevel,
   deriveSkillLevel,
-  deriveTraitPoints,
+  deriveTraitPointsForTrait,
   characterSkillProgression,
   finalReviewDestinationKey,
   getFinalReviewBlockers,
@@ -56,6 +56,7 @@ import {
   startingCBillsForWealth,
 } from '../domain/finalTouches/rules'
 import { getEquipmentCatalogItem, parseRawEquipmentRating } from '../domain/equipment/catalog'
+import { getPhenotypeDefinition } from '../domain/character/phenotypes'
 
 const SAFE_AFFILIATION_CODE = /^[A-Z][A-Z0-9-]*$/
 const FORBIDDEN_INVENTORY_RUNTIME_KEYS = [
@@ -83,6 +84,8 @@ function issue(
 
 export function validateCharacter(character: CharacterDefinition): ValidationResult {
   const issues: ValidationIssue[] = []
+
+  validatePhenotypeAndExceptionalAttributes(character, issues)
 
   if (!character.id.trim()) {
     issues.push(issue('character.id.required', 'id', 'Character ID is required.'))
@@ -187,6 +190,22 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
   return {
     valid: !issues.some((item) => item.severity === 'error'),
     issues,
+  }
+}
+
+function validatePhenotypeAndExceptionalAttributes(character: CharacterDefinition, issues: ValidationIssue[]): void {
+  const phenotype = getPhenotypeDefinition(character.phenotypeId)
+  if (!phenotype) issues.push(issue('character.phenotype.unknown', 'phenotypeId', 'Character phenotype is not in the governed phenotype catalog.'))
+  const exceptional = character.traits.filter((entry) => entry.traitId === 'trait.exceptional-attribute')
+  const seen = new Set<string>()
+  for (const entry of exceptional) {
+    const attribute = entry.parameters.attribute
+    if (typeof attribute !== 'string' || !POINT_BUY_ATTRIBUTE_MAXIMUMS[attribute] || entry.accumulatedXp < 0 || entry.attainedTp !== null && entry.attainedTp !== 2) {
+      issues.push(issue('trait.exceptional-attribute.invalid', 'traits', 'Exceptional Attribute requires one valid Attribute target and may be partially funded before reaching +2 TP.'))
+      continue
+    }
+    if (seen.has(attribute)) issues.push(issue('trait.exceptional-attribute.duplicate', 'traits', `Exceptional Attribute may apply only once to ${attribute}.`))
+    seen.add(attribute)
   }
 }
 
@@ -835,7 +854,7 @@ function validateFinalReview(
     if (entry.accumulatedXp > maximumSkillXp) issues.push(issue('life-modules.final-level.skill.maximum', `skills.${index}.accumulatedXp`, `Skill XP exceeds the modeled ${progression} Level +10 maximum and must be optimized.`))
   })
   character.traits.forEach((entry, index) => {
-    const derived = deriveTraitPoints(entry.accumulatedXp)
+    const derived = deriveTraitPointsForTrait(entry.traitId, entry.accumulatedXp)
     if (entry.attainedTp !== derived || entry.active !== (derived !== null)) issues.push(issue('life-modules.final-level.trait.malformed', `traits.${index}`, 'Trait TP/active state does not match its fully attained XP threshold.'))
     const range = traitModeledRange(entry.traitId)
     if (range && derived !== null && (derived < range.minimum || derived > range.maximum)) issues.push(issue('life-modules.final-level.trait.range', `traits.${index}`, `${entry.displayName ?? entry.traitId} is outside its modeled TP range.`))

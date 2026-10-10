@@ -769,7 +769,7 @@ function applyDestinationAward(character: CharacterDefinition, destination: Life
       character.traits.push(entry)
     }
     entry.accumulatedXp += xp
-    const attained = Math.trunc(entry.accumulatedXp / 100)
+    const attained = entry.traitId === 'trait.exceptional-attribute' && entry.accumulatedXp < 200 ? 0 : Math.trunc(entry.accumulatedXp / 100)
     entry.attainedTp = attained === 0 ? null : attained
     entry.active = attained !== 0
     entry.sourceAwards.push(sourceAward)

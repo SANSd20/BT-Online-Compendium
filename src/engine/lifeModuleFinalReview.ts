@@ -8,6 +8,7 @@ import {
   deriveAttributeLevel,
   deriveSkillLevel,
   deriveTraitPoints,
+  deriveTraitPointsForTrait,
   FINAL_REVIEW_RULES_SOURCE,
   getFinalReviewBlockers,
   getModeledOpposedTraitConflicts,
@@ -19,6 +20,7 @@ import {
   type OptimizationOpportunity,
 } from '../domain/lifeModules/finalReview'
 import { POINT_BUY_ATTRIBUTE_MAXIMUMS } from '../domain/pointBuy/catalog'
+import { attributeLegality } from '../domain/character/attributeLegality'
 import { reevaluateLifeModulePrerequisites } from './lifeModuleEngine'
 
 export function enterLifeModuleFinalReview(character: CharacterDefinition): CharacterDefinition {
@@ -281,8 +283,8 @@ function applyLedgerDelta(target: { accumulatedXp: number; sourceAwards: XpAward
 
 function assertFinalAllocationWithinModeledMaximum(character: CharacterDefinition, destination: ResolvedLifeModuleDestination, proposedXp: number): void {
   if (destination.type === 'attribute') {
-    const maximum = POINT_BUY_ATTRIBUTE_MAXIMUMS[destination.targetId]
-    if (maximum !== undefined && proposedXp > maximum * 100) throw new RangeError(`Final allocation exceeds the modeled Attribute maximum of ${maximum}.`)
+    const legality = attributeLegality(character, destination.targetId)
+    if (proposedXp > legality.effectiveMaximum * 100) throw new RangeError(`Final allocation exceeds the modeled Attribute maximum of ${legality.effectiveMaximum}.`)
     return
   }
   if (destination.type === 'trait') {
@@ -300,7 +302,7 @@ function assertFinalAllocationWithinModeledMaximum(character: CharacterDefinitio
 function recalculateDerivedLevels(character: CharacterDefinition): void {
   character.attributes.forEach((entry) => { entry.purchasedLevel = deriveAttributeLevel(entry.accumulatedXp) })
   character.traits.forEach((entry) => {
-    entry.attainedTp = deriveTraitPoints(entry.accumulatedXp)
+    entry.attainedTp = deriveTraitPointsForTrait(entry.traitId, entry.accumulatedXp)
     entry.active = entry.attainedTp !== null
   })
   const progression = characterSkillProgression(character)

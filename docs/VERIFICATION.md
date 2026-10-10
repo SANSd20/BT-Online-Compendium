@@ -2,6 +2,10 @@
 
 ## Alpha Slice 95 verification
 
+## Alpha Slice 97 verification
+
+Direct pypdf extraction from the specified Corrected Third Printing and v4.0 errata PDFs verified the required Character Minimums, Optimization, Master Traits List, Exceptional Attribute, Phenotype description, and Phenotype table sections. Automated verification covers the existing 56 test files and 416 tests, including persistence and Slice 95 regressions. Phenotype and Exceptional Attribute legality remain bounded to supported identities; Clan creation and unsupported Trait mechanics remain unavailable.
+
 Slice 95 verifies Driving canonicalization and legacy-save migration, signed Flexible XP pool accounting by absolute magnitude, and alphabetical Character Summary presentation. Additional XP and final-review accounting remain separate.
 
 ## Alpha Slice 93 regression verification

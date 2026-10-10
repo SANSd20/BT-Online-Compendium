@@ -12,6 +12,10 @@ export interface PointBuyTraitDefinition {
   allowedTp: readonly number[]
   identityBound: boolean
   parameter?: { key: string; label: string; required: true }
+  sourcePage?: number
+  category?: 'positive' | 'negative' | 'flexible' | 'neutral'
+  multiple?: boolean
+  vehicle?: boolean
 }
 
 export const POINT_BUY_RULES_SOURCE: SourceCitation = {
@@ -50,10 +54,12 @@ export const POINT_BUY_SKILLS: readonly PointBuySkillDefinition[] = [
 ]
 
 export const POINT_BUY_TRAITS: readonly PointBuyTraitDefinition[] = [
-  { id: 'trait.ambidextrous', displayName: 'Ambidextrous', allowedTp: [2], identityBound: false },
-  { id: 'trait.patient', displayName: 'Patient', allowedTp: [1], identityBound: false },
-  { id: 'trait.unattractive', displayName: 'Unattractive', allowedTp: [-1], identityBound: true },
-  { id: 'trait.reputation', displayName: 'Reputation', allowedTp: [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5], identityBound: true, parameter: { key: 'scope', label: 'Reputation scope or reason', required: true } },
+  { id: 'trait.ambidextrous', displayName: 'Ambidextrous', allowedTp: [2], identityBound: false, sourcePage: 108, category: 'positive' },
+  { id: 'trait.patient', displayName: 'Patient', allowedTp: [1], identityBound: false, sourcePage: 120, category: 'positive' },
+  { id: 'trait.unattractive', displayName: 'Unattractive', allowedTp: [-1], identityBound: true, sourcePage: 127, category: 'negative' },
+  { id: 'trait.reputation', displayName: 'Reputation', allowedTp: [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5], identityBound: true, parameter: { key: 'scope', label: 'Reputation scope or reason', required: true }, sourcePage: 123, category: 'flexible', multiple: true },
+  { id: 'trait.exceptional-attribute', displayName: 'Exceptional Attribute', allowedTp: [2], identityBound: false, parameter: { key: 'attribute', label: 'Attribute', required: true }, sourcePage: 116, category: 'positive', multiple: true },
+  { id: 'trait.phenotype', displayName: 'Phenotype', allowedTp: [0], identityBound: false, sourcePage: 121, category: 'neutral' },
 ]
 
 export function standardSkillXpCost(level: number | null): number {
