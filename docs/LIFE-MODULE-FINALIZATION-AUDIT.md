@@ -77,6 +77,12 @@ The corrected printing's printed p. 95 establishes 20-XP Skill specialties, GM a
 
 ## Alpha Slice 101 - post-creation aging
 
+## Alpha Slice 102 - readiness and finalized snapshots
+
+Slice 102 adds a deterministic readiness evaluation over committed character state. It distinguishes incomplete creation, ready-for-final-touches, and ready-for-play. Mandatory blockers include incomplete supported Life Modules, unresolved final-review blockers, invalid aging outcomes, missing supported Final Touches requirements, invalid equipment, and an unreviewed equipment draft. Empty inventory remains legal. TN/Complexity gaps, partial equipment effects/catalog coverage, and PDF export remain nonblocking advisories.
+
+Ready-for-play snapshots are immutable copies of the validated committed character, derived record sheet, source version, provenance IDs, and creation metadata. The editable draft remains separate and later edits append a new snapshot rather than mutating an earlier one. Persisted readiness booleans are not trusted; readiness is recomputed before snapshot creation. Old Alpha saves without snapshots remain valid and editable. Stasis Tube support remains deferred and is not treated as an implemented readiness input.
+
 The Corrected Third Printing aging rules on pp. 332-333 were rechecked directly. Aging begins when a character reaches age 25 and applies the published birthday XP adjustments at ages 25, 31, 41, 51, 61, 71, 81, 91, and 101. The adjustment columns affect STR, BOD, DEX, RFL, INT, WIL, and CHA; EDG and Phenotype maximums are not affected. Reputation -150 at 31 and -300 at 51 apply to Clan characters under the printed footnotes. Slow Learner -300 appears at 61 and Glass Jaw -300 at 71; those negative Traits are re-applied at later brackets as the source directs. No random aging roll or player choice is required by this table.
 
 Slice 101 derives these effects from committed chronology after character creation. It does not mutate Life Module awards, creation XP, final review purchases, Optimization, Optional Additional XP, or the original Attribute/Trait ledgers. The derived record sheet applies aging XP before Attribute legality and exposes the final age, brackets, effects, and unsupported ages beyond the published 101-year table in Final Touches. Ages below 25 have no aging effects. Aging below the Attribute minimum is reported for review rather than silently clamped.

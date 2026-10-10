@@ -5,6 +5,7 @@ import { equipmentLimitsForEquipped, getEquipmentFoundationIssues, startingCBill
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { LocalStorageCharacterRepository, type StorageLike } from '../persistence/characterRepository'
 import { validateCharacter } from '../validation/validateCharacter'
+import { evaluateCharacterReadiness, finalizeCharacterSnapshot } from '../domain/character/readiness'
 import {
   applyCapellanCommonality,
   applyStage1Module,
@@ -87,6 +88,18 @@ function readyForFinalTouches() {
 }
 
 describe('Final Touches and equipment foundation', () => {
+  it('creates an immutable ready-for-play snapshot only after equipment review', () => {
+    let character = markReadyForEquipmentReview(enterFinalTouches(readyForFinalTouches()))
+    const evaluation = evaluateCharacterReadiness(character)
+    expect(evaluation.status).toBe('ready-for-play')
+    character = finalizeCharacterSnapshot(character, '2026-10-10T00:00:00.000Z', '00000000-0000-4000-8000-000000000001')
+    expect(character.finalizedSnapshots).toHaveLength(1)
+    expect(character.finalizedSnapshots![0]).toMatchObject({ id: '00000000-0000-4000-8000-000000000001', readiness: 'ready-for-play' })
+    const snapshotName = character.finalizedSnapshots![0].character.displayName
+    character.displayName = 'Edited draft'
+    expect(character.finalizedSnapshots![0].character.displayName).toBe(snapshotName)
+  })
+
   it('models the audited Wealth and Equipped tables', () => {
     expect(startingCBillsForWealth(-1)).toBe(100)
     expect(startingCBillsForWealth(0)).toBe(1000)

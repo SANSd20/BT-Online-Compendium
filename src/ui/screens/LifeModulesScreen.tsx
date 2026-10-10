@@ -9,6 +9,7 @@ import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schoolin
 import { characterSkillProgression, getFinalReviewBlockers, getModeledOpposedTraitConflicts, skillXpCosts } from '../../domain/lifeModules/finalReview'
 import { deriveCharacterRecordSheet } from '../../domain/character/recordSheet'
 import { deriveAging, deriveCharacterAge } from '../../domain/character/aging'
+import { evaluateCharacterReadiness, finalizeCharacterSnapshot } from '../../domain/character/readiness'
 import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../../domain/pointBuy/catalog'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
@@ -198,6 +199,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const activeOrderAffiliation: OrderAffiliationSelection = state?.phase === 'stage-0-affiliation' ? orderAffiliation : state?.orderAffiliation ?? 'no'
   const themeIdentity = lifeModulesThemeIdentity(activeBirthContext, activeOrderAffiliation)
   const recordSheet = character ? deriveCharacterRecordSheet(character) : null
+  const readiness = character ? evaluateCharacterReadiness(character) : null
 
   function selectStageModule(moduleId: SupportedStageModuleId) {
     if (STAGE_3_SCHOOL_IDS.includes(moduleId as Stage3SchoolId)) {
@@ -689,7 +691,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
             {state.phase === 'alpha-stage-4-stop' && <div className="life-action"><p className="notice">Stage 4 is complete at age {currentAge(character) ?? 'unknown'}. You may take another source-legal Stage 4 module or enter final review.</p><button className="button secondary" type="button" onClick={() => operate(() => continueStage4Modules(character), 'Another Stage 4 selection opened.')}>Choose another Stage 4 module</button><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened.')}>Enter final review</button></div>}
             {state.phase === 'alpha-final-review' && <><LifeModuleReviewSummary character={character} /><p className="notice">Final review is in progress. Resolve every blocker below before the character can be marked ready for Final Touches.</p></>}
             {state.phase === 'ready-for-final-touches' && !character.creation.finalTouches && <div className="life-action"><p className="notice">This draft passed final review and may enter the Alpha Final Touches/equipment foundation.</p><button className="button" type="button" onClick={() => operate(() => enterFinalTouches(character), 'Final Touches opened with Wealth-derived funds and Equipped-derived limits.')}>Enter Final Touches</button></div>}
-            {state.phase === 'ready-for-final-touches' && character.creation.finalTouches && <p className="notice">Final Touches equipment state: {formatPhase(character.creation.finalTouches.equipmentReviewState)}. This is not a finalized or ready-for-play character.</p>}
+            {state.phase === 'ready-for-final-touches' && character.creation.finalTouches && <p className="notice">Final Touches equipment state: {formatPhase(character.creation.finalTouches.equipmentReviewState)}.</p>}
             <LifeModuleStageStatus
               pendingAwards={sectionPendingAwards}
               emptyBlockerMessage={state.phase === 'stage-0-affiliation'
@@ -713,6 +715,14 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
           {character.creation.finalTouches && <section className="life-stage-panel">
             <p className="eyebrow">Final Touches</p>
             <h2>Personal description and equipment draft</h2>
+            {readiness && <section className="readiness-summary" aria-labelledby="readiness-heading">
+              <p className="eyebrow">Readiness review</p>
+              <h3 id="readiness-heading">{readiness.status === 'ready-for-play' ? 'Ready for play' : readiness.status === 'ready-for-final-touches' ? 'Ready for Final Touches' : 'Incomplete'}</h3>
+              {readiness.blockers.length > 0 && <><p className="error">Resolve these mandatory blockers before finalizing:</p><ul>{readiness.blockers.map((item) => <li key={item.id}><strong>{item.area}:</strong> {item.message}{item.resolution ? ` ${item.resolution}` : ''}</li>)}</ul></>}
+              {readiness.advisories.length > 0 && <details><summary>{readiness.advisories.length} nonblocking advisories</summary><ul>{readiness.advisories.map((item) => <li key={item.id}>{item.message}</li>)}</ul></details>}
+              {character.finalizedSnapshots && character.finalizedSnapshots.length > 0 && <p className="success">{character.finalizedSnapshots.length} finalized snapshot{character.finalizedSnapshots.length === 1 ? '' : 's'} preserved. Draft edits remain independent.</p>}
+              <div className="row-actions"><button className="button" type="button" disabled={readiness.status !== 'ready-for-play'} onClick={() => operate(() => finalizeCharacterSnapshot(character), 'Validated ready-for-play snapshot created. The editable draft remains available.')}>Finalize validated snapshot</button></div>
+            </section>}
             <div className="xp-dashboard" aria-label="Starting equipment currency">
               <div><span>Wealth used</span><strong>{signed(character.creation.finalTouches.wealthTpUsed)} TP</strong></div>
               <div><span>Starting C-bills</span><strong>{character.creation.finalTouches.startingCBillTotal.toLocaleString()}</strong></div>

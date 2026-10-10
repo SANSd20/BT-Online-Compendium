@@ -580,6 +580,17 @@ export interface PlayStateFoundation {
   initializedAt: string
 }
 
+export interface FinalizedCharacterSnapshot {
+  id: string
+  characterId: string
+  createdAt: string
+  sourceVersion: string
+  readiness: 'ready-for-play'
+  character: CharacterDefinition
+  recordSheet: CharacterRecordSheet
+  provenanceIds: string[]
+}
+
 export interface CharacterDefinition {
   id: string
   displayName: string
@@ -604,4 +615,5 @@ export interface CharacterDefinition {
   provenance: ProvenanceRecord[]
   personalDescription?: PersonalDescription
   playState?: PlayStateFoundation
+  finalizedSnapshots?: FinalizedCharacterSnapshot[]
 }
