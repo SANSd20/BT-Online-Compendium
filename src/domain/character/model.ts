@@ -192,6 +192,27 @@ export interface FinalTouchesState {
   provenanceId: string
 }
 
+export interface RecordSheetValue<T> {
+  value: T | null
+  status: 'supported' | 'unsupported'
+  sources: string[]
+  missing?: string[]
+}
+
+export interface CharacterRecordSheet {
+  attributes: Array<{ attributeId: string; score: RecordSheetValue<number>; linkModifier: RecordSheetValue<number>; xp: number; legal: boolean }>
+  skills: Array<{ displayName: string; skillId: string; parameter?: string; specialty?: string; level: RecordSheetValue<number>; xp: number; links: RecordSheetValue<string[]>; tnComplexity: RecordSheetValue<string> }>
+  combat: {
+    standardDamage: RecordSheetValue<number>
+    fatigueDamage: RecordSheetValue<number>
+    movement: { walk: RecordSheetValue<number>; run: RecordSheetValue<number>; sprint: RecordSheetValue<number>; climb: RecordSheetValue<number>; crawl: RecordSheetValue<number>; evade: RecordSheetValue<number>; swim: RecordSheetValue<number> }
+    initiative: RecordSheetValue<string>
+    toughness: RecordSheetValue<string>
+  }
+  equipment: Array<{ id: string; displayName: string; quantity: number; ownership: EquipmentOwnership; costCBills: number; ratings: EquipmentItem['equipmentRating']; effects: RecordSheetValue<string[]> }>
+  outstanding: string[]
+}
+
 export type VehicleOwnership = 'Assigned' | 'Owned'
 
 export interface VehicleEntry {

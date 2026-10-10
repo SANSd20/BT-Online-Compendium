@@ -7,6 +7,7 @@ import { getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSe
 import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { characterSkillProgression, getFinalReviewBlockers, getModeledOpposedTraitConflicts, skillXpCosts } from '../../domain/lifeModules/finalReview'
+import { deriveCharacterRecordSheet } from '../../domain/character/recordSheet'
 import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../../domain/pointBuy/catalog'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
@@ -194,6 +195,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const activeBirthContext = state?.phase === 'stage-0-affiliation' ? stage0AffiliationContext : state?.stage0AffiliationContext ?? stage0AffiliationContext
   const activeOrderAffiliation: OrderAffiliationSelection = state?.phase === 'stage-0-affiliation' ? orderAffiliation : state?.orderAffiliation ?? 'no'
   const themeIdentity = lifeModulesThemeIdentity(activeBirthContext, activeOrderAffiliation)
+  const recordSheet = character ? deriveCharacterRecordSheet(character) : null
 
   function selectStageModule(moduleId: SupportedStageModuleId) {
     if (STAGE_3_SCHOOL_IDS.includes(moduleId as Stage3SchoolId)) {
@@ -716,6 +718,22 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <div><span>Remaining C-bills</span><strong>{character.creation.finalTouches.remainingCBillTotal.toLocaleString()}</strong></div>
             </div>
             <p><strong>Equipped {signed(character.creation.finalTouches.equippedTpUsed)} TP:</strong> base maximum {character.creation.finalTouches.maxTechRating}/{character.creation.finalTouches.maxAvailabilityRating}/{character.creation.finalTouches.maxLegalityRating}; affiliation-adjusted Owned maximum {effectiveOwnedLimits?.tech}/{effectiveOwnedLimits?.availability}/{effectiveOwnedLimits?.legality}.</p>
+
+            {recordSheet && <details open className="record-sheet-summary">
+              <summary>Derived character record sheet</summary>
+              <p className="scope-note">Deterministic source-backed values are recalculated from committed character state. Unsupported values remain explicitly unavailable.</p>
+              <h3>Attributes</h3>
+              <div className="table-wrap"><table><thead><tr><th>Attribute</th><th>Score</th><th>Link</th><th>XP</th><th>Legality</th></tr></thead><tbody>{recordSheet.attributes.map((entry) => <tr key={entry.attributeId}><td>{entry.attributeId}</td><td>{entry.score.value ?? 'Unavailable'}</td><td>{entry.linkModifier.value ?? 'Unavailable'}</td><td>{entry.xp}</td><td>{entry.legal ? 'Legal' : 'Review required'}</td></tr>)}</tbody></table></div>
+              <h3>Skills</h3>
+              <div className="table-wrap"><table><thead><tr><th>Skill</th><th>Level</th><th>XP</th><th>TN/C</th></tr></thead><tbody>{recordSheet.skills.map((entry) => <tr key={`${entry.skillId}/${entry.parameter ?? ''}`}><td>{entry.displayName}{entry.specialty ? ` (${entry.specialty})` : ''}</td><td>{entry.level.value ?? 'Untrained / unavailable'}</td><td>{entry.xp}</td><td>{entry.tnComplexity.value ?? 'Unavailable'}</td></tr>)}</tbody></table></div>
+              <h3>Combat and physical statistics</h3>
+              <p>Standard Damage: {recordSheet.combat.standardDamage.value} · Fatigue Damage: {recordSheet.combat.fatigueDamage.value} · Initiative: {recordSheet.combat.initiative.value}</p>
+              <p>Movement (m/turn): Walk {recordSheet.combat.movement.walk.value} · Run {recordSheet.combat.movement.run.value} · Sprint {recordSheet.combat.movement.sprint.value} · Climb {recordSheet.combat.movement.climb.value} · Crawl {recordSheet.combat.movement.crawl.value} · Evade {recordSheet.combat.movement.evade.value} · Swim {recordSheet.combat.movement.swim.value}</p>
+              <p>Toughness: {recordSheet.combat.toughness.value ?? 'Unavailable'}</p>
+              <h3>Equipment effects</h3>
+              {recordSheet.equipment.length === 0 ? <p>No equipment recorded.</p> : <ul>{recordSheet.equipment.map((entry) => <li key={entry.id}><strong>{entry.displayName} × {entry.quantity}</strong> · {entry.effects.value?.join('; ') ?? entry.effects.missing?.join('; ')}</li>)}</ul>}
+              {recordSheet.outstanding.length > 0 && <><h3>Outstanding record-sheet data</h3><ul>{recordSheet.outstanding.map((entry) => <li key={entry}>{entry}</li>)}</ul></>}
+            </details>}
 
             <h3>Personal details</h3>
             <div className="form-grid">
