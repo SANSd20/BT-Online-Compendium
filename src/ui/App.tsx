@@ -13,6 +13,7 @@ export function App() {
   const route = useHashRoute()
   const repository = useMemo(() => new LocalStorageCharacterRepository(window.localStorage), [])
   const [characters, setCharacters] = useState<CharacterDefinition[]>(() => repository.list())
+  const [openedCharacter, setOpenedCharacter] = useState<CharacterDefinition | null>(null)
 
   function refresh() {
     setCharacters(repository.list())
@@ -26,6 +27,13 @@ export function App() {
   function remove(id: string) {
     repository.delete(id)
     refresh()
+  }
+
+  function open(id: string) {
+    const saved = repository.get(id)
+    if (!saved) return
+    setOpenedCharacter(saved)
+    window.location.hash = `/${saved.creation.method}`
   }
 
   const method = route === '/' ? null : route.slice(1) as CreationMethod
@@ -44,15 +52,15 @@ export function App() {
       </header>
       <PublicAlphaNotice />
       {method === 'archetype' ? (
-        <ArchetypeScreen onSave={save} />
+        <ArchetypeScreen onSave={save} initialCharacter={openedCharacter} />
       ) : method === 'point-buy' ? (
-        <PointBuyScreen onSave={save} />
+        <PointBuyScreen onSave={save} initialCharacter={openedCharacter} />
       ) : method === 'life-modules' ? (
-        <LifeModulesScreen onSave={save} />
+        <LifeModulesScreen onSave={save} initialCharacter={openedCharacter} />
       ) : method ? (
-        <HomeScreen characters={characters} onImport={save} onDelete={remove} />
+        <HomeScreen characters={characters} onImport={save} onDelete={remove} onOpen={open} />
       ) : (
-        <HomeScreen characters={characters} onImport={save} onDelete={remove} />
+        <HomeScreen characters={characters} onImport={save} onDelete={remove} onOpen={open} />
       )}
       <footer>{APP_RELEASE_LABEL} · {APP_PHASE} · v{APP_VERSION} · Local browser storage · JSON portability · No account or cloud save</footer>
     </div>

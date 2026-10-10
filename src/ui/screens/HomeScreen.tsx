@@ -7,6 +7,7 @@ interface HomeScreenProps {
   characters: CharacterDefinition[]
   onImport: (character: CharacterDefinition) => void
   onDelete: (id: string) => void
+  onOpen: (id: string) => void
 }
 
 const methods: Array<{ method: CreationMethod; label: string; description: string }> = [
@@ -15,7 +16,7 @@ const methods: Array<{ method: CreationMethod; label: string; description: strin
   { method: 'life-modules', label: 'Life Modules', description: 'Build through audited Core paths from Stage 0 through Stage 4, including ComStar/Word of Blake Service.' },
 ]
 
-export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) {
+export function HomeScreen({ characters, onImport, onDelete, onOpen }: HomeScreenProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<string>('')
 
@@ -80,6 +81,7 @@ export function HomeScreen({ characters, onImport, onDelete }: HomeScreenProps) 
                   <span>{character.creation.archetype?.displayName ?? character.creation.method} · schema-backed local character</span>
                 </div>
                 <div className="row-actions">
+                  <button type="button" onClick={() => onOpen(character.id)}>{character.finalizedSnapshots?.length ? 'Open' : 'Resume'}</button>
                   <button type="button" onClick={() => downloadCharacter(character)}>Export</button>
                   <button className="danger" type="button" onClick={() => onDelete(character.id)}>Delete</button>
                 </div>

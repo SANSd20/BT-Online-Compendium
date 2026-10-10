@@ -11,12 +11,13 @@ import { getArchetypeAdjustmentBalance } from '../../engine/archetypeAdjustmentE
 
 interface ArchetypeScreenProps {
   onSave: (character: CharacterDefinition) => void
+  initialCharacter?: CharacterDefinition | null
 }
 
-export function ArchetypeScreen({ onSave }: ArchetypeScreenProps) {
+export function ArchetypeScreen({ onSave, initialCharacter = null }: ArchetypeScreenProps) {
   const [name, setName] = useState('')
   const [archetypeId, setArchetypeId] = useState(CORE_ARCHETYPES[0].id)
-  const [character, setCharacter] = useState<CharacterDefinition | null>(null)
+  const [character, setCharacter] = useState<CharacterDefinition | null>(initialCharacter)
   const [message, setMessage] = useState('')
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {

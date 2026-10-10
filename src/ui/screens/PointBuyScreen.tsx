@@ -20,12 +20,13 @@ import { validateCharacter } from '../../validation/validateCharacter'
 
 interface PointBuyScreenProps {
   onSave: (character: CharacterDefinition) => void
+  initialCharacter?: CharacterDefinition | null
 }
 
-export function PointBuyScreen({ onSave }: PointBuyScreenProps) {
+export function PointBuyScreen({ onSave, initialCharacter = null }: PointBuyScreenProps) {
   const [name, setName] = useState('')
   const [startingXp, setStartingXp] = useState(5000)
-  const [character, setCharacter] = useState<CharacterDefinition | null>(null)
+  const [character, setCharacter] = useState<CharacterDefinition | null>(initialCharacter)
   const [skillId, setSkillId] = useState(POINT_BUY_SKILLS[0].id)
   const [subskill, setSubskill] = useState('')
   const [traitId, setTraitId] = useState(POINT_BUY_TRAITS[0].id)

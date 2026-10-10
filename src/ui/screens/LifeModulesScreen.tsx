@@ -31,6 +31,7 @@ import { emptyStageChoiceSlot, filterSiblingDestinationOptions, modeledOpenSubje
 
 interface LifeModulesScreenProps {
   onSave: (character: CharacterDefinition) => void
+  initialCharacter?: CharacterDefinition | null
 }
 
 const STAGE_3_SCHOOL_IDS = [TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, SOLARIS_INTERNSHIP_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, FAMILY_TRAINING_ID, OFFICER_TRAINING_SCHOOL_ID] as const
@@ -67,7 +68,7 @@ const EMPTY_EQUIPMENT_DRAFT: EquipmentDraft = {
 }
 const EQUIPMENT_RATINGS: EquipmentRatingCode[] = ['A', 'B', 'C', 'D', 'E', 'F']
 
-export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
+export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModulesScreenProps) {
   const stageHeadingRef = useRef<HTMLHeadingElement>(null)
   const previousPhaseRef = useRef<string | undefined>(undefined)
   const [name, setName] = useState('')
@@ -89,7 +90,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const [stage3Homeworld, setStage3Homeworld] = useState('')
   const [stage3Residence, setStage3Residence] = useState('')
   const [stageChoiceSlotValues, setStageChoiceSlotValues] = useState<StageChoiceSlotValues>({})
-  const [character, setCharacter] = useState<CharacterDefinition | null>(null)
+  const [character, setCharacter] = useState<CharacterDefinition | null>(initialCharacter)
   const [resolutionDrafts, setResolutionDrafts] = useState<Record<string, ResolutionDraft>>({})
   const [finalAllocationTarget, setFinalAllocationTarget] = useState('attribute:STR')
   const [finalAllocationXp, setFinalAllocationXp] = useState(1)
