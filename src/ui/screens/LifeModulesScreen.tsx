@@ -8,6 +8,7 @@ import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedM
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { characterSkillProgression, getFinalReviewBlockers, getModeledOpposedTraitConflicts, skillXpCosts } from '../../domain/lifeModules/finalReview'
 import { deriveCharacterRecordSheet } from '../../domain/character/recordSheet'
+import { deriveAging, deriveCharacterAge } from '../../domain/character/aging'
 import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../../domain/pointBuy/catalog'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
@@ -187,6 +188,7 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const opposedTraitConflicts = character && state?.finalReview ? getModeledOpposedTraitConflicts(character) : []
   const catalogItems = filterEquipmentCatalog({ search: catalogSearch, category: catalogCategory, sourceStatus: catalogSourceStatus })
   const accessProfile = character?.creation.finalTouches?.equipmentAccessProfile ?? { enabled: false, affiliationCategory: 'inner-sphere' as const, nativeAffiliationCode: '' }
+  const aging = character ? deriveAging(character) : null
   const effectiveOwnedLimits = character?.creation.finalTouches ? adjustedOwnedEquipmentLimits(character.creation.finalTouches.equippedTpUsed, accessProfile.affiliationCategory) : null
   const stageModulePendingAwards = stageModuleBasePreview?.creation.lifeModules?.pendingAwards.filter((entry) => entry.moduleId === stageModulePreviewId) ?? []
   const completedStage3ModuleIds = character?.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId) ?? []
@@ -718,6 +720,17 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <div><span>Remaining C-bills</span><strong>{character.creation.finalTouches.remainingCBillTotal.toLocaleString()}</strong></div>
             </div>
             <p><strong>Equipped {signed(character.creation.finalTouches.equippedTpUsed)} TP:</strong> base maximum {character.creation.finalTouches.maxTechRating}/{character.creation.finalTouches.maxAvailabilityRating}/{character.creation.finalTouches.maxLegalityRating}; affiliation-adjusted Owned maximum {effectiveOwnedLimits?.tech}/{effectiveOwnedLimits?.availability}/{effectiveOwnedLimits?.legality}.</p>
+
+            {aging && <section className="aging-summary" aria-label="Aging effects">
+              <p className="eyebrow">Post-creation aging</p>
+              <h3>Age {deriveCharacterAge(character)}</h3>
+              {aging.brackets.length === 0 ? <p className="scope-note">Below the source aging threshold of 25; no aging effects apply.</p> : <>
+                <p className="scope-note">Derived from committed chronology. Aging is applied after character creation and does not alter the creation XP ledger.</p>
+                <ul>{aging.brackets.map((bracket) => <li key={bracket.age}>Age {bracket.age}: {Object.entries(bracket.attributeXp).map(([id, xp]) => `${id} ${xp >= 0 ? '+' : ''}${xp} XP`).join(', ') || 'no Attribute change'}{bracket.traitEffects.length > 0 ? `; ${bracket.traitEffects.map((effect) => `${effect.displayName} ${effect.xp} XP`).join(', ')}` : ''}</li>)}</ul>
+                {aging.unsupported.length > 0 && <p className="notice">{aging.unsupported.join(' ')}</p>}
+                {!aging.legal && <p className="error">Aging currently leaves an Attribute below the source minimum and requires review.</p>}
+              </>}
+            </section>}
 
             {recordSheet && <details open className="record-sheet-summary">
               <summary>Derived character record sheet</summary>

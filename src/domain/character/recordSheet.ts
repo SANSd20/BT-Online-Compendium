@@ -1,20 +1,24 @@
 import type { CharacterDefinition, CharacterRecordSheet, EquipmentItem, RecordSheetValue, SkillLedgerEntry } from './model'
 import { attributeLegality } from './attributeLegality'
 import { characterSkillProgression, deriveSkillLevel } from '../lifeModules/finalReview'
+import { agingAttributeXp, deriveAging } from './aging'
 
 const LINK_MODIFIERS: Readonly<Record<number, number>> = { 0: -4, 1: -2, 2: -1, 3: -1, 4: 0, 5: 0, 6: 0, 7: 1, 8: 1, 9: 1, 10: 2 }
 const supported = <T>(value: T, ...sources: string[]): RecordSheetValue<T> => ({ value, status: 'supported', sources })
 const unsupported = <T>(...missing: string[]): RecordSheetValue<T> => ({ value: null, status: 'unsupported', sources: [], missing })
 
 export function deriveCharacterRecordSheet(character: CharacterDefinition): CharacterRecordSheet {
+  const aging = deriveAging(character)
   const attributes = character.attributes.map((entry) => {
-    const legality = attributeLegality(character, entry.attributeId)
+    const agingXp = agingAttributeXp(character, entry.attributeId)
+    const agingCharacter = agingXp === entry.accumulatedXp ? character : { ...character, attributes: character.attributes.map((item) => item.attributeId === entry.attributeId ? { ...item, accumulatedXp: agingXp } : item) }
+    const legality = attributeLegality(agingCharacter, entry.attributeId)
     const score = legality.effectiveScore
     return {
       attributeId: entry.attributeId,
       score: supported(score, 'AToW Corrected Third Printing pp. 34-35', 'Phenotype/Exceptional Attribute rules'),
       linkModifier: supported(linkModifier(score), 'AToW Corrected Third Printing p. 41'),
-      xp: entry.accumulatedXp,
+      xp: agingXp,
       legal: legality.legal,
     }
   })
@@ -43,6 +47,8 @@ export function deriveCharacterRecordSheet(character: CharacterDefinition): Char
   const outstanding = [
     ...skills.filter((entry) => entry.tnComplexity.status === 'unsupported').map((entry) => `${entry.displayName}: TN/Complexity unavailable`),
     ...(character.creation.finalTouches ? [] : ['Final Touches equipment state is not initialized.']),
+    ...aging.unsupported,
+    ...(!aging.legal ? ['Aging reduces one or more Attributes below the source minimum.'] : []),
   ]
   return {
     attributes,
@@ -73,7 +79,11 @@ function levelValue(entry: SkillLedgerEntry, progression: ReturnType<typeof char
 }
 
 function attributeScore(character: CharacterDefinition, id: string): number {
-  return attributeLegality(character, id).effectiveScore
+  const agingXp = agingAttributeXp(character, id)
+  const adjusted = agingXp === character.attributes.find((entry) => entry.attributeId === id)?.accumulatedXp
+    ? character
+    : { ...character, attributes: character.attributes.map((entry) => entry.attributeId === id ? { ...entry, accumulatedXp: agingXp } : entry) }
+  return attributeLegality(adjusted, id).effectiveScore
 }
 
 function skillLevel(character: CharacterDefinition, id: string): number {
