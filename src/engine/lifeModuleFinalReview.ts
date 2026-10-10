@@ -19,7 +19,7 @@ import {
   traitModeledRange,
   type OptimizationOpportunity,
 } from '../domain/lifeModules/finalReview'
-import { POINT_BUY_ATTRIBUTE_MAXIMUMS } from '../domain/pointBuy/catalog'
+import { getPointBuySkill, POINT_BUY_ATTRIBUTE_MAXIMUMS } from '../domain/pointBuy/catalog'
 import { attributeLegality } from '../domain/character/attributeLegality'
 import { reevaluateLifeModulePrerequisites } from './lifeModuleEngine'
 
@@ -85,6 +85,96 @@ export function allocateFinalReviewXp(
   next.xp.creation.allocated = calculateLedgerXp(next)
   next.xp.creation.remaining = state.allocationPool.remaining
   next.updatedAt = allocatedAt
+  return refreshFinalReview(next)
+}
+
+export function purchaseFinalReviewSkill(character: CharacterDefinition, skillId: string, parameterValue = ''): CharacterDefinition {
+  const next = structuredClone(character)
+  const review = requireFinalReview(next)
+  const definition = getPointBuySkill(skillId)
+  const value = parameterValue.trim()
+  if (definition.parameter && !value) throw new Error(`${definition.displayName} requires a concrete subskill.`)
+  if (!definition.parameter && value) throw new Error(`${definition.displayName} does not accept a subskill.`)
+  const address: SkillAddress = { skillId, ...(value ? { parameter: { kind: 'subskill', value } } : {}) }
+  const key = skillKey(address)
+  if (next.skills.some((entry) => skillKey(entry.address) === key)) throw new Error('This concrete Skill already exists; use the existing improvement path.')
+  const progression = characterSkillProgression(next)
+  const xp = skillXpCosts(progression)[0]
+  if (review.allocationPool.remaining < xp) throw new Error('The final XP pool cannot fund this Skill purchase.')
+  const now = new Date().toISOString()
+  const provenanceId = makeId('skill-purchase-provenance')
+  next.provenance.push({ id: provenanceId, kind: 'player-choice', description: `New Skill purchase: ${value ? `${definition.displayName}/${value}` : definition.displayName} +${xp} XP`, source: { ...FINAL_REVIEW_RULES_SOURCE } })
+  const entry = { address, displayName: value ? `${definition.displayName}/${value}` : definition.displayName, accumulatedXp: xp, level: deriveSkillLevel(xp, progression), sourceAwards: [{ id: makeId('skill-purchase-award'), xp, provenanceId }] }
+  next.skills.push(entry)
+  review.skillPurchases ??= []
+  review.skillPurchases.push({ id: makeId('skill-purchase'), address, displayName: entry.displayName!, xp, level: entry.level, proposedAt: now, provenanceId })
+  review.allocationPool.allocated += xp
+  review.allocationPool.remaining -= xp
+  next.xp.creation.remaining = review.allocationPool.remaining
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  next.updatedAt = now
+  return refreshFinalReview(next)
+}
+
+export function proposeFinalReviewSpecialty(character: CharacterDefinition, address: SkillAddress, subject: string): CharacterDefinition {
+  const next = structuredClone(character)
+  const review = requireFinalReview(next)
+  const skill = findSkill(next, address)
+  const specialty = normalizeSpecialty(subject)
+  if (!specialty) throw new Error('Specialty must contain a descriptive subject.')
+  if (next.skills.some((entry) => (entry.displayName ?? '').trim().toLowerCase() === specialty.toLowerCase() || entry.address.parameter?.value.trim().toLowerCase() === specialty.toLowerCase())) throw new Error('A specialty cannot duplicate an existing Skill or subskill.')
+  const existing = review.specialties?.find((entry) => skillKey(entry.address) === skillKey(address) && (entry.state === 'proposed' || entry.state === 'committed'))
+  if (existing || skill.specialty) throw new Error('A concrete Skill may have only one specialty.')
+  if (review.allocationPool.remaining < 20) throw new Error('The final XP pool cannot fund this specialty.')
+  const now = new Date().toISOString()
+  const provenanceId = makeId('specialty-provenance')
+  next.provenance.push({ id: provenanceId, kind: 'player-choice', description: `Proposed Skill specialty: ${skill.displayName ?? address.skillId} (${specialty}) -20 XP; GM approval required`, source: { ...FINAL_REVIEW_RULES_SOURCE } })
+  review.specialties ??= []
+  review.specialties.push({ id: makeId('specialty'), address: structuredClone(address), displayName: skill.displayName ?? address.skillId, specialty, xp: 20, state: 'proposed', gmApproval: 'required', proposedAt: now, provenanceId })
+  review.allocationPool.allocated += 20
+  review.allocationPool.remaining -= 20
+  next.xp.creation.remaining = review.allocationPool.remaining
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  next.updatedAt = now
+  return refreshFinalReview(next)
+}
+
+export function approveFinalReviewSpecialty(character: CharacterDefinition, specialtyId: string): CharacterDefinition {
+  const next = structuredClone(character)
+  const review = requireFinalReview(next)
+  const record = (review.specialties ?? []).find((entry) => entry.id === specialtyId && entry.state === 'proposed')
+  if (!record) throw new Error('Unknown or already resolved specialty proposal.')
+  const skill = findSkill(next, record.address)
+  if (skill.specialty) throw new Error('This concrete Skill already has a specialty.')
+  skill.specialty = record.specialty
+  record.state = 'committed'
+  record.gmApproval = 'approved'
+  record.committedAt = new Date().toISOString()
+  next.updatedAt = record.committedAt
+  return refreshFinalReview(next)
+}
+
+export function removeFinalReviewSpecialty(character: CharacterDefinition, specialtyId: string): CharacterDefinition {
+  const next = structuredClone(character)
+  const review = requireFinalReview(next)
+  const record = (review.specialties ?? []).find((entry) => entry.id === specialtyId && (entry.state === 'proposed' || entry.state === 'committed'))
+  if (!record) throw new Error('Unknown or already removed specialty.')
+  const now = new Date().toISOString()
+  const skill = findSkill(next, record.address)
+  if (record.state === 'proposed') {
+    review.allocationPool.allocated -= 20
+    review.allocationPool.remaining += 20
+  } else {
+    if (review.allocationPool.remaining < 20) throw new Error('Removing a committed specialty requires another 20 XP.')
+    skill.specialty = undefined
+    review.allocationPool.allocated += 20
+    review.allocationPool.remaining -= 20
+  }
+  record.state = 'removed'
+  record.removedAt = now
+  next.xp.creation.remaining = review.allocationPool.remaining
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  next.updatedAt = now
   return refreshFinalReview(next)
 }
 
@@ -274,6 +364,16 @@ function findLedgerTarget(character: CharacterDefinition, destination: ResolvedL
   const matches = character.skills.filter((item) => skillKey(item.address) === skillKey(address))
   if (matches.length !== 1) throw new Error('Final allocation requires one existing, concrete Skill or subskill instance.')
   return matches[0]
+}
+
+function findSkill(character: CharacterDefinition, address: SkillAddress) {
+  const matches = character.skills.filter((entry) => skillKey(entry.address) === skillKey(address))
+  if (matches.length !== 1) throw new Error('This action requires one existing concrete Skill or subskill.')
+  return matches[0]
+}
+
+function normalizeSpecialty(subject: string): string {
+  return subject.trim().replace(/\s+/g, ' ').replace(/[()]/g, '')
 }
 
 function applyLedgerDelta(target: { accumulatedXp: number; sourceAwards: XpAward[] }, delta: number, provenanceId: string): void {

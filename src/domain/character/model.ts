@@ -60,6 +60,30 @@ export interface SkillLedgerEntry {
   sourceAwards: XpAward[]
 }
 
+export interface LifeModuleSkillPurchaseRecord {
+  id: string
+  address: SkillAddress
+  displayName: string
+  xp: number
+  level: number | null
+  proposedAt: string
+  provenanceId: string
+}
+
+export interface LifeModuleSpecialtyRecord {
+  id: string
+  address: SkillAddress
+  displayName: string
+  specialty: string
+  xp: number
+  state: 'proposed' | 'committed' | 'removed' | 'replaced'
+  gmApproval: 'required' | 'approved'
+  proposedAt: string
+  committedAt?: string
+  removedAt?: string
+  provenanceId: string
+}
+
 export interface Identity {
   id: string
   name: string
@@ -372,6 +396,10 @@ export interface LifeModuleFinalReviewState {
   opposedTraitResolutions?: LifeModuleOpposedTraitResolutionRecord[]
   /** Added in Slice 90; absent on older Alpha saves. */
   additionalTraitXp?: LifeModuleAdditionalTraitXpRecord[]
+  /** Added in Slice 98; absent on older Alpha saves. */
+  skillPurchases?: LifeModuleSkillPurchaseRecord[]
+  /** Added in Slice 98; absent on older Alpha saves. */
+  specialties?: LifeModuleSpecialtyRecord[]
   negativeTraitXpPurchase: {
     capXp: number
     purchasedXp: number

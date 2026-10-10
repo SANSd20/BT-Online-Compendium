@@ -6,13 +6,13 @@ import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, COMSTAR_WOB_SERVICE_ID, FAM
 import { getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
-import { getFinalReviewBlockers, getModeledOpposedTraitConflicts } from '../../domain/lifeModules/finalReview'
-import { POINT_BUY_TRAITS } from '../../domain/pointBuy/catalog'
+import { characterSkillProgression, getFinalReviewBlockers, getModeledOpposedTraitConflicts, skillXpCosts } from '../../domain/lifeModules/finalReview'
+import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../../domain/pointBuy/catalog'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
 import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
 import { applyStage0Affiliation, applyUniversalStage0, continueStage3Schooling, continueStage4Modules, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
-import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, purchaseAdditionalNegativeTraitXp, removeAdditionalNegativeTraitXp, removeFinalReviewAllocation, resolveLifeModuleOpposedTraits } from '../../engine/lifeModuleFinalReview'
+import { allocateFinalReviewXp, approveFinalReviewSpecialty, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, proposeFinalReviewSpecialty, purchaseAdditionalNegativeTraitXp, purchaseFinalReviewSkill, removeAdditionalNegativeTraitXp, removeFinalReviewAllocation, removeFinalReviewSpecialty, resolveLifeModuleOpposedTraits } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
@@ -92,6 +92,10 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
   const [finalAllocationXp, setFinalAllocationXp] = useState(1)
   const [additionalTraitId, setAdditionalTraitId] = useState('trait.unattractive')
   const [additionalTraitTp, setAdditionalTraitTp] = useState(-1)
+  const [newSkillId, setNewSkillId] = useState('skill.perception')
+  const [newSkillParameter, setNewSkillParameter] = useState('')
+  const [specialtyTarget, setSpecialtyTarget] = useState('')
+  const [specialtySubject, setSpecialtySubject] = useState('')
   const [equipmentDraft, setEquipmentDraft] = useState<EquipmentDraft>(EMPTY_EQUIPMENT_DRAFT)
   const [catalogSearch, setCatalogSearch] = useState('')
   const [catalogCategory, setCatalogCategory] = useState('all')
@@ -509,6 +513,18 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
     operate(() => purchaseAdditionalNegativeTraitXp(character, additionalTraitId, additionalTraitTp), 'Optional Additional XP proposed.')
   }
 
+  function purchaseNewSkill() {
+    if (!character) return
+    operate(() => purchaseFinalReviewSkill(character, newSkillId, newSkillParameter), 'New Skill proposed and 20 XP allocated.')
+  }
+
+  function addSpecialty() {
+    if (!character || !specialtyTarget) return
+    const skill = character.skills[Number(specialtyTarget)]
+    if (!skill) return
+    operate(() => proposeFinalReviewSpecialty(character, skill.address, specialtySubject), 'Specialty proposed; explicit GM approval is still required.')
+  }
+
   function updateDescription(patch: Parameters<typeof updatePersonalDescription>[1]) {
     if (!character) return
     operate(() => updatePersonalDescription(character, patch), 'Final Touches description saved.')
@@ -807,6 +823,19 @@ export function LifeModulesScreen({ onSave }: LifeModulesScreenProps) {
               <button className="button" type="button" disabled={state.finalReview.allocationPool.remaining === 0} onClick={allocateFinalXp}>Allocate XP</button>
             </div>
             {state.finalReview.allocations.length > 0 && <ul className="purchase-list" aria-label="Proposed final improvements">{state.finalReview.allocations.map((allocation) => <li key={allocation.id}><div><strong>{allocation.destination.displayName}</strong><span>Proposed +{allocation.xp} XP · {allocation.destination.type}</span></div><button className="button secondary danger" type="button" onClick={() => operate(() => removeFinalReviewAllocation(character, allocation.id), 'Proposed final improvement removed and XP returned.')}>Remove</button></li>)}</ul>}
+            <h3>3a. New Skills and specialties</h3>
+            <p>Only supported canonical Skills can be purchased here. A new concrete Skill costs the current Level 0 threshold; a specialty costs 20 XP and requires explicit GM approval.</p>
+            <div className="row-actions">
+              <label>New Skill<select value={newSkillId} onChange={(event) => setNewSkillId(event.target.value)}>{POINT_BUY_SKILLS.map((entry) => <option key={entry.id} value={entry.id}>{entry.displayName}</option>)}</select></label>
+              <label>Concrete subskill<input value={newSkillParameter} onChange={(event) => setNewSkillParameter(event.target.value)} placeholder="Required where shown" /></label>
+              <button className="button secondary" type="button" onClick={purchaseNewSkill}>Purchase Skill · {character ? skillXpCosts(characterSkillProgression(character))[0] : 20} XP</button>
+            </div>
+            <div className="row-actions">
+              <label>Specialty Skill<select value={specialtyTarget} onChange={(event) => setSpecialtyTarget(event.target.value)}><option value="">Choose an existing Skill…</option>{character.skills.map((entry, index) => <option key={`${entry.address.skillId}-${index}`} value={index}>{entry.displayName}</option>)}</select></label>
+              <label>Specialty subject<input value={specialtySubject} onChange={(event) => setSpecialtySubject(event.target.value)} placeholder="e.g. Energy" /></label>
+              <button className="button secondary" type="button" disabled={!specialtyTarget} onClick={addSpecialty}>Propose specialty · 20 XP</button>
+            </div>
+            {(state.finalReview.specialties ?? []).length > 0 && <ul className="purchase-list" aria-label="Skill specialties">{(state.finalReview.specialties ?? []).filter((entry) => entry.state !== 'removed').map((entry) => <li key={entry.id}><div><strong>{entry.displayName} ({entry.specialty})</strong><span>{entry.state === 'proposed' ? 'Proposed · GM approval required' : 'Committed'} · 20 XP</span></div>{entry.state === 'proposed' && <button className="button secondary" type="button" onClick={() => operate(() => approveFinalReviewSpecialty(character, entry.id), 'GM approval recorded for specialty.')}>Record GM approval</button>}<button className="button secondary danger" type="button" onClick={() => operate(() => removeFinalReviewSpecialty(character, entry.id), entry.state === 'proposed' ? 'Specialty proposal removed and XP returned.' : 'Specialty removed; 20 XP un-specialization cost applied.')}>Remove</button></li>)}</ul>}
             {goalStatus && <section className="goal-review" aria-labelledby="goal-review-heading">
               <h3 id="goal-review-heading">{goalStatus.displayName} goal gaps</h3>
               <p>{goalStatus.satisfied} / {goalStatus.total} guidance requirements satisfied. Goal gaps are shown before ordinary Optimization; selecting a goal never grants the Field.</p>

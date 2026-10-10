@@ -5,7 +5,7 @@ import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BA
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
-import { allocateFinalReviewXp, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, purchaseAdditionalNegativeTraitXp, removeFinalReviewAllocation, removeAdditionalNegativeTraitXp, resolveLifeModuleOpposedTraits } from './lifeModuleFinalReview'
+import { allocateFinalReviewXp, approveFinalReviewSpecialty, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, proposeFinalReviewSpecialty, purchaseAdditionalNegativeTraitXp, purchaseFinalReviewSkill, removeFinalReviewAllocation, removeFinalReviewSpecialty, removeAdditionalNegativeTraitXp, resolveLifeModuleOpposedTraits } from './lifeModuleFinalReview'
 import { createPointBuyCharacter } from './pointBuyEngine'
 
 function completeStage0(startingXp = 5000) {
@@ -1312,6 +1312,37 @@ describe('Life Module engine', () => {
     expect(character.traits.find((entry) => entry.traitId === 'trait.patient')).toMatchObject({ accumulatedXp: 100, attainedTp: 1, active: true })
     expect(() => allocateFinalReviewXp(character, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 1595)).toThrow('overspend')
     expect(character.creation.lifeModules!.finalReview!.allocations.every((entry) => character.provenance.some((provenance) => provenance.id === entry.provenanceId))).toBe(true)
+  })
+
+  it('purchases governed concrete Skills at Level 0 and prevents duplicates or unresolved subskills', () => {
+    let character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    character = purchaseFinalReviewSkill(character, 'skill.language', 'Klingon')
+    expect(character.skills.filter((entry) => entry.displayName === 'Language/Klingon')).toHaveLength(1)
+    expect(character.skills.find((entry) => entry.displayName === 'Language/Klingon')).toMatchObject({ accumulatedXp: 20, level: 0 })
+    expect(() => purchaseFinalReviewSkill(character, 'skill.language', 'Klingon')).toThrow('already exists')
+    expect(() => purchaseFinalReviewSkill(character, 'skill.language')).toThrow('concrete subskill')
+  })
+
+  it('charges, approves, removes, and persists one specialty without changing Skill Level', () => {
+    let character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    const skill = character.skills.find((entry) => entry.displayName === 'Acting')!
+    const before = skill.accumulatedXp
+    const poolBefore = character.creation.lifeModules!.finalReview!.allocationPool.remaining
+    character = proposeFinalReviewSpecialty(character, skill.address, ' Deception ')
+    const record = character.creation.lifeModules!.finalReview!.specialties![0]
+    expect(record).toMatchObject({ specialty: 'Deception', state: 'proposed', gmApproval: 'required', xp: 20 })
+    expect(character.creation.lifeModules!.finalReview!.allocationPool.remaining).toBe(poolBefore - 20)
+    expect(character.skills.find((entry) => entry.displayName === 'Acting')?.accumulatedXp).toBe(before)
+    expect(character.creation.lifeModules!.finalReview!.readiness).toBe('review-required')
+    character = approveFinalReviewSpecialty(character, record.id)
+    expect(character.skills.find((entry) => entry.displayName === 'Acting')).toMatchObject({ specialty: 'Deception', accumulatedXp: before })
+    expect(() => proposeFinalReviewSpecialty(character, skill.address, 'Other')).toThrow('only one')
+    character = removeFinalReviewSpecialty(character, record.id)
+    expect(character.skills.find((entry) => entry.displayName === 'Acting')?.specialty).toBeUndefined()
+    expect(character.creation.lifeModules!.finalReview!.allocationPool.remaining).toBe(poolBefore - 40)
+    const encoded = encodeCharacter(character, '2026-10-10T00:00:00.000Z')
+    expect(encoded).toContain('"specialty": "Deception"')
+    expect(encoded).toContain('"state": "removed"')
   })
 
   it('removes a proposed final improvement without XP drift', () => {

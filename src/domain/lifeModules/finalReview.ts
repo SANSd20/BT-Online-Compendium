@@ -202,6 +202,7 @@ export function getFinalReviewBlockers(character: CharacterDefinition): FinalRev
   if (character.attributes.some((entry) => (deriveAttributeLevel(entry.accumulatedXp) ?? 0) < 1)) blockers.push({ id: 'attribute-minimum', message: 'Every Attribute must attain a score of at least 1.' })
   if (character.attributes.some((entry) => !attributeLegality(character, entry.attributeId).legal)) blockers.push({ id: 'attribute-legality', message: 'One or more Attributes exceed the legal phenotype or Exceptional Attribute maximum.' })
   if (character.traits.some((entry) => isModeledNegativeTrait(entry.traitId) && entry.accumulatedXp > 0)) blockers.push({ id: 'negative-trait-positive-xp', message: 'A modeled negative Trait has positive XP and must be removed through explicit Optimization.' })
+  if ((review.specialties ?? []).some((entry) => entry.state === 'proposed' && entry.gmApproval === 'required')) blockers.push({ id: 'specialty-gm-approval', message: 'One or more proposed Skill specialties require explicit GM approval.' })
   return blockers
 }
 

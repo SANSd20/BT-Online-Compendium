@@ -4,6 +4,10 @@
 
 ## Alpha Slice 97 verification
 
+## Alpha Slice 98 verification
+
+Source extraction used pypdf against the authoritative Corrected Third Printing and v4.0 Errata PDFs. Automated coverage adds governed new concrete Skill purchase, Level 0 cost, duplicate/subskill rejection, specialty 20-XP accounting, one-specialty enforcement, normalized subject, explicit GM approval state, proposal cancellation, committed un-specialization, re-specialization readiness, provenance, and JSON round trip. Full Slice 98 verification and separate production build remain required before release. Reference Fields remain 56, mechanical Fields remain 50, and equipment remains 84 records with 84 unique stable IDs.
+
 Direct pypdf extraction from the specified Corrected Third Printing and v4.0 errata PDFs verified the required Character Minimums, Optimization, Master Traits List, Exceptional Attribute, Phenotype description, and Phenotype table sections. Automated verification covers the existing 56 test files and 416 tests, including persistence and Slice 95 regressions. Phenotype and Exceptional Attribute legality remain bounded to supported identities; Clan creation and unsupported Trait mechanics remain unavailable.
 
 Slice 95 verifies Driving canonicalization and legacy-save migration, signed Flexible XP pool accounting by absolute magnitude, and alphabetical Character Summary presentation. Additional XP and final-review accounting remain separate.
