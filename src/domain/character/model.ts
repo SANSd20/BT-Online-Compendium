@@ -1,6 +1,6 @@
 import type { GmException, RulesSnapshot, SourceCitation } from '../rules/model'
 import type { AffiliationLanguageSelectorGroupId } from '../lifeModules/affiliations'
-import type { ClanCasteState, ClanIdentityState } from './clanIdentity'
+import type { ClanBirthOriginState, ClanCasteState, ClanFieldAptitudeState, ClanIdentityState } from './clanIdentity'
 
 export type CreationMethod = 'archetype' | 'point-buy' | 'life-modules'
 export type CharacterStatus = 'draft' | 'ready-for-final-validation' | 'finalized'
@@ -644,6 +644,8 @@ export interface CharacterDefinition {
   /** Optional Slice 118 foundation; presence never activates Clan creation. */
   clanIdentity?: ClanIdentityState
   clanCaste?: ClanCasteState
+  clanBirthOrigin?: ClanBirthOriginState
+  clanFieldAptitude?: ClanFieldAptitudeState
   phenotypeId: string
   lifeModuleHistory: LifeModuleHistoryEntry[]
   chronology: Array<{ date: string; eventId: string; provenanceId: string }>

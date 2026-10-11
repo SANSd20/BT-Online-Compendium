@@ -57,7 +57,7 @@ import {
 } from '../domain/finalTouches/rules'
 import { getEquipmentCatalogItem, parseRawEquipmentRating } from '../domain/equipment/catalog'
 import { getPhenotypeDefinition } from '../domain/character/phenotypes'
-import { CLAN_IDENTITY_ID, isClanCasteId } from '../domain/character/clanIdentity'
+import { CLAN_IDENTITY_ID, isClanBirthOrigin, isClanCasteId } from '../domain/character/clanIdentity'
 
 const SAFE_AFFILIATION_CODE = /^[A-Z][A-Z0-9-]*$/
 const FORBIDDEN_INVENTORY_RUNTIME_KEYS = [
@@ -101,6 +101,17 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
     }
   }
   if (character.clanCaste && !character.clanIdentity) issues.push(issue('clan.caste.identity-required', 'clanCaste', 'Clan caste requires a Clan identity foundation.', { severity: 'warning', kind: 'prerequisite' }))
+  if (character.clanBirthOrigin) {
+    if (!isClanBirthOrigin(character.clanBirthOrigin.id) || character.clanBirthOrigin.support !== 'unsupported' || character.clanBirthOrigin.source.page !== 109) issues.push(issue('clan.birth-origin.invalid', 'clanBirthOrigin', 'Clan birth origin foundation is malformed.'))
+    else issues.push(issue('clan.birth-origin.unsupported', 'clanBirthOrigin', 'Trueborn/Freeborn eligibility is not enabled in this Public Alpha foundation.', { severity: 'warning', kind: 'availability' }))
+    if (!character.clanIdentity) issues.push(issue('clan.birth-origin.identity-required', 'clanBirthOrigin', 'Clan birth origin requires a Clan identity foundation.', { severity: 'warning', kind: 'prerequisite' }))
+  }
+  if (character.clanFieldAptitude) {
+    const aptitude = character.clanFieldAptitude
+    if (!aptitude.id.startsWith('field-aptitude.') || aptitude.support !== 'unsupported' || aptitude.source.page !== 121 || !aptitude.phenotypeId || aptitude.associatedFieldIds.length === 0) issues.push(issue('clan.field-aptitude.invalid', 'clanFieldAptitude', 'Clan Field Aptitude foundation is malformed.'))
+    else issues.push(issue('clan.field-aptitude.unsupported', 'clanFieldAptitude', 'Phenotype-linked Clan Field Aptitude is not enabled in this Public Alpha foundation.', { severity: 'warning', kind: 'availability' }))
+    if (!character.clanIdentity) issues.push(issue('clan.field-aptitude.identity-required', 'clanFieldAptitude', 'Clan Field Aptitude requires a Clan identity foundation.', { severity: 'warning', kind: 'prerequisite' }))
+  }
 
   validatePhenotypeAndExceptionalAttributes(character, issues)
 

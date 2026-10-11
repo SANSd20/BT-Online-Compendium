@@ -1,7 +1,7 @@
 {
   "name": "bt-online-compendium",
   "private": true,
-  "version": "0.1.0-alpha.120",
+  "version": "0.1.0-alpha.124",
   "type": "module",
   "scripts": {
     "dev": "vite",
