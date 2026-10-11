@@ -64,6 +64,8 @@ export type LifeModulePrerequisite =
   | { id: string; kind: 'affiliation'; affiliationId?: string; classification?: 'any' | 'non-clan'; description: string }
   | { id: string; kind: 'attribute-minimum'; attributeId: string; minimum: number; description: string }
   | { id: string; kind: 'phenotype'; phenotypeId: string; description: string }
+  | { id: string; kind: 'clan-caste'; casteId: string; description: string }
+  | { id: string; kind: 'birth-origin'; birthOrigin: 'trueborn' | 'freeborn'; description: string }
   | { id: string; kind: 'trait'; traitId: string; description: string }
   | { id: string; kind: 'trait-minimum'; traitId: string; minimum: number; description: string }
   | { id: string; kind: 'trait-absent'; traitId: string; description: string }

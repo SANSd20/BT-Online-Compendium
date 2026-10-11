@@ -4,6 +4,9 @@ import {
   AGITATOR_ID,
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
+  TRUEBORN_CRECHE_ID,
+  CLAN_APPRENTICESHIP_ID,
+  TRUEBORN_SIBKO_ID,
   FARM_ID,
   CAPELLAN_COMMONALITY_ID,
   COMSTAR_ORDER_ID,
@@ -28,6 +31,7 @@ import {
   UNIVERSAL_STAGE_0_ID,
   WORD_OF_BLAKE_ORDER_ID,
   validateLifeModuleCatalog,
+  CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG,
 } from './catalog'
 import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, INTELLIGENCE_FIELD_ID, MARINE_FIELD_ID, OFFICER_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 
@@ -59,12 +63,18 @@ describe('Life Module Alpha catalog', () => {
       COMSTAR_WOB_SERVICE_ID,
       TRAVEL_ID,
       AGITATOR_ID,
+      TRUEBORN_CRECHE_ID,
+      CLAN_APPRENTICESHIP_ID,
+      TRUEBORN_SIBKO_ID,
     ])
     expect(validateLifeModuleCatalog()).toEqual([])
-    expect(LIFE_MODULE_CATALOG.filter((entry) => entry.stage === 1)).toHaveLength(4)
-    expect(LIFE_MODULE_CATALOG.filter((entry) => entry.stage === 2)).toHaveLength(3)
+    expect(LIFE_MODULE_CATALOG.filter((entry) => entry.stage === 1)).toHaveLength(5)
+    expect(LIFE_MODULE_CATALOG.filter((entry) => entry.stage === 2)).toHaveLength(5)
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === FARM_ID)).toMatchObject({ costXp: 275, chronologyYears: 10, source: { page: 77 } })
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === WAR_ORPHAN_ID)).toMatchObject({ costXp: 170, chronologyYears: 10, source: { page: 78 } })
+    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === TRUEBORN_CRECHE_ID)).toMatchObject({ displayName: 'Trueborn Crèche', stage: 1, costXp: 300, chronologyYears: 10, source: { page: 76 } })
+    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === CLAN_APPRENTICESHIP_ID)).toMatchObject({ displayName: 'Clan Apprenticeship', stage: 2, costXp: 500, chronologyYears: 16, source: { page: 77 } })
+    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === TRUEBORN_SIBKO_ID)).toMatchObject({ displayName: 'Trueborn Sibko', stage: 2, costXp: 1600, chronologyYears: 16, source: { page: 79 } })
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_SCHOOL_ID)).toMatchObject({ costXp: 500, chronologyYears: 16, source: { page: 80 } })
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === TECHNICAL_COLLEGE_ID)).toMatchObject({ stage3School: { classification: 'general', family: 'civilian' } })
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === TRADE_SCHOOL_ID)).toMatchObject({ costXp: 560, stage3School: { classification: 'general', family: 'civilian' } })
@@ -160,5 +170,16 @@ describe('Life Module Alpha catalog', () => {
     expect(validateLifeModuleCatalog(duplicate)).toEqual(expect.arrayContaining([
       expect.objectContaining({ moduleId: UNIVERSAL_STAGE_0_ID, message: expect.stringContaining('Duplicate') }),
     ]))
+  })
+
+  it('keeps Clan branches atomic and unsupported branches deferred', () => {
+    expect(CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG).toHaveLength(2)
+    const apprenticeship = CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG.find((entry) => entry.id === 'package.clan-apprenticeship-branch')!
+    expect(apprenticeship.choices.map((entry) => entry.id)).toEqual(['branch.aerospace', 'branch.elemental', 'branch.mechwarrior'])
+    expect(apprenticeship.choices.find((entry) => entry.id === 'branch.aerospace')?.awards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'field-grant', fieldId: 'field.clan-aerospace-warrior', purchaseCostXp: 200 }),
+    ]))
+    expect(apprenticeship.choices.map((entry) => entry.displayName)).not.toContain('Cavalry')
+    expect(apprenticeship.choices.map((entry) => entry.displayName)).not.toContain('ProtoMech')
   })
 })

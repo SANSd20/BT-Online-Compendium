@@ -1,17 +1,15 @@
 import type { SourceCitation } from '../rules/model'
-import type { ConditionalLifeModulePackageDefinition, LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
+import type { ConditionalLifeModulePackageDefinition, LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
 import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, PILOT_DROPSHIP_FIELD_ID, PILOT_JUMPSHIP_FIELD_ID, PILOT_WARSHIP_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 import { INFANTRY_ANTI_MECH_FIELD_ID } from '../skillFields/catalog'
 import { PILOT_AEROSPACE_CIVILIAN_FIELD_ID, PILOT_AEROSPACE_COMBAT_FIELD_ID, PILOT_AIRCRAFT_COMBAT_FIELD_ID } from '../skillFields/catalog'
 import { HPG_TECHNICIAN_FIELD_ID } from '../skillFields/catalog'
+import { CLAN_AEROSPACE_WARRIOR_FIELD_ID, CLAN_BASIC_TRAINING_FIELD_ID, CLAN_ELEMENTAL_FIELD_ID, CLAN_MECHWARRIOR_FIELD_ID } from '../skillFields/catalog'
 
 export { CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
 export { OFFICER_TRAINING_SCHOOL_ID } from './stage3Schooling'
-
-/** Production package catalog contract. No package is activated until its complete source audit is represented here. */
-export const CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG: readonly ConditionalLifeModulePackageDefinition[] = []
 
 export interface ConditionalPackageCatalogValidationIssue {
   packageId: string
@@ -94,6 +92,15 @@ export const SOLARIS_INTERNSHIP_ID = 'stage3.solaris-internship'
 export const AGITATOR_ID = 'stage4.agitator'
 export const COMSTAR_WOB_SERVICE_ID = 'stage4.comstar-word-of-blake-service'
 export const TRAVEL_ID = 'stage4.travel'
+export const TRUEBORN_CRECHE_ID = 'stage1.trueborn-creche'
+export const CLAN_APPRENTICESHIP_ID = 'stage2.clan-apprenticeship'
+export const TRUEBORN_SIBKO_ID = 'stage2.trueborn-sibko'
+
+const clanAffiliation = (id: string): LifeModulePrerequisite => ({ id, kind: 'affiliation', affiliationId: 'affiliation.clan', description: 'Clan affiliation' })
+const trueborn = (id: string): LifeModulePrerequisite => ({ id, kind: 'birth-origin', birthOrigin: 'trueborn', description: 'Trueborn birth origin' })
+const phenotype = (id: string, phenotypeId: string): Exclude<LifeModulePrerequisite, { kind: 'any-of' }> => ({ id, kind: 'phenotype', phenotypeId, description: `${phenotypeId} Phenotype` })
+const attributeMinimum = (id: string, attributeId: string, minimum: number): LifeModulePrerequisite => ({ id, kind: 'attribute-minimum', attributeId, minimum, description: `${attributeId} ${minimum}+` })
+const clanFieldGrant = (id: string, fieldId: string, purchaseCostXp: number, xpPerSkill: number, category: 'basic' | 'advanced'): LifeModuleAward => ({ id, kind: 'field-grant', description: `${fieldId} governed Clan training Field`, fieldId, xpPerSkill, purchaseCostXp, schoolModuleId: id.startsWith('sibko') ? TRUEBORN_SIBKO_ID : CLAN_APPRENTICESHIP_ID, offerId: `${id.startsWith('sibko') ? TRUEBORN_SIBKO_ID : CLAN_APPRENTICESHIP_ID}/${fieldId}`, chronologyYears: category === 'basic' ? 1 : 2, category })
 
 export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
   {
@@ -1046,6 +1053,40 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     notes: ['Stage 4 Real Life module. Adds four years to character chronology.'],
     deferredRules: ['Repeated Stage 4 execution and multiple Stage 4 modules are not supported in Alpha Slice 9.'],
   },
+  {
+    id: TRUEBORN_CRECHE_ID, displayName: 'Trueborn Crèche', stage: 1, kind: 'early-childhood', source: source(76, 'stage-1-trueborn-creche'), costXp: 300, chronologyYears: 10,
+    prerequisites: [clanAffiliation('creche.affiliation'), trueborn('creche.trueborn'), { id: 'creche.phenotype', kind: 'any-of', options: [phenotype('creche.phenotype.aerospace', 'phenotype.aerospace'), phenotype('creche.phenotype.elemental', 'phenotype.elemental'), phenotype('creche.phenotype.mechwarrior', 'phenotype.mechwarrior')], description: 'Aerospace, Elemental, or MechWarrior Phenotype' }],
+    awards: [fixed('creche.attribute.str', 100, attribute('STR')), fixed('creche.attribute.bod', 125, attribute('BOD')), fixed('creche.attribute.rfl', 125, attribute('RFL')), fixed('creche.attribute.wil', 100, attribute('WIL')), fixed('creche.attribute.cha', -75, attribute('CHA')), fixed('creche.trait.compulsion', -100, trait('trait.compulsion', 'Compulsion/Clan Honor', { compulsion: 'Clan Honor' })), fixed('creche.trait.phenotype', 0, trait('trait.phenotype', 'Phenotype')), fixed('creche.trait.slow-learner', -300, trait('trait.slow-learner', 'Slow Learner')), fixed('creche.trait.trueborn', 200, trait('trait.trueborn', 'Trueborn')), fixed('creche.skill.interest-clan-remembrance', 10, skill('skill.interest', 'Interest/Clan Remembrance', 'Clan Remembrance')), fixed('creche.skill.martial-arts', 10, skill('skill.martial-arts', 'Martial Arts')), fixed('creche.skill.melee-weapons', 5, skill('skill.melee-weapons', 'Melee Weapons')), fixed('creche.skill.protocol-clan', 10, skill('skill.protocol', 'Protocol/Clan', 'Clan')), fixed('creche.skill.small-arms', 5, skill('skill.small-arms', 'Small Arms')), fixed('creche.skill.swimming', 10, skill('skill.swimming', 'Swimming')), { id: 'creche.flexible', kind: 'flexible-xp', xpPerGrant: 15, count: 5, allowedTargetTypes: ['attribute', 'trait', 'skill'] }],
+    notes: ['Trueborn Clan childhood module; choose Aerospace, Elemental, or MechWarrior Phenotype.'], deferredRules: ['Clan creation remains disabled; branch-specific source restrictions are enforced only through internal prerequisites.'],
+  },
+  {
+    id: CLAN_APPRENTICESHIP_ID, displayName: 'Clan Apprenticeship', stage: 2, kind: 'late-childhood', source: source(77, 'stage-2-clan-apprenticeship'), costXp: 500, chronologyYears: 16,
+    prerequisites: [clanAffiliation('apprenticeship.affiliation'), attributeMinimum('apprenticeship.bod', 'BOD', 4), attributeMinimum('apprenticeship.cha', 'CHA', 4)],
+    skillFieldSelection: { offers: [{ fieldId: CLAN_BASIC_TRAINING_FIELD_ID, category: 'basic', costXpPerSkill: 24, awardedXpPerSkill: 30, chronologyYears: 1 }, { fieldId: CLAN_AEROSPACE_WARRIOR_FIELD_ID, category: 'advanced', costXpPerSkill: 40, awardedXpPerSkill: 50, chronologyYears: 2 }, { fieldId: CLAN_ELEMENTAL_FIELD_ID, category: 'advanced', costXpPerSkill: 40, awardedXpPerSkill: 50, chronologyYears: 2 }, { fieldId: CLAN_MECHWARRIOR_FIELD_ID, category: 'advanced', costXpPerSkill: 40, awardedXpPerSkill: 50, chronologyYears: 2 }], exactlyBasic: 1, minimumAdvanced: 0, maximumTotal: 2, referenceOnlyOffers: [{ displayName: 'Clan Cavalry', category: 'advanced', chronologyYears: 2, reason: 'Cavalry alternatives are not mechanically representable.' }, { displayName: 'Infantry', category: 'advanced', chronologyYears: 2, reason: 'Clan-specific Infantry branch remains outside this slice.' }] },
+    awards: [fixed('apprenticeship.attribute.bod', 50, attribute('BOD')), fixed('apprenticeship.attribute.wil', 50, attribute('WIL')), fixed('apprenticeship.attribute.cha', -30, attribute('CHA')), fixed('apprenticeship.trait.compulsion', -30, trait('trait.compulsion', 'Compulsion/Clan Honor', { compulsion: 'Clan Honor' })), fixed('apprenticeship.trait.rank', 100, trait('trait.rank', 'Rank')), fixed('apprenticeship.trait.reputation', -40, trait('trait.reputation', 'Reputation')), fixed('apprenticeship.skill.career-soldier', 50, skill('skill.career', 'Career/Soldier', 'Soldier')), fixed('apprenticeship.skill.interest-clan-remembrance', 20, skill('skill.interest', 'Interest/Clan Remembrance', 'Clan Remembrance')), fixed('apprenticeship.skill.negotiation', 50, skill('skill.negotiation', 'Negotiation')), { id: 'apprenticeship.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 200, allowedTargetTypes: ['attribute', 'trait', 'skill'] }],
+    notes: ['On completion, Clan warriors proceed to Stage 4 in the source sequence.'], deferredRules: ['Technician/Any and unsupported branch-specific Fields remain unavailable.'],
+  },
+  {
+    id: TRUEBORN_SIBKO_ID, displayName: 'Trueborn Sibko', stage: 2, kind: 'late-childhood', source: source(79, 'stage-2-trueborn-sibko'), costXp: 1600, chronologyYears: 16,
+    prerequisites: [clanAffiliation('sibko.affiliation'), trueborn('sibko.trueborn'), { id: 'sibko.creche', kind: 'module-history', moduleIds: [TRUEBORN_CRECHE_ID], description: 'Trueborn Crèche history' }],
+    skillFieldSelection: { offers: [{ fieldId: CLAN_AEROSPACE_WARRIOR_FIELD_ID, category: 'advanced', costXpPerSkill: 40, awardedXpPerSkill: 50, chronologyYears: 2 }, { fieldId: CLAN_ELEMENTAL_FIELD_ID, category: 'advanced', costXpPerSkill: 40, awardedXpPerSkill: 50, chronologyYears: 2 }, { fieldId: CLAN_MECHWARRIOR_FIELD_ID, category: 'advanced', costXpPerSkill: 40, awardedXpPerSkill: 50, chronologyYears: 2 }], exactlyBasic: 0, minimumAdvanced: 0, maximumTotal: 1 },
+    awards: [fixed('sibko.attribute.bod', 50, attribute('BOD')), fixed('sibko.attribute.wil', 50, attribute('WIL')), fixed('sibko.attribute.cha', -30, attribute('CHA')), fixed('sibko.trait.compulsion', -30, trait('trait.compulsion', 'Compulsion/Clan Honor', { compulsion: 'Clan Honor' })), fixed('sibko.trait.rank', 100, trait('trait.rank', 'Rank')), fixed('sibko.trait.reputation', -40, trait('trait.reputation', 'Reputation')), fixed('sibko.skill.career-soldier', 50, skill('skill.career', 'Career/Soldier', 'Soldier')), fixed('sibko.skill.interest-clan-remembrance', 20, skill('skill.interest', 'Interest/Clan Remembrance', 'Clan Remembrance')), fixed('sibko.skill.negotiation', 50, skill('skill.negotiation', 'Negotiation')), { id: 'sibko.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 150, allowedTargetTypes: ['attribute', 'trait', 'skill'] }],
+    notes: ['Trueborn warriors identify a supported branch before advancing.'], deferredRules: ['Cavalry, ProtoMech, advanced Elemental, and Technician/Any-dependent branches remain deferred.'],
+  },
+]
+
+/** Source-backed package definitions are internal only; Clan player creation remains disabled. */
+export const CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG: readonly ConditionalLifeModulePackageDefinition[] = [
+  { id: 'package.clan-apprenticeship-branch', displayName: 'Clan Apprenticeship branch', source: source(77, 'stage-2-clan-apprenticeship-branch'), eligibility: [clanAffiliation('package.affiliation')], choices: [
+    { id: 'branch.aerospace', displayName: 'Aerospace', awards: [fixed('branch.aerospace.vehicle', 100, trait('trait.vehicle', 'Vehicle')), clanFieldGrant('apprenticeship.aerospace-field', CLAN_AEROSPACE_WARRIOR_FIELD_ID, 200, 50, 'advanced')], unsupportedReasons: ['Concrete Pilot Field follow-on choices remain outside this slice.'] },
+    { id: 'branch.elemental', displayName: 'Elemental', awards: [fixed('branch.elemental.vehicle', 100, trait('trait.vehicle', 'Vehicle')), clanFieldGrant('apprenticeship.elemental-field', CLAN_ELEMENTAL_FIELD_ID, 280, 50, 'advanced')] },
+    { id: 'branch.mechwarrior', displayName: 'MechWarrior', awards: [fixed('branch.mechwarrior.vehicle', 100, trait('trait.vehicle', 'Vehicle')), clanFieldGrant('apprenticeship.mechwarrior-field', CLAN_MECHWARRIOR_FIELD_ID, 240, 50, 'advanced')] },
+  ] },
+  { id: 'package.trueborn-sibko-branch', displayName: 'Trueborn Sibko branch', source: source(79, 'stage-2-trueborn-sibko-branch'), eligibility: [clanAffiliation('package.affiliation'), trueborn('package.trueborn')], choices: [
+    { id: 'branch.aerospace', displayName: 'Aerospace', awards: [fixed('sibko.aerospace.vehicle', 100, trait('trait.vehicle', 'Vehicle')), clanFieldGrant('sibko.aerospace-field', CLAN_AEROSPACE_WARRIOR_FIELD_ID, 200, 50, 'advanced')] },
+    { id: 'branch.elemental', displayName: 'Elemental', awards: [fixed('sibko.elemental.vehicle', 100, trait('trait.vehicle', 'Vehicle')), clanFieldGrant('sibko.elemental-field', CLAN_ELEMENTAL_FIELD_ID, 280, 50, 'advanced')] },
+    { id: 'branch.mechwarrior', displayName: 'MechWarrior', awards: [fixed('sibko.mechwarrior.vehicle', 100, trait('trait.vehicle', 'Vehicle')), clanFieldGrant('sibko.mechwarrior-field', CLAN_MECHWARRIOR_FIELD_ID, 240, 50, 'advanced')] },
+  ] },
 ]
 
 export function getLifeModule(moduleId: string): LifeModuleDefinition {
@@ -1080,7 +1121,7 @@ export function validateLifeModuleCatalog(catalog: readonly LifeModuleDefinition
       }
       const policy = module.skillFieldSelection
       const secondary = module.stage3School?.classification === 'secondary'
-      if (policy.exactlyBasic !== 1 || policy.minimumAdvanced < (secondary ? 0 : 1) || policy.maximumTotal < policy.exactlyBasic + policy.minimumAdvanced) {
+      if ((module.stage === 3 && policy.exactlyBasic !== 1) || (module.stage === 3 && policy.minimumAdvanced < (secondary ? 0 : 1)) || policy.maximumTotal < policy.exactlyBasic + policy.minimumAdvanced) {
         issues.push({ moduleId: module.id, message: 'Skill Field selection constraints are malformed.' })
       }
     }
