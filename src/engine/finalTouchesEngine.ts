@@ -35,7 +35,7 @@ export interface CatalogInventoryInput {
 export function enterFinalTouches(character: CharacterDefinition): CharacterDefinition {
   const next = structuredClone(character)
   const lifeModules = next.creation.lifeModules
-  if (next.creation.method !== 'life-modules' || lifeModules?.phase !== 'ready-for-final-touches' || lifeModules.finalReview?.readiness !== 'ready-for-final-touches') {
+  if (next.creation.method === 'life-modules' && (lifeModules?.phase !== 'ready-for-final-touches' || lifeModules.finalReview?.readiness !== 'ready-for-final-touches')) {
     throw new Error('Final Touches can begin only after a Life Modules character passes final review.')
   }
   if (next.creation.finalTouches) throw new Error('Final Touches has already been initialized.')

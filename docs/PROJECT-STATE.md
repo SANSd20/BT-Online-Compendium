@@ -440,6 +440,14 @@ Slice 93 fixes the in-place action focus regression in Life Modules. The stage h
 
 ## Alpha Slice 94 checkpoint
 
+## Alpha Slice 110 checkpoint
+
+Slice 110 defines the supported-path readiness boundary across Life Modules, Point Buy, and Archetype. A supported path has resolved mandatory choices and prerequisites, legal Attribute/Trait/Skill ledgers, reconciled method-specific XP, resolved supported aging/Stasis effects, and completed Final Touches equipment review. Optional narrative fields, empty inventory, partial equipment gameplay effects, unavailable Skill TN/Complexity metadata, and PDF record-sheet export remain nonblocking advisories. Readiness is recomputed from canonical state rather than persisted flags. The governed catalog boundary remains 56 reference Fields, 50 mechanical Fields, and 84 equipment records/IDs.
+
+Life Modules retain committed Stages 0-4, Final Review, Optimization, Final Improvements, Optional Additional XP, aging, and Stasis gates, including legal Stage 3/4 skipping. Point Buy retains its narrow five-Skill and six-Trait catalog, Normal Human Attribute maximums, concrete Skill/subskill identity, exact XP reconciliation, negative-Trait cap, and required-language checks. Archetype retains the eight source-backed Core foundations and audited balanced adjustments; published package equipment remains source-backed package data. Point Buy and Archetype do not inherit Life Module-only Final Review requirements.
+
+Final Touches initialization is method-neutral for Point Buy and Archetype while remaining Final-Review-gated for Life Modules. Published Archetype package items retain source provenance and are not reinterpreted as new purchases. Finalized snapshots, save/resume, export/import, provenance, aging, and Stasis remain shared and backward-compatible. Source authority remains the Corrected Third Printing pp. 41, 49, 95-99, 107, 116, 121-122, 165, 167, 185-186, and 332-333 with applicable v4.0 Errata; gameplay automation gaps remain separate from creation legality. Release metadata is `0.1.0-alpha.110`.
+
 ## Alpha Slice 95 checkpoint
 
 ## Alpha Slice 97 checkpoint

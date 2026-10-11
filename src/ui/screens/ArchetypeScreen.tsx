@@ -8,6 +8,8 @@ import { validateCharacter } from '../../validation/validateCharacter'
 import { CharacterSummary } from '../components/CharacterSummary'
 import { ArchetypeAdjustmentPanel } from '../components/ArchetypeAdjustmentPanel'
 import { getArchetypeAdjustmentBalance } from '../../engine/archetypeAdjustmentEngine'
+import { enterFinalTouches, markReadyForEquipmentReview } from '../../engine/finalTouchesEngine'
+import { evaluateCharacterReadiness } from '../../domain/character/readiness'
 
 interface ArchetypeScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -86,6 +88,8 @@ export function ArchetypeScreen({ onSave, initialCharacter = null }: ArchetypeSc
           <ArchetypeAdjustmentPanel character={character} onChange={(updated) => { setCharacter(updated); setMessage('Adjustment draft updated. Save and export remain blocked until the net adjustment is 0 XP.') }} />
           <CharacterSummary character={character} />
           <div className="character-actions">
+            {!character.creation.finalTouches && <button className="button" type="button" onClick={() => { const updated = enterFinalTouches(character); setCharacter(updated); onSave(updated); setMessage('Final Touches opened.') }}>Enter Final Touches</button>}
+            {character.creation.finalTouches?.equipmentReviewState === 'equipment-draft' && <button className="button" type="button" onClick={() => { const updated = markReadyForEquipmentReview(character); setCharacter(updated); onSave(updated); setMessage('Equipment review marked ready.') }}>Mark equipment review ready</button>}
             <button
               className="button"
               type="button"
@@ -99,6 +103,7 @@ export function ArchetypeScreen({ onSave, initialCharacter = null }: ArchetypeSc
               onClick={() => downloadCharacter(character)}
             >Export character JSON</button>
           </div>
+          <p className="scope-note">Readiness: {evaluateCharacterReadiness(character).status}. Final Touches is required; gameplay TN/Complexity and PDF export remain advisory gaps.</p>
         </>
       )}
     </main>

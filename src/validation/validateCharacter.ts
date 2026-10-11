@@ -445,7 +445,7 @@ function validateFinalTouches(character: CharacterDefinition, issues: Validation
     return
   }
   const lifeModules = character.creation.lifeModules
-  if (character.creation.method !== 'life-modules' || lifeModules?.phase !== 'ready-for-final-touches' || lifeModules.finalReview?.readiness !== 'ready-for-final-touches') {
+  if (character.creation.method === 'life-modules' && (lifeModules?.phase !== 'ready-for-final-touches' || lifeModules.finalReview?.readiness !== 'ready-for-final-touches')) {
     issues.push(issue('final-touches.sequence.invalid', 'creation.finalTouches', 'Final Touches cannot begin before the Life Modules character passes final review.'))
   }
   const wealthTp = effectivePrimaryTraitTp(character, 'trait.wealth')
@@ -486,7 +486,7 @@ function validateFinalTouches(character: CharacterDefinition, issues: Validation
     issues.push(issue(equipmentIssue.id, equipmentIssue.itemId ? `inventory.${equipmentIssue.itemId}` : 'creation.finalTouches', equipmentIssue.message))
   }
   character.inventory.forEach((entry, index) => {
-    if (!['manual', 'catalog'].includes(entry.entryKind ?? '') || !entry.source?.sourceId || !entry.id || !provenanceIds.has(entry.provenanceId)) {
+    if (!['manual', 'catalog', 'published-package'].includes(entry.entryKind ?? '') || !entry.source?.sourceId || !entry.id || !provenanceIds.has(entry.provenanceId)) {
       issues.push(issue('final-touches.inventory.provenance', `inventory.${index}`, 'Final Touches inventory requires a supported entry kind, source, stable ID, and valid provenance.'))
     }
     if (entry.affiliationCode !== undefined && (!entry.affiliationCode || !SAFE_AFFILIATION_CODE.test(entry.affiliationCode))) {

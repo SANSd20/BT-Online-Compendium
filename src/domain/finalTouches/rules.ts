@@ -146,11 +146,13 @@ export function getEquipmentFoundationIssues(character: CharacterDefinition): Eq
   for (const item of character.inventory) {
     if (!item.displayName.trim()) issues.push({ id: 'inventory.name.required', itemId: item.id, message: 'Inventory item name is required.' })
     if (!Number.isInteger(item.quantity) || item.quantity <= 0) issues.push({ id: 'inventory.quantity.invalid', itemId: item.id, message: `${item.displayName || 'Inventory item'} requires a positive whole-number quantity.` })
-    if (!Number.isFinite(item.costPerItemCBills) || (item.costPerItemCBills ?? -1) < 0) issues.push({ id: 'inventory.cost.invalid', itemId: item.id, message: `${item.displayName || 'Inventory item'} has an invalid unit cost.` })
+    const publishedPackage = item.entryKind === 'published-package'
+    if (publishedPackage) continue
+    if (!publishedPackage && (!Number.isFinite(item.costPerItemCBills) || (item.costPerItemCBills ?? -1) < 0)) issues.push({ id: 'inventory.cost.invalid', itemId: item.id, message: `${item.displayName || 'Inventory item'} has an invalid unit cost.` })
     const completeRatings = hasCompleteRatings(item.equipmentRating) ? item.equipmentRating : null
     const hasFullRatings = completeRatings !== null
     const hasNullExampleRatings = item.entryKind === 'catalog' && item.catalogSnapshot?.sourceStatus === 'example-backed' && item.equipmentRating != null && Object.values(item.equipmentRating).every((rating) => rating === null)
-    if (!hasFullRatings && !hasNullExampleRatings) {
+    if (!publishedPackage && !hasFullRatings && !hasNullExampleRatings) {
       issues.push({ id: 'inventory.rating.invalid', itemId: item.id, message: `${item.displayName || 'Inventory item'} requires complete ratings unless it is an example-backed catalog item whose unaudited ratings remain null.` })
       continue
     }

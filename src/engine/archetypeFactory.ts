@@ -100,6 +100,7 @@ export function createCharacterFromArchetype(
     rulesPages: [...entry.rulesPages],
     source: { ...archetype.source },
     ...(entry.notes ? { notes: [...entry.notes] } : {}),
+    entryKind: 'published-package',
     carried: null,
     provenanceId: publishedProvenanceId,
   }))

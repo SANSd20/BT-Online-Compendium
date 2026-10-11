@@ -17,6 +17,8 @@ import {
 } from '../../engine/pointBuyEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
+import { enterFinalTouches, markReadyForEquipmentReview } from '../../engine/finalTouchesEngine'
+import { evaluateCharacterReadiness } from '../../domain/character/readiness'
 
 interface PointBuyScreenProps {
   onSave: (character: CharacterDefinition) => void
@@ -68,6 +70,7 @@ export function PointBuyScreen({ onSave, initialCharacter = null }: PointBuyScre
   const selectedSkill = POINT_BUY_SKILLS.find((entry) => entry.id === skillId) ?? POINT_BUY_SKILLS[0]
   const selectedTrait = getPointBuyTrait(traitId)
   const validation = character ? validateCharacter(character) : null
+  const readiness = character ? evaluateCharacterReadiness(character) : null
 
   return (
     <main className="creation-page point-buy-page">
@@ -170,9 +173,12 @@ export function PointBuyScreen({ onSave, initialCharacter = null }: PointBuyScre
             <p>{character.displayName} · Normal Human · {character.cBills.toLocaleString()} starting C-bills</p>
             <ul>{validation?.issues.map((entry) => <li className={entry.severity} key={`${entry.id}/${entry.path}`}>{entry.message}</li>)}</ul>
             <div className="row-actions">
+              {!character.creation.finalTouches && <button className="button" type="button" onClick={() => update((current) => enterFinalTouches(current))}>Enter Final Touches</button>}
+              {character.creation.finalTouches?.equipmentReviewState === 'equipment-draft' && <button className="button" type="button" onClick={() => update((current) => markReadyForEquipmentReview(current))}>Mark equipment review ready</button>}
               <button className="button" type="button" onClick={() => { onSave(character); setMessage('Point Buy draft saved locally.') }}>Save draft</button>
               <button className="button secondary" type="button" onClick={() => downloadCharacter(character)}>Export character JSON</button>
             </div>
+            {readiness && <p className="scope-note">Readiness: {readiness.status}. {readiness.blockers.length} blocker(s); unsupported record-sheet automation remains advisory.</p>}
           </section>
         </>
       )}
