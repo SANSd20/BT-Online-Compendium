@@ -1,7 +1,7 @@
 import type { GmException, RulesSnapshot, SourceCitation } from '../rules/model'
 import type { AffiliationLanguageSelectorGroupId } from '../lifeModules/affiliations'
 import type { ConditionalPackageDraftState } from '../lifeModules/model'
-import type { ClanBirthOriginState, ClanCasteState, ClanFieldAptitudeState, ClanIdentityState } from './clanIdentity'
+import type { ClanBirthOriginState, ClanCasteState, ClanCareerContext, ClanFieldAptitudeState, ClanIdentityState } from './clanIdentity'
 
 export type CreationMethod = 'archetype' | 'point-buy' | 'life-modules'
 export type CharacterStatus = 'draft' | 'ready-for-final-validation' | 'finalized'
@@ -647,6 +647,7 @@ export interface CharacterDefinition {
   clanIdentity?: ClanIdentityState
   clanCaste?: ClanCasteState
   clanBirthOrigin?: ClanBirthOriginState
+  clanCareerContext?: ClanCareerContext
   clanFieldAptitude?: ClanFieldAptitudeState
   phenotypeId: string
   lifeModuleHistory: LifeModuleHistoryEntry[]

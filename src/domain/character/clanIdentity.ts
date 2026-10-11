@@ -5,6 +5,14 @@ export const CLAN_CASTE_IDS = ['warrior', 'scientist', 'merchant', 'technician',
 export type ClanCasteId = typeof CLAN_CASTE_IDS[number]
 export const CLAN_BIRTH_ORIGINS = ['trueborn', 'freeborn'] as const
 export type ClanBirthOrigin = typeof CLAN_BIRTH_ORIGINS[number]
+export type ClanDepartureState = 'within-clan' | 'left-clan' | 'dark-caste'
+
+export interface ClanCareerContext {
+  departureState: ClanDepartureState
+  transitionCause?: string
+  support: 'unsupported'
+  source: SourceCitation
+}
 
 export interface ClanIdentityState {
   id: typeof CLAN_IDENTITY_ID
@@ -64,6 +72,10 @@ export function clanCasteState(id: ClanCasteId): ClanCasteState {
 
 export function clanBirthOriginState(id: ClanBirthOrigin): ClanBirthOriginState {
   return { id, displayName: CLAN_BIRTH_ORIGIN_DISPLAY_NAMES[id], support: 'unsupported', source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 109, ruleId: 'trueborn-freeborn-distinction' }, eligibilityDependencies: ['Clan affiliation', 'caste rules', 'Sibko training', 'Bloodname restrictions'] }
+}
+
+export function clanCareerContextState(departureState: ClanDepartureState, transitionCause?: string): ClanCareerContext {
+  return { departureState, ...(transitionCause ? { transitionCause } : {}), support: 'unsupported', source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 84, ruleId: 'clan-stage-4-career-context' } }
 }
 
 export function clanFieldAptitudeState(phenotypeId: string, associatedFieldIds: readonly string[]): ClanFieldAptitudeState {

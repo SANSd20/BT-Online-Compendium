@@ -10,12 +10,14 @@ interface ConditionalPackagePanelProps {
 }
 
 export function ConditionalPackagePanel({ character, packages, onChange, onContinue }: ConditionalPackagePanelProps) {
-  if (packages.length === 0) return null
   const draft = character.creation.lifeModules?.conditionalPackageDraft
-  const selectedPackage = packages.find((entry) => entry.id === draft?.packageId)
+  const applicablePackages = packages.filter((entry) => entry.eligibility?.every((prerequisite) => prerequisite.kind === 'affiliation' ? character.affiliations.some((affiliation) => !prerequisite.affiliationId || affiliation.affiliationId === prerequisite.affiliationId) : true) ?? true)
+  const visiblePackages = draft?.packageId && packages.some((entry) => entry.id === draft.packageId) ? packages : applicablePackages
+  if (visiblePackages.length === 0) return null
+  const selectedPackage = visiblePackages.find((entry) => entry.id === draft?.packageId)
   const selectedOption = selectedPackage?.choices.find((entry) => entry.id === draft?.choiceId)
   const selectPackage = (packageId: string) => {
-    const definition = packages.find((entry) => entry.id === packageId)
+    const definition = visiblePackages.find((entry) => entry.id === packageId)
     if (definition) onChange(selectConditionalPackageOption(character, definition, null))
   }
   const selectOption = (optionId: string) => {
@@ -30,7 +32,7 @@ export function ConditionalPackagePanel({ character, packages, onChange, onConti
     <label htmlFor="conditional-package-select">Package
       <select id="conditional-package-select" value={draft?.packageId ?? ''} onChange={(event) => selectPackage(event.target.value)}>
         <option value="">Choose a package…</option>
-        {packages.map((entry) => <option key={entry.id} value={entry.id}>{entry.displayName}</option>)}
+        {visiblePackages.map((entry) => <option key={entry.id} value={entry.id}>{entry.displayName}</option>)}
       </select>
     </label>
     {selectedPackage && <label htmlFor="conditional-package-option">Option

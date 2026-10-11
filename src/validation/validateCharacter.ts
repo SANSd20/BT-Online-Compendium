@@ -106,6 +106,7 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
     else issues.push(issue('clan.birth-origin.unsupported', 'clanBirthOrigin', 'Trueborn/Freeborn eligibility is not enabled in this Public Alpha foundation.', { severity: 'warning', kind: 'availability' }))
     if (!character.clanIdentity) issues.push(issue('clan.birth-origin.identity-required', 'clanBirthOrigin', 'Clan birth origin requires a Clan identity foundation.', { severity: 'warning', kind: 'prerequisite' }))
   }
+  if (character.clanCareerContext && (character.clanCareerContext.support !== 'unsupported' || character.clanCareerContext.source.page !== 84 || !['within-clan', 'left-clan', 'dark-caste'].includes(character.clanCareerContext.departureState))) issues.push(issue('clan.career-context.invalid', 'clanCareerContext', 'Clan career context is malformed.'))
   if (character.clanFieldAptitude) {
     const aptitude = character.clanFieldAptitude
     if (!aptitude.id.startsWith('field-aptitude.') || aptitude.support !== 'supported' || aptitude.source.page !== 121 || !aptitude.phenotypeId || aptitude.associatedFieldIds.length === 0) issues.push(issue('clan.field-aptitude.invalid', 'clanFieldAptitude', 'Clan Field Aptitude foundation is malformed.'))
