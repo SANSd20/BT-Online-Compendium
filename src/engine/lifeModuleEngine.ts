@@ -93,6 +93,9 @@ export type LifeModuleTransactionOperation = {
   packageId: ClanAffiliationPackageId | ClanCastePackageId
   choices?: Record<string, string>
 } | {
+  kind: 'grant-trueborn-creche'
+  choices: ResolvedLifeModuleDestination[]
+} | {
   kind: 'grant-trueborn-sibko-mechwarrior'
 } | {
   kind: 'grant-clan-watch-operative'
@@ -420,6 +423,42 @@ function applyTruebornSibkoMechWarrior(character: CharacterDefinition): Characte
   return updateLifeModuleProgress(next)
 }
 
+function applyTruebornCreche(character: CharacterDefinition, operation: Extract<LifeModuleTransactionOperation, { kind: 'grant-trueborn-creche' }>): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  const now = new Date().toISOString()
+  if (next.clanIdentity?.id !== 'affiliation.clan' || !next.affiliations.some((entry) => entry.affiliationId === 'affiliation.clan')) throw new Error('Trueborn Crèche requires the canonical Clan affiliation foundation.')
+  if (!next.clanBirthOrigin || next.clanBirthOrigin.id !== 'trueborn') throw new Error('Trueborn Crèche requires Trueborn identity.')
+  if (!['phenotype.aerospace', 'phenotype.elemental', 'phenotype.mechwarrior'].includes(next.phenotypeId)) throw new Error('Trueborn Crèche requires an eligible Clan Phenotype.')
+  if (!next.lifeModuleHistory.some((entry) => entry.moduleId.startsWith('stage0.clan-package.'))) throw new Error('Trueborn Crèche requires committed Stage 0 Clan package history.')
+  if (next.lifeModuleHistory.some((entry) => entry.moduleId === TRUEBORN_CRECHE_ID)) throw new Error('Trueborn Crèche is already committed.')
+  if (operation.choices.length !== 5 || operation.choices.some((choice) => choice.type !== 'attribute' && choice.type !== 'trait' && choice.type !== 'skill')) throw new Error('Trueborn Crèche requires exactly five concrete flexible-XP destinations.')
+  if (state.moduleXp.remaining < 300) throw new Error('Trueborn Crèche would overspend the Life Module XP pool.')
+  const source = { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 76, ruleId: 'stage-1-trueborn-creche' }
+  const provenanceId = makeId(undefined, 'trueborn-creche')
+  next.provenance.push({ id: provenanceId, kind: 'published', description: 'Trueborn Crèche module awards', source })
+  const award = (destination: LifeModuleDestination, xp: number) => applyDestinationAward(next, destination, xp, provenanceId)
+  award({ type: 'attribute', attributeId: 'STR' }, 100)
+  award({ type: 'attribute', attributeId: 'BOD' }, 125)
+  award({ type: 'attribute', attributeId: 'RFL' }, 125)
+  award({ type: 'attribute', attributeId: 'WIL' }, 100)
+  award({ type: 'attribute', attributeId: 'CHA' }, -75)
+  award({ type: 'trait', traitId: 'trait.compulsion', displayName: 'Compulsion/Clan Honor', parameters: { compulsion: 'Clan Honor' } }, -100)
+  award({ type: 'trait', traitId: 'trait.phenotype', displayName: 'Phenotype' }, 0)
+  award({ type: 'trait', traitId: 'trait.slow-learner', displayName: 'Slow Learner' }, -300)
+  award({ type: 'trait', traitId: 'trait.trueborn', displayName: 'Trueborn' }, 200)
+  for (const [skillId, displayName, subject, xp] of [['skill.interest', 'Interest/Clan Remembrance', 'Clan Remembrance', 10], ['skill.martial-arts', 'Martial Arts', undefined, 10], ['skill.melee-weapons', 'Melee Weapons', undefined, 5], ['skill.protocol', 'Protocol/Clan', 'Clan', 10], ['skill.small-arms', 'Small Arms', undefined, 5], ['skill.swimming', 'Swimming', undefined, 10]] as const) award({ type: 'skill', address: { skillId, ...(subject ? { parameter: { kind: 'subskill', value: subject } } : {}) }, displayName }, xp)
+  operation.choices.forEach((choice) => award({ type: choice.type, ...(choice.type === 'attribute' ? { attributeId: choice.targetId } : choice.type === 'trait' ? { traitId: choice.targetId, displayName: choice.displayName, ...(choice.parameters ? { parameters: choice.parameters } : {}) } : { address: { skillId: choice.targetId, ...(choice.parameter ? { parameter: choice.parameter } : {}) }, displayName: choice.displayName }) } as LifeModuleDestination, 15))
+  state.moduleXp.spent += 300
+  state.moduleXp.remaining -= 300
+  state.selectedModuleIds.push(TRUEBORN_CRECHE_ID)
+  next.lifeModuleHistory.push({ moduleId: TRUEBORN_CRECHE_ID, displayName: 'Trueborn Crèche', stage: 1, costXp: 300, chronologyYears: 10, selectedAt: now, provenanceIds: [provenanceId], source, notes: ['Source-backed Trueborn Crèche; five flexible awards resolved through explicit internal choices.'] })
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  next.xp.creation.remaining = state.moduleXp.remaining
+  next.updatedAt = now
+  return updateLifeModuleProgress(next)
+}
+
 function applyClanWatchOperative(character: CharacterDefinition, operation: Extract<LifeModuleTransactionOperation, { kind: 'grant-clan-watch-operative' }>): CharacterDefinition {
   const next = structuredClone(character)
   const state = requireLifeModules(next)
@@ -517,6 +556,11 @@ export function buildLifeModuleTransaction(
     }
     if (operation.kind === 'grant-trueborn-sibko-mechwarrior') {
       try { transaction.prospectiveState = applyTruebornSibkoMechWarrior(transaction.prospectiveState!) }
+      catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
+      continue
+    }
+    if (operation.kind === 'grant-trueborn-creche') {
+      try { transaction.prospectiveState = applyTruebornCreche(transaction.prospectiveState!, operation) }
       catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
       continue
     }
@@ -1390,7 +1434,7 @@ function updateLifeModuleProgress(character: CharacterDefinition): CharacterDefi
 
 export function reevaluateLifeModulePrerequisites(character: CharacterDefinition): CharacterDefinition {
   const state = requireLifeModules(character)
-  const moduleIssues: LifeModulePrerequisiteIssue[] = state.selectedModuleIds.flatMap((moduleId) => {
+  const moduleIssues: LifeModulePrerequisiteIssue[] = state.selectedModuleIds.filter((moduleId) => !moduleId.startsWith('stage0.clan-package.')).flatMap((moduleId) => {
     const module = getLifeModule(moduleId)
     return module.prerequisites.map((entry) => evaluatePrerequisite(character, moduleId, entry, state.prerequisiteIssues))
   })
