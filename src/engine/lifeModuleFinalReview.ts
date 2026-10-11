@@ -305,6 +305,15 @@ export function applyLifeModuleOptimization(character: CharacterDefinition, oppo
   return refreshFinalReview(next)
 }
 
+export function applyAllLifeModuleOptimizations(character: CharacterDefinition): CharacterDefinition {
+  let next = character
+  while (true) {
+    const opportunity = previewLifeModuleOptimization(next)[0]
+    if (!opportunity) return next
+    next = applyLifeModuleOptimization(next, opportunity.id)
+  }
+}
+
 export function resolveLifeModuleOpposedTraits(character: CharacterDefinition, conflictId: string): CharacterDefinition {
   const next = structuredClone(character)
   const review = requireFinalReview(next)

@@ -5,7 +5,7 @@ import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BA
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
-import { allocateFinalReviewXp, approveFinalReviewSpecialty, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, proposeFinalReviewSpecialty, purchaseAdditionalNegativeTraitXp, purchaseFinalReviewSkill, removeFinalReviewAllocation, removeFinalReviewSpecialty, removeAdditionalNegativeTraitXp, resolveLifeModuleOpposedTraits } from './lifeModuleFinalReview'
+import { allocateFinalReviewXp, approveFinalReviewSpecialty, applyAllLifeModuleOptimizations, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, proposeFinalReviewSpecialty, purchaseAdditionalNegativeTraitXp, purchaseFinalReviewSkill, removeFinalReviewAllocation, removeFinalReviewSpecialty, removeAdditionalNegativeTraitXp, resolveLifeModuleOpposedTraits } from './lifeModuleFinalReview'
 import { createPointBuyCharacter } from './pointBuyEngine'
 
 function completeStage0(startingXp = 5000) {
@@ -1388,6 +1388,17 @@ describe('Life Module engine', () => {
       expect.objectContaining({ beforeXp: 200, afterXp: 100, returnedXp: 100 }),
       expect.objectContaining({ beforeXp: -125, afterXp: -200, returnedXp: 75 }),
     ]))
+  })
+
+  it('optimizes every current opportunity in one source-equivalent operation', () => {
+    let character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    character.attributes.find((entry) => entry.attributeId === 'STR')!.accumulatedXp = 325
+    character.skills.find((entry) => entry.address.skillId === 'skill.acting')!.accumulatedXp = 115
+    const expectedRecovery = previewLifeModuleOptimization(character).reduce((sum, entry) => sum + entry.returnedXp, 0)
+    character = applyAllLifeModuleOptimizations(character)
+    expect(previewLifeModuleOptimization(character)).toHaveLength(0)
+    expect(character.creation.lifeModules!.finalReview!.allocationPool.optimizationReturned).toBe(expectedRecovery)
+    expect(character.creation.lifeModules!.finalReview!.optimizations.length).toBeGreaterThanOrEqual(2)
   })
 
   it('re-evaluates final prerequisites after final allocation', () => {
