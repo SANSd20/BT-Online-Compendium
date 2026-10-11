@@ -29,6 +29,8 @@ import {
   OFFICER_TRAINING_SCHOOL_ID,
   POLICE_ACADEMY_ID,
   SOLARIS_INTERNSHIP_ID,
+  TRUEBORN_CRECHE_ID,
+  TRUEBORN_SIBKO_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   WAR_ORPHAN_ID,
@@ -44,7 +46,7 @@ import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/ski
 import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
 import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
-import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
+import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, CLAN_MECHWARRIOR_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
 import { validateCharacter } from '../validation/validateCharacter'
 import { CLAN_AFFILIATION_PACKAGES, CLAN_CASTE_PACKAGES, type ClanAffiliationPackageId, type ClanCastePackageId } from '../domain/character/clanPackages'
@@ -87,6 +89,8 @@ export type LifeModuleTransactionOperation = {
   awardId: string
   packageId: ClanAffiliationPackageId | ClanCastePackageId
   choices?: Record<string, string>
+} | {
+  kind: 'grant-trueborn-sibko-mechwarrior'
 }
 
 export type LifeModuleTransactionErrorKind = 'unsupported-operation' | 'invalid-operation' | 'unresolved-choice' | 'illegal-prospective-state'
@@ -362,6 +366,53 @@ function applyClanPackage(character: CharacterDefinition, operation: Extract<Lif
   return next
 }
 
+function applyTruebornSibkoMechWarrior(character: CharacterDefinition): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  const now = new Date().toISOString()
+  if (next.clanIdentity?.id !== 'affiliation.clan' || !next.affiliations.some((entry) => entry.affiliationId === 'affiliation.clan')) throw new Error('Trueborn Sibko requires the canonical Clan affiliation foundation.')
+  if (next.clanCaste?.id !== 'warrior') throw new Error('Trueborn Sibko MechWarrior requires the Warrior caste.')
+  if (next.clanBirthOrigin?.id !== 'trueborn') throw new Error('Trueborn Sibko MechWarrior requires Trueborn identity.')
+  if (next.phenotypeId !== 'phenotype.mechwarrior') throw new Error('Trueborn Sibko MechWarrior requires the MechWarrior Phenotype.')
+  for (const [attributeId, minimum] of [['BOD', 3], ['DEX', 4], ['RFL', 3], ['WIL', 3] ] as const) {
+    const entry = next.attributes.find((candidate) => candidate.attributeId === attributeId)
+    if (!entry || entry.accumulatedXp < minimum * 100) throw new Error(`Trueborn Sibko MechWarrior requires ${attributeId} ${minimum} or higher.`)
+  }
+  if (!next.lifeModuleHistory.some((entry) => entry.moduleId === TRUEBORN_CRECHE_ID)) throw new Error('Trueborn Sibko requires Trueborn Crèche history.')
+  if (next.lifeModuleHistory.some((entry) => entry.moduleId === TRUEBORN_SIBKO_ID)) throw new Error('Trueborn Sibko is already committed.')
+  if (state.moduleXp.remaining < 1600 + 384) throw new Error('Trueborn Sibko MechWarrior would overspend the Life Module XP pool.')
+  const source = { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 79, ruleId: 'stage-2-trueborn-sibko-mechwarrior' }
+  const provenanceId = makeId(undefined, 'trueborn-sibko-mechwarrior')
+  next.provenance.push({ id: provenanceId, kind: 'published', description: 'Trueborn Sibko MechWarrior branch awards', source })
+  const award = (destination: LifeModuleDestination, xp: number) => applyDestinationAward(next, destination, xp, provenanceId)
+  award({ type: 'attribute', attributeId: 'BOD' }, 40)
+  award({ type: 'attribute', attributeId: 'DEX' }, 60)
+  award({ type: 'attribute', attributeId: 'RFL' }, 50)
+  award({ type: 'attribute', attributeId: 'WIL' }, 20)
+  award({ type: 'attribute', attributeId: 'CHA' }, -30)
+  award({ type: 'trait', traitId: 'trait.compulsion', displayName: 'Compulsion/Clan Honor', parameters: { compulsion: 'Clan Honor' } }, -50)
+  award({ type: 'trait', traitId: 'trait.rank', displayName: 'Rank' }, 200)
+  award({ type: 'skill', address: { skillId: 'skill.career', parameter: { kind: 'subskill', value: 'Soldier' } }, displayName: 'Career/Soldier' }, 80)
+  award({ type: 'skill', address: { skillId: 'skill.interest', parameter: { kind: 'subskill', value: 'Clan Remembrance' } }, displayName: 'Interest/Clan Remembrance' }, 50)
+  award({ type: 'skill', address: { skillId: 'skill.negotiation' }, displayName: 'Negotiation' }, 50)
+  award({ type: 'trait', traitId: 'trait.custom-vehicle', displayName: 'Custom Vehicle' }, 200)
+  award({ type: 'trait', traitId: 'trait.vehicle', displayName: 'Vehicle' }, 70)
+  award({ type: 'skill', address: { skillId: 'skill.gunnery', parameter: { kind: 'subskill', value: "'Mech" } }, displayName: "Gunnery/'Mech" }, 15)
+  award({ type: 'skill', address: { skillId: 'skill.piloting', parameter: { kind: 'subskill', value: 'BattleMech' } }, displayName: 'Piloting/BattleMech' }, 15)
+  const field = getSkillField(CLAN_MECHWARRIOR_FIELD_ID)
+  for (const component of field.componentSkills) applyDestinationAward(next, component, 80, provenanceId)
+  state.selectedSkillFields.push({ id: makeId(undefined, 'trueborn-sibko-mechwarrior-field'), schoolModuleId: TRUEBORN_SIBKO_ID, fieldId: CLAN_MECHWARRIOR_FIELD_ID, displayName: field.displayName, category: 'advanced', purchaseCostXp: 384, xpPerSkill: 80, chronologyYears: 0, selectedAt: now, provenanceId, source: { ...field.source }, variableSkillChoices: [], prerequisiteSkillChoices: [] })
+  state.pendingAwards.push({ id: `${TRUEBORN_SIBKO_ID}/mechwarrior/flexible`, moduleId: TRUEBORN_SIBKO_ID, provenanceId, awardId: 'sibko.mechwarrior.flexible', kind: 'flexible-xp', description: 'Allocate 50 flexible XP under the Trueborn Sibko MechWarrior source restrictions.', xpPerGrant: 0, remainingGrants: 0, allocationMode: 'pool', remainingXp: 50, allowedTargetTypes: ['attribute', 'trait', 'skill'], source })
+  state.moduleXp.spent += 1600 + 384
+  state.moduleXp.remaining -= 1600 + 384
+  state.selectedModuleIds.push(TRUEBORN_SIBKO_ID)
+  next.lifeModuleHistory.push({ moduleId: TRUEBORN_SIBKO_ID, displayName: 'Trueborn Sibko', stage: 2, costXp: 1600, fieldCostXp: 384, chronologyYears: 16, selectedAt: now, provenanceIds: [provenanceId], source, notes: ['Source-backed MechWarrior branch; the included Skill Field does not add chronology beyond the Sibko module.'] })
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  next.xp.creation.remaining = state.moduleXp.remaining
+  next.updatedAt = now
+  return updateLifeModuleProgress(next)
+}
+
 export function buildLifeModuleTransaction(
   character: CharacterDefinition,
   operations: readonly LifeModuleTransactionOperation[],
@@ -397,6 +448,11 @@ export function buildLifeModuleTransaction(
     }
   if (operation.kind === 'grant-clan-package') {
       try { transaction.prospectiveState = applyClanPackage(transaction.prospectiveState!, operation) }
+      catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
+      continue
+    }
+    if (operation.kind === 'grant-trueborn-sibko-mechwarrior') {
+      try { transaction.prospectiveState = applyTruebornSibkoMechWarrior(transaction.prospectiveState!) }
       catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
       continue
     }

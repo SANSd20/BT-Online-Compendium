@@ -55,7 +55,7 @@ describe('Life Module transaction foundation', () => {
     }, 'option.alpha')
     expect(resolution.packageId).toBe('package.test-mixed')
     expect(resolution.optionId).toBe('option.alpha')
-    expect(resolution.operations.map((entry) => entry.kind === 'resolve-pending-award' ? entry.pendingAwardId : entry.awardId)).toEqual([
+    expect(resolution.operations.map((entry) => entry.kind === 'resolve-pending-award' ? entry.pendingAwardId : '')).toEqual([
       'package.test-mixed/option.alpha/attribute',
       'package.test-mixed/option.alpha/trait',
       'package.test-mixed/option.alpha/skill',
