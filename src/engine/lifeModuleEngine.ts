@@ -1495,6 +1495,7 @@ function evaluatePrerequisite(
   let satisfied = false
   if (prerequisite.kind === 'phenotype') satisfied = character.phenotypeId === prerequisite.phenotypeId
   if (prerequisite.kind === 'clan-caste') satisfied = character.clanCaste?.id === prerequisite.casteId
+  if (prerequisite.kind === 'path' && prerequisite.id === 'watch.caste' && moduleId === CLAN_WATCH_OPERATIVE_ID) satisfied = ['warrior', 'scientist', 'technician'].includes(character.clanCaste?.id ?? '')
   if (prerequisite.kind === 'birth-origin') satisfied = character.clanBirthOrigin?.id === prerequisite.birthOrigin
   if (prerequisite.kind === 'affiliation') {
     satisfied = prerequisite.affiliationId
@@ -1524,6 +1525,7 @@ function evaluatePrerequisite(
 function prerequisiteSatisfied(character: CharacterDefinition, prerequisite: Exclude<LifeModulePrerequisite, { kind: 'any-of' }>): boolean {
   if (prerequisite.kind === 'phenotype') return character.phenotypeId === prerequisite.phenotypeId
   if (prerequisite.kind === 'clan-caste') return character.clanCaste?.id === prerequisite.casteId
+  if (prerequisite.kind === 'path' && prerequisite.id === 'watch.caste') return ['warrior', 'scientist', 'technician'].includes(character.clanCaste?.id ?? '')
   if (prerequisite.kind === 'birth-origin') return character.clanBirthOrigin?.id === prerequisite.birthOrigin
   if (prerequisite.kind === 'affiliation') {
     const matchesIdentity = prerequisite.affiliationId

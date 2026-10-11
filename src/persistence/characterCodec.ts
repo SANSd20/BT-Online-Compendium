@@ -76,7 +76,16 @@ export function encodeCharacter(character: CharacterDefinition, exportedAt = new
   return JSON.stringify(envelope, null, 2)
 }
 
-export function decodeCharacter(json: string): CharacterDefinition {
+export interface DecodeCharacterOptions {
+  allowInternalClanRecord?: boolean
+}
+
+const INTERNAL_CLAN_READINESS_ISSUES = new Set([
+  'life-modules.stage-0.affiliation-context.required',
+  'life-modules.final-level.attribute.minimum',
+])
+
+export function decodeCharacter(json: string, options: DecodeCharacterOptions = {}): CharacterDefinition {
   let parsed: unknown
   try {
     parsed = JSON.parse(json)
@@ -88,9 +97,12 @@ export function decodeCharacter(json: string): CharacterDefinition {
   migrateAlphaArchetypeState(parsed.character)
   migrateAlphaLifeModuleState(parsed.character)
   migrateDrivingAliases(parsed.character)
+  const isInternalClanRecord = options.allowInternalClanRecord === true && Boolean(parsed.character.clanIdentity)
+  if (parsed.character.clanIdentity && !isInternalClanRecord) throw new Error('Clan character import is not enabled in this Public Alpha foundation.')
   const validation = validateCharacter(parsed.character)
-  if (!validation.valid) {
-    throw new Error(`Character file failed validation: ${validation.issues.map((item) => item.message).join(' ')}`)
+  const blockingIssues = validation.issues.filter((item) => item.severity === 'error' && !(isInternalClanRecord && INTERNAL_CLAN_READINESS_ISSUES.has(item.id)))
+  if (blockingIssues.length > 0) {
+    throw new Error(`Character file failed validation: ${blockingIssues.map((item) => item.message).join(' ')}`)
   }
   return parsed.character
 }
