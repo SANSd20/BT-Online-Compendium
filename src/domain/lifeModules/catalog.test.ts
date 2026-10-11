@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { INFANTRY_ANTI_MECH_FIELD_ID } from '../skillFields/catalog'
 import {
   AGITATOR_ID,
+  CLAN_CIVILIAN_JOB_ID,
+  CLAN_SCIENTIST_CASTE_SERVICE_ID,
+  CLAN_WATCH_OPERATIVE_ID,
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
   TRUEBORN_CRECHE_ID,
@@ -66,6 +69,9 @@ describe('Life Module Alpha catalog', () => {
       TRUEBORN_CRECHE_ID,
       CLAN_APPRENTICESHIP_ID,
       TRUEBORN_SIBKO_ID,
+      CLAN_CIVILIAN_JOB_ID,
+      CLAN_WATCH_OPERATIVE_ID,
+      CLAN_SCIENTIST_CASTE_SERVICE_ID,
     ])
     expect(validateLifeModuleCatalog()).toEqual([])
     expect(LIFE_MODULE_CATALOG.filter((entry) => entry.stage === 1)).toHaveLength(5)
@@ -173,7 +179,7 @@ describe('Life Module Alpha catalog', () => {
   })
 
   it('keeps Clan branches atomic and unsupported branches deferred', () => {
-    expect(CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG).toHaveLength(2)
+    expect(CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG).toHaveLength(4)
     const apprenticeship = CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG.find((entry) => entry.id === 'package.clan-apprenticeship-branch')!
     expect(apprenticeship.choices.map((entry) => entry.id)).toEqual(['branch.aerospace', 'branch.elemental', 'branch.mechwarrior'])
     expect(apprenticeship.choices.find((entry) => entry.id === 'branch.aerospace')?.awards).toEqual(expect.arrayContaining([

@@ -74,6 +74,13 @@ export type LifeModuleTransactionOperation = {
   moduleId: string
   source: { sourceId: string; edition: string; page?: number; ruleId?: string }
   selections: Array<{ fieldId: string; destination: ResolvedLifeModuleDestination }>
+} | {
+  kind: 'allocate-career-field-xp'
+  awardId: string
+  moduleId: string
+  source: { sourceId: string; edition: string; page?: number; ruleId?: string }
+  fieldId: string
+  selections: Array<{ destination: ResolvedLifeModuleDestination }>
 }
 
 export type LifeModuleTransactionErrorKind = 'unsupported-operation' | 'invalid-operation' | 'unresolved-choice' | 'illegal-prospective-state'
@@ -276,6 +283,31 @@ function applyClanWarriorFieldSkillAllocation(character: CharacterDefinition, op
   return updateLifeModuleProgress(next)
 }
 
+function applyCareerFieldSkillAllocation(character: CharacterDefinition, operation: Extract<LifeModuleTransactionOperation, { kind: 'allocate-career-field-xp' }>): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  if (operation.selections.length !== 4) throw new Error('Civilian Job career Field allocation requires exactly four Skill selections.')
+  if (operation.selections.some((selection) => selection.destination.type !== 'skill')) throw new Error('Career Field allocation destinations must be concrete Skills.')
+  const keys = operation.selections.map((selection) => destinationKey(selection.destination))
+  if (new Set(keys).size !== keys.length) throw new Error('Career Field allocation cannot select a Skill more than once.')
+  if (state.careerFieldSkillAllocations?.some((entry) => entry.awardId === operation.awardId)) throw new Error(`Career Field allocation is already resolved: ${operation.awardId}`)
+  const grant = state.selectedSkillFields.find((entry) => entry.fieldId === operation.fieldId)
+  if (!grant) throw new Error(`Career Field has not been acquired: ${operation.fieldId}`)
+  const field = getSkillField(operation.fieldId)
+  const allowed = [...field.componentSkills.map(lifeModuleDestinationToResolved), ...(grant.variableSkillChoices ?? []).map((entry) => entry.destination)]
+  if (operation.selections.some((selection) => !allowed.some((entry) => destinationKey(entry) === destinationKey(selection.destination)))) throw new Error(`A selected Skill is not a concrete component of ${field.displayName}.`)
+  const provenanceId = makeId(undefined, `career-field-allocation-${operation.awardId}`)
+  next.provenance.push({ id: provenanceId, kind: 'published', description: 'Civilian Job career Field Skill allocation', source: { ...operation.source } })
+  const records = state.careerFieldSkillAllocations ?? (state.careerFieldSkillAllocations = [])
+  for (const selection of operation.selections) {
+    applyDestinationAward(next, { type: 'skill', address: { skillId: selection.destination.targetId, ...(selection.destination.parameter ? { parameter: selection.destination.parameter } : {}) }, displayName: selection.destination.displayName }, 20, provenanceId)
+    records.push({ id: makeId(undefined, 'career-field-allocation'), awardId: operation.awardId, moduleId: operation.moduleId, fieldId: operation.fieldId, destination: structuredClone(selection.destination), xp: 20, provenanceId, source: { ...operation.source }, allocatedAt: new Date().toISOString() })
+  }
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  next.updatedAt = new Date().toISOString()
+  return updateLifeModuleProgress(next)
+}
+
 export function buildLifeModuleTransaction(
   character: CharacterDefinition,
   operations: readonly LifeModuleTransactionOperation[],
@@ -301,6 +333,11 @@ export function buildLifeModuleTransaction(
     }
     if (operation.kind === 'allocate-clan-warrior-field-xp') {
       try { transaction.prospectiveState = applyClanWarriorFieldSkillAllocation(transaction.prospectiveState!, operation) }
+      catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
+      continue
+    }
+    if (operation.kind === 'allocate-career-field-xp') {
+      try { transaction.prospectiveState = applyCareerFieldSkillAllocation(transaction.prospectiveState!, operation) }
       catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
       continue
     }

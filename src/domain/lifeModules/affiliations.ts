@@ -11,6 +11,7 @@ export type SubAffiliationSelection = 'no' | string
 
 export type AffiliationLanguageSelectorGroupId =
   | 'affiliation-languages'
+  | 'any-language'
   | 'capellan-secondary'
   | 'federated-suns-languages'
   | 'federated-suns-affiliation-languages'
@@ -56,6 +57,7 @@ const source = (page: number, ruleId: string): SourceCitation => ({
 
 export const LIFE_MODULE_LANGUAGE_SELECTOR_GROUPS: Readonly<Record<AffiliationLanguageSelectorGroupId, readonly string[]>> = {
   'affiliation-languages': modeledLanguages('Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English'),
+  'any-language': modeledLanguages('Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English'),
   'capellan-secondary': modeledLanguages('Russian', 'Cantonese', 'Vietnamese', 'English'),
   'federated-suns-languages': modeledLanguages('English', 'French'),
   'federated-suns-affiliation-languages': modeledLanguages('English', 'French', 'German', 'Hindi', 'Russian'),

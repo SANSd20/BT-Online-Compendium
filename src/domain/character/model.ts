@@ -374,6 +374,18 @@ export interface ClanWarriorFieldSkillAllocationRecord {
   allocatedAt: string
 }
 
+export interface CareerFieldSkillAllocationRecord {
+  id: string
+  awardId: string
+  moduleId: string
+  fieldId: string
+  destination: ResolvedLifeModuleDestination
+  xp: number
+  provenanceId: string
+  source: SourceCitation
+  allocatedAt: string
+}
+
 export interface LifeModuleFinalAllocationRecord {
   id: string
   destination: ResolvedLifeModuleDestination
@@ -455,6 +467,8 @@ export interface LifeModuleCreationState {
   selectedSkillFields: SkillFieldGrantRecord[]
   /** Added in Slice 138; absent on older Alpha saves. */
   clanWarriorFieldSkillAllocations?: ClanWarriorFieldSkillAllocationRecord[]
+  /** Added in Slice 139; absent on older Alpha saves. */
+  careerFieldSkillAllocations?: CareerFieldSkillAllocationRecord[]
   masterSkillFieldGoalId?: string
   stage0AffiliationContext?: string
   /** Explicit UI selection. Absent preserves pre-Slice-80 saves, whose combined context includes its sub-affiliation. */
