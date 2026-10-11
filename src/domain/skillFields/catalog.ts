@@ -66,6 +66,12 @@ export const ARCHAEOLOGIST_FIELD_ID = 'field.archaeologist'
 export const LAWYER_FIELD_ID = 'field.lawyer'
 export const MERCHANT_FIELD_ID = 'field.merchant'
 export const JOURNALIST_FIELD_ID = 'field.journalist'
+export const CLAN_AEROSPACE_WARRIOR_FIELD_ID = 'field.clan-aerospace-warrior'
+export const CLAN_BASIC_TRAINING_FIELD_ID = 'field.clan-basic-training'
+export const CLAN_CAVALRY_FIELD_ID = 'field.clan-cavalry'
+export const CLAN_ELEMENTAL_FIELD_ID = 'field.clan-elemental'
+export const CLAN_MECHWARRIOR_FIELD_ID = 'field.clan-mechwarrior'
+export const CLAN_PROTOMECH_WARRIOR_FIELD_ID = 'field.clan-protomech-warrior'
 
 export const SECURITY_SYSTEMS_SUBSKILLS = VARIABLE_SKILL_DOMAINS.securitySystems.options
 export const NAVAL_CAREER_SUBSKILLS = VARIABLE_SKILL_DOMAINS.navalCareer.options
@@ -899,6 +905,47 @@ export const SKILL_FIELD_CATALOG: readonly SkillFieldDefinition[] = [
     ],
     componentSkills: [skill('skill.acting', 'Acting'), skill('skill.administration', 'Administration'), skill('skill.career', 'Career/Lawyer', 'Lawyer'), skill('skill.interest', 'Interest/Law', 'Law'), skill('skill.negotiation', 'Negotiation')],
     variableComponentSkills: [variableSkill('lawyer.protocol-any', 'Protocol affiliation', VARIABLE_SKILL_DOMAINS.protocolAffiliations)],
+  },
+  {
+    id: CLAN_BASIC_TRAINING_FIELD_ID, displayName: 'Clan Basic Training', category: 'basic', source: { ...source('skill-field-clan-basic-training'), page: 95 },
+    prerequisites: [{ id: 'clan-basic.affiliation', kind: 'affiliation', affiliationId: 'affiliation.clan', description: 'Clan affiliation' }],
+    componentSkills: [skill('skill.martial-arts', 'Martial Arts'), skill('skill.medtech', 'MedTech/General', 'General'), skill('skill.melee-weapons', 'Melee Weapons'), skill('skill.navigation', 'Navigation/Ground', 'Ground'), skill('skill.small-arms', 'Small Arms')],
+    affiliationBoundComponentSkills: [{ skillId: 'skill.protocol', displayName: 'Protocol/Clan' }],
+  },
+  {
+    id: CLAN_AEROSPACE_WARRIOR_FIELD_ID, displayName: 'Clan Aerospace Warrior', category: 'advanced', source: { ...source('skill-field-clan-aerospace-warrior'), page: 95 },
+    prerequisites: [
+      { id: 'clan-aerospace.affiliation', kind: 'affiliation', affiliationId: 'affiliation.clan', description: 'Clan affiliation' },
+      { id: 'clan-aerospace.phenotype', kind: 'phenotype', phenotypeId: 'phenotype.aerospace', description: 'Aerospace Phenotype' },
+      { id: 'clan-aerospace.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 5, description: 'DEX 5+' },
+      { id: 'clan-aerospace.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 5, description: 'RFL 5+' },
+      { id: 'clan-aerospace.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 4, description: 'WIL 4+' },
+    ],
+    componentSkills: [skill('skill.gunnery', 'Gunnery/Aerospace', 'Aerospace'), skill('skill.navigation', 'Navigation/Space', 'Space'), skill('skill.piloting', 'Piloting/Aerospace', 'Aerospace'), skill('skill.sensor-operations', 'Sensor Operations'), skill('skill.tactics', 'Tactics/Space', 'Space')],
+  },
+  {
+    id: CLAN_ELEMENTAL_FIELD_ID, displayName: 'Clan Elemental', category: 'advanced', source: { ...source('skill-field-clan-elemental'), page: 95 },
+    prerequisites: [
+      { id: 'clan-elemental.affiliation', kind: 'affiliation', affiliationId: 'affiliation.clan', description: 'Clan affiliation' },
+      { id: 'clan-elemental.phenotype', kind: 'phenotype', phenotypeId: 'phenotype.elemental', description: 'Elemental Phenotype' },
+      { id: 'clan-elemental.bod', kind: 'attribute-minimum', attributeId: 'BOD', minimum: 5, description: 'BOD 5+' },
+      { id: 'clan-elemental.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 3, description: 'DEX 3+' },
+      { id: 'clan-elemental.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 3, description: 'RFL 3+' },
+      { id: 'clan-elemental.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 4, description: 'WIL 4+' },
+    ],
+    componentSkills: [skill('skill.climbing', 'Climbing'), skill('skill.gunnery', 'Gunnery/Battlesuit', 'Battlesuit'), skill('skill.melee-weapons', 'Melee Weapons'), skill('skill.piloting', 'Piloting/Battlesuit', 'Battlesuit'), skill('skill.sensor-operations', 'Sensor Operations'), skill('skill.small-arms', 'Small Arms'), skill('skill.tactics', 'Tactics/Infantry', 'Infantry')],
+  },
+  {
+    id: CLAN_MECHWARRIOR_FIELD_ID, displayName: 'Clan MechWarrior', category: 'advanced', source: { ...source('skill-field-clan-mechwarrior'), page: 95 },
+    prerequisites: [
+      { id: 'clan-mechwarrior.affiliation', kind: 'affiliation', affiliationId: 'affiliation.clan', description: 'Clan affiliation' },
+      { id: 'clan-mechwarrior.phenotype', kind: 'phenotype', phenotypeId: 'phenotype.mechwarrior', description: 'MechWarrior Phenotype' },
+      { id: 'clan-mechwarrior.bod', kind: 'attribute-minimum', attributeId: 'BOD', minimum: 4, description: 'BOD 4+' },
+      { id: 'clan-mechwarrior.dex', kind: 'attribute-minimum', attributeId: 'DEX', minimum: 3, description: 'DEX 3+' },
+      { id: 'clan-mechwarrior.rfl', kind: 'attribute-minimum', attributeId: 'RFL', minimum: 4, description: 'RFL 4+' },
+      { id: 'clan-mechwarrior.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 5, description: 'WIL 5+' },
+    ],
+    componentSkills: [skill('skill.gunnery', 'Gunnery/Mech', 'Mech'), skill('skill.leadership', 'Leadership'), skill('skill.navigation', 'Navigation/Ground', 'Ground'), skill('skill.piloting', 'Piloting/Mech', 'Mech'), skill('skill.sensor-operations', 'Sensor Operations'), skill('skill.tactics', 'Tactics/Land', 'Land')],
   },
 ]
 

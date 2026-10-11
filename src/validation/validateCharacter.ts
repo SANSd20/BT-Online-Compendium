@@ -1225,6 +1225,7 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
 }
 
 function skillFieldPrerequisiteSatisfied(character: CharacterDefinition, prerequisite: LifeModulePrerequisite): boolean {
+  if (prerequisite.kind === 'phenotype') return character.phenotypeId === prerequisite.phenotypeId
   if (prerequisite.kind === 'attribute-minimum') return (character.attributes.find((entry) => entry.attributeId === prerequisite.attributeId)?.purchasedLevel ?? 0) >= prerequisite.minimum
   if (prerequisite.kind === 'skill-field') return prerequisite.fieldIds.some((fieldId) => character.creation.lifeModules?.selectedSkillFields.some((grant) => grant.fieldId === fieldId))
   if (prerequisite.kind === 'trait') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)

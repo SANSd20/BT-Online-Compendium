@@ -1167,6 +1167,7 @@ function evaluatePrerequisite(
     return { id: `${moduleId}/${prerequisite.id}`, moduleId, prerequisiteId: prerequisite.id, description: prerequisite.description, status: 'gm-override' as const, finalValidationRequired: true }
   }
   let satisfied = false
+  if (prerequisite.kind === 'phenotype') satisfied = character.phenotypeId === prerequisite.phenotypeId
   if (prerequisite.kind === 'affiliation') {
     satisfied = prerequisite.affiliationId
       ? character.affiliations.some((entry) => entry.affiliationId === prerequisite.affiliationId)
@@ -1196,6 +1197,7 @@ function evaluatePrerequisite(
 }
 
 function prerequisiteSatisfied(character: CharacterDefinition, prerequisite: Exclude<LifeModulePrerequisite, { kind: 'any-of' }>): boolean {
+  if (prerequisite.kind === 'phenotype') return character.phenotypeId === prerequisite.phenotypeId
   if (prerequisite.kind === 'affiliation') {
     const matchesIdentity = prerequisite.affiliationId
       ? character.affiliations.some((entry) => entry.affiliationId === prerequisite.affiliationId)

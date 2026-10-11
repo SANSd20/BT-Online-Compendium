@@ -1,9 +1,43 @@
 import { describe, expect, it } from 'vitest'
-import { ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, CAVALRY_TACTICS_SUBSKILLS, DETECTIVE_FIELD_ID, DRIVING_SUBSKILLS, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MERCHANT_FIELD_ID, NAVAL_CAREER_SUBSKILLS, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, PILOT_DROPSHIP_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, PILOT_JUMPSHIP_FIELD_ID, PILOT_WARSHIP_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCOUT_FIELD_ID, SCOUT_STREETWISE_SUBSKILLS, SECURITY_SYSTEMS_SUBSKILLS, SHIPS_CREW_FIELD_ID, SKILL_FIELD_CATALOG, skillFieldCost, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID, TRACKING_SUBSKILLS, validateSkillFieldCatalog, VEHICLE_GUNNERY_SUBSKILLS } from './catalog'
+import { ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, CAVALRY_TACTICS_SUBSKILLS, DETECTIVE_FIELD_ID, DRIVING_SUBSKILLS, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MERCHANT_FIELD_ID, NAVAL_CAREER_SUBSKILLS, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, PILOT_DROPSHIP_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, PILOT_JUMPSHIP_FIELD_ID, PILOT_WARSHIP_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCOUT_FIELD_ID, SCOUT_STREETWISE_SUBSKILLS, SECURITY_SYSTEMS_SUBSKILLS, SHIPS_CREW_FIELD_ID, SKILL_FIELD_CATALOG, skillFieldCost, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID, TRACKING_SUBSKILLS, validateSkillFieldCatalog, VEHICLE_GUNNERY_SUBSKILLS, CLAN_BASIC_TRAINING_FIELD_ID, CLAN_AEROSPACE_WARRIOR_FIELD_ID, CLAN_ELEMENTAL_FIELD_ID, CLAN_MECHWARRIOR_FIELD_ID } from './catalog'
 import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
 import { INFANTRY_ANTI_MECH_FIELD_ID } from './catalog'
 import { PILOT_AEROSPACE_CIVILIAN_FIELD_ID, PILOT_AEROSPACE_COMBAT_FIELD_ID, PILOT_AIRCRAFT_COMBAT_FIELD_ID } from './catalog'
 import { HPG_TECHNICIAN_FIELD_ID } from './catalog'
+import { MASTER_SKILL_FIELD_GOAL_CATALOG } from './goalCatalog'
+
+describe('Slice 134 Clan Skill Field promotion boundary', () => {
+  it('promotes only the complete source-backed Clan Fields', () => {
+    expect(SKILL_FIELD_CATALOG.map((entry) => entry.id)).toEqual(expect.arrayContaining([
+      'field.clan-basic-training', 'field.clan-aerospace-warrior', 'field.clan-elemental', 'field.clan-mechwarrior',
+    ]))
+    expect(SKILL_FIELD_CATALOG.map((entry) => entry.id)).not.toContain('field.clan-cavalry')
+    expect(SKILL_FIELD_CATALOG.map((entry) => entry.id)).not.toContain('field.clan-protomech-warrior')
+    expect(MASTER_SKILL_FIELD_GOAL_CATALOG.map((entry) => entry.displayName)).toEqual(expect.arrayContaining(['Clan Cavalry', 'Clan ProtoMech Warrior']))
+  })
+
+  it('preserves source prerequisites and component bundles for promoted Fields', () => {
+    expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === CLAN_BASIC_TRAINING_FIELD_ID)).toMatchObject({
+      componentSkills: expect.arrayContaining([
+        expect.objectContaining({ displayName: 'Martial Arts' }),
+        expect.objectContaining({ displayName: 'MedTech/General' }),
+        expect.objectContaining({ displayName: 'Navigation/Ground' }),
+      ]),
+      affiliationBoundComponentSkills: [{ skillId: 'skill.protocol', displayName: 'Protocol/Clan' }],
+    })
+    expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === CLAN_AEROSPACE_WARRIOR_FIELD_ID)?.prerequisites).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'phenotype', phenotypeId: 'phenotype.aerospace' }),
+      expect.objectContaining({ kind: 'attribute-minimum', attributeId: 'DEX', minimum: 5 }),
+      expect.objectContaining({ kind: 'attribute-minimum', attributeId: 'RFL', minimum: 5 }),
+    ]))
+    expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === CLAN_ELEMENTAL_FIELD_ID)?.componentSkills.map((entry) => entry.displayName)).toEqual([
+      'Climbing', 'Gunnery/Battlesuit', 'Melee Weapons', 'Piloting/Battlesuit', 'Sensor Operations', 'Small Arms', 'Tactics/Infantry',
+    ])
+    expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === CLAN_MECHWARRIOR_FIELD_ID)?.componentSkills.map((entry) => entry.displayName)).toEqual([
+      'Gunnery/Mech', 'Leadership', 'Navigation/Ground', 'Piloting/Mech', 'Sensor Operations', 'Tactics/Land',
+    ])
+  })
+})
 
 describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
   it('contains the fifty source-audited Fields with calculated reduced costs', () => {
@@ -58,6 +92,10 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       ANTHROPOLOGIST_FIELD_ID,
       ARCHAEOLOGIST_FIELD_ID,
       LAWYER_FIELD_ID,
+      CLAN_BASIC_TRAINING_FIELD_ID,
+      CLAN_AEROSPACE_WARRIOR_FIELD_ID,
+      CLAN_ELEMENTAL_FIELD_ID,
+      CLAN_MECHWARRIOR_FIELD_ID,
     ])
     expect(Object.fromEntries(SKILL_FIELD_CATALOG.slice(1).map((field) => [field.id, skillFieldCost(field, 24)]))).toEqual({
       [BASIC_TRAINING_NAVAL_FIELD_ID]: 144,
@@ -109,6 +147,10 @@ describe('bounded mechanically acquirable Stage 3 Skill Field catalog', () => {
       [ANTHROPOLOGIST_FIELD_ID]: 144,
       [ARCHAEOLOGIST_FIELD_ID]: 144,
       [LAWYER_FIELD_ID]: 144,
+      [CLAN_BASIC_TRAINING_FIELD_ID]: 144,
+      [CLAN_AEROSPACE_WARRIOR_FIELD_ID]: 120,
+      [CLAN_ELEMENTAL_FIELD_ID]: 168,
+      [CLAN_MECHWARRIOR_FIELD_ID]: 144,
     })
     expect(SKILL_FIELD_CATALOG.find((entry) => entry.id === TECHNICIAN_AEROSPACE_FIELD_ID)?.prerequisites).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'skill-field', fieldIds: [TECHNICIAN_CIVILIAN_FIELD_ID, 'field.technician-military'] }),

@@ -8,8 +8,8 @@ describe('Public Alpha notice', () => {
   it('collapses details by default while keeping the heading, version, and summary visible', () => {
     const markup = renderToStaticMarkup(<PublicAlphaNotice />)
 
-    expect(APP_RELEASE_LABEL).toBe('Alpha Slice 133')
-    expect(APP_VERSION).toBe('0.1.0-alpha.133')
+    expect(APP_RELEASE_LABEL).toBe('Alpha Slice 134')
+    expect(APP_VERSION).toBe('0.1.0-alpha.134')
     expect(markup).toContain('<details>')
     expect(markup).not.toContain('<details open="">')
     expect(markup).toContain('Public Alpha Notice')
