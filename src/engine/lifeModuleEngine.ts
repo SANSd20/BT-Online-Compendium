@@ -53,6 +53,7 @@ import { validateCharacter } from '../validation/validateCharacter'
 import { CLAN_AFFILIATION_PACKAGES, CLAN_CASTE_PACKAGES, type ClanAffiliationPackageId, type ClanCastePackageId } from '../domain/character/clanPackages'
 import { clanWarriorStage3Bypass, evaluateClanStage4Eligibility, CLAN_STAGE4_ELIGIBILITY_RULES } from '../domain/lifeModules/clanStage4Eligibility'
 import { CLAN_AFFILIATION_CONTEXTS } from '../domain/lifeModules/affiliations'
+import { attributeLegality } from '../domain/character/attributeLegality'
 
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
 
@@ -384,10 +385,6 @@ function applyTruebornSibkoMechWarrior(character: CharacterDefinition): Characte
   if (next.clanCaste?.id !== 'warrior') throw new Error('Trueborn Sibko MechWarrior requires the Warrior caste.')
   if (next.clanBirthOrigin?.id !== 'trueborn') throw new Error('Trueborn Sibko MechWarrior requires Trueborn identity.')
   if (next.phenotypeId !== 'phenotype.mechwarrior') throw new Error('Trueborn Sibko MechWarrior requires the MechWarrior Phenotype.')
-  for (const [attributeId, minimum] of [['BOD', 3], ['DEX', 4], ['RFL', 3], ['WIL', 3] ] as const) {
-    const entry = next.attributes.find((candidate) => candidate.attributeId === attributeId)
-    if (!entry || entry.accumulatedXp < minimum * 100) throw new Error(`Trueborn Sibko MechWarrior requires ${attributeId} ${minimum} or higher.`)
-  }
   if (!next.lifeModuleHistory.some((entry) => entry.moduleId === TRUEBORN_CRECHE_ID)) throw new Error('Trueborn Sibko requires Trueborn Crèche history.')
   if (next.lifeModuleHistory.some((entry) => entry.moduleId === TRUEBORN_SIBKO_ID)) throw new Error('Trueborn Sibko is already committed.')
   if (state.moduleXp.remaining < 1600 + 384) throw new Error('Trueborn Sibko MechWarrior would overspend the Life Module XP pool.')
@@ -1499,10 +1496,7 @@ function evaluatePrerequisite(
       : character.affiliations.length > 0
     if (satisfied && prerequisite.classification === 'non-clan') satisfied = character.affiliations.every((entry) => !entry.affiliationId.startsWith('affiliation.clan'))
   }
-  if (prerequisite.kind === 'attribute-minimum') {
-    const entry = character.attributes.find((item) => item.attributeId === prerequisite.attributeId)
-    satisfied = (entry?.purchasedLevel ?? 0) >= prerequisite.minimum
-  }
+  if (prerequisite.kind === 'attribute-minimum') satisfied = attributeLegality(character, prerequisite.attributeId).effectiveScore >= prerequisite.minimum
   if (prerequisite.kind === 'trait') satisfied = character.traits.some((item) => item.traitId === prerequisite.traitId && item.active)
   if (prerequisite.kind === 'trait-minimum') satisfied = character.traits.some((item) => item.traitId === prerequisite.traitId && (item.attainedTp ?? 0) >= prerequisite.minimum)
   if (prerequisite.kind === 'trait-absent') satisfied = !character.traits.some((item) => item.traitId === prerequisite.traitId && item.active)
@@ -1531,7 +1525,7 @@ function prerequisiteSatisfied(character: CharacterDefinition, prerequisite: Exc
       : character.affiliations.length > 0
     return matchesIdentity && (prerequisite.classification !== 'non-clan' || character.affiliations.every((entry) => !entry.affiliationId.startsWith('affiliation.clan')))
   }
-  if (prerequisite.kind === 'attribute-minimum') return (character.attributes.find((entry) => entry.attributeId === prerequisite.attributeId)?.purchasedLevel ?? 0) >= prerequisite.minimum
+  if (prerequisite.kind === 'attribute-minimum') return attributeLegality(character, prerequisite.attributeId).effectiveScore >= prerequisite.minimum
   if (prerequisite.kind === 'trait') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
   if (prerequisite.kind === 'trait-minimum') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && (entry.attainedTp ?? 0) >= prerequisite.minimum)
   if (prerequisite.kind === 'trait-absent') return !character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)

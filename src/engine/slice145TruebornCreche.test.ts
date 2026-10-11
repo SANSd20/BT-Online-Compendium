@@ -42,7 +42,7 @@ describe('Slice 145 Trueborn Crèche', () => {
     expect(character.lifeModuleHistory).toHaveLength(1)
   })
 
-  it('preserves source-legal Attribute totals and rejects Sibko when BOD remains below the published threshold', () => {
+  it('preserves source-legal Attribute totals and records outstanding Sibko prerequisites', () => {
     const character = fixture()
     character.clanCaste = clanCasteState('warrior')
     const creche = buildLifeModuleTransaction(character, [
@@ -54,8 +54,8 @@ describe('Slice 145 Trueborn Crèche', () => {
     const committed = creche.prospectiveState!
     expect(committed.attributes.find((entry) => entry.attributeId === 'BOD')?.accumulatedXp).toBe(225)
     const sibko = buildLifeModuleTransaction(committed, [{ kind: 'grant-trueborn-sibko-mechwarrior' }])
-    expect(sibko.errors).toEqual([{ kind: 'invalid-operation', operationIndex: 0, message: 'Trueborn Sibko MechWarrior requires BOD 3 or higher.' }])
-    expect(sibko.prospectiveState).toBeNull()
-    expect(committed.lifeModuleHistory.some((entry) => entry.moduleId === 'stage2.trueborn-sibko')).toBe(false)
+    expect(sibko.errors).toEqual([])
+    expect(sibko.prospectiveState?.lifeModuleHistory.at(-1)?.moduleId).toBe('stage2.trueborn-sibko')
+    expect(sibko.prospectiveState?.creation.lifeModules?.prerequisiteIssues.filter((entry) => entry.moduleId === 'stage2.trueborn-sibko' && entry.status === 'outstanding').map((entry) => entry.prerequisiteId)).toEqual(['sibko.bod', 'sibko.dex', 'sibko.wil'])
   })
 })
