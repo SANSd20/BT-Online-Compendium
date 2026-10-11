@@ -10,7 +10,7 @@ Implemented through the supported generic engine: Back Woods, Blue Collar, Farm,
 
 Remaining entries are visible in the source audit but unavailable in this slice because they require unsupported concrete affiliation/identity/vehicle/Field or aggregate Trait mechanics: Born Mercenary Brat, Fugitives, Nobility, Slave, Street, Trueborn Crèche, and White Collar.
 
-## Stage 2 — Late Childhood (9)
+## Stage 2 — Late Childhood (12)
 
 Adolescent Warfare (p. 79), Back Woods (p. 79), Clan Apprenticeship (p. 79), Farm (p. 79), Freeborn Sibko (p. 79), High School (p. 80), Mercenary Brat (p. 80), Military School (p. 80), Preparatory School (p. 80), Spacer Family (p. 81), Street (p. 81), and Trueborn Sibko (p. 81). The source also defines the Stage 2 age/flexible-XP rules.
 
