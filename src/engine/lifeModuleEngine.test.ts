@@ -1451,13 +1451,24 @@ describe('Life Module engine', () => {
 
   it('round-trips final-review allocations and Optimization history', () => {
     let character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    const preImprovement = previewLifeModuleOptimization(character).find((entry) => entry.destination.type === 'attribute' && entry.destination.targetId === 'STR')!
+    character = applyLifeModuleOptimization(character, preImprovement.id)
     character = allocateFinalReviewXp(character, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 25)
-    const opportunity = previewLifeModuleOptimization(character).find((entry) => entry.destination.type === 'attribute' && entry.destination.targetId === 'STR')!
-    character = applyLifeModuleOptimization(character, opportunity.id)
+    expect(previewLifeModuleOptimization(character)).toHaveLength(0)
     const decoded = decodeCharacter(encodeCharacter(character, '2026-09-23T00:00:00.000Z'))
     expect(decoded).toEqual(character)
     expect(decoded.creation.lifeModules!.finalReview!.allocations).toHaveLength(1)
     expect(decoded.creation.lifeModules!.finalReview!.optimizations.length).toBeGreaterThan(0)
+  })
+
+  it('preserves partial XP created after Optimization without reopening the phase', () => {
+    let character = enterLifeModuleFinalReview(completeAgitatorStage4())
+    const opportunity = previewLifeModuleOptimization(character).find((entry) => entry.destination.type === 'attribute' && entry.destination.targetId === 'STR')!
+    character = applyLifeModuleOptimization(character, opportunity.id)
+    character = allocateFinalReviewXp(character, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 25)
+    expect(character.attributes.find((entry) => entry.attributeId === 'STR')?.accumulatedXp).toBe(225)
+    expect(previewLifeModuleOptimization(character)).toHaveLength(0)
+    expect(validateCharacter(character).issues.map((entry) => entry.id)).not.toContain('life-modules.optimization.outstanding')
   })
 
   it('marks a fully allocated, prerequisite-satisfied, fully attained draft ready only for Final Touches', () => {

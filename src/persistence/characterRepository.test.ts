@@ -147,9 +147,9 @@ describe('LocalStorageCharacterRepository', () => {
     character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 50)
     character = resolvePendingLifeModuleAward(character, flexible.id, { type: 'skill', targetId: 'skill.acting', displayName: 'Acting' }, 75)
     character = enterLifeModuleFinalReview(character)
+    const preImprovement = previewLifeModuleOptimization(character).find((entry) => entry.destination.type === 'attribute' && entry.destination.targetId === 'STR')!
+    character = applyLifeModuleOptimization(character, preImprovement.id)
     character = allocateFinalReviewXp(character, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 25)
-    const optimization = previewLifeModuleOptimization(character).find((entry) => entry.destination.type === 'attribute' && entry.destination.targetId === 'STR')!
-    character = applyLifeModuleOptimization(character, optimization.id)
     repository.save(character)
     const reviewed = repository.get(character.id)
     expect(reviewed).toEqual(character)

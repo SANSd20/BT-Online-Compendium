@@ -123,6 +123,8 @@ export function negativeTraitXpPurchaseCap(startingXp: number): number {
 
 export function getOptimizationPreview(character: CharacterDefinition): OptimizationOpportunity[] {
   if (character.creation.method !== 'life-modules') return []
+  const review = character.creation.lifeModules?.finalReview
+  if (review && (review.allocations.length > 0 || (review.skillPurchases?.length ?? 0) > 0 || (review.additionalTraitXp?.length ?? 0) > 0 || (review.specialties ?? []).some((entry) => entry.state === 'proposed' || entry.state === 'committed'))) return []
   const opportunities: OptimizationOpportunity[] = []
 
   for (const attribute of character.attributes) {
