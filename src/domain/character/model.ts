@@ -677,6 +677,9 @@ export interface CharacterDefinition {
   clanBirthOrigin?: ClanBirthOriginState
   clanCareerContext?: ClanCareerContext
   clanFieldAptitude?: ClanFieldAptitudeState
+  /** Added in Slice 141; internal package provenance only. */
+  clanAffiliationPackageId?: string
+  clanCastePackageId?: string
   phenotypeId: string
   lifeModuleHistory: LifeModuleHistoryEntry[]
   chronology: Array<{ date: string; eventId: string; provenanceId: string }>

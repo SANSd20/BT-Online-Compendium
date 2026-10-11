@@ -634,6 +634,13 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const provenanceIds = new Set(character.provenance.map((entry) => entry.id))
   let calculatedCost = 0
   for (const [index, entry] of character.lifeModuleHistory.entries()) {
+    if (entry.moduleId.startsWith('stage0.clan-package.')) {
+      selectedIds.add(entry.moduleId)
+      calculatedCost += entry.costXp
+      if (entry.stage !== 0 || entry.chronologyYears !== 0 || !entry.source.sourceId) issues.push(issue('life-modules.clan-package.malformed', `lifeModuleHistory.${index}`, 'Internal Clan package history is malformed.'))
+      if (entry.provenanceIds.length === 0 || entry.provenanceIds.some((id) => !provenanceIds.has(id))) issues.push(issue('life-modules.module.provenance', `lifeModuleHistory.${index}.provenanceIds`, 'Selected Life Modules require valid provenance references.'))
+      continue
+    }
     if (selectedIds.has(entry.moduleId) && getLifeModule(entry.moduleId).repeatPolicy?.sameModuleRepeat !== 'allowed') issues.push(issue('life-modules.module.duplicate', `lifeModuleHistory.${index}.moduleId`, 'This Life Module cannot be selected more than once.'))
     selectedIds.add(entry.moduleId)
     try {
@@ -665,7 +672,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const hasUniversal = selectedIds.has('stage0.universal-fixed-xp')
   const orderModuleIds = new Set([COMSTAR_ORDER_ID, WORD_OF_BLAKE_ORDER_ID])
   const affiliationModuleIds = character.lifeModuleHistory
-    .filter((entry) => entry.stage === 0 && entry.moduleId !== 'stage0.universal-fixed-xp' && !orderModuleIds.has(entry.moduleId))
+    .filter((entry) => entry.stage === 0 && entry.moduleId !== 'stage0.universal-fixed-xp' && !orderModuleIds.has(entry.moduleId) && !entry.moduleId.startsWith('stage0.clan-package.'))
     .map((entry) => entry.moduleId)
   const hasAffiliation = affiliationModuleIds.length === 1
   const universalAffiliationResolution = state.resolvedAwards?.find((entry) => entry.moduleId === 'stage0.universal-fixed-xp' && entry.awardId === 'universal.language.affiliation')

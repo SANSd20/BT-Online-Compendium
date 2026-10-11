@@ -47,6 +47,7 @@ import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
 import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
 import { validateCharacter } from '../validation/validateCharacter'
+import { CLAN_AFFILIATION_PACKAGES, CLAN_CASTE_PACKAGES, type ClanAffiliationPackageId, type ClanCastePackageId } from '../domain/character/clanPackages'
 
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
 
@@ -81,6 +82,11 @@ export type LifeModuleTransactionOperation = {
   source: { sourceId: string; edition: string; page?: number; ruleId?: string }
   fieldId: string
   selections: Array<{ destination: ResolvedLifeModuleDestination }>
+} | {
+  kind: 'grant-clan-package'
+  awardId: string
+  packageId: ClanAffiliationPackageId | ClanCastePackageId
+  choices?: Record<string, string>
 }
 
 export type LifeModuleTransactionErrorKind = 'unsupported-operation' | 'invalid-operation' | 'unresolved-choice' | 'illegal-prospective-state'
@@ -248,7 +254,7 @@ function applyGovernedFieldGrant(character: CharacterDefinition, operation: Extr
   state.selectedSkillFields.push({ id: makeId(undefined, 'field-grant'), schoolModuleId: operation.schoolModuleId, fieldId: field.id, displayName: field.displayName, category: operation.category, purchaseCostXp: operation.purchaseCostXp, xpPerSkill: operation.xpPerSkill, chronologyYears: operation.chronologyYears, selectedAt: new Date().toISOString(), provenanceId, source: { ...field.source }, variableSkillChoices: variableChoices, prerequisiteSkillChoices: [] })
   next.xp.creation.allocated = calculateLedgerXp(next)
   next.updatedAt = new Date().toISOString()
-  return updateLifeModuleProgress(next)
+  return next
 }
 
 const CLAN_WARRIOR_ALLOCATION_FIELD_IDS = new Set(['field.clan-aerospace-warrior', 'field.clan-elemental', 'field.clan-mechwarrior'])
@@ -308,6 +314,54 @@ function applyCareerFieldSkillAllocation(character: CharacterDefinition, operati
   return updateLifeModuleProgress(next)
 }
 
+function applyClanPackage(character: CharacterDefinition, operation: Extract<LifeModuleTransactionOperation, { kind: 'grant-clan-package' }>): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  if (next.clanIdentity?.id !== 'affiliation.clan' || !next.affiliations.some((entry) => entry.affiliationId === 'affiliation.clan')) throw new Error('Clan package requires the canonical Clan affiliation foundation.')
+  if (operation.packageId === next.clanAffiliationPackageId || operation.packageId === next.clanCastePackageId) throw new Error(`Clan package is already committed: ${operation.packageId}`)
+  const affiliation = CLAN_AFFILIATION_PACKAGES.find((entry) => entry.id === operation.packageId)
+  const caste = CLAN_CASTE_PACKAGES.find((entry) => entry.id === operation.packageId)
+  if (!affiliation && !caste) throw new Error(`Unknown Clan package: ${operation.packageId}`)
+  if (caste && !next.clanCaste) throw new Error('Clan caste package requires a canonical caste foundation.')
+  const cost = affiliation?.moduleCostXp ?? 0
+  if (state.moduleXp.remaining < cost) throw new Error(`Selecting ${operation.packageId} would overspend the Life Module XP pool.`)
+  const source = { ...(affiliation ?? caste)!.source }
+  const provenanceId = makeId(undefined, `clan-package-${operation.packageId}`)
+  next.provenance.push({ id: provenanceId, kind: 'published', description: `${(affiliation ?? caste)!.displayName} package awards`, source })
+  const award = (destination: LifeModuleDestination, xp: number) => applyDestinationAward(next, destination, xp, provenanceId)
+  if (operation.packageId === 'invading-clan') {
+    award({ type: 'trait', traitId: 'trait.compulsion', displayName: 'Compulsion/Arrogance', parameters: { compulsion: 'Arrogance' } }, -50)
+    award({ type: 'trait', traitId: 'trait.compulsion', displayName: 'Compulsion/Distrust of Inner Sphere', parameters: { compulsion: 'Distrust of Inner Sphere' } }, -100)
+    award({ type: 'skill', address: { skillId: 'skill.interest', parameter: { kind: 'subskill', value: 'Clan Remembrance' } }, displayName: 'Interest/Clan Remembrance' }, 25)
+    award({ type: 'skill', address: { skillId: 'skill.protocol', parameter: { kind: 'subskill', value: 'Clan' } }, displayName: 'Protocol/Clan' }, 25)
+  } else if (operation.packageId === 'homeworld-clan') {
+    award({ type: 'trait', traitId: 'trait.compulsion', displayName: 'Compulsion/Distrust of Inner Sphere', parameters: { compulsion: 'Distrust of Inner Sphere' } }, -100)
+    award({ type: 'trait', traitId: 'trait.compulsion', displayName: 'Compulsion/Hate Invading Clans', parameters: { compulsion: 'Hate Invading Clans' } }, -100)
+    award({ type: 'skill', address: { skillId: 'skill.interest', parameter: { kind: 'subskill', value: 'Clan Remembrance' } }, displayName: 'Interest/Clan Remembrance' }, 25)
+    award({ type: 'skill', address: { skillId: 'skill.protocol', parameter: { kind: 'subskill', value: 'Clan' } }, displayName: 'Protocol/Clan' }, 25)
+  } else if (operation.packageId === 'mechwarrior') {
+    award({ type: 'attribute', attributeId: 'DEX' }, 75)
+    award({ type: 'attribute', attributeId: 'RFL' }, 75)
+    award({ type: 'attribute', attributeId: 'WIL' }, 75)
+    award({ type: 'attribute', attributeId: 'CHA' }, -25)
+    award({ type: 'attribute', attributeId: 'EDG' }, -50)
+    award({ type: 'trait', traitId: 'trait.fit', displayName: 'Fit' }, 25)
+    award({ type: 'trait', traitId: 'trait.impatient', displayName: 'Impatient' }, -50)
+  } else {
+    throw new Error(`Caste package awards require a source-defined concrete choice bundle: ${operation.packageId}`)
+  }
+  state.moduleXp.spent += cost
+  state.moduleXp.remaining -= cost
+  next.lifeModuleHistory.push({ moduleId: `stage0.clan-package.${operation.packageId}`, displayName: (affiliation ?? caste)!.displayName, stage: 0, costXp: cost, chronologyYears: 0, selectedAt: new Date().toISOString(), provenanceIds: [provenanceId], source, notes: ['Internal Clan package award integration; Clan creation remains player-facing unsupported.'] })
+  state.selectedModuleIds.push(`stage0.clan-package.${operation.packageId}`)
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  next.xp.creation.remaining = state.moduleXp.remaining
+  if (affiliation) next.clanAffiliationPackageId = operation.packageId
+  else next.clanCastePackageId = operation.packageId
+  next.updatedAt = new Date().toISOString()
+  return next
+}
+
 export function buildLifeModuleTransaction(
   character: CharacterDefinition,
   operations: readonly LifeModuleTransactionOperation[],
@@ -338,6 +392,11 @@ export function buildLifeModuleTransaction(
     }
     if (operation.kind === 'allocate-career-field-xp') {
       try { transaction.prospectiveState = applyCareerFieldSkillAllocation(transaction.prospectiveState!, operation) }
+      catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
+      continue
+    }
+  if (operation.kind === 'grant-clan-package') {
+      try { transaction.prospectiveState = applyClanPackage(transaction.prospectiveState!, operation) }
       catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
       continue
     }
