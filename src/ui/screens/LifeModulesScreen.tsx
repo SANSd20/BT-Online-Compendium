@@ -7,6 +7,7 @@ import { getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSe
 import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { TRAVEL_ID } from '../../domain/lifeModules/catalog'
+import { CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG } from '../../domain/lifeModules/catalog'
 import { characterSkillProgression, getFinalReviewBlockers, getModeledOpposedTraitConflicts, skillXpCosts } from '../../domain/lifeModules/finalReview'
 import { deriveCharacterRecordSheet } from '../../domain/character/recordSheet'
 import { deriveAging, deriveBiologicalAge, deriveCharacterAge } from '../../domain/character/aging'
@@ -29,6 +30,7 @@ import { lifeModulesThemeIdentity, previewStage0Affiliation } from '../component
 import { defaultStage3FieldIds, previewSupportedStageModule, stage3FieldSelectionStatus, type SupportedStageModuleId } from '../components/stageModulePreviewModel'
 import { catalogAvailability, catalogAvailabilityLabel } from '../components/catalogAvailability'
 import { shouldFocusLifeModuleStageHeading } from '../components/lifeModulesFocusBehavior'
+import { ConditionalPackagePanel } from '../components/ConditionalPackagePanel'
 import { emptyStageChoiceSlot, filterSiblingDestinationOptions, modeledOpenSubjectStageChoiceSlot, openSubjectStageChoiceSlot, previewStageModuleChoiceSlots, relatedStageChoiceSlotValues, slotValueComplete, stageChoicePoolProgress, stageChoicePoolProgressLabel, stageChoicePresentationPending, stageChoiceSlotCount, stageSlotContinueEnabled, stageSlotPendingAwards, type StageChoiceSlotValue, type StageChoiceSlotValues } from '../components/stageModuleChoiceSlotsModel'
 
 interface LifeModulesScreenProps {
@@ -630,6 +632,13 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
                 <button className="button secondary" type="button" onClick={() => downloadCharacter(character)}>Export character JSON</button>
             </>}
           >
+
+          <ConditionalPackagePanel
+            character={character}
+            packages={CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG}
+            onChange={setCharacter}
+            onContinue={() => setMessage('Conditional package preview is ready for the authorized Continue integration.')}
+          />
 
           <section className="life-stage-panel" aria-labelledby="life-stage-heading">
             <LifeModuleStageHeading phase={state.phase} headingRef={stageHeadingRef} />

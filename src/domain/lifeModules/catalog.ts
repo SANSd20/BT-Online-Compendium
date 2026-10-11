@@ -1,5 +1,5 @@
 import type { SourceCitation } from '../rules/model'
-import type { LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
+import type { ConditionalLifeModulePackageDefinition, LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination } from './model'
 import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
 import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, PILOT_DROPSHIP_FIELD_ID, PILOT_JUMPSHIP_FIELD_ID, PILOT_WARSHIP_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
@@ -9,6 +9,41 @@ import { HPG_TECHNICIAN_FIELD_ID } from '../skillFields/catalog'
 
 export { CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
 export { OFFICER_TRAINING_SCHOOL_ID } from './stage3Schooling'
+
+/** Production package catalog contract. No package is activated until its complete source audit is represented here. */
+export const CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG: readonly ConditionalLifeModulePackageDefinition[] = []
+
+export interface ConditionalPackageCatalogValidationIssue {
+  packageId: string
+  message: string
+}
+
+export function validateConditionalPackageCatalog(catalog: readonly ConditionalLifeModulePackageDefinition[] = CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG): ConditionalPackageCatalogValidationIssue[] {
+  const issues: ConditionalPackageCatalogValidationIssue[] = []
+  const packageIds = new Set<string>()
+  for (const packageDefinition of catalog) {
+    if (!packageDefinition.id || packageIds.has(packageDefinition.id)) issues.push({ packageId: packageDefinition.id, message: 'Package IDs must be present and unique.' })
+    packageIds.add(packageDefinition.id)
+    if (!packageDefinition.displayName || !packageDefinition.source.sourceId || packageDefinition.choices.length === 0) issues.push({ packageId: packageDefinition.id, message: 'Package display name, source provenance, and at least one option are required.' })
+    const optionIds = new Set<string>()
+    for (const option of packageDefinition.choices) {
+      if (!option.id || optionIds.has(option.id)) issues.push({ packageId: packageDefinition.id, message: 'Option IDs must be present and unique within a package.' })
+      optionIds.add(option.id)
+      if (!option.displayName || option.awards.length === 0) issues.push({ packageId: packageDefinition.id, message: `Option ${option.id} requires a display name and complete award bundle.` })
+      for (const nested of option.nestedChoices ?? []) {
+        if (!nested.id || nested.required !== true || nested.validOptionIds.length === 0 || !nested.awardId || !nested.source.sourceId) issues.push({ packageId: packageDefinition.id, message: `Nested choice ${nested.id} is incomplete.` })
+        if (!option.awards.some((award) => award.id === nested.awardId)) issues.push({ packageId: packageDefinition.id, message: `Nested choice ${nested.id} references a missing award.` })
+      }
+    }
+  }
+  return issues
+}
+
+export function getConditionalLifeModulePackage(packageId: string): ConditionalLifeModulePackageDefinition {
+  const packageDefinition = CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG.find((entry) => entry.id === packageId)
+  if (!packageDefinition) throw new Error(`Unknown conditional Life Module package: ${packageId}`)
+  return packageDefinition
+}
 
 export const LIFE_MODULE_RULES_SOURCE: SourceCitation = {
   sourceId: 'atow-core-corrected-third',

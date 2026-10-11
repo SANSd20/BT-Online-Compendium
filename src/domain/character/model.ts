@@ -1,5 +1,6 @@
 import type { GmException, RulesSnapshot, SourceCitation } from '../rules/model'
 import type { AffiliationLanguageSelectorGroupId } from '../lifeModules/affiliations'
+import type { ConditionalPackageDraftState } from '../lifeModules/model'
 import type { ClanBirthOriginState, ClanCasteState, ClanFieldAptitudeState, ClanIdentityState } from './clanIdentity'
 
 export type CreationMethod = 'archetype' | 'point-buy' | 'life-modules'
@@ -450,6 +451,7 @@ export interface LifeModuleCreationState {
   orderSecondaryLanguage?: string
   orderTechnicianSubskill?: string
   pendingAwards: PendingLifeModuleAward[]
+  conditionalPackageDraft?: ConditionalPackageDraftState
   resolvedAwards: ResolvedLifeModuleAward[]
   choiceGrantRequirements: LifeModuleChoiceGrantRequirement[]
   prerequisiteIssues: LifeModulePrerequisiteIssue[]

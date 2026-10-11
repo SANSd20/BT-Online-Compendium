@@ -8,6 +8,7 @@ import type {
   SkillAddress,
   XpAward,
 } from '../domain/character/model'
+import type { ConditionalLifeModulePackageDefinition, ConditionalPackageDraftState } from '../domain/lifeModules/model'
 import {
   AGITATOR_ID,
   TRAVEL_ID,
@@ -45,8 +46,271 @@ import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
 import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
+import { validateCharacter } from '../validation/validateCharacter'
 
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
+
+export type LifeModuleTransactionOperation = {
+  kind: 'resolve-pending-award'
+  pendingAwardId: string
+  destination: ResolvedLifeModuleDestination
+  xpAmount?: number
+} | {
+  kind: 'grant-governed-field'
+  packageId: string
+  optionId: string
+  awardId: string
+  fieldId: string
+  schoolModuleId: string
+  offerId: string
+  xpPerSkill: number
+  purchaseCostXp: number
+  chronologyYears: number
+  category: 'basic' | 'advanced' | 'special'
+  choices?: Record<string, string>
+}
+
+export type LifeModuleTransactionErrorKind = 'unsupported-operation' | 'invalid-operation' | 'unresolved-choice' | 'illegal-prospective-state'
+
+export interface LifeModuleTransactionError {
+  kind: LifeModuleTransactionErrorKind
+  operationIndex?: number
+  message: string
+  validationIssueIds?: string[]
+}
+
+export interface LifeModuleTransaction {
+  readonly baseState: CharacterDefinition
+  readonly operations: readonly LifeModuleTransactionOperation[]
+  readonly provenanceContext?: string
+  readonly sourceContext?: string
+  prospectiveState: CharacterDefinition | null
+  errors: LifeModuleTransactionError[]
+  status: 'built' | 'validated' | 'failed' | 'committed'
+}
+
+export interface ConditionalLifeModulePackage {
+  id: string
+  source: { sourceId: string; edition: string; page?: number; ruleId?: string }
+  choices: Array<{
+    id: string
+    label: string
+    awards: LifeModuleAward[]
+  }>
+}
+
+export interface LifeModulePackageResolution {
+  packageId: string
+  optionId: string
+  operations: LifeModuleTransactionOperation[]
+  source: ConditionalLifeModulePackage['source']
+}
+
+export function selectConditionalPackageOption(
+  character: CharacterDefinition,
+  packageDefinition: ConditionalLifeModulePackageDefinition,
+  choiceId: string | null,
+  nestedSelections: Record<string, string> = {},
+): CharacterDefinition {
+  const next = structuredClone(character)
+  const option = choiceId ? packageDefinition.choices.find((entry) => entry.id === choiceId) : undefined
+  const errors: string[] = []
+  if (choiceId && !option) errors.push(`Unknown conditional package option: ${choiceId}`)
+  for (const nested of option?.nestedChoices ?? []) {
+    const selected = nestedSelections[nested.id]
+    if (!selected) errors.push(`Required package choice is unresolved: ${nested.id}`)
+    else if (!nested.validOptionIds.includes(selected)) errors.push(`Invalid package choice: ${nested.id}`)
+  }
+  const status: ConditionalPackageDraftState['status'] = !choiceId ? 'not-selected' : errors.length > 0 ? 'incomplete' : 'ready'
+  next.creation.lifeModules!.conditionalPackageDraft = {
+    packageId: packageDefinition.id,
+    choiceId,
+    nestedSelections: structuredClone(nestedSelections),
+    status,
+    errors,
+    source: { ...packageDefinition.source },
+  }
+  return next
+}
+
+export function resolveConditionalPackageDraft(
+  character: CharacterDefinition,
+  packageDefinition: ConditionalLifeModulePackageDefinition,
+): LifeModulePackageResolution {
+  const draft = character.creation.lifeModules?.conditionalPackageDraft
+  if (!draft || draft.packageId !== packageDefinition.id || !draft.choiceId || draft.status !== 'ready') throw new Error('Conditional package draft is incomplete and cannot be resolved.')
+  const resolution = resolveLifeModulePackage({
+    id: packageDefinition.id,
+    source: packageDefinition.source,
+    choices: packageDefinition.choices.map((choice) => ({ id: choice.id, label: choice.displayName, awards: choice.awards })),
+  }, draft.choiceId, draft.nestedSelections)
+  return resolution
+}
+
+export interface GovernedFieldGrantContext {
+  fieldId: string
+  schoolModuleId: string
+  offerId: string
+  category: 'basic' | 'advanced' | 'special'
+  chronologyYears: number
+  xpPerSkill: number
+  purchaseCostXp: number
+  source: { sourceId: string; edition: string; page?: number; ruleId?: string }
+}
+
+export function resolveGovernedFieldGrantContext(award: Extract<LifeModuleAward, { kind: 'field-grant' }>): GovernedFieldGrantContext {
+  if (!award.schoolModuleId || !award.offerId || award.chronologyYears === undefined || !award.category) throw new Error(`Field grant ${award.fieldId} lacks complete governed school offer context.`)
+  const school = getLifeModule(award.schoolModuleId)
+  const offer = school.skillFieldSelection?.offers.find((entry) => entry.fieldId === award.fieldId)
+  if (!offer || award.offerId !== `${school.id}/${award.fieldId}`) throw new Error(`Field grant ${award.fieldId} does not match its governed school offer.`)
+  const field = getSkillField(award.fieldId)
+  if (offer.category !== award.category || offer.awardedXpPerSkill !== award.xpPerSkill || skillFieldCost(field, offer.costXpPerSkill) !== award.purchaseCostXp || offer.chronologyYears !== award.chronologyYears) throw new Error(`Field grant ${award.fieldId} has inconsistent governed offer values.`)
+  return { fieldId: award.fieldId, schoolModuleId: school.id, offerId: award.offerId, category: offer.category, chronologyYears: offer.chronologyYears, xpPerSkill: offer.awardedXpPerSkill, purchaseCostXp: skillFieldCost(field, offer.costXpPerSkill), source: { ...field.source } }
+}
+
+export function resolveLifeModulePackage(
+  packageDefinition: ConditionalLifeModulePackage,
+  optionId: string,
+  choices: Record<string, string> = {},
+): LifeModulePackageResolution {
+  if (!packageDefinition.id || !packageDefinition.source.sourceId) throw new Error('Conditional package identity and source provenance are required.')
+  const option = packageDefinition.choices.find((entry) => entry.id === optionId)
+  if (!option) throw new Error(`Unknown conditional package option: ${optionId}`)
+  const operations: LifeModuleTransactionOperation[] = []
+  const expand = (award: LifeModuleAward): void => {
+    if (award.kind === 'fixed') {
+      operations.push({ kind: 'resolve-pending-award', pendingAwardId: `${packageDefinition.id}/${option.id}/${award.id}`, destination: lifeModuleDestinationToResolved(award.destination), xpAmount: award.xp })
+      return
+    }
+    if (award.kind === 'conditional') {
+      for (const nested of award.awards) expand(nested)
+      return
+    }
+    if (award.kind === 'choice-package') {
+      const nestedOptionId = choices[award.id]
+      if (!nestedOptionId) throw new Error(`Required nested choice is unresolved: ${award.id}`)
+      const nestedOption = award.options.find((entry) => entry[0]?.type === 'skill' && entry[0].address.skillId === nestedOptionId)
+      if (!nestedOption) throw new Error(`Invalid nested choice for package award: ${award.id}`)
+      for (const nested of nestedOption) expand({ id: `${award.id}/${nestedOptionId}`, kind: 'fixed', xp: 0, destination: nested })
+      return
+    }
+    if (award.kind === 'field-grant') {
+      const context = resolveGovernedFieldGrantContext(award)
+      operations.push({ kind: 'grant-governed-field', packageId: packageDefinition.id, optionId: option.id, awardId: award.id, ...context })
+      return
+    }
+    throw new Error(`Unsupported conditional package award: ${award.kind}`)
+  }
+  for (const award of option.awards) expand(award)
+  return { packageId: packageDefinition.id, optionId, operations, source: { ...packageDefinition.source } }
+}
+
+function lifeModuleDestinationToResolved(destination: LifeModuleDestination): ResolvedLifeModuleDestination {
+  if (destination.type === 'attribute') return { type: 'attribute', targetId: destination.attributeId, displayName: destination.attributeId }
+  if (destination.type === 'trait') return { type: 'trait', targetId: destination.traitId, displayName: destination.displayName, ...(destination.parameters ? { parameters: { ...destination.parameters } } : {}) }
+  return { type: 'skill', targetId: destination.address.skillId, displayName: destination.displayName, ...(destination.address.parameter ? { parameter: { ...destination.address.parameter } } : {}) }
+}
+
+function applyGovernedFieldGrant(character: CharacterDefinition, operation: Extract<LifeModuleTransactionOperation, { kind: 'grant-governed-field' }>): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  const school = getLifeModule(operation.schoolModuleId)
+  const offer = school.skillFieldSelection?.offers.find((entry) => entry.fieldId === operation.fieldId)
+  const field = getSkillField(operation.fieldId)
+  if (!offer || operation.offerId !== `${school.id}/${operation.fieldId}`) throw new Error(`Field grant ${operation.fieldId} does not match a governed school offer.`)
+  if (offer.category !== operation.category || offer.awardedXpPerSkill !== operation.xpPerSkill || offer.chronologyYears !== operation.chronologyYears || skillFieldCost(field, offer.costXpPerSkill) !== operation.purchaseCostXp) throw new Error(`Field grant ${operation.fieldId} has inconsistent XP, category, or chronology.`)
+  if (state.selectedSkillFields.some((entry) => entry.fieldId === operation.fieldId)) throw new Error(`Skill Field is already acquired: ${operation.fieldId}`)
+  if (!next.lifeModuleHistory.some((entry) => entry.moduleId === operation.schoolModuleId)) throw new Error(`Field grant requires its governed school: ${operation.schoolModuleId}`)
+  const provenanceId = makeId(undefined, `package-field-${operation.packageId}-${operation.optionId}-${operation.awardId}`)
+  next.provenance.push({ id: provenanceId, kind: 'published', description: `${field.displayName} Skill Field package grant`, source: { ...field.source } })
+  for (const component of field.componentSkills) applyDestinationAward(next, component, operation.xpPerSkill, provenanceId)
+  for (const component of field.affiliationBoundComponentSkills ?? []) applyDestinationAward(next, resolveAffiliationBoundLifeModuleDestination(next, component.skillId, component.displayName), operation.xpPerSkill, provenanceId)
+  const variableChoices = field.variableComponentSkills?.map((component) => {
+    const selected = operation.choices?.[component.id]
+    if (!selected || !component.legalSubskills.includes(selected)) throw new Error(`Required concrete Field Skill choice is missing or invalid: ${component.id}`)
+    const destination: LifeModuleDestination = { type: 'skill', address: { skillId: component.skillId, parameter: { kind: 'subskill', value: selected } }, displayName: `${component.displayName}/${selected}` }
+    applyDestinationAward(next, destination, operation.xpPerSkill, provenanceId)
+    return { componentId: component.id, destination: lifeModuleDestinationToResolved(destination) }
+  }) ?? []
+  state.selectedSkillFields.push({ id: makeId(undefined, 'field-grant'), schoolModuleId: operation.schoolModuleId, fieldId: field.id, displayName: field.displayName, category: operation.category, purchaseCostXp: operation.purchaseCostXp, xpPerSkill: operation.xpPerSkill, chronologyYears: operation.chronologyYears, selectedAt: new Date().toISOString(), provenanceId, source: { ...field.source }, variableSkillChoices: variableChoices, prerequisiteSkillChoices: [] })
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  next.updatedAt = new Date().toISOString()
+  return updateLifeModuleProgress(next)
+}
+
+export function buildLifeModuleTransaction(
+  character: CharacterDefinition,
+  operations: readonly LifeModuleTransactionOperation[],
+  context: { provenanceContext?: string; sourceContext?: string } = {},
+): LifeModuleTransaction {
+  const transaction: LifeModuleTransaction = {
+    baseState: structuredClone(character),
+    operations: structuredClone(operations),
+    ...context,
+    prospectiveState: structuredClone(character),
+    errors: [],
+    status: 'built',
+  }
+
+  for (const [operationIndex, operation] of operations.entries()) {
+    if (operation.kind === 'grant-governed-field') {
+      try {
+        transaction.prospectiveState = applyGovernedFieldGrant(transaction.prospectiveState!, operation)
+      } catch (error) {
+        transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) })
+      }
+      continue
+    }
+    if (operation.kind !== 'resolve-pending-award') {
+      transaction.errors.push({ kind: 'unsupported-operation', operationIndex, message: `Unsupported Life Module transaction operation: ${String((operation as { kind?: unknown }).kind)}` })
+      continue
+    }
+    if (!operation.pendingAwardId || !operation.destination?.type || !operation.destination.targetId || !operation.destination.displayName) {
+      transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: 'A pending-award operation requires an award ID and complete destination.' })
+      continue
+    }
+    const pending = transaction.prospectiveState!.creation.lifeModules?.pendingAwards.find((entry) => entry.id === operation.pendingAwardId)
+    if (!pending) {
+      transaction.errors.push({ kind: 'unresolved-choice', operationIndex, message: `Pending Life Module award is not available: ${operation.pendingAwardId}` })
+      continue
+    }
+    try {
+      transaction.prospectiveState = resolvePendingLifeModuleAward(transaction.prospectiveState!, operation.pendingAwardId, operation.destination, operation.xpAmount)
+    } catch (error) {
+      transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) })
+    }
+  }
+  if (transaction.errors.length > 0) {
+    transaction.prospectiveState = null
+    transaction.status = 'failed'
+  }
+  return transaction
+}
+
+export function validateLifeModuleTransaction(transaction: LifeModuleTransaction): LifeModuleTransaction {
+  if (transaction.status === 'committed') throw new Error('A committed Life Module transaction cannot be validated again.')
+  if (transaction.status === 'failed' || !transaction.prospectiveState) return transaction
+  const validation = validateCharacter(transaction.prospectiveState)
+  const errors = validation.issues.filter((entry) => entry.severity === 'error')
+  if (errors.length > 0) {
+    transaction.errors = errors.map((entry) => ({
+      kind: 'illegal-prospective-state' as const,
+      message: entry.message,
+      validationIssueIds: [entry.id],
+    }))
+    transaction.prospectiveState = null
+    transaction.status = 'failed'
+  } else {
+    transaction.status = 'validated'
+  }
+  return transaction
+}
+
+export function commitLifeModuleTransaction(transaction: LifeModuleTransaction): CharacterDefinition {
+  if (transaction.status !== 'validated' || !transaction.prospectiveState) throw new Error('Only a validated Life Module transaction can be committed.')
+  transaction.status = 'committed'
+  return structuredClone(transaction.prospectiveState)
+}
 
 export function createLifeModuleCharacter(
   displayName: string,

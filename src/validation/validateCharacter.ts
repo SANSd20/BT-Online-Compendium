@@ -19,7 +19,7 @@ import {
   standardAttributeXpCost,
 } from '../domain/pointBuy/calculations'
 import type { ValidationIssue, ValidationResult } from './model'
-import { getLifeModule } from '../domain/lifeModules/catalog'
+import { getConditionalLifeModulePackage, getLifeModule } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues, modeledSkillChoiceOptions, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
 import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
@@ -114,6 +114,7 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
   }
 
   validatePhenotypeAndExceptionalAttributes(character, issues)
+  validateConditionalPackageDraft(character, issues)
 
   if (!character.id.trim()) {
     issues.push(issue('character.id.required', 'id', 'Character ID is required.'))
@@ -219,6 +220,24 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
     valid: !issues.some((item) => item.severity === 'error'),
     issues,
   }
+}
+
+function validateConditionalPackageDraft(character: CharacterDefinition, issues: ValidationIssue[]): void {
+  const draft = character.creation.lifeModules?.conditionalPackageDraft
+  if (!draft) return
+  if (draft.packageId === null) {
+    if (draft.choiceId !== null || draft.status !== 'not-selected') issues.push(issue('life-modules.package-draft.empty.invalid', 'creation.lifeModules.conditionalPackageDraft', 'An unselected package draft must have no option and status not-selected.'))
+    return
+  }
+  let packageDefinition
+  try { packageDefinition = getConditionalLifeModulePackage(draft.packageId) } catch { issues.push(issue('life-modules.package-draft.package.unknown', 'creation.lifeModules.conditionalPackageDraft.packageId', 'Conditional package identity is not supported by the current catalog.')); return }
+  const option = packageDefinition.choices.find((entry) => entry.id === draft.choiceId)
+  if (!option) { issues.push(issue('life-modules.package-draft.option.invalid', 'creation.lifeModules.conditionalPackageDraft.choiceId', 'Conditional package option is not valid for the selected package.')); return }
+  for (const nested of option.nestedChoices ?? []) {
+    const selected = draft.nestedSelections[nested.id]
+    if (!selected || !nested.validOptionIds.includes(selected)) issues.push(issue('life-modules.package-draft.nested.invalid', `creation.lifeModules.conditionalPackageDraft.nestedSelections.${nested.id}`, 'A required nested package choice is unresolved or invalid.'))
+  }
+  if (draft.status === 'ready' && (draft.errors.length > 0 || (option.nestedChoices ?? []).some((nested) => !nested.validOptionIds.includes(draft.nestedSelections[nested.id] ?? '')))) issues.push(issue('life-modules.package-draft.status.invalid', 'creation.lifeModules.conditionalPackageDraft.status', 'A package draft cannot be ready while required choices or validation errors remain.'))
 }
 
 function validatePhenotypeAndExceptionalAttributes(character: CharacterDefinition, issues: ValidationIssue[]): void {

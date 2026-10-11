@@ -24,7 +24,41 @@ export type LifeModuleAward =
   | { id: string; kind: 'flexible-xp'; totalXp: number; allowedTargetTypes: AwardTargetType[]; allocationMode: 'pool'; maxXpPerTarget?: Partial<Record<AwardTargetType, number>> }
   | { id: string; kind: 'choice-package'; description: string; options: LifeModuleDestination[][] }
   | { id: string; kind: 'conditional'; description: string; awards: LifeModuleAward[] }
-  | { id: string; kind: 'field-grant'; description: string; fieldId: string; xpPerSkill: number; purchaseCostXp: number }
+  | { id: string; kind: 'field-grant'; description: string; fieldId: string; xpPerSkill: number; purchaseCostXp: number; schoolModuleId?: string; offerId?: string; chronologyYears?: number; category?: 'basic' | 'advanced' | 'special' }
+
+export interface ConditionalPackageNestedChoice {
+  id: string
+  label: string
+  required: true
+  validOptionIds: string[]
+  awardId: string
+  source: SourceCitation
+}
+
+export interface ConditionalLifeModulePackageDefinition {
+  id: string
+  displayName: string
+  source: SourceCitation
+  eligibility?: LifeModulePrerequisite[]
+  choices: Array<{
+    id: string
+    displayName: string
+    awards: LifeModuleAward[]
+    nestedChoices?: ConditionalPackageNestedChoice[]
+    unsupportedReasons?: string[]
+  }>
+}
+
+export type ConditionalPackageDraftStatus = 'not-selected' | 'incomplete' | 'invalid' | 'ready'
+
+export interface ConditionalPackageDraftState {
+  packageId: string | null
+  choiceId: string | null
+  nestedSelections: Record<string, string>
+  status: ConditionalPackageDraftStatus
+  errors: string[]
+  source?: SourceCitation
+}
 
 export type LifeModulePrerequisite =
   | { id: string; kind: 'affiliation'; affiliationId?: string; classification?: 'any' | 'non-clan'; description: string }
