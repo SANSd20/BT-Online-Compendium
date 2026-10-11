@@ -1,13 +1,14 @@
 {
   "name": "bt-online-compendium",
   "private": true,
-  "version": "0.1.0-alpha.105",
+  "version": "0.1.0-alpha.106",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "vitest run --exclude scripts/**",
+    "test:integration": "vitest run scripts/export-import.integration.test.ts",
     "check": "npm run lint && npm run test && npm run build",
     "preview": "vite preview"
   },
@@ -25,6 +26,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "playwright-core": "^1.64.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.70.1",
     "vite": "^8.3.0",

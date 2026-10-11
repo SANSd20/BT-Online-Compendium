@@ -1,0 +1,42 @@
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { spawn } from 'node:child_process'
+import { chromium } from 'playwright-core'
+import { describe, expect, it } from 'vitest'
+import { createLifeModuleCharacter, applyUniversalStage0, applyCapellanCommonality, applyStage1Module, applyStage2Module, applyTechnicalCollege, applyAgitator, continueToStage2, continueToStage3, continueToStage4, resolvePendingLifeModuleAward } from '../src/engine/lifeModuleEngine'
+import { BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_HIGH_SCHOOL_ID } from '../src/domain/lifeModules/catalog'
+import { getOptimizationPreview } from '../src/domain/lifeModules/finalReview'
+import { enterLifeModuleFinalReview } from '../src/engine/lifeModuleFinalReview'
+import { enterFinalTouches, markReadyForEquipmentReview } from '../src/engine/finalTouchesEngine'
+import { finalizeCharacterSnapshot } from '../src/domain/character/readiness'
+import { encodeCharacter } from '../src/persistence/characterCodec'
+
+const pwExpect = (locator: { waitFor: (options: { state: 'visible' }) => Promise<void>; count: () => Promise<number>; first: () => { waitFor: (options: { state: 'visible' }) => Promise<void> } }) => ({ toBeVisible: () => locator.first().waitFor({ state: 'visible' }), toHaveCount: async (expected: number) => { const actual = await locator.count(); if (actual !== expected) throw new Error(`Expected ${expected} matching elements, found ${actual}.`) } })
+
+const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+const award = (c: ReturnType<typeof createLifeModuleCharacter>, id: string, targetId: string, displayName: string, parameter?: string) => { const p = c.creation.lifeModules!.pendingAwards.find((x) => x.awardId === id)!; return resolvePendingLifeModuleAward(c, p.id, { type: p.allowedTargetTypes[0], targetId, displayName, ...(parameter ? { parameter: { kind: 'subskill', value: parameter } } : {}) }) }
+function fixture() {
+  let c = createLifeModuleCharacter('Export Import Fixture')
+  c = applyUniversalStage0(c, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'); c = applyCapellanCommonality(c, 'Russian'); c = applyStage1Module(c, BLUE_COLLAR_ID)
+  c = award(c, 'commonality.language.fedsuns', 'skill.language', 'Language/French', 'French'); c = award(c, 'blue-collar.career', 'skill.career', 'Career/Technician', 'Technician'); c = award(c, 'blue-collar.interests', 'skill.interest', 'Interest/History', 'History'); c = award(c, 'blue-collar.interests', 'skill.interest', 'Interest/Science', 'Science')
+  for (const id of ['STR', 'BOD', 'DEX', 'RFL']) c = award(c, 'blue-collar.flexible', id, id)
+  c = applyStage2Module(continueToStage2(c), STAGE_2_HIGH_SCHOOL_ID); c = award(c, 'high-school.interest-40', 'skill.interest', 'Interest/Physics', 'Physics'); c = award(c, 'high-school.interest-35', 'skill.interest', 'Interest/Art', 'Art')
+  let p = c.creation.lifeModules!.pendingAwards.find((x) => x.awardId === 'high-school.flexible')!; c = resolvePendingLifeModuleAward(c, p.id, { type: 'attribute', targetId: 'DEX', displayName: 'DEX' }, 185)
+  c = applyTechnicalCollege(continueToStage3(c)); c = award(c, 'technical-college.interest', 'skill.interest', 'Interest/Engineering', 'Engineering'); p = c.creation.lifeModules!.pendingAwards.find((x) => x.awardId === 'technical-college.flexible')!; c = resolvePendingLifeModuleAward(c, p.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 150); c = resolvePendingLifeModuleAward(c, p.id, { type: 'trait', targetId: 'trait.patient', displayName: 'Patient' }, 50)
+  c = applyAgitator(continueToStage4(c)); c = award(c, 'agitator.skill.driving', 'skill.driving', 'Driving/Ground Car', 'Ground Car'); c = award(c, 'agitator.skill.prestidigitation', 'skill.prestidigitation', 'Prestidigitation/Sleight of Hand', 'Sleight of Hand'); p = c.creation.lifeModules!.pendingAwards.find((x) => x.awardId === 'agitator.flexible')!; c = resolvePendingLifeModuleAward(c, p.id, { type: 'attribute', targetId: 'STR', displayName: 'STR' }, 50); c = resolvePendingLifeModuleAward(c, p.id, { type: 'skill', targetId: 'skill.acting', displayName: 'Acting' }, 75)
+  for (const o of getOptimizationPreview(c)) { const t = o.destination.type === 'attribute' ? c.attributes.find((x) => x.attributeId === o.destination.targetId) : o.destination.type === 'trait' ? c.traits.find((x) => x.traitId === o.destination.targetId) : c.skills.find((x) => x.address.skillId === o.destination.targetId && x.address.parameter?.value === o.destination.parameter?.value); if (t) t.accumulatedXp = o.afterXp }
+  c.creation.lifeModules!.moduleXp.starting = c.creation.lifeModules!.moduleXp.spent; c.creation.lifeModules!.moduleXp.remaining = 0; c.xp.creation.starting = c.creation.lifeModules!.moduleXp.spent; c.xp.creation.remaining = 0; c = enterLifeModuleFinalReview(c); c = enterFinalTouches(c); c = markReadyForEquipmentReview(c); c = finalizeCharacterSnapshot(c, '2026-10-11T00:00:00.000Z', '00000000-0000-4000-8000-000000000101'); c.displayName = 'Export Import Fixture - revised draft'; return finalizeCharacterSnapshot(c, '2026-10-11T00:01:00.000Z', '00000000-0000-4000-8000-000000000102')
+}
+const waitForServer = async () => { for (let i = 0; i < 60; i++) { try { if ((await fetch('http://127.0.0.1:4173/')).ok) return } catch { /* server is still starting */ } await new Promise((r) => setTimeout(r, 250)) }; throw new Error('Vite server did not start') }
+
+describe('browser export/import integration', () => {
+  it('round-trips through isolated contexts twice', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'atow-export-import-')); const fixturePath = join(root, 'fixture.json'); const repo = fileURLToPath(new URL('..', import.meta.url)); const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '4173'], { cwd: repo, stdio: 'ignore' }); const source = fixture(); await writeFile(fixturePath, encodeCharacter(source, '2026-10-11T00:02:00.000Z'))
+    try { await waitForServer(); const browser = await chromium.launch({ executablePath: chromePath, headless: true }); try { for (let run = 0; run < 2; run++) {
+      const sourceContext = await browser.newContext({ acceptDownloads: true }); const sourcePage = await sourceContext.newPage(); await sourcePage.goto('http://127.0.0.1:4173/'); const input = sourcePage.locator('input[type="file"]'); await input.setInputFiles(fixturePath); await pwExpect(sourcePage.getByText('Export Import Fixture')).toBeVisible(); await sourcePage.getByRole('button', { name: 'Open' }).click(); const downloadPromise = sourcePage.waitForEvent('download'); await sourcePage.getByRole('button', { name: 'Export character JSON' }).click(); const download = await downloadPromise; const exportedPath = join(root, `export-${run}.json`); await download.saveAs(exportedPath); const exported = JSON.parse(await readFile(exportedPath, 'utf8')); expect(exported.character).toEqual(source); expect(exported.character.finalizedSnapshots).toHaveLength(2)
+      const destinationContext = await browser.newContext({ acceptDownloads: true }); const destinationPage = await destinationContext.newPage(); await destinationPage.goto('http://127.0.0.1:4173/'); await pwExpect(destinationPage.getByText('Export Import Fixture')).toHaveCount(0); await destinationPage.locator('input[type="file"]').setInputFiles(exportedPath); await pwExpect(destinationPage.getByText('Export Import Fixture - revised draft')).toBeVisible(); await destinationPage.getByRole('button', { name: 'Open' }).click(); await pwExpect(destinationPage.getByText('2 finalized snapshots preserved. Draft edits remain independent.')).toBeVisible(); const importedDownloadPromise = destinationPage.waitForEvent('download'); await destinationPage.getByRole('button', { name: 'Export character JSON' }).click(); const importedDownload = await importedDownloadPromise; const importedPath = join(root, `imported-${run}.json`); await importedDownload.saveAs(importedPath); expect(JSON.parse(await readFile(importedPath, 'utf8')).character).toEqual(source); await sourceContext.close(); await destinationContext.close()
+    } } finally { await browser.close() } } finally { if (server.pid) { try { process.kill(server.pid) } catch { /* process already exited */ } } await rm(root, { recursive: true, force: true }) }
+  }, 120000)
+})
