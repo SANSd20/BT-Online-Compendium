@@ -201,6 +201,7 @@ export function getFinalReviewBlockers(character: CharacterDefinition): FinalRev
   const review = state?.finalReview
   if (character.creation.method !== 'life-modules' || !state || !review) return [{ id: 'final-review.required', message: 'Life Module final review has not been initialized.' }]
   const blockers: FinalReviewBlocker[] = []
+  if (character.clanIdentity || character.clanCaste) blockers.push({ id: 'clan-foundation-unsupported', message: 'Clan identity and caste foundation is preserved but Clan character creation is not yet supported.' })
   if (state.pendingAwards.length > 0) blockers.push({ id: 'pending-awards', message: 'All pending module awards must be resolved.' })
   if (review.allocationPool.remaining !== 0) blockers.push({ id: 'unallocated-xp', message: `${review.allocationPool.remaining} final-allocation XP remains unspent.` })
   if (state.prerequisiteIssues.some((entry) => entry.status === 'outstanding')) blockers.push({ id: 'prerequisites', message: 'One or more final prerequisites remain outstanding.' })

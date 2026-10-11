@@ -57,6 +57,7 @@ import {
 } from '../domain/finalTouches/rules'
 import { getEquipmentCatalogItem, parseRawEquipmentRating } from '../domain/equipment/catalog'
 import { getPhenotypeDefinition } from '../domain/character/phenotypes'
+import { CLAN_IDENTITY_ID, isClanCasteId } from '../domain/character/clanIdentity'
 
 const SAFE_AFFILIATION_CODE = /^[A-Z][A-Z0-9-]*$/
 const FORBIDDEN_INVENTORY_RUNTIME_KEYS = [
@@ -84,6 +85,22 @@ function issue(
 
 export function validateCharacter(character: CharacterDefinition): ValidationResult {
   const issues: ValidationIssue[] = []
+
+  if (character.clanIdentity) {
+    if (character.clanIdentity.id !== CLAN_IDENTITY_ID || character.clanIdentity.support !== 'unsupported' || !character.clanIdentity.source.sourceId) {
+      issues.push(issue('clan.identity.invalid', 'clanIdentity', 'Clan identity foundation is malformed.'))
+    } else {
+      issues.push(issue('clan.identity.unsupported', 'clanIdentity', 'Clan character creation is not enabled in this Public Alpha foundation.', { severity: 'warning', kind: 'availability' }))
+    }
+  }
+  if (character.clanCaste) {
+    if (!isClanCasteId(character.clanCaste.id) || character.clanCaste.support !== 'unsupported' || !character.clanCaste.source.sourceId) {
+      issues.push(issue('clan.caste.invalid', 'clanCaste', 'Clan caste foundation is malformed.'))
+    } else {
+      issues.push(issue('clan.caste.unsupported', 'clanCaste', 'Clan caste rules and dependent Life Modules are not enabled in this Public Alpha foundation.', { severity: 'warning', kind: 'availability' }))
+    }
+  }
+  if (character.clanCaste && !character.clanIdentity) issues.push(issue('clan.caste.identity-required', 'clanCaste', 'Clan caste requires a Clan identity foundation.', { severity: 'warning', kind: 'prerequisite' }))
 
   validatePhenotypeAndExceptionalAttributes(character, issues)
 
