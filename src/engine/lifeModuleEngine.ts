@@ -31,6 +31,7 @@ import {
   SOLARIS_INTERNSHIP_ID,
   TRUEBORN_CRECHE_ID,
   TRUEBORN_SIBKO_ID,
+  CLAN_WATCH_OPERATIVE_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   WAR_ORPHAN_ID,
@@ -50,6 +51,8 @@ import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, CLAN_MECHWARRIOR_FIELD_ID, g
 import { createCharacterDraft, type CharacterFactoryDependencies } from './characterFactory'
 import { validateCharacter } from '../validation/validateCharacter'
 import { CLAN_AFFILIATION_PACKAGES, CLAN_CASTE_PACKAGES, type ClanAffiliationPackageId, type ClanCastePackageId } from '../domain/character/clanPackages'
+import { clanWarriorStage3Bypass, evaluateClanStage4Eligibility, CLAN_STAGE4_ELIGIBILITY_RULES } from '../domain/lifeModules/clanStage4Eligibility'
+import { CLAN_AFFILIATION_CONTEXTS } from '../domain/lifeModules/affiliations'
 
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
 
@@ -91,6 +94,10 @@ export type LifeModuleTransactionOperation = {
   choices?: Record<string, string>
 } | {
   kind: 'grant-trueborn-sibko-mechwarrior'
+} | {
+  kind: 'grant-clan-watch-operative'
+  branch: 'homeworld-clan' | 'invader-clan'
+  choices: Record<string, string>
 }
 
 export type LifeModuleTransactionErrorKind = 'unsupported-operation' | 'invalid-operation' | 'unresolved-choice' | 'illegal-prospective-state'
@@ -413,6 +420,63 @@ function applyTruebornSibkoMechWarrior(character: CharacterDefinition): Characte
   return updateLifeModuleProgress(next)
 }
 
+function applyClanWatchOperative(character: CharacterDefinition, operation: Extract<LifeModuleTransactionOperation, { kind: 'grant-clan-watch-operative' }>): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  const now = new Date().toISOString()
+  const rule = CLAN_STAGE4_ELIGIBILITY_RULES.find((entry) => entry.moduleId === CLAN_WATCH_OPERATIVE_ID)!
+  const eligibility = evaluateClanStage4Eligibility(next, rule)
+  if (eligibility.status !== 'ELIGIBLE' && !clanWarriorStage3Bypass(next)) throw new Error(`Clan Watch Operative is not eligible: ${eligibility.reasons.join('; ')}`)
+  const context = CLAN_AFFILIATION_CONTEXTS.find((entry) => entry.id === state.stage0AffiliationContext)
+  if (!context?.clanCategory) throw new Error('Clan Watch Operative requires a canonical Homeworld or Invader Clan affiliation context.')
+  const expectedCategory = operation.branch === 'invader-clan' ? 'invading-clan' : operation.branch
+  if (context.clanCategory !== expectedCategory) throw new Error(`Watch Operative branch ${operation.branch} does not match the canonical Clan affiliation category ${context.clanCategory}.`)
+  const requiredChoiceIds = operation.branch === 'homeworld-clan'
+    ? ['watch.tracking', 'homeworld.security-systems', 'homeworld.streetwise', 'homeworld.survival', 'homeworld.technician']
+    : ['watch.tracking', 'invader.streetwise', 'invader.survival']
+  if (requiredChoiceIds.some((choiceId) => !operation.choices[choiceId]?.trim())) throw new Error(`Concrete Watch Operative Skill choices are incomplete: ${requiredChoiceIds.filter((choiceId) => !operation.choices[choiceId]?.trim()).join(', ')}`)
+  if (next.lifeModuleHistory.some((entry) => entry.moduleId === CLAN_WATCH_OPERATIVE_ID)) throw new Error('Clan Watch Operative cannot be repeated.')
+  if (state.moduleXp.remaining < 1200) throw new Error('Clan Watch Operative would overspend the Life Module XP pool.')
+  const source = { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 84, ruleId: `stage-4-clan-watch-operative-${operation.branch}` }
+  const watchModule = getLifeModule(CLAN_WATCH_OPERATIVE_ID)
+  const provenanceId = makeId(undefined, 'clan-watch-operative')
+  next.provenance.push({ id: provenanceId, kind: 'published', description: `Clan Watch Operative ${operation.branch} awards`, source })
+  const award = (destination: LifeModuleDestination, xp: number) => applyDestinationAward(next, destination, xp, provenanceId)
+  award({ type: 'attribute', attributeId: 'INT' }, 70)
+  award({ type: 'attribute', attributeId: 'RFL' }, 50)
+  award({ type: 'attribute', attributeId: 'CHA' }, -75)
+  award({ type: 'trait', traitId: 'trait.connections', displayName: 'Connections' }, 100)
+  award({ type: 'trait', traitId: 'trait.dark-secret', displayName: 'Dark Secret' }, -50)
+  award({ type: 'trait', traitId: 'trait.in-for-life', displayName: 'In For Life' }, -100)
+  award({ type: 'trait', traitId: 'trait.reputation', displayName: 'Reputation' }, -50)
+  for (const [skillId, displayName, xp] of [
+    ['skill.acting', 'Acting', 30], ['skill.computers', 'Computers', 75], ['skill.cryptography', 'Cryptography', 50], ['skill.demolitions', 'Demolitions', 40], ['skill.martial-arts', 'Martial Arts', 75], ['skill.perception', 'Perception', 75], ['skill.protocol', 'Protocol/Affiliation', 50], ['skill.small-arms', 'Small Arms', 80], ['skill.stealth', 'Stealth', 50], ['skill.streetwise', 'Streetwise/Affiliation', 50],
+  ] as const) award({ type: 'skill', address: { skillId, ...(skillId === 'skill.protocol' || skillId === 'skill.streetwise' ? { parameter: { kind: 'subskill', value: operation.choices[skillId] ?? 'Affiliation' } } : {}) }, displayName }, xp)
+  const trackingAward = watchModule.awards.find((entry) => entry.id === 'watch.skill.tracking-any')
+  if (!trackingAward || trackingAward.kind !== 'any-skill-choice') throw new Error('Watch Operative Tracking choice definition is unavailable.')
+  const trackingPending = pendingAwardFrom(watchModule, trackingAward, provenanceId)
+  state.pendingAwards.push(trackingPending)
+  resolvePendingLifeModuleAward(next, trackingPending.id, { type: 'skill', targetId: 'skill.tracking', displayName: `Tracking/${operation.choices['watch.tracking']}`, parameter: { kind: 'subskill', value: operation.choices['watch.tracking'] } }, 80)
+  const required = operation.branch === 'homeworld-clan'
+    ? [['skill.career', 'Career/Soldier', 60, 'Soldier'], ['skill.interrogation', 'Interrogation', 50], ['skill.investigation', 'Investigation', 50], ['skill.melee-weapons', 'Melee Weapons', 40], ['skill.protocol', 'Protocol/Any Clan', 75, operation.choices['homeworld.protocol'] ?? 'Clan'], ['skill.security-systems', 'Security Systems', 35, operation.choices['homeworld.security-systems']], ['skill.streetwise', 'Streetwise/Any Homeworld Clan', 50, operation.choices['homeworld.streetwise']], ['skill.survival', 'Survival', 25, operation.choices['homeworld.survival']], ['skill.technician', 'Technician', 40, operation.choices['homeworld.technician']]] as const
+    : [['skill.equipped', 'Equipped', 50, undefined], ['skill.dark-secret', 'Dark Secret', -50, undefined], ['skill.computers', 'Computers', 50, undefined], ['skill.disguise', 'Disguise', 35, undefined], ['skill.interrogation', 'Interrogation', 75, undefined], ['skill.investigation', 'Investigation', 75, undefined], ['skill.negotiation', 'Negotiation', 40, undefined], ['skill.perception', 'Perception', 50, undefined], ['skill.streetwise', 'Streetwise/Any Invader Clan or Inner Sphere', 50, operation.choices['invader.streetwise']], ['skill.survival', 'Survival', 50, operation.choices['invader.survival']]] as const
+  for (const [skillId, displayName, xp, subject] of required) {
+    if (skillId === 'skill.equipped' || skillId === 'skill.dark-secret') award({ type: 'trait', traitId: skillId === 'skill.equipped' ? 'trait.equipped' : 'trait.dark-secret', displayName }, xp)
+    else award({ type: 'skill', address: { skillId, ...(subject ? { parameter: { kind: 'subskill', value: subject } } : {}) }, displayName }, xp)
+  }
+  state.choiceGrantRequirements.push({ moduleId: CLAN_WATCH_OPERATIVE_ID, provenanceId, awardId: 'watch.skill.tracking-any', requiredGrants: 1 })
+  state.choiceGrantRequirements.push({ moduleId: CLAN_WATCH_OPERATIVE_ID, provenanceId, awardId: 'watch.flexible', requiredGrants: 1, requiredXp: 175, allocationMode: 'pool' })
+  state.pendingAwards.push({ id: `${CLAN_WATCH_OPERATIVE_ID}/${operation.branch}/flexible`, moduleId: CLAN_WATCH_OPERATIVE_ID, provenanceId, awardId: 'watch.flexible', kind: 'flexible-xp', description: 'Allocate 175 flexible XP under the Clan Watch Operative source restrictions.', xpPerGrant: 0, remainingGrants: 0, allocationMode: 'pool', remainingXp: 175, allowedTargetTypes: ['attribute', 'trait', 'skill'], source })
+  state.moduleXp.spent += 1200
+  state.moduleXp.remaining -= 1200
+  state.selectedModuleIds.push(CLAN_WATCH_OPERATIVE_ID)
+  next.lifeModuleHistory.push({ moduleId: CLAN_WATCH_OPERATIVE_ID, displayName: 'Clan Watch Operative', stage: 4, costXp: 1200, chronologyYears: 3, repeatPolicy: { sameModuleRepeat: 'deferred', repeatCost: 'full-module-cost', repeatAwards: { skills: 'repeat', flexibleXp: 'repeat', attributes: 'first-occurrence-only', traits: 'first-occurrence-only' } }, selectedAt: now, provenanceIds: [provenanceId], source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 84, ruleId: 'stage-4-clan-watch-operative' }, notes: [`Source-backed ${operation.branch} branch; Clan readiness remains unsupported.`] })
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  next.xp.creation.remaining = state.moduleXp.remaining
+  next.updatedAt = now
+  return updateLifeModuleProgress(next)
+}
+
 export function buildLifeModuleTransaction(
   character: CharacterDefinition,
   operations: readonly LifeModuleTransactionOperation[],
@@ -453,6 +517,11 @@ export function buildLifeModuleTransaction(
     }
     if (operation.kind === 'grant-trueborn-sibko-mechwarrior') {
       try { transaction.prospectiveState = applyTruebornSibkoMechWarrior(transaction.prospectiveState!) }
+      catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
+      continue
+    }
+    if (operation.kind === 'grant-clan-watch-operative') {
+      try { transaction.prospectiveState = applyClanWatchOperative(transaction.prospectiveState!, operation) }
       catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
       continue
     }
