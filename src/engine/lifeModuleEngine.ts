@@ -437,6 +437,11 @@ function applyTruebornCreche(character: CharacterDefinition, operation: Extract<
   const source = { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 76, ruleId: 'stage-1-trueborn-creche' }
   const provenanceId = makeId(undefined, 'trueborn-creche')
   next.provenance.push({ id: provenanceId, kind: 'published', description: 'Trueborn Crèche module awards', source })
+  const crecheModule = getLifeModule(TRUEBORN_CRECHE_ID)
+  const flexibleAward = crecheModule.awards.find((entry) => entry.id === 'creche.flexible')
+  if (!flexibleAward || flexibleAward.kind !== 'flexible-xp' || flexibleAward.allocationMode === 'pool') throw new Error('Trueborn Crèche flexible award definition is unavailable.')
+  const flexiblePending = pendingAwardFrom(crecheModule, flexibleAward, provenanceId)
+  state.choiceGrantRequirements.push({ moduleId: TRUEBORN_CRECHE_ID, awardId: flexibleAward.id, requiredGrants: flexibleAward.count })
   const award = (destination: LifeModuleDestination, xp: number) => applyDestinationAward(next, destination, xp, provenanceId)
   award({ type: 'attribute', attributeId: 'STR' }, 100)
   award({ type: 'attribute', attributeId: 'BOD' }, 125)
@@ -448,7 +453,17 @@ function applyTruebornCreche(character: CharacterDefinition, operation: Extract<
   award({ type: 'trait', traitId: 'trait.slow-learner', displayName: 'Slow Learner' }, -300)
   award({ type: 'trait', traitId: 'trait.trueborn', displayName: 'Trueborn' }, 200)
   for (const [skillId, displayName, subject, xp] of [['skill.interest', 'Interest/Clan Remembrance', 'Clan Remembrance', 10], ['skill.martial-arts', 'Martial Arts', undefined, 10], ['skill.melee-weapons', 'Melee Weapons', undefined, 5], ['skill.protocol', 'Protocol/Clan', 'Clan', 10], ['skill.small-arms', 'Small Arms', undefined, 5], ['skill.swimming', 'Swimming', undefined, 10]] as const) award({ type: 'skill', address: { skillId, ...(subject ? { parameter: { kind: 'subskill', value: subject } } : {}) }, displayName }, xp)
-  operation.choices.forEach((choice) => award({ type: choice.type, ...(choice.type === 'attribute' ? { attributeId: choice.targetId } : choice.type === 'trait' ? { traitId: choice.targetId, displayName: choice.displayName, ...(choice.parameters ? { parameters: choice.parameters } : {}) } : { address: { skillId: choice.targetId, ...(choice.parameter ? { parameter: choice.parameter } : {}) }, displayName: choice.displayName }) } as LifeModuleDestination, 15))
+  operation.choices.forEach((choice) => {
+    const destination = { type: choice.type, targetId: choice.targetId, displayName: choice.displayName, ...(choice.parameter ? { parameter: choice.parameter } : {}), ...(choice.parameters ? { parameters: choice.parameters } : {}) } as ResolvedLifeModuleDestination
+    validateResolutionDestination(next, flexiblePending, destination)
+    const ledgerDestination = choice.type === 'attribute'
+      ? { type: 'attribute', attributeId: choice.targetId }
+      : choice.type === 'trait'
+        ? { type: 'trait', traitId: choice.targetId, displayName: choice.displayName, ...(choice.parameters ? { parameters: choice.parameters } : {}) }
+        : { type: 'skill', address: { skillId: choice.targetId, ...(choice.parameter ? { parameter: choice.parameter } : {}) }, displayName: choice.displayName }
+    award(ledgerDestination as LifeModuleDestination, 15)
+    recordResolvedAward(state.resolvedAwards, flexiblePending, destination, provenanceId, 15)
+  })
   state.moduleXp.spent += 300
   state.moduleXp.remaining -= 300
   state.selectedModuleIds.push(TRUEBORN_CRECHE_ID)
