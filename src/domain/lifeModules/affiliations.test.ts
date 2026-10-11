@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './catalog'
 import {
   CAPELLAN_COMMONALITY_CONTEXT,
+  CLAN_AFFILIATION_CONTEXTS,
   FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT,
   getLifeModuleLanguageSelectorOptions,
   resolveLifeModuleAffiliationContext,
   SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS,
+  getClanAffiliationContext,
+  getLifeModuleAffiliationContextByAffiliationId,
   UNIVERSAL_LIFE_MODULE_CONTEXT,
 } from './affiliations'
 
@@ -38,5 +41,13 @@ describe('Life Module affiliation framework', () => {
 
   it('marks unknown affiliation contexts deferred instead of inventing choices', () => {
     expect(resolveLifeModuleAffiliationContext('stage0.not-modeled')).toEqual({ support: 'deferred', contextId: 'stage0.not-modeled' })
+  })
+
+  it('provides governed internal Invading and Homeworld Clan contexts without exposing them as birth options', () => {
+    expect(CLAN_AFFILIATION_CONTEXTS.map((entry) => entry.clanCategory)).toEqual(['invading-clan', 'homeworld-clan'])
+    expect(getClanAffiliationContext('invading-clan')).toMatchObject({ affiliationId: 'affiliation.clan', protocolContextLabel: 'Clan', source: { page: 69 } })
+    expect(getClanAffiliationContext('homeworld-clan')).toMatchObject({ affiliationId: 'affiliation.clan', protocolContextLabel: 'Clan', source: { page: 70 } })
+    expect(getLifeModuleAffiliationContextByAffiliationId('affiliation.clan')).toMatchObject({ affiliationId: 'affiliation.clan', protocolContextLabel: 'Clan' })
+    expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.some((entry) => entry.affiliationId === 'affiliation.clan')).toBe(false)
   })
 })

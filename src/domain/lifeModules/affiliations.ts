@@ -16,6 +16,7 @@ export type AffiliationLanguageSelectorGroupId =
   | 'federated-suns-affiliation-languages'
 
 export type AffiliationContextSupport = 'supported' | 'deferred'
+export type ClanAffiliationCategory = 'invading-clan' | 'homeworld-clan'
 
 export interface UniversalLifeModuleContext {
   id: typeof UNIVERSAL_STAGE_0_ID
@@ -41,6 +42,8 @@ export interface LifeModuleAffiliationContext {
   secondaryLanguageSelector: AffiliationLanguageSelectorGroupId
   protocolContextLabel: string
   streetwiseContextLabel: string
+  clanCategory?: ClanAffiliationCategory
+  clanCasteIds?: readonly string[]
   source: SourceCitation
 }
 
@@ -107,6 +110,26 @@ export const FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT: LifeModuleAffiliationContext =
   source: source(65, 'federated-suns-crucis-march'),
 }
 
+/** Internal-only Clan context. It is deliberately excluded from player-facing birth-affiliation options. */
+export const CLAN_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [
+  {
+    id: 'stage0.clan.invading-clan', kind: 'affiliation', support: 'supported', displayName: 'Invading Clan', isAffiliation: true,
+    affiliationId: 'affiliation.clan', affiliationName: 'Clan', subAffiliationName: 'Invading Clan',
+    primaryLanguage: 'English', secondaryLanguages: [], affiliationLanguageSelector: 'affiliation-languages',
+    secondaryLanguageSelector: 'affiliation-languages', protocolContextLabel: 'Clan', streetwiseContextLabel: 'Clan',
+    clanCategory: 'invading-clan', clanCasteIds: ['warrior', 'scientist', 'merchant', 'technician', 'laborer'],
+    source: source(69, 'stage-0-invading-clan'),
+  },
+  {
+    id: 'stage0.clan.homeworld-clan', kind: 'affiliation', support: 'supported', displayName: 'Homeworld Clan', isAffiliation: true,
+    affiliationId: 'affiliation.clan', affiliationName: 'Clan', subAffiliationName: 'Homeworld Clan',
+    primaryLanguage: 'English', secondaryLanguages: [], affiliationLanguageSelector: 'affiliation-languages',
+    secondaryLanguageSelector: 'affiliation-languages', protocolContextLabel: 'Clan', streetwiseContextLabel: 'Clan',
+    clanCategory: 'homeworld-clan', clanCasteIds: ['warrior', 'scientist', 'merchant', 'technician', 'laborer'],
+    source: source(70, 'stage-0-homeworld-clan'),
+  },
+]
+
 export const SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT]
 
 export const ORDER_AFFILIATION_IDS = {
@@ -136,7 +159,11 @@ export function resolveLifeModuleAffiliationContext(contextId: string): Affiliat
 }
 
 export function getLifeModuleAffiliationContextByAffiliationId(affiliationId: string): LifeModuleAffiliationContext | undefined {
-  return SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.find((entry) => entry.affiliationId === affiliationId)
+  return [...SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS, ...CLAN_AFFILIATION_CONTEXTS].find((entry) => entry.affiliationId === affiliationId)
+}
+
+export function getClanAffiliationContext(category: ClanAffiliationCategory): LifeModuleAffiliationContext {
+  return CLAN_AFFILIATION_CONTEXTS.find((entry) => entry.clanCategory === category)!
 }
 
 export function getLifeModuleLanguageSelectorOptions(groupId: AffiliationLanguageSelectorGroupId): readonly string[] {
