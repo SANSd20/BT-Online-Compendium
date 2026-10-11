@@ -33,6 +33,7 @@ import {
 } from '../domain/lifeModules/affiliations'
 import { stage3SchoolClassification, stage3SchoolEligibility, usedStage3SchoolFamilies } from '../domain/lifeModules/stage3Schooling'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
+import { attributeLegality } from '../domain/character/attributeLegality'
 import { getMasterSkillFieldGoal } from '../domain/skillFields/goalCatalog'
 import {
   FAST_SKILL_XP_COSTS,
@@ -1101,10 +1102,16 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
     }
     if (seen.has(grant.fieldId)) issues.push(issue('life-modules.skill-field.duplicate', `creation.lifeModules.selectedSkillFields.${index}.fieldId`, 'A Skill Field may not be selected more than once in Alpha Slice 9.'))
     seen.add(grant.fieldId)
-    const school = character.lifeModuleHistory.find((entry) => entry.moduleId === grant.schoolModuleId && entry.stage === 3)
+    const stage2SibkoGrant = grant.schoolModuleId === 'stage2.trueborn-sibko'
+    const school = character.lifeModuleHistory.find((entry) => entry.moduleId === grant.schoolModuleId && (entry.stage === 3 || (stage2SibkoGrant && entry.stage === 2)))
     let schoolDefinition: LifeModuleDefinition | undefined
     try { schoolDefinition = school ? getLifeModule(school.moduleId) : undefined } catch { /* school validation reports this */ }
     const offer = schoolDefinition?.skillFieldSelection?.offers.find((entry) => entry.fieldId === grant.fieldId)
+    const stage2SibkoMechWarrior = stage2SibkoGrant && grant.fieldId === 'field.clan-mechwarrior'
+    const expectedCategory = stage2SibkoMechWarrior ? 'advanced' : offer?.category
+    const expectedPurchaseCostXp = stage2SibkoMechWarrior ? 384 : skillFieldCost(field, offer?.costXpPerSkill ?? 0)
+    const expectedXpPerSkill = stage2SibkoMechWarrior ? 80 : offer?.awardedXpPerSkill
+    const expectedChronologyYears = stage2SibkoMechWarrior ? 0 : offer?.chronologyYears
     const variableChoices = grant.variableSkillChoices ?? []
     const variableComponents = field.variableComponentSkills ?? []
     const pendingVariableChoices = state.pendingAwards.filter((entry) => entry.skillFieldChoice?.fieldId === field.id && entry.moduleId === grant.schoolModuleId)
@@ -1115,10 +1122,10 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
       !school ||
       !offer ||
       grant.displayName !== field.displayName ||
-      grant.category !== offer?.category ||
-      grant.purchaseCostXp !== skillFieldCost(field, offer?.costXpPerSkill ?? 0) ||
-      grant.xpPerSkill !== offer?.awardedXpPerSkill ||
-      grant.chronologyYears !== offer?.chronologyYears ||
+      grant.category !== expectedCategory ||
+      grant.purchaseCostXp !== expectedPurchaseCostXp ||
+      grant.xpPerSkill !== expectedXpPerSkill ||
+      grant.chronologyYears !== expectedChronologyYears ||
       !grant.selectedAt ||
       !grant.source.sourceId ||
       !provenanceIds.has(grant.provenanceId) ||
@@ -1205,8 +1212,9 @@ function validateSkillFieldGrants(character: CharacterDefinition, issues: Valida
   }
 
   const stage3Entries = character.lifeModuleHistory.filter((entry) => entry.stage === 3)
+  const nonStage3Fields = state.selectedSkillFields.filter((grant) => grant.schoolModuleId !== 'stage2.trueborn-sibko')
   if (stage3Entries.length === 0) {
-    if (state.selectedSkillFields.length > 0) issues.push(issue('life-modules.skill-field.without-school', 'creation.lifeModules.selectedSkillFields', 'Skill Fields require a selected Stage 3 school.'))
+    if (nonStage3Fields.length > 0) issues.push(issue('life-modules.skill-field.without-school', 'creation.lifeModules.selectedSkillFields', 'Skill Fields require a selected Stage 3 school.'))
     return
   }
   let expectedAge = 16
@@ -1236,7 +1244,7 @@ function skillFieldPrerequisiteSatisfied(character: CharacterDefinition, prerequ
   if (prerequisite.kind === 'phenotype') return character.phenotypeId === prerequisite.phenotypeId
   if (prerequisite.kind === 'clan-caste') return character.clanCaste?.id === prerequisite.casteId
   if (prerequisite.kind === 'birth-origin') return character.clanBirthOrigin?.id === prerequisite.birthOrigin
-  if (prerequisite.kind === 'attribute-minimum') return (character.attributes.find((entry) => entry.attributeId === prerequisite.attributeId)?.purchasedLevel ?? 0) >= prerequisite.minimum
+  if (prerequisite.kind === 'attribute-minimum') return attributeLegality(character, prerequisite.attributeId).effectiveScore >= prerequisite.minimum
   if (prerequisite.kind === 'skill-field') return prerequisite.fieldIds.some((fieldId) => character.creation.lifeModules?.selectedSkillFields.some((grant) => grant.fieldId === fieldId))
   if (prerequisite.kind === 'trait') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && entry.active)
   if (prerequisite.kind === 'trait-minimum') return character.traits.some((entry) => entry.traitId === prerequisite.traitId && (entry.attainedTp ?? 0) >= prerequisite.minimum)
