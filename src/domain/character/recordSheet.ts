@@ -3,6 +3,7 @@ import { attributeLegality } from './attributeLegality'
 import { characterSkillProgression, deriveSkillLevel } from '../lifeModules/finalReview'
 import { agingAttributeXp, deriveAging } from './aging'
 import { deriveStasisAttributeLosses } from './stasis'
+import { POINT_BUY_SKILLS } from '../pointBuy/catalog'
 
 const LINK_MODIFIERS: Readonly<Record<number, number>> = { 0: -4, 1: -2, 2: -1, 3: -1, 4: 0, 5: 0, 6: 0, 7: 1, 8: 1, 9: 1, 10: 2 }
 const supported = <T>(value: T, ...sources: string[]): RecordSheetValue<T> => ({ value, status: 'supported', sources })
@@ -30,6 +31,7 @@ export function deriveCharacterRecordSheet(character: CharacterDefinition): Char
     skillId: entry.address.skillId,
     ...(entry.address.parameter ? { parameter: entry.address.parameter.value } : {}),
     ...(entry.specialty ? { specialty: entry.specialty } : {}),
+    ...(POINT_BUY_SKILLS.find((definition) => definition.id === entry.address.skillId)?.sourcePage ? { sourcePage: POINT_BUY_SKILLS.find((definition) => definition.id === entry.address.skillId)?.sourcePage } : {}),
     level: levelValue(entry, progression),
     xp: entry.accumulatedXp,
     links: unsupported<string[]>('Skill catalog link metadata is not yet complete.'),

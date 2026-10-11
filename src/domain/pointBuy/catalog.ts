@@ -4,6 +4,9 @@ export interface PointBuySkillDefinition {
   id: string
   displayName: string
   parameter?: { kind: 'subskill'; label: string; required: true }
+  sourcePage?: number
+  linkedAttributes?: readonly string[]
+  specialties?: 'source-described' | 'unsupported'
 }
 
 export interface PointBuyTraitDefinition {
@@ -46,11 +49,40 @@ export const POINT_BUY_ATTRIBUTE_MAXIMUMS: Readonly<Record<string, number>> = {
 export const STANDARD_SKILL_XP_COSTS = [20, 30, 50, 80, 120, 170, 230, 300, 380, 470, 570] as const
 
 export const POINT_BUY_SKILLS: readonly PointBuySkillDefinition[] = [
-  { id: 'skill.perception', displayName: 'Perception' },
-  { id: 'skill.language', displayName: 'Language', parameter: { kind: 'subskill', label: 'Language', required: true } },
-  { id: 'skill.martial-arts', displayName: 'Martial Arts' },
-  { id: 'skill.small-arms', displayName: 'Small Arms' },
-  { id: 'skill.technician', displayName: 'Technician', parameter: { kind: 'subskill', label: 'Technician field', required: true } },
+  { id: 'skill.acrobatics', displayName: 'Acrobatics', sourcePage: 141 },
+  { id: 'skill.acting', displayName: 'Acting', sourcePage: 142 },
+  { id: 'skill.administration', displayName: 'Administration', sourcePage: 143 },
+  { id: 'skill.appraisal', displayName: 'Appraisal', sourcePage: 143 },
+  { id: 'skill.art', displayName: 'Art', sourcePage: 144 },
+  { id: 'skill.artillery', displayName: 'Artillery', sourcePage: 144 },
+  { id: 'skill.climbing', displayName: 'Climbing', sourcePage: 144 },
+  { id: 'skill.computers', displayName: 'Computers', sourcePage: 145 },
+  { id: 'skill.cryptography', displayName: 'Cryptography', sourcePage: 145 },
+  { id: 'skill.demolitions', displayName: 'Demolitions', sourcePage: 146 },
+  { id: 'skill.disguise', displayName: 'Disguise', sourcePage: 146 },
+  { id: 'skill.escape-artist', displayName: 'Escape Artist', sourcePage: 147 },
+  { id: 'skill.forgery', displayName: 'Forgery', sourcePage: 147 },
+  { id: 'skill.interrogation', displayName: 'Interrogation', sourcePage: 148 },
+  { id: 'skill.investigation', displayName: 'Investigation', sourcePage: 148 },
+  { id: 'skill.leadership', displayName: 'Leadership', sourcePage: 148 },
+  { id: 'skill.martial-arts', displayName: 'Martial Arts', sourcePage: 149 },
+  { id: 'skill.melee-weapons', displayName: 'Melee Weapons', sourcePage: 149 },
+  { id: 'skill.negotiation', displayName: 'Negotiation', sourcePage: 150 },
+  { id: 'skill.perception', displayName: 'Perception', sourcePage: 151 },
+  { id: 'skill.prestidigitation', displayName: 'Prestidigitation', sourcePage: 152 },
+  { id: 'skill.running', displayName: 'Running', sourcePage: 153 },
+  { id: 'skill.science', displayName: 'Science', sourcePage: 153 },
+  { id: 'skill.small-arms', displayName: 'Small Arms', sourcePage: 153 },
+  { id: 'skill.stealth', displayName: 'Stealth', sourcePage: 154 },
+  { id: 'skill.strategy', displayName: 'Strategy', sourcePage: 154 },
+  { id: 'skill.surgery', displayName: 'Surgery', sourcePage: 154 },
+  { id: 'skill.survival', displayName: 'Survival', sourcePage: 156 },
+  { id: 'skill.swimming', displayName: 'Swimming', sourcePage: 156 },
+  { id: 'skill.tactics', displayName: 'Tactics', sourcePage: 156 },
+  { id: 'skill.training', displayName: 'Training', sourcePage: 159 },
+  { id: 'skill.zero-g-operations', displayName: 'Zero-G Operations', sourcePage: 159 },
+  { id: 'skill.language', displayName: 'Language', parameter: { kind: 'subskill', label: 'Language', required: true }, sourcePage: 148 },
+  { id: 'skill.technician', displayName: 'Technician', parameter: { kind: 'subskill', label: 'Technician field', required: true }, sourcePage: 157 },
 ]
 
 export const POINT_BUY_TRAITS: readonly PointBuyTraitDefinition[] = [

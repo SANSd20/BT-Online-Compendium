@@ -201,7 +201,7 @@ export interface RecordSheetValue<T> {
 
 export interface CharacterRecordSheet {
   attributes: Array<{ attributeId: string; score: RecordSheetValue<number>; linkModifier: RecordSheetValue<number>; xp: number; legal: boolean }>
-  skills: Array<{ displayName: string; skillId: string; parameter?: string; specialty?: string; level: RecordSheetValue<number>; xp: number; links: RecordSheetValue<string[]>; tnComplexity: RecordSheetValue<string> }>
+  skills: Array<{ displayName: string; skillId: string; parameter?: string; specialty?: string; sourcePage?: number; level: RecordSheetValue<number>; xp: number; links: RecordSheetValue<string[]>; tnComplexity: RecordSheetValue<string> }>
   combat: {
     standardDamage: RecordSheetValue<number>
     fatigueDamage: RecordSheetValue<number>

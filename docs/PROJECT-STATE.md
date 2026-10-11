@@ -450,6 +450,10 @@ Final Touches initialization is method-neutral for Point Buy and Archetype while
 
 ## Alpha Slice 95 checkpoint
 
+## Alpha Slice 111 checkpoint
+
+The governed Point Buy Skill catalog expands from 5 to 34 stable identities using the Corrected Third Printing Skills chapter, pp. 141-159. Newly promoted non-parameterized Skills retain source-page metadata and use the existing Standard/Fast/Slow progression, Level 0 acquisition, partial XP, Level +10 maximum, specialty, provenance, readiness, snapshot, and persistence machinery. Language and Technician remain required-concrete-subskill families. Parameterized, open-subject, affiliation-bound, vehicle-dependent, or GM-dependent families remain explicitly unsupported rather than being exposed as generic purchases. Record sheets preserve source pages while linked Attributes and TN/Complexity remain unavailable where gameplay dependencies are not modeled. The complete inventory and unsupported-dependency boundary is recorded in `docs/SKILL-CATALOG-AUDIT.md`. Reference Fields remain 56, mechanical Fields 50, and equipment 84.
+
 ## Alpha Slice 97 checkpoint
 
 Source-verified Phenotype definitions now preserve XP-derived Attribute scores, free phenotype modifiers, phenotype-specific maxima, and Exceptional Attribute adjustments separately. Exceptional Attribute is a +2 TP target-specific Trait: partial funding remains inactive, one instance may apply per Attribute, and the higher Attribute score still requires ordinary XP. Supported Trait metadata now records source pages, categories, ranges, and repeatability for the governed catalog. Release metadata is `0.1.0-alpha.97`.

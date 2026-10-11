@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { standardSkillXpCost } from '../domain/pointBuy/catalog'
+import { POINT_BUY_SKILLS, standardSkillXpCost } from '../domain/pointBuy/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
 import {
@@ -18,6 +18,13 @@ function dependencies() {
 }
 
 describe('Point Buy v0.1', () => {
+  it('exposes the governed Slice 111 Skill identities with source pages', () => {
+    expect(POINT_BUY_SKILLS).toHaveLength(34)
+    expect(new Set(POINT_BUY_SKILLS.map((entry) => entry.id)).size).toBe(34)
+    expect(POINT_BUY_SKILLS.find((entry) => entry.id === 'skill.acrobatics')).toMatchObject({ displayName: 'Acrobatics', sourcePage: 141 })
+    expect(POINT_BUY_SKILLS.find((entry) => entry.id === 'skill.language')).toMatchObject({ sourcePage: 148, parameter: { required: true } })
+  })
+
   it('creates a sourced 5,000-XP Normal Human draft with minimum Attributes', () => {
     const character = createPointBuyCharacter('Point Buyer', 5000, dependencies())
 
