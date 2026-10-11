@@ -473,8 +473,8 @@ function applyTruebornCreche(character: CharacterDefinition, operation: Extract<
 }
 
 function applyClanWatchOperative(character: CharacterDefinition, operation: Extract<LifeModuleTransactionOperation, { kind: 'grant-clan-watch-operative' }>): CharacterDefinition {
-  const next = structuredClone(character)
-  const state = requireLifeModules(next)
+  let next = structuredClone(character)
+  let state = requireLifeModules(next)
   const now = new Date().toISOString()
   const rule = CLAN_STAGE4_ELIGIBILITY_RULES.find((entry) => entry.moduleId === CLAN_WATCH_OPERATIVE_ID)!
   const eligibility = evaluateClanStage4Eligibility(next, rule)
@@ -508,7 +508,8 @@ function applyClanWatchOperative(character: CharacterDefinition, operation: Extr
   if (!trackingAward || trackingAward.kind !== 'any-skill-choice') throw new Error('Watch Operative Tracking choice definition is unavailable.')
   const trackingPending = pendingAwardFrom(watchModule, trackingAward, provenanceId)
   state.pendingAwards.push(trackingPending)
-  resolvePendingLifeModuleAward(next, trackingPending.id, { type: 'skill', targetId: 'skill.tracking', displayName: `Tracking/${operation.choices['watch.tracking']}`, parameter: { kind: 'subskill', value: operation.choices['watch.tracking'] } }, 80)
+  next = resolvePendingLifeModuleAward(next, trackingPending.id, { type: 'skill', targetId: 'skill.tracking', displayName: `Tracking/${operation.choices['watch.tracking']}`, parameter: { kind: 'subskill', value: operation.choices['watch.tracking'] } }, 80)
+  state = requireLifeModules(next)
   const required = operation.branch === 'homeworld-clan'
     ? [['skill.career', 'Career/Soldier', 60, 'Soldier'], ['skill.interrogation', 'Interrogation', 50], ['skill.investigation', 'Investigation', 50], ['skill.melee-weapons', 'Melee Weapons', 40], ['skill.protocol', 'Protocol/Any Clan', 75, operation.choices['homeworld.protocol'] ?? 'Clan'], ['skill.security-systems', 'Security Systems', 35, operation.choices['homeworld.security-systems']], ['skill.streetwise', 'Streetwise/Any Homeworld Clan', 50, operation.choices['homeworld.streetwise']], ['skill.survival', 'Survival', 25, operation.choices['homeworld.survival']], ['skill.technician', 'Technician', 40, operation.choices['homeworld.technician']]] as const
     : [['skill.equipped', 'Equipped', 50, undefined], ['skill.dark-secret', 'Dark Secret', -50, undefined], ['skill.computers', 'Computers', 50, undefined], ['skill.disguise', 'Disguise', 35, undefined], ['skill.interrogation', 'Interrogation', 75, undefined], ['skill.investigation', 'Investigation', 75, undefined], ['skill.negotiation', 'Negotiation', 40, undefined], ['skill.perception', 'Perception', 50, undefined], ['skill.streetwise', 'Streetwise/Any Invader Clan or Inner Sphere', 50, operation.choices['invader.streetwise']], ['skill.survival', 'Survival', 50, operation.choices['invader.survival']]] as const
@@ -517,12 +518,16 @@ function applyClanWatchOperative(character: CharacterDefinition, operation: Extr
     else award({ type: 'skill', address: { skillId, ...(subject ? { parameter: { kind: 'subskill', value: subject } } : {}) }, displayName }, xp)
   }
   state.choiceGrantRequirements.push({ moduleId: CLAN_WATCH_OPERATIVE_ID, provenanceId, awardId: 'watch.skill.tracking-any', requiredGrants: 1 })
-  state.choiceGrantRequirements.push({ moduleId: CLAN_WATCH_OPERATIVE_ID, provenanceId, awardId: 'watch.flexible', requiredGrants: 1, requiredXp: 175, allocationMode: 'pool' })
+  state.choiceGrantRequirements.push({ moduleId: CLAN_WATCH_OPERATIVE_ID, provenanceId, awardId: 'watch.flexible', requiredGrants: 0, requiredXp: 175, allocationMode: 'pool' })
   state.pendingAwards.push({ id: `${CLAN_WATCH_OPERATIVE_ID}/${operation.branch}/flexible`, moduleId: CLAN_WATCH_OPERATIVE_ID, provenanceId, awardId: 'watch.flexible', kind: 'flexible-xp', description: 'Allocate 175 flexible XP under the Clan Watch Operative source restrictions.', xpPerGrant: 0, remainingGrants: 0, allocationMode: 'pool', remainingXp: 175, allowedTargetTypes: ['attribute', 'trait', 'skill'], source })
   state.moduleXp.spent += 1200
   state.moduleXp.remaining -= 1200
   state.selectedModuleIds.push(CLAN_WATCH_OPERATIVE_ID)
   next.lifeModuleHistory.push({ moduleId: CLAN_WATCH_OPERATIVE_ID, displayName: 'Clan Watch Operative', stage: 4, costXp: 1200, chronologyYears: 3, repeatPolicy: { sameModuleRepeat: 'deferred', repeatCost: 'full-module-cost', repeatAwards: { skills: 'repeat', flexibleXp: 'repeat', attributes: 'first-occurrence-only', traits: 'first-occurrence-only' } }, selectedAt: now, provenanceIds: [provenanceId], source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 84, ruleId: 'stage-4-clan-watch-operative' }, notes: [`Source-backed ${operation.branch} branch; Clan readiness remains unsupported.`] })
+  const stage3And4Years = next.lifeModuleHistory
+    .filter((entry) => entry.stage === 3 || entry.stage === 4)
+    .reduce((total, entry) => total + (entry.chronologyYears ?? 0), 0)
+  next.chronology.push({ date: `age:${16 + stage3And4Years}`, eventId: `${CLAN_WATCH_OPERATIVE_ID}.complete`, provenanceId })
   next.xp.creation.allocated = calculateLedgerXp(next)
   next.xp.creation.remaining = state.moduleXp.remaining
   next.updatedAt = now

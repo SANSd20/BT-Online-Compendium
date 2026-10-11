@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { clanBirthOriginState, clanCasteState, clanIdentityState } from '../domain/character/clanIdentity'
-import { applyUniversalStage0, buildLifeModuleTransaction, commitLifeModuleTransaction, createLifeModuleCharacter, validateLifeModuleTransaction } from './lifeModuleEngine'
+import { applyUniversalStage0, buildLifeModuleTransaction, commitLifeModuleTransaction, createLifeModuleCharacter, resolvePendingLifeModuleAward, validateLifeModuleTransaction } from './lifeModuleEngine'
 
 const crecheChoices = [
   { type: 'attribute', targetId: 'BOD', displayName: 'BOD' },
@@ -38,6 +38,33 @@ describe('Alpha Slice 155 Trueborn Sibko Field validation', () => {
     expect(committed.creation.lifeModules?.selectedSkillFields.at(-1)).toMatchObject({ schoolModuleId: 'stage2.trueborn-sibko', fieldId: 'field.clan-mechwarrior', purchaseCostXp: 384, xpPerSkill: 80, chronologyYears: 0 })
     expect(committed.creation.lifeModules?.pendingAwards.at(-1)).toMatchObject({ awardId: 'sibko.flexible', remainingXp: 150 })
     expect(committed.creation.lifeModules?.prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => entry.prerequisiteId)).toEqual(['sibko.bod', 'sibko.dex', 'clan-mechwarrior.bod', 'clan-mechwarrior.wil'])
+  })
+
+  it('commits the real Homeworld Clan Watch Operative branch with canonical grants and chronology', () => {
+    const sibkoTransaction = buildLifeModuleTransaction(realPathToCreche(), [{ kind: 'grant-trueborn-sibko-mechwarrior' }])
+    validateLifeModuleTransaction(sibkoTransaction)
+    expect(sibkoTransaction.errors).toEqual([])
+    const sibko = commitLifeModuleTransaction(sibkoTransaction)
+    const sibkoAward = sibko.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'sibko.flexible')!
+    const resolvedSibko = resolvePendingLifeModuleAward(sibko, sibkoAward.id, { type: 'attribute', targetId: 'BOD', displayName: 'BOD' }, 150)
+    const transaction = buildLifeModuleTransaction(resolvedSibko, [{
+      kind: 'grant-clan-watch-operative',
+      branch: 'homeworld-clan',
+      choices: {
+        'watch.tracking': 'Wilderness',
+        'homeworld.security-systems': 'Security',
+        'homeworld.streetwise': 'Clan Wolf',
+        'homeworld.survival': 'Wilderness',
+        'homeworld.technician': 'Vehicle',
+      },
+    }])
+    validateLifeModuleTransaction(transaction)
+    expect(transaction.errors).toEqual([])
+    const committed = commitLifeModuleTransaction(transaction)
+    expect(committed.lifeModuleHistory.at(-1)).toMatchObject({ moduleId: 'stage4.clan-watch-operative', costXp: 1200, chronologyYears: 3 })
+    expect(committed.chronology).toContainEqual(expect.objectContaining({ eventId: 'stage4.clan-watch-operative.complete', date: 'age:19' }))
+    expect(committed.creation.lifeModules?.pendingAwards.at(-1)).toMatchObject({ awardId: 'watch.flexible', remainingXp: 175 })
+    expect(committed.skills).toContainEqual(expect.objectContaining({ address: expect.objectContaining({ skillId: 'skill.tracking', parameter: { kind: 'subskill', value: 'Wilderness' } }), sourceAwards: expect.arrayContaining([expect.objectContaining({ xp: 80 })]) }))
   })
 
   it('rejects an invalid later operation without mutating prior committed history', () => {

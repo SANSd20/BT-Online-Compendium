@@ -1292,7 +1292,8 @@ function validateChoiceGrantBalance(character: CharacterDefinition, issues: Vali
       if (moduleId === 'stage4.comstar-word-of-blake-service') continue
       for (const award of module.awards) {
         if (state.stage0SubAffiliation === 'no' && (award.id.startsWith('commonality.') || award.id.startsWith('crucis.'))) continue
-        if (lifeModuleAwardGrantCount(award) !== null && !seen.has(`${moduleId}/${award.id}`)) {
+        const hasRequirement = state.choiceGrantRequirements.some((requirement) => requirement.moduleId === moduleId && requirement.awardId === award.id)
+        if (lifeModuleAwardGrantCount(award) !== null && !hasRequirement) {
           issues.push(issue('life-modules.choice-requirement.missing', 'creation.lifeModules.choiceGrantRequirements', `${module.displayName}: ${award.id} is missing its required grant record.`))
         }
       }
