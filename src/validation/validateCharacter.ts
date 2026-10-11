@@ -213,6 +213,12 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
 function validatePhenotypeAndExceptionalAttributes(character: CharacterDefinition, issues: ValidationIssue[]): void {
   const phenotype = getPhenotypeDefinition(character.phenotypeId)
   if (!phenotype) issues.push(issue('character.phenotype.unknown', 'phenotypeId', 'Character phenotype is not in the governed phenotype catalog.'))
+  const governedArchetypePhenotype = character.creation.method === 'archetype' && character.creation.archetype?.kind === 'source-backed-preset'
+  if (phenotype?.clanOnly && !character.clanIdentity && !governedArchetypePhenotype) issues.push(issue('character.phenotype.clan-eligibility', 'phenotypeId', 'A Clan-only Phenotype requires a Clan identity; Clan creation remains unsupported.'))
+  if (phenotype && !phenotype.clanOnly && phenotype.id !== 'phenotype.normal-human' && character.clanIdentity) issues.push(issue('character.phenotype.invalid-affiliation', 'phenotypeId', 'This Phenotype is not legal for the selected Clan identity.'))
+  if (phenotype?.id === 'phenotype.normal-human' && character.clanIdentity && character.traits.some((entry) => entry.traitId === 'trait.phenotype' && entry.parameters.phenotype)) {
+    issues.push(issue('character.phenotype.mismatch', 'phenotypeId', 'The Phenotype record must agree with the character Phenotype selection.'))
+  }
   const exceptional = character.traits.filter((entry) => entry.traitId === 'trait.exceptional-attribute')
   const seen = new Set<string>()
   for (const entry of exceptional) {
