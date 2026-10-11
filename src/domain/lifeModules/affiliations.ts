@@ -156,7 +156,7 @@ export type AffiliationContextResolution =
   | { support: 'deferred'; contextId: string }
 
 export function resolveLifeModuleAffiliationContext(contextId: string): AffiliationContextResolution {
-  const context = SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.find((entry) => entry.id === contextId)
+  const context = [...SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS, ...CLAN_AFFILIATION_CONTEXTS].find((entry) => entry.id === contextId)
   return context ? { support: 'supported', context } : { support: 'deferred', contextId }
 }
 
