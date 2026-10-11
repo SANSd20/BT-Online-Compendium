@@ -6,6 +6,7 @@ import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, COMSTAR_WOB_SERVICE_ID, FAM
 import { getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
+import { TRAVEL_ID } from '../../domain/lifeModules/catalog'
 import { characterSkillProgression, getFinalReviewBlockers, getModeledOpposedTraitConflicts, skillXpCosts } from '../../domain/lifeModules/finalReview'
 import { deriveCharacterRecordSheet } from '../../domain/character/recordSheet'
 import { deriveAging, deriveBiologicalAge, deriveCharacterAge } from '../../domain/character/aging'
@@ -699,9 +700,10 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
                   <option value="">Choose a Real Life module…</option>
                   <option value={AGITATOR_ID}>{getLifeModule(AGITATOR_ID).displayName} · Available</option>
                   <option value={COMSTAR_WOB_SERVICE_ID} disabled={!state.orderAffiliation}>{getLifeModule(COMSTAR_WOB_SERVICE_ID).displayName} · {state.orderAffiliation ? 'Available' : catalogAvailabilityLabel(catalogAvailability('ineligible', 'Requires ComStar or Word of Blake'))}</option>
+                  <option value={TRAVEL_ID}>{getLifeModule(TRAVEL_ID).displayName} · Available when prerequisites are satisfied</option>
                 </select>
                 <span>Unavailable options remain visible during Public Alpha with their current eligibility reason.</span>
-              </label>{(stageModulePreviewId === AGITATOR_ID || stageModulePreviewId === COMSTAR_WOB_SERVICE_ID) && <section className="selected-module-detail"><h3>{getLifeModule(stageModulePreviewId).displayName}</h3><p>{getLifeModule(stageModulePreviewId).costXp} XP · selected module preview · chronology and repetition remain governed by the existing engine.</p>{renderStageChoiceSlots('Real Life', 'Stage 4 module and choices committed.')}</section>}</>)}
+              </label>{(stageModulePreviewId === AGITATOR_ID || stageModulePreviewId === COMSTAR_WOB_SERVICE_ID || stageModulePreviewId === TRAVEL_ID) && <section className="selected-module-detail"><h3>{getLifeModule(stageModulePreviewId).displayName}</h3><p>{getLifeModule(stageModulePreviewId).costXp} XP · selected module preview · chronology and repetition remain governed by the existing engine.</p>{renderStageChoiceSlots('Real Life', 'Stage 4 module and choices committed.')}</section>}</>)}
             {state.phase === 'stage-4-resolution' && <p className="notice">Stage 4 is selected. Resolve every source-bound choice and flexible XP allocation below.</p>}
             {state.phase === 'stage-4-prerequisite-review' && <div className="life-action"><p className="notice">All Stage 4 awards are resolved, but one or more prerequisites remain outstanding. Enter final review to allocate XP and re-evaluate them.</p><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened with outstanding prerequisites.')}>Enter final review</button></div>}
             {state.phase === 'alpha-stage-4-stop' && <div className="life-action"><p className="notice">Stage 4 is complete at age {currentAge(character) ?? 'unknown'}. You may take another source-legal Stage 4 module or enter final review.</p><button className="button secondary" type="button" onClick={() => operate(() => continueStage4Modules(character), 'Another Stage 4 selection opened.')}>Choose another Stage 4 module</button><button className="button" type="button" onClick={() => operate(() => enterLifeModuleFinalReview(character), 'Life Module final review opened.')}>Enter final review</button></div>}

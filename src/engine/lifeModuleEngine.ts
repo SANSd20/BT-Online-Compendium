@@ -10,6 +10,7 @@ import type {
 } from '../domain/character/model'
 import {
   AGITATOR_ID,
+  TRAVEL_ID,
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
   FARM_ID,
@@ -531,6 +532,7 @@ export function applyAgitator(character: CharacterDefinition): CharacterDefiniti
 
 export function applyStage4Module(character: CharacterDefinition, moduleId: string): CharacterDefinition {
   if (moduleId === AGITATOR_ID) return applyAgitator(character)
+  if (moduleId === TRAVEL_ID) return applyGenericStage4(character, TRAVEL_ID)
   if (moduleId !== COMSTAR_WOB_SERVICE_ID) throw new Error(`Unknown Alpha Stage 4 module: ${moduleId}`)
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-4-selection') throw new Error('A Stage 4 module is not the current legal action.')
@@ -553,6 +555,17 @@ export function applyStage4Module(character: CharacterDefinition, moduleId: stri
       })
       .map((award) => award.id === 'service.branch.skills.any-four' && award.kind === 'modeled-skill-choice' && fieldSkillKeys.length > 0 ? { ...award, allowedDestinationKeys: fieldSkillKeys } : award),
   }
+  const next = applyModule(character, module, {}, { allowRepeat: repeat })
+  const years = next.lifeModuleHistory.filter((entry) => entry.stage === 3 || entry.stage === 4).reduce((total, entry) => total + (entry.chronologyYears ?? 0), 0)
+  next.chronology.push({ date: `age:${16 + years}`, eventId: `${module.id}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })
+  return updateLifeModuleProgress(next)
+}
+
+function applyGenericStage4(character: CharacterDefinition, moduleId: string): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-4-selection') throw new Error('A Stage 4 module is not the current legal action.')
+  const module = getLifeModule(moduleId)
+  const repeat = character.lifeModuleHistory.some((entry) => entry.moduleId === moduleId)
   const next = applyModule(character, module, {}, { allowRepeat: repeat })
   const years = next.lifeModuleHistory.filter((entry) => entry.stage === 3 || entry.stage === 4).reduce((total, entry) => total + (entry.chronologyYears ?? 0), 0)
   next.chronology.push({ date: `age:${16 + years}`, eventId: `${module.id}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })

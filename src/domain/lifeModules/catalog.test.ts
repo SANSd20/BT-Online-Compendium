@@ -8,6 +8,7 @@ import {
   CAPELLAN_COMMONALITY_ID,
   COMSTAR_ORDER_ID,
   COMSTAR_WOB_SERVICE_ID,
+  TRAVEL_ID,
   FEDERATED_SUNS_CRUCIS_MARCH_ID,
   FAMILY_TRAINING_ID,
   INTELLIGENCE_OPERATIVE_TRAINING_ID,
@@ -56,6 +57,7 @@ describe('Life Module Alpha catalog', () => {
       FAMILY_TRAINING_ID,
       OFFICER_TRAINING_SCHOOL_ID,
       COMSTAR_WOB_SERVICE_ID,
+      TRAVEL_ID,
       AGITATOR_ID,
     ])
     expect(validateLifeModuleCatalog()).toEqual([])
@@ -93,6 +95,10 @@ describe('Life Module Alpha catalog', () => {
         expect.objectContaining({ id: 'officer-candidate-school.flexible', totalXp: 115 }),
       ]),
     })
+    expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === TRAVEL_ID)).toMatchObject({ costXp: 700, chronologyYears: 6, source: { page: 91 }, awards: expect.arrayContaining([
+      expect.objectContaining({ id: 'travel.attribute.int', xp: 45 }),
+      expect.objectContaining({ id: 'travel.flexible', totalXp: 110 }),
+    ]) })
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ACADEMY_ID)?.skillFieldSelection?.offers).toContainEqual(expect.objectContaining({ fieldId: 'field.mechwarrior', category: 'advanced', awardedXpPerSkill: 30, costXpPerSkill: 24, chronologyYears: 1 }))
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ACADEMY_ID)?.skillFieldSelection?.referenceOnlyOffers?.some((entry) => entry.displayName === 'MechWarrior')).toBe(false)
     expect(LIFE_MODULE_CATALOG.find((entry) => entry.id === MILITARY_ENLISTMENT_ID)?.skillFieldSelection?.offers.some((entry) => entry.fieldId === 'field.mechwarrior')).toBe(false)

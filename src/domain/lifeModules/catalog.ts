@@ -58,6 +58,7 @@ export const FAMILY_TRAINING_ID = 'stage3.family-training'
 export const SOLARIS_INTERNSHIP_ID = 'stage3.solaris-internship'
 export const AGITATOR_ID = 'stage4.agitator'
 export const COMSTAR_WOB_SERVICE_ID = 'stage4.comstar-word-of-blake-service'
+export const TRAVEL_ID = 'stage4.travel'
 
 export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
   {
@@ -942,6 +943,32 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     ],
     notes: ['Requires committed ComStar or Word of Blake affiliation.', 'Alternative intelligence, police, and military service modules remain outside this bounded slice.'],
     deferredRules: [],
+  },
+  {
+    id: TRAVEL_ID,
+    displayName: 'Travel',
+    stage: 4,
+    kind: 'real-life',
+    source: source(91, 'stage-4-travel'),
+    costXp: 700,
+    chronologyYears: 6,
+    repeatPolicy: { sameModuleRepeat: 'allowed', repeatCost: 'full-module-cost', repeatAwards: { skills: 'repeat', flexibleXp: 'repeat', attributes: 'first-occurrence-only', traits: 'first-occurrence-only' } },
+    prerequisites: [
+      { id: 'travel.tds', kind: 'trait-absent', traitId: 'trait.tds', description: 'Cannot have Transit Disorientation Syndrome.' },
+      { id: 'travel.resources', kind: 'any-of', description: 'Extra Income or Wealth at +2 TP or higher', options: [
+        { id: 'travel.extra-income', kind: 'trait-minimum', traitId: 'trait.extra-income', minimum: 2, description: 'Extra Income +2 or higher' },
+        { id: 'travel.wealth', kind: 'trait-minimum', traitId: 'trait.wealth', minimum: 2, description: 'Wealth +2 or higher' },
+      ] },
+    ],
+    awards: [
+      fixed('travel.attribute.int', 45, attribute('INT')), fixed('travel.attribute.edg', 45, attribute('EDG')),
+      { id: 'travel.skill.art-any', kind: 'any-skill-choice', xp: 35, skillId: 'skill.art', displayName: 'Art/Any', count: 1 }, fixed('travel.skill.art-cooking', 30, skill('skill.art', 'Art/Cooking', 'Cooking')), fixed('travel.skill.climbing', 35, skill('skill.climbing', 'Climbing')),
+      { id: 'travel.skill.driving-any', kind: 'any-skill-choice', xp: 50, skillId: 'skill.driving', displayName: 'Driving/Any', count: 1 },
+      { id: 'travel.skill.interest-1', kind: 'any-skill-choice', xp: 75, skillId: 'skill.interest', displayName: 'Interest/Any', count: 1 }, { id: 'travel.skill.interest-2', kind: 'any-skill-choice', xp: 45, skillId: 'skill.interest', displayName: 'Interest/Any', count: 1 }, { id: 'travel.skill.interest-3', kind: 'any-skill-choice', xp: 20, skillId: 'skill.interest', displayName: 'Interest/Any', count: 1 },
+      { id: 'travel.skill.language-affiliation', kind: 'affiliation-bound-skill', xp: 50, skillId: 'skill.language', displayName: 'Language/Affiliation' }, { id: 'travel.skill.language-any', kind: 'any-skill-choice', xp: 35, skillId: 'skill.language', displayName: 'Language/Any', count: 1 }, { id: 'travel.skill.survival-any', kind: 'any-skill-choice', xp: 25, skillId: 'skill.survival', displayName: 'Survival/Any', count: 1 }, fixed('travel.skill.swimming', 50, skill('skill.swimming', 'Swimming')), fixed('travel.skill.zero-g', 50, skill('skill.zero-g-operations', 'Zero-G Operations')),
+      { id: 'travel.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 110, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: ['Stage 4 Real Life module; adds six years.'], deferredRules: [],
   },
   {
     id: AGITATOR_ID,
