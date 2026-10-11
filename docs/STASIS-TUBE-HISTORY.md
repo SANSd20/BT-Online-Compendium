@@ -1,4 +1,4 @@
-# Alpha Slice 107: Stasis Tube history
+# Alpha Slice 108: Stasis Tube history and browser verification
 
 ## Source and policy
 
@@ -37,5 +37,33 @@ codec.
 
 The Final Touches area provides a bounded outcome-entry control for recording a
 Stasis event. It does not treat Stasis as a Life Module, Trait, equipment
-catalog record, XP award, or training event. Full annual/power-interruption
-entry and discretionary GM adjudication remain explicitly limited Alpha scope.
+catalog record, XP award, or training event. The isolated browser integration
+suite exercises these controls against the running application, including
+successful and fatal brain/body freezing outcomes, annual outcomes,
+power-interruption controls, export round-trip preservation, Save/Resume,
+player-facing fatal readiness blockers, and rendered BOD/INT values. The suite
+runs in temporary Playwright contexts and does not use the user's normal
+browser profile.
+
+## Slice 108 browser coverage
+
+Run `npm run test:integration` to execute the existing Slice 106 isolated
+Chrome framework. The suite now covers the player-facing Stasis controls and
+the existing finalized-snapshot export/import workflow; the Stasis tests also
+assert the -2 freezing modifiers, annual -1 and power-interruption -3
+modifiers, cumulative BOD/INT losses, forced thaw, biological-age display,
+stable creation XP, rendered Attribute values, fatal readiness blockers, and
+Save/Resume. The integration suite was run twice during Slice 108 verification
+with three passing tests per run.
+
+Automated browser coverage does not constitute manual live-browser coverage.
+The Codex computer-use helper could not provide a fresh isolated Chrome
+session in this environment, so manual browser interaction, visual responsive
+inspection, and browser-console capture remain unverified. Secondary effects,
+ancient-tube discretionary modifiers, and a full human-entered MedTech
+workflow remain explicit Alpha limitations. The UI's bounded outcome-entry
+controls cannot independently model a fatal annual threshold from a high BOD
+starting point or a missing annual check; those cases remain domain-verified
+and browser-unverified. The age-25 biological boundary and full rendered
+readiness clearance for a completed event also remain outside this browser
+fixture's supported boundary.
