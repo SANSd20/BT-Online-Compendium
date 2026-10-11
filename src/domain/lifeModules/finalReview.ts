@@ -52,7 +52,7 @@ const MODELED_OPPOSED_TRAIT_PAIRS = [
   ['trait.toughness', 'trait.glass-jaw', 'Toughness and Glass Jaw are opposed Traits.'],
 ] as const
 
-const NEGATIVE_TRAIT_IDS = new Set([
+const LEGACY_NEGATIVE_TRAIT_IDS = new Set([
   'trait.bloodmark',
   'trait.compulsion',
   'trait.illiterate',
@@ -67,6 +67,11 @@ const NEGATIVE_TRAIT_IDS = new Set([
   'trait.slow-learner',
   'trait.unattractive',
   'trait.glass-jaw',
+])
+
+const NEGATIVE_TRAIT_IDS = new Set([
+  ...LEGACY_NEGATIVE_TRAIT_IDS,
+  ...POINT_BUY_TRAITS.filter((definition) => definition.category === 'negative').map((definition) => definition.id),
 ])
 
 const SIGNED_TRAIT_IDS = new Set(['trait.reputation'])

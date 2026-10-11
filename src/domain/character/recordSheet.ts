@@ -3,7 +3,7 @@ import { attributeLegality } from './attributeLegality'
 import { characterSkillProgression, deriveSkillLevel } from '../lifeModules/finalReview'
 import { agingAttributeXp, deriveAging } from './aging'
 import { deriveStasisAttributeLosses } from './stasis'
-import { POINT_BUY_SKILLS } from '../pointBuy/catalog'
+import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../pointBuy/catalog'
 
 const LINK_MODIFIERS: Readonly<Record<number, number>> = { 0: -4, 1: -2, 2: -1, 3: -1, 4: 0, 5: 0, 6: 0, 7: 1, 8: 1, 9: 1, 10: 2 }
 const supported = <T>(value: T, ...sources: string[]): RecordSheetValue<T> => ({ value, status: 'supported', sources })
@@ -48,6 +48,10 @@ export function deriveCharacterRecordSheet(character: CharacterDefinition): Char
   const swim = swimming > 0 ? walk + swimming : Math.floor(walk / 2)
   const tough = traitActive(character, 'trait.toughness') ? supported('0.75× personal damage, round up', 'AToW Corrected Third Printing p. 128') : unsupported<string>('No modeled Toughness modifier.')
   const equipment = character.inventory.map((item) => equipmentRecord(item))
+  const traits = character.traits.map((entry) => {
+    const definition = POINT_BUY_TRAITS.find((candidate) => candidate.id === entry.traitId)
+    return { traitId: entry.traitId, displayName: entry.displayName ?? definition?.displayName ?? entry.traitId, tp: entry.attainedTp, xp: entry.accumulatedXp, ...(definition?.sourcePage ? { sourcePage: definition.sourcePage } : {}), parameters: { ...entry.parameters }, effects: unsupported<string[]>('Trait gameplay effects are not generally automated; consult the cited source description.') }
+  })
   const outstanding = [
     ...skills.filter((entry) => entry.tnComplexity.status === 'unsupported').map((entry) => `${entry.displayName}: TN/Complexity unavailable`),
     ...(character.creation.finalTouches ? [] : ['Final Touches equipment state is not initialized.']),
@@ -57,6 +61,7 @@ export function deriveCharacterRecordSheet(character: CharacterDefinition): Char
   return {
     attributes,
     skills,
+    traits,
     combat: {
       standardDamage: supported(value('BOD') * 2, 'AToW Corrected Third Printing p. 165'),
       fatigueDamage: supported(value('WIL') * 2, 'AToW Corrected Third Printing p. 165'),
