@@ -42,8 +42,11 @@ const fixed = (id: string, xp: number, destination: LifeModuleDestination): Life
 
 export const BLUE_COLLAR_ID = 'stage1.blue-collar'
 export const BACK_WOODS_ID = 'stage1.back-woods'
+export const FARM_ID = 'stage1.farm'
+export const WAR_ORPHAN_ID = 'stage1.war-orphan'
 export const STAGE_2_BACK_WOODS_ID = 'stage2.back-woods'
 export const STAGE_2_HIGH_SCHOOL_ID = 'stage2.high-school'
+export const MILITARY_SCHOOL_ID = 'stage2.military-school'
 export const TECHNICAL_COLLEGE_ID = 'stage3.technical-college'
 export const UNIVERSITY_ID = 'stage3.university'
 export const TRADE_SCHOOL_ID = 'stage3.trade-school'
@@ -246,6 +249,60 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     deferredRules: [],
   },
   {
+    id: FARM_ID,
+    displayName: 'Farm',
+    stage: 1,
+    kind: 'early-childhood',
+    source: source(77, 'stage-1-farm'),
+    costXp: 275,
+    chronologyYears: 10,
+    prerequisites: [{ id: 'farm.affiliation', kind: 'affiliation', description: 'Any affiliation' }],
+    awards: [
+      fixed('farm.attribute.str', 100, attribute('STR')),
+      fixed('farm.attribute.bod', 100, attribute('BOD')),
+      fixed('farm.attribute.dex', 25, attribute('DEX')),
+      fixed('farm.attribute.cha', -50, attribute('CHA')),
+      fixed('farm.trait.animal-empathy', 25, trait('trait.animal-empathy', 'Animal Empathy')),
+      fixed('farm.trait.illiterate', -25, trait('trait.illiterate', 'Illiterate')),
+      fixed('farm.trait.toughness', 50, trait('trait.toughness', 'Toughness')),
+      fixed('farm.trait.wealth', -25, trait('trait.wealth', 'Wealth')),
+      fixed('farm.skill.career-agriculture', 10, skill('skill.career', 'Career/Agriculture', 'Agriculture')),
+      { id: 'farm.skill.animal-handling', kind: 'any-skill-choice', xp: 15, skillId: 'skill.animal-handling', displayName: 'Animal Handling/Any', count: 1 },
+      { id: 'farm.interests', kind: 'multi-skill-choice', xp: 5, skillId: 'skill.interest', displayName: 'Interest/Any', count: 2 },
+      { id: 'farm.flexible', kind: 'flexible-xp', xpPerGrant: 10, count: 4, allowedTargetTypes: ['attribute', 'trait', 'skill'] },
+    ],
+    notes: [],
+    deferredRules: [],
+  },
+  {
+    id: WAR_ORPHAN_ID,
+    displayName: 'War Orphan',
+    stage: 1,
+    kind: 'early-childhood',
+    source: source(78, 'stage-1-war-orphan'),
+    costXp: 170,
+    chronologyYears: 10,
+    prerequisites: [{ id: 'war-orphan.affiliation', kind: 'affiliation', description: 'Any affiliation' }],
+    awards: [
+      fixed('war-orphan.attribute.int', 50, attribute('INT')),
+      fixed('war-orphan.attribute.wil', 100, attribute('WIL')),
+      fixed('war-orphan.attribute.edg', 100, attribute('EDG')),
+      fixed('war-orphan.trait.compulsion', -100, trait('trait.compulsion', 'Compulsion/Traumatic Memories', { compulsion: 'Traumatic Memories' })),
+      fixed('war-orphan.trait.illiterate', -25, trait('trait.illiterate', 'Illiterate')),
+      fixed('war-orphan.trait.introvert', -50, trait('trait.introvert', 'Introvert')),
+      fixed('war-orphan.trait.reputation', -50, trait('trait.reputation', 'Reputation')),
+      fixed('war-orphan.trait.sixth-sense', 150, trait('trait.sixth-sense', 'Sixth Sense')),
+      fixed('war-orphan.trait.wealth', -100, trait('trait.wealth', 'Wealth')),
+      fixed('war-orphan.skill.language-affiliation', -5, skill('skill.language', 'Language/Affiliation', 'Affiliation')),
+      fixed('war-orphan.skill.perception', 10, skill('skill.perception', 'Perception')),
+      fixed('war-orphan.skill.stealth', 5, skill('skill.stealth', 'Stealth')),
+      fixed('war-orphan.skill.streetwise-affiliation', 10, skill('skill.streetwise', 'Streetwise/Affiliation', 'Affiliation')),
+      { id: 'war-orphan.flexible', kind: 'flexible-xp', xpPerGrant: 25, count: 3, allowedTargetTypes: ['attribute', 'trait'] },
+    ],
+    notes: [],
+    deferredRules: [],
+  },
+  {
     id: STAGE_2_BACK_WOODS_ID,
     displayName: 'Back Woods',
     stage: 2,
@@ -301,6 +358,38 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
       { id: 'high-school.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 185, allowedTargetTypes: ['attribute', 'trait', 'skill'], maxXpPerTarget: { attribute: 200, trait: 200, skill: 35 } },
     ],
     notes: ['Stage 2 represents Late Childhood; completing it advances chronology to age 16.'],
+    deferredRules: [],
+  },
+  {
+    id: MILITARY_SCHOOL_ID,
+    displayName: 'Military School',
+    stage: 2,
+    kind: 'late-childhood',
+    source: source(80, 'stage-2-military-school'),
+    costXp: 500,
+    chronologyYears: 16,
+    prerequisites: [{ id: 'military-school.wil', kind: 'attribute-minimum', attributeId: 'WIL', minimum: 3, description: 'WIL 3+' }],
+    awards: [
+      fixed('military-school.attribute.cha', 50, attribute('CHA')),
+      fixed('military-school.trait.connections', 15, trait('trait.connections', 'Connections')),
+      fixed('military-school.trait.fit', 15, trait('trait.fit', 'Fit')),
+      fixed('military-school.trait.rank', 20, trait('trait.rank', 'Rank')),
+      fixed('military-school.skill.career-soldier', 25, skill('skill.career', 'Career/Soldier', 'Soldier')),
+      fixed('military-school.skill.computers', 35, skill('skill.computers', 'Computers')),
+      { id: 'military-school.interest', kind: 'any-skill-choice', xp: 30, skillId: 'skill.interest', displayName: 'Interest/Any', count: 1 },
+      fixed('military-school.skill.interest-military-history', 40, skill('skill.interest', 'Interest/Military History', 'Military History')),
+      fixed('military-school.skill.leadership', 20, skill('skill.leadership', 'Leadership')),
+      fixed('military-school.skill.martial-arts', 30, skill('skill.martial-arts', 'Martial Arts')),
+      fixed('military-school.skill.medtech-general', 10, skill('skill.medtech', 'MedTech/General', 'General')),
+      fixed('military-school.skill.melee-weapons', 20, skill('skill.melee-weapons', 'Melee Weapons')),
+      fixed('military-school.skill.protocol-affiliation', 30, skill('skill.protocol', 'Protocol/Affiliation', 'Affiliation')),
+      fixed('military-school.skill.running', 30, skill('skill.running', 'Running')),
+      fixed('military-school.skill.small-arms', 50, skill('skill.small-arms', 'Small Arms')),
+      fixed('military-school.skill.strategy', 10, skill('skill.strategy', 'Strategy')),
+      fixed('military-school.skill.swimming', 30, skill('skill.swimming', 'Swimming')),
+      { id: 'military-school.flexible', kind: 'flexible-xp', allocationMode: 'pool', totalXp: 40, allowedTargetTypes: ['skill'] },
+    ],
+    notes: [],
     deferredRules: [],
   },
   {

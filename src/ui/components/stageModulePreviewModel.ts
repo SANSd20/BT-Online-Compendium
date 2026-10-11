@@ -4,16 +4,19 @@ import {
   COMSTAR_WOB_SERVICE_ID,
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
+  FARM_ID,
   getLifeModule,
   INTELLIGENCE_OPERATIVE_TRAINING_ID,
   FAMILY_TRAINING_ID,
   MILITARY_ACADEMY_ID,
+  MILITARY_SCHOOL_ID,
   MILITARY_ENLISTMENT_ID,
   OFFICER_TRAINING_SCHOOL_ID,
   POLICE_ACADEMY_ID,
   SOLARIS_INTERNSHIP_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
+  WAR_ORPHAN_ID,
   TECHNICAL_COLLEGE_ID,
   TRADE_SCHOOL_ID,
   UNIVERSITY_ID,
@@ -24,8 +27,11 @@ import { applyStage1Module, applyStage2Module, applyStage3School, applyStage4Mod
 export type SupportedStageModuleId =
   | typeof BLUE_COLLAR_ID
   | typeof BACK_WOODS_ID
+  | typeof FARM_ID
+  | typeof WAR_ORPHAN_ID
   | typeof STAGE_2_BACK_WOODS_ID
   | typeof STAGE_2_HIGH_SCHOOL_ID
+  | typeof MILITARY_SCHOOL_ID
   | typeof TECHNICAL_COLLEGE_ID
   | typeof TRADE_SCHOOL_ID
   | typeof UNIVERSITY_ID
@@ -48,9 +54,12 @@ export function applySupportedStageModule(character: CharacterDefinition, module
   switch (moduleId) {
     case BLUE_COLLAR_ID:
     case BACK_WOODS_ID:
+    case FARM_ID:
+    case WAR_ORPHAN_ID:
       return applyStage1Module(character, moduleId)
     case STAGE_2_BACK_WOODS_ID:
     case STAGE_2_HIGH_SCHOOL_ID:
+    case MILITARY_SCHOOL_ID:
       return applyStage2Module(character, moduleId)
     case TECHNICAL_COLLEGE_ID:
     case TRADE_SCHOOL_ID:

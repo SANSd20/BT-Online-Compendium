@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, COMSTAR_WOB_SERVICE_ID, FAMILY_TRAINING_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, SOLARIS_INTERNSHIP_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, COMSTAR_WOB_SERVICE_ID, FAMILY_TRAINING_ID, FARM_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, MILITARY_SCHOOL_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, SOLARIS_INTERNSHIP_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, WAR_ORPHAN_ID } from '../../domain/lifeModules/catalog'
 import { getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
@@ -665,7 +665,7 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
               <><label className="catalog-selector" htmlFor="stage1-module">Early Childhood module
                 <select id="stage1-module" value={stageModulePreviewId.startsWith('stage1.') ? stageModulePreviewId : ''} onChange={(event) => event.target.value && selectStageModule(event.target.value as SupportedStageModuleId)}>
                   <option value="">Choose an Early Childhood module…</option>
-                  {[BLUE_COLLAR_ID, BACK_WOODS_ID].map((moduleId) => <option key={moduleId} value={moduleId}>{getLifeModule(moduleId).displayName} · Available</option>)}
+                  {[BLUE_COLLAR_ID, BACK_WOODS_ID, FARM_ID, WAR_ORPHAN_ID].map((moduleId) => <option key={moduleId} value={moduleId}>{getLifeModule(moduleId).displayName} · Available</option>)}
                 </select>
               </label>{stageModulePreviewId.startsWith('stage1.') && <section className="selected-module-detail"><h3>{getLifeModule(stageModulePreviewId).displayName}</h3><p>{getLifeModule(stageModulePreviewId).costXp} XP · selected module preview. Pending choices and source details appear below.</p>{goalGuidance(stageModulePreviewId)}{renderStageChoiceSlots('Early Childhood', 'Stage 1 module and choices committed.')}</section>}</>)}
             {state.phase === 'stage-1-resolution' && <p className="notice">Stage 1 is selected. Resolve every source-bound choice and flexible grant below before reaching an Alpha partial stop.</p>}
@@ -675,7 +675,7 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
               <><label className="catalog-selector" htmlFor="stage2-module">Late Childhood module
                 <select id="stage2-module" value={stageModulePreviewId.startsWith('stage2.') ? stageModulePreviewId : ''} onChange={(event) => event.target.value && selectStageModule(event.target.value as SupportedStageModuleId)}>
                   <option value="">Choose a Late Childhood module…</option>
-                  {[STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID].map((moduleId) => <option key={moduleId} value={moduleId}>{getLifeModule(moduleId).displayName} · Available</option>)}
+                  {[STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, MILITARY_SCHOOL_ID].map((moduleId) => <option key={moduleId} value={moduleId}>{getLifeModule(moduleId).displayName} · Available</option>)}
                 </select>
               </label>{stageModulePreviewId.startsWith('stage2.') && <section className="selected-module-detail"><h3>{getLifeModule(stageModulePreviewId).displayName}</h3><p>{getLifeModule(stageModulePreviewId).costXp} XP · selected module preview. Flexible XP limits remain enforced by the existing slot engine.</p>{goalGuidance(stageModulePreviewId)}{renderStageChoiceSlots('Late Childhood', 'Stage 2 module and choices committed.')}</section>}</>)}
             {state.phase === 'stage-2-resolution' && <p className="notice">Stage 2 is selected. Resolve all Stage 2 source-bound choices and flexible XP below.</p>}

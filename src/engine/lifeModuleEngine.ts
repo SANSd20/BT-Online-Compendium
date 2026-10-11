@@ -12,6 +12,7 @@ import {
   AGITATOR_ID,
   BACK_WOODS_ID,
   BLUE_COLLAR_ID,
+  FARM_ID,
   CAPELLAN_COMMONALITY_ID,
   COMSTAR_ORDER_ID,
   COMSTAR_WOB_SERVICE_ID,
@@ -21,12 +22,14 @@ import {
   INTELLIGENCE_OPERATIVE_TRAINING_ID,
   LIFE_MODULE_RULES_SOURCE,
   MILITARY_ACADEMY_ID,
+  MILITARY_SCHOOL_ID,
   MILITARY_ENLISTMENT_ID,
   OFFICER_TRAINING_SCHOOL_ID,
   POLICE_ACADEMY_ID,
   SOLARIS_INTERNSHIP_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
+  WAR_ORPHAN_ID,
   TECHNICAL_COLLEGE_ID,
   TRADE_SCHOOL_ID,
   UNIVERSITY_ID,
@@ -302,10 +305,10 @@ export function previewFederatedSunsCrucisMarch(character: CharacterDefinition, 
   return next
 }
 
-export function applyStage1Module(character: CharacterDefinition, moduleId: typeof BLUE_COLLAR_ID | typeof BACK_WOODS_ID): CharacterDefinition {
+export function applyStage1Module(character: CharacterDefinition, moduleId: typeof BLUE_COLLAR_ID | typeof BACK_WOODS_ID | typeof FARM_ID | typeof WAR_ORPHAN_ID): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-1-selection') throw new Error('A Stage 1 module is not the current legal action.')
-  if (moduleId !== BLUE_COLLAR_ID && moduleId !== BACK_WOODS_ID) throw new Error(`Unknown Alpha Stage 1 module: ${moduleId}`)
+  if (![BLUE_COLLAR_ID, BACK_WOODS_ID, FARM_ID, WAR_ORPHAN_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 1 module: ${moduleId}`)
   const module = getLifeModule(moduleId)
   const next = applyModule(character, module, {})
   next.chronology.push({ date: 'age:10', eventId: `${module.id}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })
@@ -327,11 +330,11 @@ export function continueToStage2(character: CharacterDefinition): CharacterDefin
 
 export function applyStage2Module(
   character: CharacterDefinition,
-  moduleId: typeof STAGE_2_BACK_WOODS_ID | typeof STAGE_2_HIGH_SCHOOL_ID,
+  moduleId: typeof STAGE_2_BACK_WOODS_ID | typeof STAGE_2_HIGH_SCHOOL_ID | typeof MILITARY_SCHOOL_ID,
 ): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-2-selection') throw new Error('A Stage 2 module is not the current legal action.')
-  if (moduleId !== STAGE_2_BACK_WOODS_ID && moduleId !== STAGE_2_HIGH_SCHOOL_ID) throw new Error(`Unknown Alpha Stage 2 module: ${moduleId}`)
+  if (![STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, MILITARY_SCHOOL_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 2 module: ${moduleId}`)
   if (character.lifeModuleHistory.some((entry) => entry.stage === 2)) throw new Error('Exactly one Stage 2 module may be selected.')
   const next = applyModule(character, getLifeModule(moduleId), {})
   next.chronology.push({ date: 'age:16', eventId: `${moduleId}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })
