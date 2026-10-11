@@ -5,6 +5,7 @@ import { getFinalReviewBlockers } from '../lifeModules/finalReview'
 import { getEquipmentFoundationIssues } from '../finalTouches/rules'
 import { validateCharacter } from '../../validation/validateCharacter'
 import { APP_VERSION } from '../../appMetadata'
+import { deriveStasisAttributeLosses } from './stasis'
 
 export type ReadinessStatus = 'incomplete' | 'ready-for-final-touches' | 'ready-for-play'
 export interface ReadinessFinding {
@@ -48,6 +49,12 @@ export function evaluateCharacterReadiness(character: CharacterDefinition): Read
   const aging = deriveAging(character)
   if (aging.unsupported.length > 0) blockers.push(finding('aging.unsupported', 'aging', aging.unsupported.join(' '), 'Use a source-supported age or defer finalization.'))
   if (!aging.legal) blockers.push(finding('aging.illegal', 'aging', 'Derived aging effects leave an Attribute below the supported minimum.', 'Review the resulting Attribute state.'))
+  for (const event of character.stasisHistory ?? []) {
+    if (event.survivalStatus === 'fatal') blockers.push(finding(`stasis.${event.id}.fatal`, 'aging', 'A Stasis event records a fatal outcome; the character cannot be ready for play.', 'Preserve the event and resolve it outside character creation.'))
+    if (event.survivalStatus === 'unresolved' || event.unresolvedConditions.length > 0) blockers.push(finding(`stasis.${event.id}.unresolved`, 'aging', 'A Stasis event has unresolved mandatory checks or adjudication.', 'Record all required checks and resolve mandatory outcomes.'))
+  }
+  const losses = deriveStasisAttributeLosses(character)
+  if (losses.BOD >= 1 && losses.INT >= 1 && character.attributes.some((entry) => entry.attributeId === 'BOD' || entry.attributeId === 'INT')) advisories.push(finding('stasis.attribute-losses', 'record-sheet', `Stasis has recorded BOD -${losses.BOD} and INT -${losses.INT}; these are not XP changes.`))
 
   if (!character.creation.finalTouches) blockers.push(finding('final-touches.required', 'final-touches', 'Final Touches must be completed before a character is ready for play.', 'Enter Final Touches and complete the supported identity and equipment review.'))
   if (character.creation.finalTouches) {

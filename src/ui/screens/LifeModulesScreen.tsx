@@ -8,7 +8,8 @@ import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedM
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { characterSkillProgression, getFinalReviewBlockers, getModeledOpposedTraitConflicts, skillXpCosts } from '../../domain/lifeModules/finalReview'
 import { deriveCharacterRecordSheet } from '../../domain/character/recordSheet'
-import { deriveAging, deriveCharacterAge } from '../../domain/character/aging'
+import { deriveAging, deriveBiologicalAge, deriveCharacterAge } from '../../domain/character/aging'
+import { createAnnualCheckOutcome, createPowerInterruptionOutcome, createStasisEvent, addStasisEvent, createFreezingCheckOutcome } from '../../domain/character/stasis'
 import { evaluateCharacterReadiness, finalizeCharacterSnapshot } from '../../domain/character/readiness'
 import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../../domain/pointBuy/catalog'
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
@@ -107,11 +108,25 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
   const [catalogQuantity, setCatalogQuantity] = useState(1)
   const [catalogOwnership, setCatalogOwnership] = useState<EquipmentOwnership>('Owned')
   const [message, setMessage] = useState('')
+  const [stasisDuration, setStasisDuration] = useState(1)
+  const [stasisBrain, setStasisBrain] = useState<'success' | 'failure'>('success')
+  const [stasisBody, setStasisBody] = useState<'success' | 'failure'>('success')
+  const [stasisAnnualFailures, setStasisAnnualFailures] = useState(0)
+  const [stasisPower, setStasisPower] = useState<'none' | 'success' | 'failure'>('none')
+  const [stasisMedtechMoS, setStasisMedtechMoS] = useState(0)
 
   function start(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setStage3FieldIds([TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID])
     operate(() => setMasterSkillFieldGoal(createLifeModuleCharacter(name, startingXp), masterSkillFieldGoalId || null), 'Life Module draft created and saved locally.')
+  }
+
+  function addStasisHistory() {
+    if (!character) return
+    const id = `stasis-${(character.stasisHistory?.length ?? 0) + 1}`
+    const annualChecks = Array.from({ length: Math.floor(stasisDuration) }, (_, index) => createAnnualCheckOutcome(`${id}-annual-${index + 1}`, index < stasisAnnualFailures ? 'failure' : 'success', 10 - Math.min(index, stasisAnnualFailures), 10 - Math.min(index, stasisAnnualFailures)))
+    const powerInterruptions = stasisPower === 'none' ? [] : [createPowerInterruptionOutcome(`${id}-power`, stasisPower, 10, 10, stasisMedtechMoS)]
+    operate(() => addStasisEvent(character, createStasisEvent(id, deriveCharacterAge(character), stasisDuration, `${id}-provenance`, { brain: createFreezingCheckOutcome(`${id}-brain`, 'freezing-brain', stasisBrain, 10, 10), body: createFreezingCheckOutcome(`${id}-body`, 'freezing-body', stasisBody, 10, 10) }, annualChecks, powerInterruptions, stasisPower === 'failure' ? 'forced-thaw' : 'thawed')), 'Stasis history event recorded. Resolve any required annual checks before finalization.')
   }
 
   function operate(operation: () => CharacterDefinition, success: string, preserveStagePreview = false) {
@@ -742,6 +757,23 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
                 {!aging.legal && <p className="error">Aging currently leaves an Attribute below the source minimum and requires review.</p>}
               </>}
             </section>}
+
+            <section className="aging-summary" aria-label="Stasis history">
+              <p className="eyebrow">Post-creation history</p>
+              <h3>Stasis Tube history</h3>
+              <p className="scope-note">Stasis is not a Life Module or Trait. It adds chronological time and approximately one biological day per year while preserving creation XP and chronology.</p>
+              <div className="row-actions">
+                <label>Duration (years)<input type="number" min="1" step="1" value={stasisDuration} onChange={(event) => setStasisDuration(Number(event.target.value))} /></label>
+                <label>Brain freezing check<select value={stasisBrain} onChange={(event) => setStasisBrain(event.target.value as 'success' | 'failure')}><option value="success">Success</option><option value="failure">Failure — fatal</option></select></label>
+                <label>Body freezing check<select value={stasisBody} onChange={(event) => setStasisBody(event.target.value as 'success' | 'failure')}><option value="success">Success</option><option value="failure">Failure — fatal</option></select></label>
+                <label>Annual failures<input type="number" min="0" max={Math.floor(stasisDuration)} value={stasisAnnualFailures} onChange={(event) => setStasisAnnualFailures(Number(event.target.value))} /></label>
+                <label>Power interruption<select value={stasisPower} onChange={(event) => setStasisPower(event.target.value as 'none' | 'success' | 'failure')}><option value="none">None</option><option value="success">Check succeeds</option><option value="failure">Check fails</option></select></label>
+                {stasisPower === 'failure' && <label>MedTech MoS<input type="number" min="0" value={stasisMedtechMoS} onChange={(event) => setStasisMedtechMoS(Number(event.target.value))} /></label>}
+                <button className="button secondary" type="button" onClick={addStasisHistory}>Record Stasis event</button>
+              </div>
+              <p>Chronological age: {deriveCharacterAge(character)} · biological age: {deriveBiologicalAge(character).toFixed(3)} · events: {character.stasisHistory?.length ?? 0}</p>
+              {(character.stasisHistory ?? []).map((event) => <div className="notice" key={event.id}><strong>{event.durationYears} year Stasis event</strong> · {event.survivalStatus} · BOD -{event.attributeLosses.BOD} / INT -{event.attributeLosses.INT}{event.unresolvedConditions.length ? ` · ${event.unresolvedConditions.join(' ')}` : ''}<br />Source: Handbook — Major Periphery States p. 185. Secondary effects remain GM-adjudicated and are not assigned automatically.</div>)}
+            </section>
 
             {recordSheet && <details open className="record-sheet-summary">
               <summary>Derived character record sheet</summary>

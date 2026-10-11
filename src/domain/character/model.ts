@@ -575,6 +575,39 @@ export interface LifeModuleHistoryEntry {
   notes: string[]
 }
 
+export type StasisCheckKind = 'freezing-brain' | 'freezing-body' | 'annual' | 'power-interruption'
+export interface StasisCheckOutcome {
+  id: string
+  kind: StasisCheckKind
+  modifier: number
+  outcome: 'success' | 'failure'
+  bodBefore: number
+  intBefore: number
+  bodLoss: number
+  intLoss: number
+  fatal: boolean
+  medtechEligible?: boolean
+  medtechMoS?: number
+  intervention?: 'none' | 'prevented-death' | 'failed'
+}
+export interface StasisHistoryEvent {
+  id: string
+  source: SourceCitation
+  provenanceId: string
+  startYear: number
+  durationYears: number
+  biologicalAgeDays: number
+  freezing: { brain: StasisCheckOutcome; body: StasisCheckOutcome }
+  annualChecks: StasisCheckOutcome[]
+  powerInterruptions: StasisCheckOutcome[]
+  thawStatus: 'not-thawed' | 'thawed' | 'forced-thaw'
+  attributeLosses: { BOD: number; INT: number }
+  survivalStatus: 'survived' | 'fatal' | 'unresolved'
+  unresolvedConditions: string[]
+  ancientModifier?: number
+  notes: string[]
+}
+
 export interface PlayStateFoundation {
   schemaVersion: 1
   initializedAt: string
@@ -609,6 +642,7 @@ export interface CharacterDefinition {
   phenotypeId: string
   lifeModuleHistory: LifeModuleHistoryEntry[]
   chronology: Array<{ date: string; eventId: string; provenanceId: string }>
+  stasisHistory?: StasisHistoryEvent[]
   inventory: EquipmentItem[]
   cBills: number
   vehicles: VehicleEntry[]

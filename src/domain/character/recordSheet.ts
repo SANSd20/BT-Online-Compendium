@@ -2,6 +2,7 @@ import type { CharacterDefinition, CharacterRecordSheet, EquipmentItem, RecordSh
 import { attributeLegality } from './attributeLegality'
 import { characterSkillProgression, deriveSkillLevel } from '../lifeModules/finalReview'
 import { agingAttributeXp, deriveAging } from './aging'
+import { deriveStasisAttributeLosses } from './stasis'
 
 const LINK_MODIFIERS: Readonly<Record<number, number>> = { 0: -4, 1: -2, 2: -1, 3: -1, 4: 0, 5: 0, 6: 0, 7: 1, 8: 1, 9: 1, 10: 2 }
 const supported = <T>(value: T, ...sources: string[]): RecordSheetValue<T> => ({ value, status: 'supported', sources })
@@ -9,11 +10,12 @@ const unsupported = <T>(...missing: string[]): RecordSheetValue<T> => ({ value: 
 
 export function deriveCharacterRecordSheet(character: CharacterDefinition): CharacterRecordSheet {
   const aging = deriveAging(character)
+  const stasisLosses = deriveStasisAttributeLosses(character)
   const attributes = character.attributes.map((entry) => {
     const agingXp = agingAttributeXp(character, entry.attributeId)
     const agingCharacter = agingXp === entry.accumulatedXp ? character : { ...character, attributes: character.attributes.map((item) => item.attributeId === entry.attributeId ? { ...item, accumulatedXp: agingXp } : item) }
     const legality = attributeLegality(agingCharacter, entry.attributeId)
-    const score = legality.effectiveScore
+    const score = Math.max(0, legality.effectiveScore - (stasisLosses[entry.attributeId as 'BOD' | 'INT'] ?? 0))
     return {
       attributeId: entry.attributeId,
       score: supported(score, 'AToW Corrected Third Printing pp. 34-35', 'Phenotype/Exceptional Attribute rules'),
@@ -83,7 +85,9 @@ function attributeScore(character: CharacterDefinition, id: string): number {
   const adjusted = agingXp === character.attributes.find((entry) => entry.attributeId === id)?.accumulatedXp
     ? character
     : { ...character, attributes: character.attributes.map((entry) => entry.attributeId === id ? { ...entry, accumulatedXp: agingXp } : entry) }
-  return attributeLegality(adjusted, id).effectiveScore
+    const effective = attributeLegality(adjusted, id).effectiveScore
+    const losses = deriveStasisAttributeLosses(character)
+    return Math.max(0, effective - (id === 'BOD' ? losses.BOD : id === 'INT' ? losses.INT : 0))
 }
 
 function skillLevel(character: CharacterDefinition, id: string): number {

@@ -1,5 +1,6 @@
 import type { CharacterDefinition, TraitLedgerEntry } from './model'
 import { deriveAttributeLevel } from '../lifeModules/finalReview'
+import { deriveStasisBiologicalAgeYears, deriveStasisChronologicalYears } from './stasis'
 
 export const AGING_SOURCE = 'AToW Corrected Third Printing pp. 332-333'
 export const AGING_THRESHOLDS = [25, 31, 41, 51, 61, 71, 81, 91, 101] as const
@@ -35,7 +36,12 @@ const brackets: AgingBracket[] = [
 
 export function deriveCharacterAge(character: CharacterDefinition): number {
   const ages = character.chronology.map((entry) => /^age:(\d+(?:\.\d+)?)$/.exec(entry.date)?.[1]).filter(Boolean).map(Number)
-  return ages.length ? Math.max(...ages) : 16
+  return (ages.length ? Math.max(...ages) : 16) + deriveStasisChronologicalYears(character)
+}
+
+export function deriveBiologicalAge(character: CharacterDefinition): number {
+  const ages = character.chronology.map((entry) => /^age:(\d+(?:\.\d+)?)$/.exec(entry.date)?.[1]).filter(Boolean).map(Number)
+  return (ages.length ? Math.max(...ages) : 16) + deriveStasisBiologicalAgeYears(character)
 }
 
 function isClan(character: CharacterDefinition): boolean {
@@ -43,7 +49,7 @@ function isClan(character: CharacterDefinition): boolean {
     || character.phenotypeId.toLowerCase().includes('clan')
 }
 
-export function deriveAging(character: CharacterDefinition, age = deriveCharacterAge(character)): AgingDerivation {
+export function deriveAging(character: CharacterDefinition, age = deriveBiologicalAge(character)): AgingDerivation {
   const applicable = brackets.filter((entry) => age >= entry.age)
   const attributeXpAdjustments: Record<string, number> = {}
   const traitXpAdjustments: Record<string, number> = {}
