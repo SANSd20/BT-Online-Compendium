@@ -68,6 +68,12 @@ export type LifeModuleTransactionOperation = {
   chronologyYears: number
   category: 'basic' | 'advanced' | 'special'
   choices?: Record<string, string>
+} | {
+  kind: 'allocate-clan-warrior-field-xp'
+  awardId: string
+  moduleId: string
+  source: { sourceId: string; edition: string; page?: number; ruleId?: string }
+  selections: Array<{ fieldId: string; destination: ResolvedLifeModuleDestination }>
 }
 
 export type LifeModuleTransactionErrorKind = 'unsupported-operation' | 'invalid-operation' | 'unresolved-choice' | 'illegal-prospective-state'
@@ -238,6 +244,38 @@ function applyGovernedFieldGrant(character: CharacterDefinition, operation: Extr
   return updateLifeModuleProgress(next)
 }
 
+const CLAN_WARRIOR_ALLOCATION_FIELD_IDS = new Set(['field.clan-aerospace-warrior', 'field.clan-elemental', 'field.clan-mechwarrior'])
+
+function destinationKey(destination: ResolvedLifeModuleDestination): string {
+  return `${destination.type}/${destination.targetId}/${destination.parameter?.kind ?? ''}/${destination.parameter?.value ?? ''}/${JSON.stringify(destination.parameters ?? {})}`
+}
+
+function applyClanWarriorFieldSkillAllocation(character: CharacterDefinition, operation: Extract<LifeModuleTransactionOperation, { kind: 'allocate-clan-warrior-field-xp' }>): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  if (!operation.awardId || !operation.moduleId || operation.selections.length !== 3) throw new Error('Clan Warrior Field allocation requires exactly three Skill selections.')
+  if (operation.selections.some((selection) => selection.destination.type !== 'skill')) throw new Error('Clan Warrior Field allocation destinations must be concrete Skills.')
+  const keys = operation.selections.map((selection) => destinationKey(selection.destination))
+  if (new Set(keys).size !== keys.length) throw new Error('Clan Warrior Field allocation cannot select a Skill more than once.')
+  if (state.clanWarriorFieldSkillAllocations?.some((entry) => entry.awardId === operation.awardId)) throw new Error(`Clan Warrior Field allocation is already resolved: ${operation.awardId}`)
+  const provenanceId = makeId(undefined, `clan-warrior-allocation-${operation.awardId}`)
+  next.provenance.push({ id: provenanceId, kind: 'published', description: 'Clan Warrior Field Skill allocation', source: { ...operation.source } })
+  const records = state.clanWarriorFieldSkillAllocations ?? (state.clanWarriorFieldSkillAllocations = [])
+  for (const selection of operation.selections) {
+    if (!CLAN_WARRIOR_ALLOCATION_FIELD_IDS.has(selection.fieldId)) throw new Error(`Skill Field is not a supported mechanical Clan Warrior Field: ${selection.fieldId}`)
+    const grant = state.selectedSkillFields.find((entry) => entry.fieldId === selection.fieldId)
+    if (!grant) throw new Error(`Clan Warrior Field has not been acquired: ${selection.fieldId}`)
+    const field = getSkillField(selection.fieldId)
+    const allowed = [...field.componentSkills.map(lifeModuleDestinationToResolved), ...(grant.variableSkillChoices ?? []).map((entry) => entry.destination)]
+    if (!allowed.some((entry) => destinationKey(entry) === destinationKey(selection.destination))) throw new Error(`Selected Skill is not a concrete Skill in ${field.displayName}.`)
+    applyDestinationAward(next, { type: 'skill', address: { skillId: selection.destination.targetId, ...(selection.destination.parameter ? { parameter: selection.destination.parameter } : {}) }, displayName: selection.destination.displayName }, 25, provenanceId)
+    records.push({ id: makeId(undefined, 'clan-warrior-allocation'), awardId: operation.awardId, moduleId: operation.moduleId, fieldId: selection.fieldId, destination: structuredClone(selection.destination), xp: 25, provenanceId, source: { ...operation.source }, allocatedAt: new Date().toISOString() })
+  }
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  next.updatedAt = new Date().toISOString()
+  return updateLifeModuleProgress(next)
+}
+
 export function buildLifeModuleTransaction(
   character: CharacterDefinition,
   operations: readonly LifeModuleTransactionOperation[],
@@ -259,6 +297,11 @@ export function buildLifeModuleTransaction(
       } catch (error) {
         transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) })
       }
+      continue
+    }
+    if (operation.kind === 'allocate-clan-warrior-field-xp') {
+      try { transaction.prospectiveState = applyClanWarriorFieldSkillAllocation(transaction.prospectiveState!, operation) }
+      catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
       continue
     }
     if (operation.kind !== 'resolve-pending-award') {
