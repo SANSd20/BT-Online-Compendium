@@ -18,12 +18,12 @@ describe('Clan identity and caste foundation', () => {
     expect(isClanCasteId(undefined)).toBe(false)
   })
 
-  it('preserves unsupported Trueborn/Freeborn and Field Aptitude metadata', () => {
+  it('preserves unsupported Trueborn/Freeborn and mechanically defined Field Aptitude metadata', () => {
     expect(CLAN_BIRTH_ORIGINS).toEqual(['trueborn', 'freeborn'])
     expect(isClanBirthOrigin('trueborn')).toBe(true)
     expect(isClanBirthOrigin('unknown')).toBe(false)
     expect(clanBirthOriginState('trueborn')).toMatchObject({ support: 'unsupported', source: { page: 109 } })
-    expect(clanFieldAptitudeState('phenotype.mechwarrior', ['field.mechwarrior'])).toMatchObject({ support: 'unsupported', phenotypeId: 'phenotype.mechwarrior', source: { page: 121 } })
+    expect(clanFieldAptitudeState('phenotype.mechwarrior', ['field.clan-mechwarrior'])).toMatchObject({ support: 'supported', phenotypeId: 'phenotype.mechwarrior', source: { page: 121 } })
   })
 
   it('round-trips optional unsupported Clan state without changing XP or character identity', () => {
@@ -31,7 +31,7 @@ describe('Clan identity and caste foundation', () => {
     character.clanIdentity = clanIdentityState()
     character.clanCaste = clanCasteState('warrior')
     character.clanBirthOrigin = clanBirthOriginState('trueborn')
-    character.clanFieldAptitude = clanFieldAptitudeState('phenotype.mechwarrior', ['field.mechwarrior'])
+    character.clanFieldAptitude = clanFieldAptitudeState('phenotype.mechwarrior', ['field.clan-mechwarrior'])
     const beforeXp = JSON.stringify(character.xp)
     const restored = decodeCharacter(encodeCharacter(character))
     expect(restored.id).toBe(character.id)

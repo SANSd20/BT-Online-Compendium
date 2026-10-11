@@ -35,7 +35,7 @@ export interface ClanFieldAptitudeState {
   displayName: string
   phenotypeId: string
   associatedFieldIds: readonly string[]
-  support: 'unsupported'
+  support: 'supported'
   source: SourceCitation
   eligibilityDependencies: readonly string[]
 }
@@ -67,5 +67,5 @@ export function clanBirthOriginState(id: ClanBirthOrigin): ClanBirthOriginState 
 }
 
 export function clanFieldAptitudeState(phenotypeId: string, associatedFieldIds: readonly string[]): ClanFieldAptitudeState {
-  return { id: `field-aptitude.${phenotypeId}`, displayName: 'Clan Field Aptitude', phenotypeId, associatedFieldIds: [...associatedFieldIds], support: 'unsupported', source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 121, ruleId: 'phenotype-field-aptitude' }, eligibilityDependencies: ['Clan affiliation', 'Clan Phenotype', 'Clan training Field prerequisites', 'Field-specific Skill requirements'] }
+  return { id: `field-aptitude.${phenotypeId}`, displayName: 'Clan Field Aptitude', phenotypeId, associatedFieldIds: [...associatedFieldIds], support: 'supported', source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 121, ruleId: 'phenotype-field-aptitude' }, eligibilityDependencies: ['Clan affiliation', 'Trueborn birth origin', 'Clan Phenotype', 'Clan training Field prerequisites', 'Field-specific Skill requirements'] }
 }

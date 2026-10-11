@@ -18,4 +18,11 @@ describe('source-backed phenotype and Attribute legality', () => {
     character.traits.push({ traitId: 'trait.exceptional-attribute', displayName: 'Exceptional Attribute/STR', accumulatedXp: 200, attainedTp: 2, active: true, parameters: { attribute: 'STR' }, sourceAwards: [] })
     expect(attributeLegality(character, 'STR')).toMatchObject({ effectiveMaximum: 10, legal: true })
   })
+
+  it('models trueborn Field Aptitude as a phenotype-linked permanent TN modifier', () => {
+    expect(getPhenotypeDefinition('phenotype.aerospace')?.fieldAptitude).toEqual({ id: 'field-aptitude.clan-fighter-pilot', associatedFieldIds: ['field.clan-aerospace-warrior'], tnModifier: -1 })
+    expect(getPhenotypeDefinition('phenotype.elemental')?.fieldAptitude).toEqual({ id: 'field-aptitude.elemental', associatedFieldIds: ['field.clan-elemental'], tnModifier: -1 })
+    expect(getPhenotypeDefinition('phenotype.mechwarrior')?.fieldAptitude).toEqual({ id: 'field-aptitude.clan-mechwarrior', associatedFieldIds: ['field.clan-mechwarrior'], tnModifier: -1 })
+    expect(getPhenotypeDefinition('phenotype.normal-human')?.fieldAptitude).toBeUndefined()
+  })
 })

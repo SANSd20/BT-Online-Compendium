@@ -56,7 +56,7 @@ import {
   startingCBillsForWealth,
 } from '../domain/finalTouches/rules'
 import { getEquipmentCatalogItem, parseRawEquipmentRating } from '../domain/equipment/catalog'
-import { getPhenotypeDefinition } from '../domain/character/phenotypes'
+import { getPhenotypeDefinition, phenotypeFieldAptitude } from '../domain/character/phenotypes'
 import { CLAN_IDENTITY_ID, isClanBirthOrigin, isClanCasteId } from '../domain/character/clanIdentity'
 
 const SAFE_AFFILIATION_CODE = /^[A-Z][A-Z0-9-]*$/
@@ -108,8 +108,13 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
   }
   if (character.clanFieldAptitude) {
     const aptitude = character.clanFieldAptitude
-    if (!aptitude.id.startsWith('field-aptitude.') || aptitude.support !== 'unsupported' || aptitude.source.page !== 121 || !aptitude.phenotypeId || aptitude.associatedFieldIds.length === 0) issues.push(issue('clan.field-aptitude.invalid', 'clanFieldAptitude', 'Clan Field Aptitude foundation is malformed.'))
-    else issues.push(issue('clan.field-aptitude.unsupported', 'clanFieldAptitude', 'Phenotype-linked Clan Field Aptitude is not enabled in this Public Alpha foundation.', { severity: 'warning', kind: 'availability' }))
+    if (!aptitude.id.startsWith('field-aptitude.') || aptitude.support !== 'supported' || aptitude.source.page !== 121 || !aptitude.phenotypeId || aptitude.associatedFieldIds.length === 0) issues.push(issue('clan.field-aptitude.invalid', 'clanFieldAptitude', 'Clan Field Aptitude foundation is malformed.'))
+    else if (character.clanBirthOrigin?.id !== 'trueborn') issues.push(issue('clan.field-aptitude.trueborn-required', 'clanFieldAptitude', 'Clan Field Aptitude is available only to trueborn Clan characters.', { severity: 'warning', kind: 'prerequisite' }))
+    else if (aptitude.phenotypeId !== character.phenotypeId) issues.push(issue('clan.field-aptitude.phenotype-mismatch', 'clanFieldAptitude', 'Clan Field Aptitude must match the selected Phenotype.', { severity: 'warning', kind: 'prerequisite' }))
+    else {
+      const expected = phenotypeFieldAptitude(character.phenotypeId)
+      if (!expected || aptitude.id !== expected.id || aptitude.associatedFieldIds.join('\0') !== expected.associatedFieldIds.join('\0')) issues.push(issue('clan.field-aptitude.association-invalid', 'clanFieldAptitude', 'Clan Field Aptitude does not match the source-defined Phenotype association.', { severity: 'warning', kind: 'prerequisite' }))
+    }
     if (!character.clanIdentity) issues.push(issue('clan.field-aptitude.identity-required', 'clanFieldAptitude', 'Clan Field Aptitude requires a Clan identity foundation.', { severity: 'warning', kind: 'prerequisite' }))
   }
 
@@ -245,6 +250,7 @@ function validatePhenotypeAndExceptionalAttributes(character: CharacterDefinitio
   if (!phenotype) issues.push(issue('character.phenotype.unknown', 'phenotypeId', 'Character phenotype is not in the governed phenotype catalog.'))
   const governedArchetypePhenotype = character.creation.method === 'archetype' && character.creation.archetype?.kind === 'source-backed-preset'
   if (phenotype?.clanOnly && !character.clanIdentity && !governedArchetypePhenotype) issues.push(issue('character.phenotype.clan-eligibility', 'phenotypeId', 'A Clan-only Phenotype requires a Clan identity; Clan creation remains unsupported.'))
+  if (character.clanBirthOrigin?.id === 'trueborn' && phenotype?.id === 'phenotype.normal-human') issues.push(issue('character.phenotype.trueborn-required', 'phenotypeId', 'Trueborn Clan characters must select Aerospace, Elemental, or MechWarrior Phenotype.', { severity: 'warning', kind: 'prerequisite' }))
   if (phenotype && !phenotype.clanOnly && phenotype.id !== 'phenotype.normal-human' && character.clanIdentity) issues.push(issue('character.phenotype.invalid-affiliation', 'phenotypeId', 'This Phenotype is not legal for the selected Clan identity.'))
   if (phenotype?.id === 'phenotype.normal-human' && character.clanIdentity && character.traits.some((entry) => entry.traitId === 'trait.phenotype' && entry.parameters.phenotype)) {
     issues.push(issue('character.phenotype.mismatch', 'phenotypeId', 'The Phenotype record must agree with the character Phenotype selection.'))
