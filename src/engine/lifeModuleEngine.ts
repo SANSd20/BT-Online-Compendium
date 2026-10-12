@@ -57,6 +57,7 @@ import { CLAN_AFFILIATION_CONTEXTS } from '../domain/lifeModules/affiliations'
 import { attributeLegality } from '../domain/character/attributeLegality'
 import { isHomeworldClanId, type HomeworldClanId } from '../domain/character/clanIdentity'
 import { HOMEWORLD_CLAN_PACKAGES } from '../domain/character/clanPackages'
+import { resolveClanDestination } from '../domain/character/clanDestinations'
 
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
 
@@ -395,11 +396,24 @@ function applyHomeworldClanPackage(character: CharacterDefinition, operation: Ex
   const provenanceId = makeId(undefined, `clan-sub-affiliation-${operation.clanId}`)
   next.provenance.push({ id: provenanceId, kind: 'published', description: `${pkg.identity.displayName} specific Clan package awards`, source: { ...pkg.identity.source } })
   for (const award of pkg.fixedAwards) {
-    const destination: LifeModuleDestination = award.kind === 'attribute'
-      ? { type: 'attribute', attributeId: award.subject }
-      : award.kind === 'trait'
-        ? { type: 'trait', traitId: award.subject.startsWith('Compulsion/') ? 'trait.compulsion' : `trait.${award.subject.toLowerCase().replaceAll(' ', '-')}`, displayName: award.subject, parameters: award.subject.startsWith('Compulsion/') ? { compulsion: award.subject.slice('Compulsion/'.length) } : {} }
-        : { type: 'skill', address: { skillId: award.subject.startsWith('Protocol/') ? 'skill.protocol' : award.subject.startsWith('Interest/') ? 'skill.interest' : `skill.${award.subject.toLowerCase().replaceAll(' ', '-')}`, parameter: { kind: 'subskill', value: award.subject.includes('/') ? award.subject.split('/').slice(1).join('/') : award.subject } }, displayName: award.subject }
+    const resolved = resolveClanDestination(award.subject)
+    if (resolved.status !== 'SUPPORTED_CONCRETE' || !resolved.canonicalId) throw new Error(`Specific Clan package award has an unresolved destination: ${award.subject}`)
+    const destination: LifeModuleDestination = award.kind === 'attribute' && resolved.canonicalId.startsWith('attribute.')
+      ? { type: 'attribute', attributeId: resolved.canonicalId.slice('attribute.'.length).toUpperCase() }
+      : award.kind === 'trait' && resolved.family === 'trait'
+        ? {
+            type: 'trait', traitId: resolved.canonicalId, displayName: award.subject,
+            parameters: resolved.subject
+              ? resolved.canonicalId === 'trait.compulsion'
+                ? { compulsion: resolved.subject }
+                : resolved.canonicalId === 'trait.exceptional-attribute'
+                  ? { attribute: resolved.subject }
+                  : { subject: resolved.subject }
+              : {},
+          }
+        : award.kind === 'skill' && resolved.family === 'skill'
+          ? { type: 'skill', address: { skillId: resolved.canonicalId, ...(resolved.subject ? { parameter: { kind: 'subskill', value: resolved.subject } } : {}) }, displayName: award.subject }
+          : (() => { throw new Error(`Specific Clan package award destination type does not match ${award.kind}: ${award.subject}`) })()
     applyDestinationAward(next, destination, award.xp, provenanceId)
   }
   const packageId = `stage0.clan-sub-affiliation.${operation.clanId}`
