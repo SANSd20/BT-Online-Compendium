@@ -22,7 +22,7 @@ function pathway(clanId: 'blood-spirit' | 'ice-hellion') {
   commit([{ kind: 'grant-clan-package', awardId: 'stage0.homeworld-clan', packageId: 'homeworld-clan' }, { kind: 'grant-homeworld-clan-package', clanId }, { kind: 'grant-clan-package', awardId: 'stage0.mechwarrior', packageId: 'mechwarrior' }, { kind: 'grant-trueborn-creche', choices: [...choices] }])
   commit([{ kind: 'grant-trueborn-sibko-mechwarrior' }])
   const sibko = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'sibko.flexible')!
-  character = resolvePendingLifeModuleAward(character, sibko.id, { type: 'attribute', targetId: 'BOD', displayName: 'BOD' }, 150)
+  character = resolvePendingLifeModuleAward(character, sibko.id, { type: 'attribute', targetId: 'BOD', displayName: 'BOD' }, 50)
   commit([{ kind: 'grant-clan-watch-operative', branch: 'homeworld-clan', choices: { 'watch.tracking': 'Wilderness', 'homeworld.security-systems': 'Security', 'homeworld.streetwise': 'Clan Wolf', 'homeworld.survival': 'Wilderness', 'homeworld.technician': 'Vehicle' } }])
   const watch = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'watch.flexible')!
   return resolvePendingLifeModuleAward(character, watch.id, { type: 'attribute', targetId: 'INT', displayName: 'INT' }, 175)

@@ -445,8 +445,8 @@ function applyTruebornSibkoMechWarrior(character: CharacterDefinition): Characte
   const field = getSkillField(CLAN_MECHWARRIOR_FIELD_ID)
   for (const component of field.componentSkills) applyDestinationAward(next, component, 80, provenanceId)
   state.selectedSkillFields.push({ id: makeId(undefined, 'trueborn-sibko-mechwarrior-field'), schoolModuleId: TRUEBORN_SIBKO_ID, fieldId: CLAN_MECHWARRIOR_FIELD_ID, displayName: field.displayName, category: 'advanced', purchaseCostXp: 384, xpPerSkill: 80, chronologyYears: 0, selectedAt: now, provenanceId, source: { ...field.source }, variableSkillChoices: [], prerequisiteSkillChoices: [] })
-  state.pendingAwards.push({ id: `${TRUEBORN_SIBKO_ID}/flexible`, moduleId: TRUEBORN_SIBKO_ID, provenanceId, awardId: 'sibko.flexible', kind: 'flexible-xp', description: 'Allocate 150 flexible XP under the Trueborn Sibko MechWarrior source restrictions.', xpPerGrant: 0, remainingGrants: 0, allocationMode: 'pool', remainingXp: 150, allowedTargetTypes: ['attribute', 'trait', 'skill'], source })
-  state.choiceGrantRequirements.push({ moduleId: TRUEBORN_SIBKO_ID, awardId: 'sibko.flexible', requiredGrants: 0, requiredXp: 150, allocationMode: 'pool' })
+  state.pendingAwards.push({ id: `${TRUEBORN_SIBKO_ID}/flexible`, moduleId: TRUEBORN_SIBKO_ID, provenanceId, awardId: 'sibko.flexible', kind: 'flexible-xp', description: 'Allocate 50 flexible XP under the Trueborn Sibko MechWarrior source restrictions.', xpPerGrant: 0, remainingGrants: 0, allocationMode: 'pool', remainingXp: 50, allowedTargetTypes: ['attribute', 'trait', 'skill'], source })
+  state.choiceGrantRequirements.push({ moduleId: TRUEBORN_SIBKO_ID, awardId: 'sibko.flexible', requiredGrants: 0, requiredXp: 50, allocationMode: 'pool' })
   state.moduleXp.spent += 1600 + 384
   state.moduleXp.remaining -= 1600 + 384
   state.selectedModuleIds.push(TRUEBORN_SIBKO_ID)

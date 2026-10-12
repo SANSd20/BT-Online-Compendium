@@ -41,7 +41,7 @@ describe('Alpha Slice 165-B8 specific-Clan history progression boundary', () => 
     const commit = (operations: Parameters<typeof buildLifeModuleTransaction>[1]) => { const transaction = buildLifeModuleTransaction(character, operations); validateLifeModuleTransaction(transaction); expect(transaction.errors).toEqual([]); character = commitLifeModuleTransaction(transaction) }
     commit([{ kind: 'grant-trueborn-sibko-mechwarrior' }])
     const sibko = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'sibko.flexible')!
-    character = resolvePendingLifeModuleAward(character, sibko.id, { type: 'attribute', targetId: 'BOD', displayName: 'BOD' }, 150)
+    character = resolvePendingLifeModuleAward(character, sibko.id, { type: 'attribute', targetId: 'BOD', displayName: 'BOD' }, 50)
     commit([{ kind: 'grant-clan-watch-operative', branch: 'homeworld-clan', choices: { 'watch.tracking': 'Wilderness', 'homeworld.security-systems': 'Security', 'homeworld.streetwise': 'Clan Wolf', 'homeworld.survival': 'Wilderness', 'homeworld.technician': 'Vehicle' } }])
     expect(character.lifeModuleHistory.at(-1)?.moduleId).toBe('stage4.clan-watch-operative')
     expect(character.chronology).toContainEqual(expect.objectContaining({ date: 'age:19' }))

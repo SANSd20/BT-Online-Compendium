@@ -34,7 +34,7 @@ function representative() {
   ])
   commit([{ kind: 'grant-trueborn-sibko-mechwarrior' }])
   let pending = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'sibko.flexible')!
-  character = resolvePendingLifeModuleAward(character, pending.id, { type: 'attribute', targetId: 'BOD', displayName: 'BOD' }, 150)
+  character = resolvePendingLifeModuleAward(character, pending.id, { type: 'attribute', targetId: 'BOD', displayName: 'BOD' }, 50)
   commit([{
     kind: 'grant-clan-watch-operative',
     branch: 'homeworld-clan',

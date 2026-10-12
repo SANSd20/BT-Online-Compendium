@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { clanBirthOriginState, clanCasteState, clanIdentityState } from '../domain/character/clanIdentity'
+import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { applyUniversalStage0, buildLifeModuleTransaction, commitLifeModuleTransaction, createLifeModuleCharacter, resolvePendingLifeModuleAward, validateLifeModuleTransaction } from './lifeModuleEngine'
 
 const crecheChoices = [
@@ -36,7 +37,7 @@ describe('Alpha Slice 155 Trueborn Sibko Field validation', () => {
     const committed = commitLifeModuleTransaction(transaction)
     expect(committed.lifeModuleHistory.at(-1)).toMatchObject({ moduleId: 'stage2.trueborn-sibko', stage: 2, baseCostXp: 1600, fieldCostXp: 384, chronologyYears: 16 })
     expect(committed.creation.lifeModules?.selectedSkillFields.at(-1)).toMatchObject({ schoolModuleId: 'stage2.trueborn-sibko', fieldId: 'field.clan-mechwarrior', purchaseCostXp: 384, xpPerSkill: 80, chronologyYears: 0 })
-    expect(committed.creation.lifeModules?.pendingAwards.at(-1)).toMatchObject({ awardId: 'sibko.flexible', remainingXp: 150 })
+    expect(committed.creation.lifeModules?.pendingAwards.at(-1)).toMatchObject({ awardId: 'sibko.flexible', remainingXp: 50 })
     expect(committed.creation.lifeModules?.prerequisiteIssues.filter((entry) => entry.status === 'outstanding').map((entry) => entry.prerequisiteId)).toEqual(['sibko.bod', 'sibko.dex', 'clan-mechwarrior.bod', 'clan-mechwarrior.wil'])
   })
 
@@ -46,7 +47,7 @@ describe('Alpha Slice 155 Trueborn Sibko Field validation', () => {
     expect(sibkoTransaction.errors).toEqual([])
     const sibko = commitLifeModuleTransaction(sibkoTransaction)
     const sibkoAward = sibko.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'sibko.flexible')!
-    const resolvedSibko = resolvePendingLifeModuleAward(sibko, sibkoAward.id, { type: 'attribute', targetId: 'BOD', displayName: 'BOD' }, 150)
+    const resolvedSibko = resolvePendingLifeModuleAward(sibko, sibkoAward.id, { type: 'attribute', targetId: 'BOD', displayName: 'BOD' }, 50)
     const transaction = buildLifeModuleTransaction(resolvedSibko, [{
       kind: 'grant-clan-watch-operative',
       branch: 'homeworld-clan',
@@ -73,5 +74,35 @@ describe('Alpha Slice 155 Trueborn Sibko Field validation', () => {
     expect(transaction.status).toBe('failed')
     expect(transaction.prospectiveState).toBeNull()
     expect(base.lifeModuleHistory.map((entry) => entry.moduleId)).toEqual(['stage0.universal-fixed-xp', 'stage0.clan-package.homeworld-clan', 'stage0.clan-package.mechwarrior', 'stage1.trueborn-creche'])
+  })
+
+  it('grants one source-defined 50-XP pool, rejects over-allocation atomically, and persists its resolution', () => {
+    const transaction = buildLifeModuleTransaction(realPathToCreche(), [{ kind: 'grant-trueborn-sibko-mechwarrior' }])
+    validateLifeModuleTransaction(transaction)
+    const committed = commitLifeModuleTransaction(transaction)
+    const pending = committed.creation.lifeModules!.pendingAwards.filter((entry) => entry.awardId === 'sibko.flexible')
+    expect(pending).toHaveLength(1)
+    expect(pending[0]).toMatchObject({ moduleId: 'stage2.trueborn-sibko', remainingXp: 50, allocationMode: 'pool', source: { sourceId: 'atow-core-corrected-third', page: 79 } })
+    expect(committed.creation.lifeModules!.choiceGrantRequirements.filter((entry) => entry.awardId === 'sibko.flexible')).toEqual([
+      expect.objectContaining({ requiredXp: 50, allocationMode: 'pool' }),
+    ])
+
+    const before = structuredClone(committed)
+    expect(() => resolvePendingLifeModuleAward(committed, pending[0]!.id, { type: 'attribute', targetId: 'BOD', displayName: 'BOD' }, 51)).toThrow('exceeds the remaining award XP')
+    expect(committed).toEqual(before)
+
+    const bodBefore = committed.attributes.find((entry) => entry.attributeId === 'BOD')!.accumulatedXp
+    const resolved = resolvePendingLifeModuleAward(committed, pending[0]!.id, { type: 'attribute', targetId: 'BOD', displayName: 'BOD' }, 50)
+    expect(resolved.attributes.find((entry) => entry.attributeId === 'BOD')!.accumulatedXp).toBe(bodBefore + 50)
+    expect(resolved.creation.lifeModules!.pendingAwards.some((entry) => entry.awardId === 'sibko.flexible')).toBe(false)
+    expect(resolved.creation.lifeModules!.resolvedAwards.filter((entry) => entry.awardId === 'sibko.flexible')).toEqual([
+      expect.objectContaining({ xp: 50, provenanceId: pending[0]!.provenanceId }),
+    ])
+
+    const restored = decodeCharacter(encodeCharacter(resolved), { allowInternalClanRecord: true })
+    expect(restored.creation.lifeModules!.resolvedAwards.filter((entry) => entry.awardId === 'sibko.flexible')).toEqual(
+      resolved.creation.lifeModules!.resolvedAwards.filter((entry) => entry.awardId === 'sibko.flexible'),
+    )
+    expect(restored.attributes.find((entry) => entry.attributeId === 'BOD')!.accumulatedXp).toBe(bodBefore + 50)
   })
 })

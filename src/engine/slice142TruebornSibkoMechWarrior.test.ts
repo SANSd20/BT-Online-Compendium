@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildLifeModuleTransaction } from './lifeModuleEngine'
-import { createLifeModuleCharacter } from './lifeModuleEngine'
+import { buildLifeModuleTransaction, createLifeModuleCharacter } from './lifeModuleEngine'
 import { clanCasteState, clanIdentityState, clanBirthOriginState } from '../domain/character/clanIdentity'
 
 function fixture() {
@@ -26,7 +25,7 @@ describe('Slice 142 Trueborn Sibko MechWarrior branch', () => {
     expect(transaction.prospectiveState?.lifeModuleHistory.at(-1)?.moduleId).toBe('stage2.trueborn-sibko')
     expect(transaction.prospectiveState?.lifeModuleHistory.at(-1)?.fieldCostXp).toBe(384)
     expect(transaction.prospectiveState?.creation.lifeModules?.selectedSkillFields.at(-1)).toMatchObject({ fieldId: 'field.clan-mechwarrior', xpPerSkill: 80, purchaseCostXp: 384, chronologyYears: 0 })
-    expect(transaction.prospectiveState?.creation.lifeModules?.pendingAwards.at(-1)).toMatchObject({ awardId: 'sibko.flexible', remainingXp: 150, kind: 'flexible-xp' })
+    expect(transaction.prospectiveState?.creation.lifeModules?.pendingAwards.at(-1)).toMatchObject({ awardId: 'sibko.flexible', remainingXp: 50, kind: 'flexible-xp' })
     expect(transaction.prospectiveState?.xp.creation.remaining).toBe(2166)
   })
 
@@ -38,4 +37,5 @@ describe('Slice 142 Trueborn Sibko MechWarrior branch', () => {
     expect(transaction.prospectiveState).toBeNull()
     expect(character.lifeModuleHistory).toHaveLength(2)
   })
+
 })
