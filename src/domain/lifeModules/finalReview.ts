@@ -226,11 +226,11 @@ function optimizedTraitXp(trait: TraitLedgerEntry): number | null {
   const xp = trait.accumulatedXp
   if (NEGATIVE_TRAIT_IDS.has(trait.traitId)) {
     if (xp > 0) return 0
-    if (xp < 0) return -Math.ceil(Math.abs(xp) / 100) * 100
+    if (xp < 0) return negativeTraitOptimizationTarget(trait)
     return null
   }
   if (SIGNED_TRAIT_IDS.has(trait.traitId)) {
-    if (xp < 0) return -Math.ceil(Math.abs(xp) / 100) * 100
+    if (xp < 0) return negativeTraitOptimizationTarget(trait)
     return cappedPositiveTraitXp(trait)
   }
   if (xp > 0) return cappedPositiveTraitXp(trait)
@@ -241,6 +241,13 @@ function cappedPositiveTraitXp(trait: TraitLedgerEntry): number {
   const fullyAttained = Math.floor(trait.accumulatedXp / 100) * 100
   const range = traitModeledRange(trait.traitId)
   return range ? Math.min(fullyAttained, Math.max(0, range.maximum) * 100) : fullyAttained
+}
+
+function negativeTraitOptimizationTarget(trait: TraitLedgerEntry): number {
+  const target = -Math.ceil(Math.abs(trait.accumulatedXp) / 100) * 100
+  const range = traitModeledRange(trait.traitId)
+  const bounded = range ? Math.max(target, range.minimum * 100) : target
+  return bounded === 0 ? 0 : bounded
 }
 
 function traitMaximumExceeded(trait: TraitLedgerEntry): boolean {

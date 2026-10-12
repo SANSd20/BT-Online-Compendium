@@ -939,7 +939,8 @@ function validateFinalReview(
     const derived = deriveTraitPointsForTrait(entry.traitId, entry.accumulatedXp)
     if (entry.attainedTp !== derived || entry.active !== (derived !== null)) issues.push(issue('life-modules.final-level.trait.malformed', `traits.${index}`, 'Trait TP/active state does not match its fully attained XP threshold.'))
     const range = traitModeledRange(entry.traitId)
-    if (range && derived !== null && (derived < range.minimum || derived > range.maximum)) issues.push(issue('life-modules.final-level.trait.range', `traits.${index}`, `${entry.displayName ?? entry.traitId} is outside its modeled TP range.`))
+    const sourceBacked = entry.sourceAwards.length > 0 && entry.sourceAwards.every((award) => character.provenance.find((provenance) => provenance.id === award.provenanceId)?.kind === 'published')
+    if (range && !sourceBacked && derived !== null && (derived < range.minimum || derived > range.maximum)) issues.push(issue('life-modules.final-level.trait.range', `traits.${index}`, `${entry.displayName ?? entry.traitId} is outside its modeled TP range.`))
     if (isModeledNegativeTrait(entry.traitId) && entry.accumulatedXp > 0) issues.push(issue('life-modules.negative-trait.positive-xp', `traits.${index}`, `${entry.displayName ?? entry.traitId} is a modeled negative Trait with positive XP and requires explicit Optimization.`))
   })
 
@@ -970,7 +971,7 @@ function validateFinalReview(
 
 function optimizationRecordTargetsFullyAttained(record: LifeModuleOptimizationRecord): boolean {
   if (record.reason === 'negative-trait-positive-xp') return record.beforeXp > 0 && record.afterXp === 0
-  if (record.reason === 'negative-trait-threshold') return record.beforeXp < 0 && record.afterXp < record.beforeXp && Math.abs(record.afterXp) % 100 === 0
+  if (record.reason === 'negative-trait-threshold') return record.beforeXp < 0 && record.afterXp !== record.beforeXp && Math.abs(record.afterXp) % 100 === 0
   if (record.afterXp < 0 || record.afterXp >= record.beforeXp) return false
   if (record.destination.type === 'attribute' || record.destination.type === 'trait') return record.afterXp % 100 === 0
   if (record.afterXp === 0) return record.beforeXp < Math.max(standardSkillXpCost(0), FAST_SKILL_XP_COSTS[0], SLOW_SKILL_XP_COSTS[0])
