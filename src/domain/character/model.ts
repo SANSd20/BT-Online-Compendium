@@ -2,6 +2,7 @@ import type { GmException, RulesSnapshot, SourceCitation } from '../rules/model'
 import type { AffiliationLanguageSelectorGroupId } from '../lifeModules/affiliations'
 import type { ConditionalPackageDraftState } from '../lifeModules/model'
 import type { ClanBirthOriginState, ClanCasteState, ClanCareerContext, ClanFieldAptitudeState, ClanIdentityState } from './clanIdentity'
+import type { ClanSubAffiliationDraftState } from './clanSubAffiliation'
 
 export type CreationMethod = 'archetype' | 'point-buy' | 'life-modules'
 export type CharacterStatus = 'draft' | 'ready-for-final-validation' | 'finalized'
@@ -673,6 +674,8 @@ export interface CharacterDefinition {
   affiliations: AffiliationHistoryEntry[]
   /** Optional Slice 118 foundation; presence never activates Clan creation. */
   clanIdentity?: ClanIdentityState
+  /** Added in Alpha Slice 165-B1; internal only and never award-applying. */
+  clanSubAffiliationDraft?: ClanSubAffiliationDraftState
   clanCaste?: ClanCasteState
   clanBirthOrigin?: ClanBirthOriginState
   clanCareerContext?: ClanCareerContext

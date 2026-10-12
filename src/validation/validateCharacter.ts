@@ -58,7 +58,8 @@ import {
 } from '../domain/finalTouches/rules'
 import { getEquipmentCatalogItem, parseRawEquipmentRating } from '../domain/equipment/catalog'
 import { getPhenotypeDefinition, phenotypeFieldAptitude } from '../domain/character/phenotypes'
-import { CLAN_IDENTITY_ID, isClanBirthOrigin, isClanCasteId } from '../domain/character/clanIdentity'
+import { CLAN_IDENTITY_ID, isClanBirthOrigin, isClanCasteId, isHomeworldClanId } from '../domain/character/clanIdentity'
+import { validateClanSubAffiliationDraft } from '../domain/character/clanSubAffiliation'
 
 const SAFE_AFFILIATION_CODE = /^[A-Z][A-Z0-9-]*$/
 const FORBIDDEN_INVENTORY_RUNTIME_KEYS = [
@@ -93,6 +94,12 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
     } else {
       issues.push(issue('clan.identity.unsupported', 'clanIdentity', 'Clan character creation is not enabled in this Public Alpha foundation.', { severity: 'warning', kind: 'availability' }))
     }
+  }
+  if (character.clanSubAffiliationDraft) {
+    const draftIssues = validateClanSubAffiliationDraft(character.clanSubAffiliationDraft)
+    for (const message of draftIssues) issues.push(issue('clan.sub-affiliation-draft.invalid', 'clanSubAffiliationDraft', message))
+    if (!character.clanIdentity || character.clanIdentity.id !== CLAN_IDENTITY_ID || !isHomeworldClanId(character.clanSubAffiliationDraft.clanId)) issues.push(issue('clan.sub-affiliation-draft.identity-required', 'clanSubAffiliationDraft', 'Specific Clan draft requires the canonical Clan affiliation identity.'))
+    issues.push(issue('clan.sub-affiliation-draft.unsupported', 'clanSubAffiliationDraft', 'Specific Clan awards remain unapplied and unsupported in this Alpha foundation.', { severity: 'warning', kind: 'availability' }))
   }
   if (character.clanCaste) {
     if (!isClanCasteId(character.clanCaste.id) || character.clanCaste.support !== 'unsupported' || !character.clanCaste.source.sourceId) {
