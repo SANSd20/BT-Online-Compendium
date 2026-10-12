@@ -27,6 +27,8 @@ const OPEN_DOMAINS: Readonly<Record<string, string>> = {
 export function resolveClanDestination(destination: string): ClanDestinationResolution {
   if (['BOD', 'STR', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'].includes(destination)) return { status: 'SUPPORTED_CONCRETE', family: 'domain', canonicalId: `attribute.${destination}`, reason: 'Concrete Attribute destination.', source: SOURCE }
   if (FIXED_SKILLS[destination]) return FIXED_SKILLS[destination]
+  if (destination === 'Survival/Arctic') return skill('skill.survival', 'Arctic')
+  if (destination === 'Exceptional Attribute/WIL') return trait('trait.exceptional-attribute', 'WIL')
   if (FIXED_TRAITS[destination]) return FIXED_TRAITS[destination]
   if (destination.startsWith('Language/Secondary/')) {
     const language = destination.slice('Language/Secondary/'.length)

@@ -8,6 +8,7 @@ import type {
   SkillAddress,
   XpAward,
 } from '../domain/character/model'
+import type { ClanPackageHistoryRecord } from '../domain/character/clanPackageHistory'
 import type { ConditionalLifeModulePackageDefinition, ConditionalPackageDraftState } from '../domain/lifeModules/model'
 import {
   AGITATOR_ID,
@@ -54,6 +55,8 @@ import { CLAN_AFFILIATION_PACKAGES, CLAN_CASTE_PACKAGES, type ClanAffiliationPac
 import { clanWarriorStage3Bypass, evaluateClanStage4Eligibility, CLAN_STAGE4_ELIGIBILITY_RULES } from '../domain/lifeModules/clanStage4Eligibility'
 import { CLAN_AFFILIATION_CONTEXTS } from '../domain/lifeModules/affiliations'
 import { attributeLegality } from '../domain/character/attributeLegality'
+import { isHomeworldClanId, type HomeworldClanId } from '../domain/character/clanIdentity'
+import { HOMEWORLD_CLAN_PACKAGES } from '../domain/character/clanPackages'
 
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
 
@@ -93,6 +96,9 @@ export type LifeModuleTransactionOperation = {
   awardId: string
   packageId: ClanAffiliationPackageId | ClanCastePackageId
   choices?: Record<string, string>
+} | {
+  kind: 'grant-homeworld-clan-package'
+  clanId: HomeworldClanId
 } | {
   kind: 'grant-trueborn-creche'
   choices: ResolvedLifeModuleDestination[]
@@ -377,6 +383,36 @@ function applyClanPackage(character: CharacterDefinition, operation: Extract<Lif
   return next
 }
 
+function applyHomeworldClanPackage(character: CharacterDefinition, operation: Extract<LifeModuleTransactionOperation, { kind: 'grant-homeworld-clan-package' }>): CharacterDefinition {
+  const next = structuredClone(character)
+  const state = requireLifeModules(next)
+  if (!isHomeworldClanId(operation.clanId) || !['blood-spirit', 'ice-hellion'].includes(operation.clanId)) throw new Error('This bounded transaction supports only the source-complete Blood Spirit and Ice Hellion packages.')
+  if (next.clanIdentity?.id !== 'affiliation.clan' || !next.affiliations.some((entry) => entry.affiliationId === 'affiliation.clan')) throw new Error('Specific Clan package requires the canonical Clan affiliation foundation.')
+  if (next.clanAffiliationPackageId !== 'homeworld-clan') throw new Error('Specific Clan package requires the committed generic Homeworld Clan package.')
+  if (next.clanSubAffiliationId || next.clanPackageHistory?.length) throw new Error('A specific Homeworld Clan package is already committed.')
+  const pkg = HOMEWORLD_CLAN_PACKAGES.find((entry) => entry.identity.id === operation.clanId)!
+  if (pkg.choices.length > 0) throw new Error('This candidate has unresolved governed choices and is not transaction-supported.')
+  const provenanceId = makeId(undefined, `clan-sub-affiliation-${operation.clanId}`)
+  next.provenance.push({ id: provenanceId, kind: 'published', description: `${pkg.identity.displayName} specific Clan package awards`, source: { ...pkg.identity.source } })
+  for (const award of pkg.fixedAwards) {
+    const destination: LifeModuleDestination = award.kind === 'attribute'
+      ? { type: 'attribute', attributeId: award.subject }
+      : award.kind === 'trait'
+        ? { type: 'trait', traitId: award.subject.startsWith('Compulsion/') ? 'trait.compulsion' : `trait.${award.subject.toLowerCase().replaceAll(' ', '-')}`, displayName: award.subject, parameters: award.subject.startsWith('Compulsion/') ? { compulsion: award.subject.slice('Compulsion/'.length) } : {} }
+        : { type: 'skill', address: { skillId: award.subject.startsWith('Protocol/') ? 'skill.protocol' : award.subject.startsWith('Interest/') ? 'skill.interest' : `skill.${award.subject.toLowerCase().replaceAll(' ', '-')}`, parameter: { kind: 'subskill', value: award.subject.includes('/') ? award.subject.split('/').slice(1).join('/') : award.subject } }, displayName: award.subject }
+    applyDestinationAward(next, destination, award.xp, provenanceId)
+  }
+  const packageId = `stage0.clan-sub-affiliation.${operation.clanId}`
+  const history: ClanPackageHistoryRecord = { version: 1, transactionId: makeId(undefined, `txn-${packageId}`), characterId: next.id, clanId: operation.clanId, parentAffiliationId: 'affiliation.clan', packageId, status: 'committed', awards: pkg.fixedAwards.map((award) => ({ id: award.id, type: award.kind === 'attribute' ? 'attribute-xp' : award.kind === 'trait' ? 'trait-xp' : 'skill-xp', destination: award.subject, amount: award.xp, packageId, source: { ...award.source } })), choices: [], source: { ...pkg.identity.source }, committedAt: new Date().toISOString() }
+  next.clanPackageHistory = [history]
+  next.clanSubAffiliationId = operation.clanId
+  state.selectedModuleIds.push(packageId)
+  next.lifeModuleHistory.push({ moduleId: packageId, displayName: pkg.identity.displayName, stage: 0, costXp: 0, chronologyYears: 0, selectedAt: history.committedAt, provenanceIds: [provenanceId], source: { ...pkg.identity.source }, notes: ['Internal specific Clan transaction; player-facing Clan creation remains unsupported.'] })
+  next.xp.creation.allocated = calculateLedgerXp(next)
+  next.updatedAt = history.committedAt
+  return next
+}
+
 function applyTruebornSibkoMechWarrior(character: CharacterDefinition): CharacterDefinition {
   const next = structuredClone(character)
   const state = requireLifeModules(next)
@@ -569,6 +605,11 @@ export function buildLifeModuleTransaction(
     }
   if (operation.kind === 'grant-clan-package') {
       try { transaction.prospectiveState = applyClanPackage(transaction.prospectiveState!, operation) }
+      catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
+      continue
+    }
+    if (operation.kind === 'grant-homeworld-clan-package') {
+      try { transaction.prospectiveState = applyHomeworldClanPackage(transaction.prospectiveState!, operation) }
       catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
       continue
     }

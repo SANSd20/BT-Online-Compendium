@@ -649,7 +649,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const provenanceIds = new Set(character.provenance.map((entry) => entry.id))
   let calculatedCost = 0
   for (const [index, entry] of character.lifeModuleHistory.entries()) {
-    if (entry.moduleId.startsWith('stage0.clan-package.')) {
+    if (entry.moduleId.startsWith('stage0.clan-package.') || entry.moduleId.startsWith('stage0.clan-sub-affiliation.')) {
       selectedIds.add(entry.moduleId)
       calculatedCost += entry.costXp
       if (entry.stage !== 0 || entry.chronologyYears !== 0 || !entry.source.sourceId) issues.push(issue('life-modules.clan-package.malformed', `lifeModuleHistory.${index}`, 'Internal Clan package history is malformed.'))
@@ -687,7 +687,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const hasUniversal = selectedIds.has('stage0.universal-fixed-xp')
   const orderModuleIds = new Set([COMSTAR_ORDER_ID, WORD_OF_BLAKE_ORDER_ID])
   const affiliationModuleIds = character.lifeModuleHistory
-    .filter((entry) => entry.stage === 0 && entry.moduleId !== 'stage0.universal-fixed-xp' && !orderModuleIds.has(entry.moduleId) && !entry.moduleId.startsWith('stage0.clan-package.'))
+    .filter((entry) => entry.stage === 0 && entry.moduleId !== 'stage0.universal-fixed-xp' && !orderModuleIds.has(entry.moduleId) && !entry.moduleId.startsWith('stage0.clan-package.') && !entry.moduleId.startsWith('stage0.clan-sub-affiliation.'))
     .map((entry) => entry.moduleId)
   const hasAffiliation = affiliationModuleIds.length === 1
   const universalAffiliationResolution = state.resolvedAwards?.find((entry) => entry.moduleId === 'stage0.universal-fixed-xp' && entry.awardId === 'universal.language.affiliation')
