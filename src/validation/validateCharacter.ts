@@ -61,6 +61,7 @@ import { getPhenotypeDefinition, phenotypeFieldAptitude } from '../domain/charac
 import { CLAN_IDENTITY_ID, isClanBirthOrigin, isClanCasteId, isHomeworldClanId } from '../domain/character/clanIdentity'
 import { validateClanSubAffiliationDraft } from '../domain/character/clanSubAffiliation'
 import { evaluateHomeworldClanEligibility } from '../domain/character/clanEligibility'
+import { validateClanPackageHistory } from '../domain/character/clanPackageHistory'
 
 const SAFE_AFFILIATION_CODE = /^[A-Z][A-Z0-9-]*$/
 const FORBIDDEN_INVENTORY_RUNTIME_KEYS = [
@@ -106,6 +107,7 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
       if (character.clanEligibility.clanId !== character.clanSubAffiliationDraft.clanId || character.clanEligibility.status !== evaluated.status) issues.push(issue('clan.eligibility.stale', 'clanEligibility', 'Specific Clan eligibility does not match the current draft identity.'))
     }
   }
+  for (const message of validateClanPackageHistory(character.clanPackageHistory, character.id)) issues.push(issue('clan.package-history.invalid', 'clanPackageHistory', message))
   if (character.clanCaste) {
     if (!isClanCasteId(character.clanCaste.id) || character.clanCaste.support !== 'unsupported' || !character.clanCaste.source.sourceId) {
       issues.push(issue('clan.caste.invalid', 'clanCaste', 'Clan caste foundation is malformed.'))

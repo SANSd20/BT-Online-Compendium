@@ -6,6 +6,7 @@ import { BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID
 import { applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyStage1Module, applyUniversalStage0, createLifeModuleCharacter } from '../engine/lifeModuleEngine'
 import { validateCharacter } from '../validation/validateCharacter'
 import { decodeCharacter, encodeCharacter } from './characterCodec'
+import { clanIdentityState } from '../domain/character/clanIdentity'
 
 function character() {
   let id = 0
@@ -22,6 +23,15 @@ describe('character codec', () => {
     expect(JSON.parse(encoded).application).toEqual({ name: APP_PUBLIC_TITLE, version: APP_VERSION })
     const restored = decodeCharacter(encoded)
     expect(restored).toEqual(source)
+  })
+
+  it('round-trips an internal specific-Clan history fixture while rejecting public import', () => {
+    const source = character()
+    source.clanIdentity = clanIdentityState()
+    source.clanPackageHistory = [{ version: 1, transactionId: 'txn.homeworld.star-adder.fixture', characterId: source.id, clanId: 'star-adder', parentAffiliationId: 'affiliation.clan', packageId: 'stage0.clan-sub-affiliation.star-adder', status: 'committed', awards: [{ id: 'star-adder.int', type: 'attribute-xp', destination: 'INT', amount: -50, packageId: 'stage0.clan-sub-affiliation.star-adder', source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 70, ruleId: 'homeworld-clan-sub-affiliations' } }], choices: [], source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 70, ruleId: 'homeworld-clan-sub-affiliations' }, committedAt: '3025-01-02T00:00:00.000Z' }]
+    const encoded = encodeCharacter(source)
+    expect(() => decodeCharacter(encoded)).toThrow('Clan character import is not enabled')
+    expect(decodeCharacter(encoded, { allowInternalClanRecord: true }).clanPackageHistory).toEqual(source.clanPackageHistory)
   })
 
   it('preserves the distinction between untrained and level zero', () => {

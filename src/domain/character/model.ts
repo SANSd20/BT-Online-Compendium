@@ -3,6 +3,7 @@ import type { AffiliationLanguageSelectorGroupId } from '../lifeModules/affiliat
 import type { ConditionalPackageDraftState } from '../lifeModules/model'
 import type { ClanBirthOriginState, ClanCasteState, ClanCareerContext, ClanFieldAptitudeState, ClanIdentityState } from './clanIdentity'
 import type { ClanSubAffiliationDraftState } from './clanSubAffiliation'
+import type { ClanPackageHistoryRecord } from './clanPackageHistory'
 import type { ClanEligibilityResult } from './clanEligibility'
 
 export type CreationMethod = 'archetype' | 'point-buy' | 'life-modules'
@@ -677,6 +678,8 @@ export interface CharacterDefinition {
   clanIdentity?: ClanIdentityState
   /** Added in Alpha Slice 165-B1; internal only and never award-applying. */
   clanSubAffiliationDraft?: ClanSubAffiliationDraftState
+  /** Added in Alpha Slice 165-B5; internal non-authoritative history contract only. */
+  clanPackageHistory?: ClanPackageHistoryRecord[]
   /** Added in Alpha Slice 165-B2; internal eligibility result only. */
   clanEligibility?: ClanEligibilityResult
   clanCaste?: ClanCasteState

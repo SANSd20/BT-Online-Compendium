@@ -39,6 +39,7 @@ function assertEnvelope(value: unknown): asserts value is SavedCharacterEnvelope
   if (!Array.isArray(character.skills) || !Array.isArray(character.traits) || !Array.isArray(character.attributes)) {
     throw new Error('Character ledger data is invalid.')
   }
+  if (character.clanPackageHistory !== undefined && !Array.isArray(character.clanPackageHistory)) throw new Error('Clan package history is invalid.')
   if (!isRecord(character.identities) || !Array.isArray(character.identities.entries)) {
     throw new Error('Character identity collection is invalid.')
   }
