@@ -1493,7 +1493,7 @@ function updateLifeModuleProgress(character: CharacterDefinition): CharacterDefi
 
 export function reevaluateLifeModulePrerequisites(character: CharacterDefinition): CharacterDefinition {
   const state = requireLifeModules(character)
-  const moduleIssues: LifeModulePrerequisiteIssue[] = state.selectedModuleIds.filter((moduleId) => !moduleId.startsWith('stage0.clan-package.')).flatMap((moduleId) => {
+  const moduleIssues: LifeModulePrerequisiteIssue[] = state.selectedModuleIds.filter((moduleId) => !moduleId.startsWith('stage0.clan-package.') && !moduleId.startsWith('stage0.clan-sub-affiliation.')).flatMap((moduleId) => {
     const module = getLifeModule(moduleId)
     return module.prerequisites.map((entry) => evaluatePrerequisite(character, moduleId, entry, state.prerequisiteIssues))
   })
