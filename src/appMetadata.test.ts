@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest'
 describe('current application release metadata', () => {
   it('centralizes the active public title, release, and version', () => {
     expect(APP_PUBLIC_TITLE).toBe('AToW Online Character Creator')
-    expect(APP_ALPHA_SLICE).toBe(160)
-    expect(APP_RELEASE_LABEL).toBe('Alpha Slice 160')
+    expect(APP_ALPHA_SLICE).toBe(165)
+    expect(APP_RELEASE_LABEL).toBe('Alpha Slice 165-A')
     expect(APP_PHASE).toBe('Public Alpha')
-    expect(APP_PUBLIC_ALPHA_LABEL).toContain('160')
-    expect(APP_VERSION).toBe('0.1.0-alpha.160')
-    expect(APP_DOCUMENT_TITLE).toContain('160')
+    expect(APP_PUBLIC_ALPHA_LABEL).toContain('165-A')
+    expect(APP_VERSION).toBe('0.1.0-alpha.165-a')
+    expect(APP_DOCUMENT_TITLE).toContain('165-A')
   })
 })

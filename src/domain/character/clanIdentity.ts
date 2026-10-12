@@ -1,6 +1,12 @@
 import type { SourceCitation } from '../rules/model'
 
 export const CLAN_IDENTITY_ID = 'affiliation.clan' as const
+export const HOMEWORLD_CLAN_IDS = ['blood-spirit', 'cloud-cobra', 'coyote', 'fire-mandrill', 'goliath-scorpion', 'ice-hellion', 'star-adder', 'steel-viper'] as const
+export type HomeworldClanId = typeof HOMEWORLD_CLAN_IDS[number]
+export const HOMEWORLD_CLAN_DISPLAY_NAMES: Readonly<Record<HomeworldClanId, string>> = {
+  'blood-spirit': 'Blood Spirit', 'cloud-cobra': 'Cloud Cobra', coyote: 'Coyote', 'fire-mandrill': 'Fire Mandrill',
+  'goliath-scorpion': 'Goliath Scorpion', 'ice-hellion': 'Ice Hellion', 'star-adder': 'Star Adder', 'steel-viper': 'Steel Viper',
+}
 export const CLAN_CASTE_IDS = ['warrior', 'scientist', 'merchant', 'technician', 'laborer'] as const
 export type ClanCasteId = typeof CLAN_CASTE_IDS[number]
 export const CLAN_BIRTH_ORIGINS = ['trueborn', 'freeborn'] as const
@@ -20,6 +26,28 @@ export interface ClanIdentityState {
   support: 'unsupported'
   source: SourceCitation
   eligibilityDependencies: readonly string[]
+}
+
+export interface ClanSubAffiliationIdentity {
+  id: HomeworldClanId
+  displayName: string
+  category: 'homeworld-clan'
+  parentAffiliationId: typeof CLAN_IDENTITY_ID
+  support: 'unsupported'
+  source: SourceCitation
+  eligibilityDependencies: readonly string[]
+}
+
+export function isHomeworldClanId(value: unknown): value is HomeworldClanId {
+  return typeof value === 'string' && (HOMEWORLD_CLAN_IDS as readonly string[]).includes(value)
+}
+
+export function homeworldClanIdentity(id: HomeworldClanId): ClanSubAffiliationIdentity {
+  return {
+    id, displayName: HOMEWORLD_CLAN_DISPLAY_NAMES[id], category: 'homeworld-clan', parentAffiliationId: CLAN_IDENTITY_ID,
+    support: 'unsupported', source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 70, ruleId: 'homeworld-clan-sub-affiliations' },
+    eligibilityDependencies: ['Clan Phenotype and Field Aptitude', 'Clan caste and sub-caste restrictions', 'service era', 'governed award choices'],
+  }
 }
 
 export interface ClanCasteState {
