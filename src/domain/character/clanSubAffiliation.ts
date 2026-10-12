@@ -1,6 +1,7 @@
 import type { SourceCitation } from '../rules/model'
 import { HOMEWORLD_CLAN_IDS, type HomeworldClanId, isHomeworldClanId } from './clanIdentity'
 import { HOMEWORLD_CLAN_PACKAGES } from './clanPackages'
+import { resolveClanDestination } from './clanDestinations'
 
 export const CLAN_SUB_AFFILIATION_PACKAGE_PREFIX = 'stage0.clan-sub-affiliation.' as const
 export type ClanSubAffiliationPackageId = `${typeof CLAN_SUB_AFFILIATION_PACKAGE_PREFIX}${HomeworldClanId}`
@@ -67,6 +68,8 @@ export function resolveClanChoiceDestination(clanId: HomeworldClanId, choiceId: 
   const pkg = HOMEWORLD_CLAN_PACKAGES.find((entry) => entry.identity.id === clanId)
   const choice = pkg?.choices.find((entry) => entry.id === choiceId)
   if (!choice || !choice.allowedSubjects.includes(destination)) throw new Error(`Unsupported or invalid Clan choice destination: ${destination}`)
+  const resolved = resolveClanDestination(destination)
+  if (resolved.status === 'UNSUPPORTED_DESTINATION' || resolved.status === 'SOURCE_AMBIGUITY') throw new Error(`Unsupported or invalid Clan choice destination: ${destination}`)
   return destination
 }
 
