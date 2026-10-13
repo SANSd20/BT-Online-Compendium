@@ -1049,18 +1049,21 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
       choiceSource: award.kind === 'language-choice' ? award.choicesFrom : undefined,
       requiredSkillId: award.kind === 'affiliation-skill-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' ? award.skillId : award.kind === 'language-choice' ? 'skill.language' : undefined,
     })
-    const knownChoiceValid = state.awardSelectorVersion !== 1 || knownChoices.length === 0 || knownChoices.includes(resolved.destination.parameter?.value ?? '')
     const openSubject = pendingOpenSubject({
       kind: award.kind,
       requiredSkillId,
     })
+    const knownChoiceValid = state.awardSelectorVersion !== 1 || openSubject !== null || knownChoices.length === 0 || knownChoices.includes(resolved.destination.parameter?.value ?? '')
     let openSubjectValid = true
     if (openSubject) {
-      try {
-        const canonical = openSkillSubjectDestination(openSubject.skillId, resolved.destination.parameter?.value ?? '')
-        openSubjectValid = JSON.stringify(canonical) === JSON.stringify(resolved.destination)
-      } catch {
-        openSubjectValid = false
+      const selectedValue = resolved.destination.parameter?.value ?? ''
+      if (!knownChoices.includes(selectedValue)) {
+        try {
+          const canonical = openSkillSubjectDestination(openSubject.skillId, selectedValue)
+          openSubjectValid = JSON.stringify(canonical) === JSON.stringify(resolved.destination)
+        } catch {
+          openSubjectValid = false
+        }
       }
     }
     let modeledSkillValid = true

@@ -41,6 +41,7 @@ export const VARIABLE_SKILL_DOMAINS = {
   interestOpen: openDomain('open-interest-subject', 'skill.interest', 'Player-proposed academic, cultural, or hobby subject; applicability remains GM-defined.'),
   scienceOpen: openDomain('open-science-subject', 'skill.science', 'Player-proposed major scientific field; must not replace a better-fitting Technician or other Skill.'),
   survivalOpen: openDomain('open-survival-environment', 'skill.survival', 'Player-proposed general environment type; source guidance also ties Survival expertise to a specific planet.'),
+  artOpen: openDomain('open-art-subject', 'skill.art', 'Player-proposed artistic subject; applicability remains GM-defined.'),
 } as const satisfies Record<string, VariableSkillDomain>
 
 export const VARIABLE_SKILL_DOMAIN_CATALOG: readonly VariableSkillDomain[] = Object.values(VARIABLE_SKILL_DOMAINS)

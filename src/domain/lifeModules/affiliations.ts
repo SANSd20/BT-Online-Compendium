@@ -4,6 +4,8 @@ import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
 export const UNIVERSAL_STAGE_0_ID = 'stage0.universal-fixed-xp'
 export const CAPELLAN_COMMONALITY_ID = 'stage0.capellan-confederation.capellan-commonality'
 export const FEDERATED_SUNS_CRUCIS_MARCH_ID = 'stage0.federated-suns.crucis-march'
+export const FEDERATED_SUNS_CAPELLAN_MARCH_ID = 'stage0.federated-suns.capellan-march'
+export const FEDERATED_SUNS_DRACONIS_MARCH_ID = 'stage0.federated-suns.draconis-march'
 export const COMSTAR_ORDER_ID = 'stage0.comstar-word-of-blake.comstar'
 export const WORD_OF_BLAKE_ORDER_ID = 'stage0.comstar-word-of-blake.word-of-blake'
 export type OrderAffiliationSelection = 'no' | 'comstar' | 'word-of-blake'
@@ -15,6 +17,7 @@ export type AffiliationLanguageSelectorGroupId =
   | 'capellan-secondary'
   | 'federated-suns-languages'
   | 'federated-suns-affiliation-languages'
+  | 'capellan-march-languages'
 
 export type AffiliationContextSupport = 'supported' | 'deferred'
 export type ClanAffiliationCategory = 'invading-clan' | 'homeworld-clan'
@@ -61,6 +64,7 @@ export const LIFE_MODULE_LANGUAGE_SELECTOR_GROUPS: Readonly<Record<AffiliationLa
   'capellan-secondary': modeledLanguages('Russian', 'Cantonese', 'Vietnamese', 'English'),
   'federated-suns-languages': modeledLanguages('English', 'French'),
   'federated-suns-affiliation-languages': modeledLanguages('English', 'French', 'German', 'Hindi', 'Russian'),
+  'capellan-march-languages': modeledLanguages('Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'),
 }
 
 function modeledLanguages(...languages: Array<(typeof MODELED_LANGUAGE_SUBSKILLS)[number]>): readonly string[] {
@@ -112,6 +116,20 @@ export const FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT: LifeModuleAffiliationContext =
   source: source(65, 'federated-suns-crucis-march'),
 }
 
+export const FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT: LifeModuleAffiliationContext = {
+  id: FEDERATED_SUNS_CAPELLAN_MARCH_ID, kind: 'affiliation', displayName: 'Federated Suns / Capellan March', isAffiliation: true,
+  support: 'supported', affiliationId: 'affiliation.federated-suns', affiliationName: 'Federated Suns', subAffiliationName: 'Capellan March',
+  primaryLanguage: 'English', secondaryLanguages: ['French', 'German', 'Hindi', 'Russian'], affiliationLanguageSelector: 'federated-suns-affiliation-languages',
+  secondaryLanguageSelector: 'federated-suns-languages', protocolContextLabel: 'FedSuns', streetwiseContextLabel: 'FedSuns', source: source(65, 'federated-suns-capellan-march'),
+}
+
+export const FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT: LifeModuleAffiliationContext = {
+  id: FEDERATED_SUNS_DRACONIS_MARCH_ID, kind: 'affiliation', displayName: 'Federated Suns / Draconis March', isAffiliation: true,
+  support: 'supported', affiliationId: 'affiliation.federated-suns', affiliationName: 'Federated Suns', subAffiliationName: 'Draconis March',
+  primaryLanguage: 'English', secondaryLanguages: ['French', 'German', 'Hindi', 'Russian'], affiliationLanguageSelector: 'federated-suns-affiliation-languages',
+  secondaryLanguageSelector: 'federated-suns-languages', protocolContextLabel: 'FedSuns', streetwiseContextLabel: 'FedSuns', source: source(65, 'federated-suns-draconis-march'),
+}
+
 /** Internal-only Clan context. It is deliberately excluded from player-facing birth-affiliation options. */
 export const CLAN_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [
   {
@@ -132,7 +150,7 @@ export const CLAN_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] 
   },
 ]
 
-export const SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT]
+export const SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT]
 
 export const ORDER_AFFILIATION_IDS = {
   comstar: 'affiliation.comstar',

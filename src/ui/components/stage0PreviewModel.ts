@@ -1,7 +1,7 @@
 import type { CharacterDefinition } from '../../domain/character/model'
-import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID } from '../../domain/lifeModules/catalog'
+import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID } from '../../domain/lifeModules/catalog'
 import type { OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
-import { applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyUniversalStage0, previewFederatedSunsCrucisMarch, previewOrderAffiliation } from '../../engine/lifeModuleEngine'
+import { applyCapellanCommonality, applyFederatedSunsMarch, applyFederatedSunsCrucisMarch, applyUniversalStage0, previewFederatedSunsCrucisMarch, previewOrderAffiliation } from '../../engine/lifeModuleEngine'
 
 export type LifeModulesThemeIdentity = {
   className: string
@@ -12,7 +12,7 @@ export type LifeModulesThemeIdentity = {
 export function lifeModulesThemeIdentity(affiliationContext: string, orderAffiliation: OrderAffiliationSelection = 'no'): LifeModulesThemeIdentity {
   const birth = affiliationContext === CAPELLAN_COMMONALITY_ID
     ? { className: 'capellan-theme', secondaryClass: 'birth-capellan', label: 'Capellan Confederation' }
-    : affiliationContext === FEDERATED_SUNS_CRUCIS_MARCH_ID
+    : [FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID].includes(affiliationContext)
       ? { className: 'davion-theme', secondaryClass: 'birth-davion', label: 'Federated Suns' }
       : { className: '', secondaryClass: '', label: '' }
   if (orderAffiliation === 'comstar') return { className: `order-theme comstar-theme ${birth.secondaryClass}`.trim(), dominantLabel: 'ComStar', birthLabel: birth.label }
@@ -52,6 +52,17 @@ export function previewStage0Affiliation(
       const birthPreview = davionNaturalAptitude && (!includeSub || davionArt)
         ? applyFederatedSunsCrucisMarch(withUniversal, davionNaturalAptitude as 'Protocol' | 'Strategy', davionArt, includeSub)
         : previewFederatedSunsCrucisMarch(withUniversal, includeSub)
+      birthPreview.creation.lifeModules!.stage0SubAffiliation = includeSub ? affiliationContext : 'no'
+      return previewOrderAffiliation(birthPreview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
+    }
+    if (affiliationContext === FEDERATED_SUNS_CAPELLAN_MARCH_ID || affiliationContext === FEDERATED_SUNS_DRACONIS_MARCH_ID) {
+      const includeSub = !subAffiliationSelection || subAffiliationSelection === affiliationContext
+      const preview = structuredClone(withUniversal)
+      preview.creation.lifeModules!.stage0AffiliationContext = affiliationContext
+      const ready = davionNaturalAptitude && (!includeSub || davionArt)
+      const birthPreview = ready
+        ? applyFederatedSunsMarch(preview, affiliationContext, davionNaturalAptitude as 'Protocol' | 'Strategy', davionArt, includeSub)
+        : preview
       birthPreview.creation.lifeModules!.stage0SubAffiliation = includeSub ? affiliationContext : 'no'
       return previewOrderAffiliation(birthPreview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
     }

@@ -16,6 +16,8 @@ import {
   COMSTAR_WOB_SERVICE_ID,
   TRAVEL_ID,
   FEDERATED_SUNS_CRUCIS_MARCH_ID,
+  FEDERATED_SUNS_CAPELLAN_MARCH_ID,
+  FEDERATED_SUNS_DRACONIS_MARCH_ID,
   FAMILY_TRAINING_ID,
   INTELLIGENCE_OPERATIVE_TRAINING_ID,
   LIFE_MODULE_CATALOG,
@@ -41,6 +43,8 @@ import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_I
 describe('Life Module Alpha catalog', () => {
   it('contains the audited Core entries through the minimal Stage 4 branch', () => {
     expect(LIFE_MODULE_CATALOG.map((entry) => entry.id)).toEqual([
+      FEDERATED_SUNS_CAPELLAN_MARCH_ID,
+      FEDERATED_SUNS_DRACONIS_MARCH_ID,
       UNIVERSAL_STAGE_0_ID,
       CAPELLAN_COMMONALITY_ID,
       FEDERATED_SUNS_CRUCIS_MARCH_ID,
@@ -172,7 +176,8 @@ describe('Life Module Alpha catalog', () => {
   })
 
   it('detects duplicate module IDs', () => {
-    const duplicate = [LIFE_MODULE_CATALOG[0], structuredClone(LIFE_MODULE_CATALOG[0])]
+    const universal = LIFE_MODULE_CATALOG.find((entry) => entry.id === UNIVERSAL_STAGE_0_ID)!
+    const duplicate = [universal, structuredClone(universal)]
     expect(validateLifeModuleCatalog(duplicate)).toEqual(expect.arrayContaining([
       expect.objectContaining({ moduleId: UNIVERSAL_STAGE_0_ID, message: expect.stringContaining('Duplicate') }),
     ]))

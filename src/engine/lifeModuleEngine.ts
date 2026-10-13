@@ -45,7 +45,7 @@ import {
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues, modeledSkillChoiceOptions, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
 import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
-import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
 import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
 import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, CLAN_MECHWARRIOR_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
@@ -785,7 +785,9 @@ export function applyStage0Affiliation(
   const includeSubAffiliation = subAffiliationSelection === undefined || subAffiliationSelection === affiliationContextModuleId
   const withBirth = affiliationContextModuleId === FEDERATED_SUNS_CRUCIS_MARCH_ID
     ? applyFederatedSunsCrucisMarch(withUniversal, davionNaturalAptitude, davionArt, includeSubAffiliation)
-    : applyCapellanCommonality(withUniversal, capellanSecondaryLanguage, includeSubAffiliation)
+    : affiliationContextModuleId === FEDERATED_SUNS_CAPELLAN_MARCH_ID || affiliationContextModuleId === FEDERATED_SUNS_DRACONIS_MARCH_ID
+      ? applyFederatedSunsMarch(withUniversal, affiliationContextModuleId, davionNaturalAptitude, davionArt, includeSubAffiliation)
+      : applyCapellanCommonality(withUniversal, capellanSecondaryLanguage, includeSubAffiliation)
   requireLifeModules(withBirth).stage0SubAffiliation = includeSubAffiliation ? affiliationContextModuleId : 'no'
   return applyOrderAffiliation(withBirth, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
 }
@@ -934,6 +936,44 @@ export function applyFederatedSunsCrucisMarch(character: CharacterDefinition, na
     { affiliationId: FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.affiliationId, role: 'birth', provenanceId },
     { affiliationId: FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.affiliationId, role: 'final', provenanceId },
   )
+  nextState.phase = 'stage-1-selection'
+  nextState.currentStage = 1
+  return next
+}
+
+export function applyFederatedSunsMarch(character: CharacterDefinition, marchId: typeof FEDERATED_SUNS_CAPELLAN_MARCH_ID | typeof FEDERATED_SUNS_DRACONIS_MARCH_ID, naturalAptitude?: 'Protocol' | 'Strategy', art?: string, includeSubAffiliation = true): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-0-affiliation') throw new Error('The Stage 0 affiliation is not the current legal action.')
+  if (state.stage0AffiliationContext !== marchId) throw new Error('The selected Stage 0 affiliation package must match the explicit Universal affiliation context.')
+  if (naturalAptitude !== 'Protocol' && naturalAptitude !== 'Strategy') throw new Error('Choose the published Federated Suns Natural Aptitude option.')
+  const march = getLifeModule(marchId)
+  const parent = getLifeModule(FEDERATED_SUNS_CRUCIS_MARCH_ID)
+  const resolutions: Record<string, LifeModuleDestination> = {
+    'fedsuns.trait.natural-aptitude': { type: 'trait', traitId: 'trait.natural-aptitude', displayName: `Natural Aptitude/${naturalAptitude}`, parameters: { skill: naturalAptitude } },
+  }
+  const awards: LifeModuleAward[] = parent.awards.filter((award) => award.id.startsWith('fedsuns.')).flatMap((award): LifeModuleAward[] => {
+    if (award.kind === 'choice-package') return [{ id: award.id, kind: 'fixed', xp: 100, destination: resolutions['fedsuns.trait.natural-aptitude'] }]
+    return [award]
+  })
+  if (includeSubAffiliation) awards.push(...march.awards)
+  const module: LifeModuleDefinition = { ...march, costXp: 150, displayName: includeSubAffiliation ? march.displayName : 'Federated Suns', awards }
+  if (includeSubAffiliation && marchId === FEDERATED_SUNS_CAPELLAN_MARCH_ID) {
+    const language = art?.trim() ?? ''
+    if (!getLifeModuleLanguageSelectorOptions('capellan-march-languages').includes(language)) throw new Error('Choose a valid Capellan March language.')
+    resolutions['capellan-march.language'] = { type: 'skill', address: { skillId: 'skill.language', parameter: { kind: 'subskill', value: language } }, displayName: `Language/${language}` }
+  }
+  const draconisArt = includeSubAffiliation && marchId === FEDERATED_SUNS_DRACONIS_MARCH_ID && art?.trim()
+  let next = applyModule(character, module, resolutions)
+  if (draconisArt) {
+    const pendingArt = requireLifeModules(next).pendingAwards.find((award) => award.awardId === 'draconis-march.skill.art')
+    if (!pendingArt) throw new Error('Draconis March Art award was not recorded as a pending choice.')
+    const destination: ResolvedLifeModuleDestination = { type: 'skill', targetId: 'skill.art', displayName: `Art/${art!.trim()}`, parameter: { kind: 'subskill', value: art!.trim() } }
+    next = resolvePendingLifeModuleAward(next, pendingArt.id, destination)
+  }
+  const nextState = requireLifeModules(next)
+  const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
+  if (!provenanceId) throw new Error('Federated Suns March provenance was not recorded.')
+  next.affiliations.push({ affiliationId: FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT.affiliationId, role: 'birth', provenanceId }, { affiliationId: FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT.affiliationId, role: 'final', provenanceId })
   nextState.phase = 'stage-1-selection'
   nextState.currentStage = 1
   return next
@@ -1683,7 +1723,7 @@ function validateResolutionDestination(character: CharacterDefinition, pending: 
       throw new Error('Open subject destination must use its canonical parent Skill identity.')
     }
   }
-  if (knownChoices.length > 0 && !knownChoices.includes(destination.parameter?.value ?? '')) {
+  if (knownChoices.length > 0 && !openSubject && !knownChoices.includes(destination.parameter?.value ?? '')) {
     throw new Error('This award must resolve to a safe known choice from the current Alpha data.')
   }
 }

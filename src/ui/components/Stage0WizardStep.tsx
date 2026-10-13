@@ -1,4 +1,4 @@
-import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, getBirthAffiliationOptions, getBirthSubAffiliationOptions, getLifeModuleLanguageSelectorOptions, getNearestStateOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, getBirthAffiliationOptions, getBirthSubAffiliationOptions, getLifeModuleLanguageSelectorOptions, getNearestStateOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { TECHNICIAN_SUBSKILLS } from '../../domain/skillFields/catalog'
 import { controlStatus, controlStatusProps } from './controlStatus'
 import { Stage0UniversalStep } from './Stage0UniversalStep'
@@ -42,7 +42,9 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
   const subSelected = effectiveSubAffiliation === context?.id
   const affiliationLanguages = context ? getLifeModuleLanguageSelectorOptions(context.affiliationLanguageSelector) : []
   const capellanSelected = context?.id === CAPELLAN_COMMONALITY_CONTEXT.id
-  const davionSelected = context?.id === FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.id
+  const davionSelected = context?.affiliationId === 'affiliation.federated-suns'
+  const capellanMarchSelected = context?.id === FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT.id
+  const draconisMarchSelected = context?.id === FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT.id
   const secondaryLanguages = capellanSelected ? getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector) : []
   const orderSelected = effectiveOrderAffiliation !== 'no'
   const nearestState = getNearestStateOptions().find((entry) => entry.id === props.orderNearestStateContext)
@@ -53,7 +55,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
     context &&
     props.affiliationLanguage &&
     affiliationLanguages.includes(props.affiliationLanguage) &&
-    (capellanSelected ? secondaryLanguages.includes(props.secondaryLanguage) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && (!subSelected || props.davionArt === 'Painting')) && orderReady,
+    (capellanSelected ? secondaryLanguages.includes(props.secondaryLanguage) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && (!subSelected || (draconisMarchSelected ? Boolean(props.davionArt.trim()) : capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : props.davionArt === 'Painting'))) && orderReady,
   )
   return <div className="stage0-package-stack">
     {!universalComplete && <section className="stage0-package-section current" aria-labelledby="stage0-universal-heading">
@@ -138,17 +140,20 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
               </label>
             </div>}
             {davionSelected && <div className="stage0-secondary-action davion-choices">
-              <div><h4>{subSelected ? 'Federated Suns / Crucis March' : 'Federated Suns'}</h4><p>150 XP · full affiliation cost{subSelected ? ' with the Crucis March package' : ' with no sub-affiliation awards'}.</p></div>
+              <div><h4>{subSelected ? context?.displayName : 'Federated Suns'}</h4><p>150 XP · full affiliation cost{subSelected ? ' with the selected March package' : ' with no sub-affiliation awards'}.</p></div>
               <div className="stage0-choice-grid">
                 <label htmlFor="stage0-davion-aptitude">Natural Aptitude award
                   <select id="stage0-davion-aptitude" {...controlStatusProps(controlStatus({ required: true, resolved: ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) }), requirementDescriptionId)} value={props.davionNaturalAptitude} onChange={(event) => props.onDavionNaturalAptitudeChange(event.target.value)}>
                     <option value="">Choose an aptitude…</option><option>Protocol</option><option>Strategy</option>
                   </select>
                 </label>
-                {subSelected && <label htmlFor="stage0-davion-art">Crucis March Art award
-                  <select id="stage0-davion-art" {...controlStatusProps(controlStatus({ required: true, resolved: props.davionArt === 'Painting' }), requirementDescriptionId)} value={props.davionArt} onChange={(event) => props.onDavionArtChange(event.target.value)}>
-                    <option value="">Choose a supported Art subskill…</option><option>Painting</option>
+                {subSelected && !draconisMarchSelected && <label htmlFor="stage0-davion-art">{capellanMarchSelected ? 'Capellan March language award' : 'Crucis March Art award'}
+                  <select id="stage0-davion-art" {...controlStatusProps(controlStatus({ required: true, resolved: capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : props.davionArt === 'Painting' }), requirementDescriptionId)} value={props.davionArt} onChange={(event) => props.onDavionArtChange(event.target.value)}>
+                    <option value="">{capellanMarchSelected ? 'Choose a language…' : 'Choose a supported Art subskill…'}</option>{(capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'] : ['Painting']).map((value) => <option key={value}>{value}</option>)}
                   </select>
+                </label>}
+                {subSelected && draconisMarchSelected && <label htmlFor="stage0-davion-art">Draconis March Art/Any subject
+                  <input id="stage0-davion-art" value={props.davionArt} placeholder="Enter an Art subject…" onChange={(event) => props.onDavionArtChange(event.target.value)} />
                 </label>}
               </div>
             </div>}

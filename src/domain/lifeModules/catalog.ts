@@ -1,6 +1,6 @@
 import type { SourceCitation } from '../rules/model'
 import type { ConditionalLifeModulePackageDefinition, LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from './model'
-import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
 import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, PILOT_DROPSHIP_FIELD_ID, PILOT_JUMPSHIP_FIELD_ID, PILOT_WARSHIP_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 import { INFANTRY_ANTI_MECH_FIELD_ID } from '../skillFields/catalog'
@@ -8,7 +8,7 @@ import { PILOT_AEROSPACE_CIVILIAN_FIELD_ID, PILOT_AEROSPACE_COMBAT_FIELD_ID, PIL
 import { HPG_TECHNICIAN_FIELD_ID } from '../skillFields/catalog'
 import { CLAN_AEROSPACE_WARRIOR_FIELD_ID, CLAN_BASIC_TRAINING_FIELD_ID, CLAN_ELEMENTAL_FIELD_ID, CLAN_MECHWARRIOR_FIELD_ID } from '../skillFields/catalog'
 
-export { CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
+export { CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
 export { OFFICER_TRAINING_SCHOOL_ID } from './stage3Schooling'
 
 export interface ConditionalPackageCatalogValidationIssue {
@@ -108,6 +108,20 @@ const attributeMinimum = (id: string, attributeId: string, minimum: number): Lif
 const clanFieldGrant = (id: string, fieldId: string, purchaseCostXp: number, xpPerSkill: number, category: 'basic' | 'advanced'): LifeModuleAward => ({ id, kind: 'field-grant', description: `${fieldId} governed Clan training Field`, fieldId, xpPerSkill, purchaseCostXp, schoolModuleId: id.startsWith('sibko') ? TRUEBORN_SIBKO_ID : CLAN_APPRENTICESHIP_ID, offerId: `${id.startsWith('sibko') ? TRUEBORN_SIBKO_ID : CLAN_APPRENTICESHIP_ID}/${fieldId}`, chronologyYears: category === 'basic' ? 1 : 2, category })
 
 export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
+  {
+    id: FEDERATED_SUNS_CAPELLAN_MARCH_ID,
+    displayName: 'Federated Suns / Capellan March', stage: 0, kind: 'affiliation', source: FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT.source, costXp: 150,
+    primaryLanguage: FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT.primaryLanguage, secondaryLanguages: [...FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT.secondaryLanguages], prerequisites: [],
+    awards: [fixed('capellan-march.attribute.wil', 40, attribute('WIL')), fixed('capellan-march.trait.connections', 25, trait('trait.connections', 'Connections')), fixed('capellan-march.trait.hatred', -50, trait('trait.compulsion', 'Compulsion/Hatred of Capellan Confederation', { compulsion: 'Hatred of Capellan Confederation' })), fixed('capellan-march.skill.protocol', 10, skill('skill.protocol', 'Protocol/FedSuns', 'FedSuns')), fixed('capellan-march.skill.interest-history', 10, skill('skill.interest', 'Interest/FedSuns History', 'FedSuns History')), { id: 'capellan-march.language', kind: 'language-choice', xp: 5, choicesFrom: 'capellan-march-languages', description: 'Choose one Capellan March language.' }],
+    notes: ['Federated Suns sub-affiliation; no additional module cost.'], deferredRules: [],
+  },
+  {
+    id: FEDERATED_SUNS_DRACONIS_MARCH_ID,
+    displayName: 'Federated Suns / Draconis March', stage: 0, kind: 'affiliation', source: FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT.source, costXp: 150,
+    primaryLanguage: FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT.primaryLanguage, secondaryLanguages: [...FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT.secondaryLanguages], prerequisites: [],
+    awards: [fixed('draconis-march.attribute.edg', 25, attribute('EDG')), fixed('draconis-march.trait.connections', 20, trait('trait.connections', 'Connections')), fixed('draconis-march.trait.hatred', -30, trait('trait.compulsion', 'Compulsion/Hatred of Draconis Combine', { compulsion: 'Hatred of Draconis Combine' })), { id: 'draconis-march.skill.art', kind: 'any-skill-choice', xp: 10, skillId: 'skill.art', displayName: 'Art/Any', count: 1 }, fixed('draconis-march.skill.interest-history', 10, skill('skill.interest', 'Interest/FedSuns History', 'FedSuns History')), fixed('draconis-march.skill.protocol', 5, skill('skill.protocol', 'Protocol/FedSuns', 'FedSuns'))],
+    notes: ['Federated Suns sub-affiliation; no additional module cost. Art/Any remains an open subject.'], deferredRules: [],
+  },
   {
     id: UNIVERSAL_STAGE_0_ID,
     displayName: 'Universal Fixed Experience Points',

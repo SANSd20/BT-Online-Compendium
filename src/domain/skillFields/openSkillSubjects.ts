@@ -6,6 +6,7 @@ const OPEN_SUBJECT_SKILLS: ReadonlyMap<string, string> = new Map([
   ['skill.interest', 'Interest'],
   ['skill.science', 'Science'],
   ['skill.survival', 'Survival'],
+  ['skill.art', 'Art'],
 ] as const)
 
 export interface OpenSkillSubjectResult {

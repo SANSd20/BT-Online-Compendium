@@ -5,7 +5,7 @@ describe('governed modeled language source', () => {
   it('exposes the explicit safe subset without duplicate semantic identities', () => {
     expect(MODELED_LANGUAGE_SUBSKILLS).toEqual([
       'Cantonese', 'English', 'French', 'German', 'Hindi', 'Japanese',
-      'Mandarin Chinese', 'Romanian', 'Russian', 'Vietnamese',
+      'Mandarin Chinese', 'Romanian', 'Russian', 'Spanish', 'Vietnamese',
     ])
     expect(new Set(MODELED_LANGUAGE_SUBSKILLS).size).toBe(MODELED_LANGUAGE_SUBSKILLS.length)
     expect(normalizeModeledLanguage('Mandarin')).toBe('Mandarin Chinese')

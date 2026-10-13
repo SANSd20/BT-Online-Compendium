@@ -44,6 +44,7 @@ const VARIABLE_OPEN_DOMAINS = [
   getVariableSkillDomain('open-interest-subject'),
   getVariableSkillDomain('open-science-subject'),
   getVariableSkillDomain('open-survival-environment'),
+  getVariableSkillDomain('open-art-subject'),
 ]
 
 const KNOWN_SUBSKILLS: Readonly<Record<string, readonly string[]>> = {
@@ -51,8 +52,8 @@ const KNOWN_SUBSKILLS: Readonly<Record<string, readonly string[]>> = {
   'skill.language': ['Cantonese', 'English', 'French', 'German', 'Japanese', 'Russian', 'Spanish'],
   'skill.protocol': ['Capellan Confederation', 'ComStar', 'Federated Suns', 'Word of Blake'],
   'skill.driving': ['Ground Vehicles', 'Rail Vehicles', 'Sea Vehicles'],
-  'skill.prestidigitation': ['Sleight of Hand'],
   'skill.art': ['Painting'],
+  'skill.prestidigitation': ['Sleight of Hand'],
   'skill.technician': TECHNICIAN_SUBSKILLS,
 }
 

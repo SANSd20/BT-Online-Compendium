@@ -13,6 +13,7 @@ import { enterFinalTouches, markReadyForEquipmentReview } from '../src/engine/fi
 import { finalizeCharacterSnapshot } from '../src/domain/character/readiness'
 import { encodeCharacter } from '../src/persistence/characterCodec'
 import { addStasisEvent, createAnnualCheckOutcome, createFreezingCheckOutcome, createStasisEvent } from '../src/domain/character/stasis'
+import { B12_FIXTURES, V1D_FIXTURES, assertFixtureSummary, completeV1dFinalReview, completeV1dProgression, createMarchThroughStage0 } from './browserVerification.mjs'
 
 const pwExpect = (locator: { waitFor: (options: { state: 'visible' }) => Promise<void>; count: () => Promise<number>; first: () => { waitFor: (options: { state: 'visible' }) => Promise<void> } }) => ({ toBeVisible: () => locator.first().waitFor({ state: 'visible' }), toHaveCount: async (expected: number) => { const actual = await locator.count(); if (actual !== expected) throw new Error(`Expected ${expected} matching elements, found ${actual}.`) } })
 
@@ -51,5 +52,102 @@ describe('browser export/import integration', () => {
   it('exercises fatal freezing outcomes and player-facing readiness blocking', async () => {
     const root = await mkdtemp(join(tmpdir(), 'atow-stasis-fatal-')); const fixturePath = join(root, 'fixture.json'); const repo = fileURLToPath(new URL('..', import.meta.url)); const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '4175'], { cwd: repo, stdio: 'ignore' }); await writeFile(fixturePath, encodeCharacter(fixture(false), '2026-10-11T00:04:00.000Z'))
     try { await waitForServerAt(4175); const browser = await launchBrowser(); try { for (const failedCheck of ['Brain freezing check', 'Body freezing check']) { const context = await browser.newContext(); const page = await context.newPage(); await page.goto('http://127.0.0.1:4175/'); await page.locator('input[type="file"]').setInputFiles(fixturePath); await page.getByRole('button', { name: 'Open' }).click(); await pwExpect(page.getByRole('region', { name: 'Stasis history' })).toBeVisible(); await page.getByLabel(failedCheck).selectOption('failure'); await page.getByRole('button', { name: 'Record Stasis event' }).click(); await pwExpect(page.getByText(/1 year Stasis event · fatal/)).toBeVisible(); await pwExpect(page.getByText('A Stasis event records a fatal outcome; the character cannot be ready for play.')).toBeVisible(); await context.close() } } finally { await browser.close() } } finally { if (server.pid) { try { process.kill(server.pid) } catch { /* process already exited */ } } await rm(root, { recursive: true, force: true }) }
+  }, 120000)
+
+  it('preserves a real Capellan Stage 0 checkpoint across browser sessions and reuses the workflow for Draconis', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'atow-b12-checkpoint-'))
+    const capellanPath = join(root, 'capellan-stage0.json')
+    const capellanStage1Path = join(root, 'capellan-stage1.json')
+    const draconisPath = join(root, 'draconis-stage0.json')
+    const repo = fileURLToPath(new URL('..', import.meta.url))
+    const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '4176'], { cwd: repo, stdio: 'ignore' })
+    try {
+      await waitForServerAt(4176)
+      const browser = await launchBrowser()
+      try {
+        const capellan = B12_FIXTURES.capellan
+        const first = await browser.newPage()
+        await first.goto('http://127.0.0.1:4176/#/', { waitUntil: 'domcontentloaded' })
+        await createMarchThroughStage0(first, capellan)
+        await assertFixtureSummary(first, capellan)
+        const firstExport = first.waitForEvent('download')
+        await first.getByRole('button', { name: 'Export character JSON' }).click()
+        await (await firstExport).saveAs(capellanPath)
+        await first.close()
+
+        const resumed = await browser.newPage()
+        await resumed.goto('http://127.0.0.1:4176/#/', { waitUntil: 'domcontentloaded' })
+        await resumed.locator('input[type=file]').setInputFiles(capellanPath)
+        await resumed.getByText(`Imported ${capellan.name}.`, { exact: true }).waitFor({ state: 'visible' })
+        const card = resumed.locator('li').filter({ hasText: capellan.name })
+        await card.getByRole('button', { name: 'Resume' }).click()
+        await resumed.locator('select').first().selectOption({ label: 'Blue Collar · Available' })
+        const stage1Selects = resumed.locator('select')
+        for (let index = 1; index < await stage1Selects.count(); index++) await stage1Selects.nth(index).selectOption({ index: 1 })
+        await resumed.getByRole('button', { name: 'Continue' }).click()
+        await resumed.getByText('Late Childhood', { exact: true }).waitFor({ state: 'visible' })
+        const secondExport = resumed.waitForEvent('download')
+        await resumed.getByRole('button', { name: 'Export character JSON' }).click()
+        await (await secondExport).saveAs(capellanStage1Path)
+        const stage1Text = await resumed.locator('body').innerText()
+        if (!stage1Text.includes('Capellan')) throw new Error('Stage 0 Capellan identity was not preserved after Stage 1.')
+        await resumed.close()
+
+        const draconis = B12_FIXTURES.draconis
+        const dracPage = await browser.newPage()
+        await dracPage.goto('http://127.0.0.1:4176/#/', { waitUntil: 'domcontentloaded' })
+        await createMarchThroughStage0(dracPage, draconis)
+        await assertFixtureSummary(dracPage, draconis)
+        const dracExport = dracPage.waitForEvent('download')
+        await dracPage.getByRole('button', { name: 'Export character JSON' }).click()
+        await (await dracExport).saveAs(draconisPath)
+        await dracPage.close()
+        const dracResumed = await browser.newPage()
+        await dracResumed.goto('http://127.0.0.1:4176/#/', { waitUntil: 'domcontentloaded' })
+        await dracResumed.locator('input[type=file]').setInputFiles(draconisPath)
+        await dracResumed.getByText(`Imported ${draconis.name}.`, { exact: true }).waitFor({ state: 'visible' })
+        await dracResumed.locator('li').filter({ hasText: draconis.name }).getByRole('button', { name: 'Resume' }).click()
+        await assertFixtureSummary(dracResumed, draconis)
+        await dracResumed.close()
+      } finally { await browser.close() }
+    } finally { if (server.pid) { try { process.kill(server.pid) } catch { /* process already exited */ } } await rm(root, { recursive: true, force: true }) }
+  }, 120000)
+
+  it('executes the source-valid Capellan progression through legal final review', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'atow-v1d-progression-'))
+    const checkpointPath = join(root, 'stage3-checkpoint.json')
+    const repo = fileURLToPath(new URL('..', import.meta.url))
+    const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '4177'], { cwd: repo, stdio: 'ignore' })
+    try {
+      await waitForServerAt(4177)
+      const browser = await launchBrowser()
+      try {
+        const fixture = V1D_FIXTURES.capellanProgression
+        const first = await browser.newPage({ acceptDownloads: true })
+        await first.goto('http://127.0.0.1:4177/#/', { waitUntil: 'domcontentloaded' })
+        await completeV1dProgression(first, fixture)
+        await assertFixtureSummary(first, fixture)
+        expect(await first.getByText('Review character readiness', { exact: true }).count()).toBe(1)
+
+        const checkpoint = first.waitForEvent('download')
+        await first.getByRole('button', { name: 'Export character JSON' }).click()
+        await (await checkpoint).saveAs(checkpointPath)
+        await first.close()
+
+        const resumed = await browser.newPage({ acceptDownloads: true })
+        await resumed.goto('http://127.0.0.1:4177/#/', { waitUntil: 'domcontentloaded' })
+        await resumed.locator('input[type=file]').setInputFiles(checkpointPath)
+        await resumed.getByText(`Imported ${fixture.name}.`, { exact: true }).waitFor({ state: 'visible' })
+        await resumed.locator('li').filter({ hasText: fixture.name }).getByRole('button', { name: 'Resume' }).click()
+        await resumed.getByText('Review character readiness', { exact: true }).waitFor({ state: 'visible' })
+        await completeV1dFinalReview(resumed, fixture)
+        if (await resumed.getByText('No final-review blockers remain.', { exact: true }).count() === 0) throw new Error(`Final legality blockers:\n${(await resumed.locator('body').innerText()).slice(-5000)}`)
+        expect(await resumed.getByText('Ready for Final Touches', { exact: true }).count()).toBe(1)
+        expect(await resumed.getByText('Optimization opportunities remain unresolved.', { exact: true }).count()).toBe(0)
+        expect(await resumed.locator('body').innerText()).toContain('Pending choices\n0')
+        expect(await resumed.getByText('Technician/Civilian: DEX 3+', { exact: false }).count()).toBe(0)
+        await resumed.close()
+      } finally { await browser.close() }
+    } finally { if (server.pid) { try { process.kill(server.pid) } catch { /* process already exited */ } } await rm(root, { recursive: true, force: true }) }
   }, 120000)
 })

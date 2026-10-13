@@ -15,6 +15,7 @@ export const MODELED_LANGUAGE_SUBSKILLS = [
   'Mandarin Chinese',
   'Romanian',
   'Russian',
+  'Spanish',
   'Vietnamese',
 ] as const
 
