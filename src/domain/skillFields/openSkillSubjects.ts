@@ -1,6 +1,9 @@
 import type { ResolvedLifeModuleDestination } from '../character/model'
 
 export const OPEN_SKILL_SUBJECT_MAX_LENGTH = 60
+export const OPEN_ART_SUGGESTED_SUBJECTS = [
+  'Dance', 'Drawing', 'Music', 'Painting', 'Poetry', 'Sculpture', 'Songwriting', 'Writing',
+] as const
 const OPEN_SUBJECT_SKILLS: ReadonlyMap<string, string> = new Map([
   ['skill.career', 'Career'],
   ['skill.interest', 'Interest'],

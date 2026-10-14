@@ -1,5 +1,6 @@
 import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, getBirthAffiliationOptions, getBirthSubAffiliationOptions, getLifeModuleLanguageSelectorOptions, getNearestStateOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { TECHNICIAN_SUBSKILLS } from '../../domain/skillFields/catalog'
+import { OPEN_ART_SUGGESTED_SUBJECTS } from '../../domain/skillFields/openSkillSubjects'
 import { controlStatus, controlStatusProps } from './controlStatus'
 import { Stage0UniversalStep } from './Stage0UniversalStep'
 
@@ -55,7 +56,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
     context &&
     props.affiliationLanguage &&
     affiliationLanguages.includes(props.affiliationLanguage) &&
-    (capellanSelected ? secondaryLanguages.includes(props.secondaryLanguage) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && (!subSelected || (draconisMarchSelected ? Boolean(props.davionArt.trim()) : capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : props.davionArt === 'Painting'))) && orderReady,
+    (capellanSelected ? secondaryLanguages.includes(props.secondaryLanguage) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && (!subSelected || (draconisMarchSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' : capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : props.davionArt === 'Painting'))) && orderReady,
   )
   return <div className="stage0-package-stack">
     {!universalComplete && <section className="stage0-package-section current" aria-labelledby="stage0-universal-heading">
@@ -153,7 +154,12 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
                   </select>
                 </label>}
                 {subSelected && draconisMarchSelected && <label htmlFor="stage0-davion-art">Draconis March Art/Any subject
-                  <input id="stage0-davion-art" value={props.davionArt} placeholder="Enter an Art subject…" onChange={(event) => props.onDavionArtChange(event.target.value)} />
+                  <select id="stage0-davion-art" {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' }), requirementDescriptionId)} value={OPEN_ART_SUGGESTED_SUBJECTS.includes(props.davionArt as (typeof OPEN_ART_SUGGESTED_SUBJECTS)[number]) ? props.davionArt : props.davionArt ? '__other__' : ''} onChange={(event) => props.onDavionArtChange(event.target.value === '__other__' ? '__other__' : event.target.value)}>
+                    <option value="">Choose an Art specialty…</option>
+                    {OPEN_ART_SUGGESTED_SUBJECTS.map((subject) => <option key={subject} value={subject}>{`Art/${subject}`}</option>)}
+                    <option value="__other__">Other (specify)</option>
+                  </select>
+                  {props.davionArt && !OPEN_ART_SUGGESTED_SUBJECTS.includes(props.davionArt as (typeof OPEN_ART_SUGGESTED_SUBJECTS)[number]) && <input id="stage0-davion-art-other" aria-label="Other Art specialty" value={props.davionArt === '__other__' ? '' : props.davionArt} placeholder="Enter an Art specialty…" onChange={(event) => props.onDavionArtChange(event.target.value)} />}
                 </label>}
               </div>
             </div>}

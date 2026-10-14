@@ -45,7 +45,10 @@ export async function createMarchThroughStage0(page, fixture) {
   await page.selectOption('#stage0-affiliation-context', { label: fixture.march })
   await page.selectOption('#stage0-davion-aptitude', { label: fixture.aptitude })
   if (fixture.marchLanguage) await page.selectOption('#stage0-davion-art', { label: fixture.marchLanguage })
-  else await page.locator('#stage0-davion-art').fill(fixture.art)
+  else {
+    await page.selectOption('#stage0-davion-art', { label: 'Other (specify)' })
+    await page.locator('#stage0-davion-art-other').fill(fixture.art)
+  }
   await page.getByRole('button', { name: 'Continue' }).last().click()
   await page.getByText('Early Childhood module', { exact: false }).first().waitFor({ state: 'visible' })
   return page

@@ -91,4 +91,12 @@ describe('merged Stage 0 wizard step', () => {
     expect(markup).toContain('<option value="no" selected="">No</option>')
     expect(markup).toContain('full affiliation cost with no sub-affiliation awards')
   })
+
+  it('offers suggested Draconis Art specialties without narrowing the open domain', () => {
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext="stage0.federated-suns.draconis-march" subAffiliation="stage0.federated-suns.draconis-march" affiliationLanguage="English" secondaryLanguage="" davionNaturalAptitude="Strategy" davionArt="" {...orderChoices} birthAffiliationId="affiliation.federated-suns" {...handlers} />)
+    for (const subject of ['Dance', 'Drawing', 'Music', 'Painting', 'Poetry', 'Sculpture', 'Songwriting', 'Writing']) expect(markup).toContain(`Art/${subject}`)
+    expect(markup).toContain('Other (specify)')
+    expect(markup).toContain('id="stage0-davion-art"')
+    expect(markup).toContain('value="" selected=""')
+  })
 })
