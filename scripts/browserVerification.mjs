@@ -53,6 +53,24 @@ export async function createMarchThroughStage0(page, fixture) {
   await page.getByText('Early Childhood module', { exact: false }).first().waitFor({ state: 'visible' })
   return page
 }
+export async function createOutbackThroughStage0(page, fixture) {
+  await page.getByRole('link', { name: 'Start Life Modules' }).click()
+  await page.getByLabel('Character name').fill(fixture.name)
+  await page.getByRole('button', { name: 'Create Life Module draft' }).click()
+  await page.selectOption('#stage0-affiliation', { label: 'Federated Suns' })
+  await page.selectOption('#stage0-affiliation-language', { value: fixture.language ?? 'English' })
+  await page.selectOption('#stage0-affiliation-context', { label: 'Outback' })
+  await page.selectOption('#stage0-davion-aptitude', { value: fixture.aptitude ?? 'Strategy' })
+  const outbackArt = page.locator('#stage0-davion-art-outback')
+  if (fixture.branch === 'interest') {
+    await outbackArt.selectOption({ value: '__interest_other__' })
+    await page.getByLabel('Other Interest subject').fill(fixture.subject)
+  } else {
+    await outbackArt.selectOption({ value: fixture.subject ?? 'Sculpture' })
+  }
+  await page.locator('#stage0-survival').fill(fixture.survival ?? 'Forest')
+  return page
+}
 export async function assertFixtureSummary(page, fixture) {
   const summary = await page.locator('body').innerText()
   for (const expected of fixture.expected) {

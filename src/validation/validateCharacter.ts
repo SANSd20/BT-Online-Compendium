@@ -1039,7 +1039,8 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
     }
     const expectedXp = award.kind === 'flexible-xp' ? (award.allocationMode === 'pool' ? null : award.xpPerGrant) : award.xp
     const allowedTypes = award.kind === 'flexible-xp' ? award.allowedTargetTypes : ['skill']
-    const requiredSkillId = award.kind === 'affiliation-skill-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' ? award.skillId : award.kind === 'language-choice' ? 'skill.language' : undefined
+    const outbackArtOrInterest = resolved.awardId === 'outback.skill.art-or-interest'
+    const requiredSkillId = !outbackArtOrInterest && (award.kind === 'affiliation-skill-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') ? award.skillId : award.kind === 'language-choice' ? 'skill.language' : undefined
     const targetIdValid = resolved.destination.type === 'attribute'
       ? LIFE_MODULE_ATTRIBUTE_IDS.includes(resolved.destination.targetId)
       : resolved.destination.targetId.startsWith(resolved.destination.type === 'trait' ? 'trait.' : 'skill.')
@@ -1047,9 +1048,9 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
     const knownChoices = knownPendingChoiceValues({
       kind: award.kind,
       choiceSource: award.kind === 'language-choice' ? award.choicesFrom : undefined,
-      requiredSkillId: award.kind === 'affiliation-skill-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice' ? award.skillId : award.kind === 'language-choice' ? 'skill.language' : undefined,
+      requiredSkillId: !outbackArtOrInterest && (award.kind === 'affiliation-skill-choice' || award.kind === 'any-skill-choice' || award.kind === 'multi-skill-choice') ? award.skillId : award.kind === 'language-choice' ? 'skill.language' : undefined,
     })
-    const openSubject = pendingOpenSubject({
+    const openSubject = outbackArtOrInterest ? null : pendingOpenSubject({
       kind: award.kind,
       requiredSkillId,
     })

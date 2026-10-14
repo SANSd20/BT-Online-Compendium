@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSITY_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, UNIVERSITY_ID, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { deriveSkillLevel, getOptimizationPreview as getDomainOptimizationPreview, skillThreshold } from '../domain/lifeModules/finalReview'
 import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, DETECTIVE_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, LAWYER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_EXOSKELETON_FIELD_ID, PILOT_INDUSTRIALMECH_FIELD_ID, POLICE_OFFICER_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { validateCharacter } from '../validation/validateCharacter'
-import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
+import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage0Affiliation, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
 import { allocateFinalReviewXp, approveFinalReviewSpecialty, applyAllLifeModuleOptimizations, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, proposeFinalReviewSpecialty, purchaseAdditionalNegativeTraitXp, purchaseFinalReviewSkill, removeFinalReviewAllocation, removeFinalReviewSpecialty, removeAdditionalNegativeTraitXp, resolveLifeModuleOpposedTraits } from './lifeModuleFinalReview'
 import { createPointBuyCharacter } from './pointBuyEngine'
 
@@ -73,6 +73,26 @@ function completeAgitatorStage4() {
 }
 
 describe('Life Module engine', () => {
+  it('commits the source-backed Outback package with exactly one open branch and Survival subject', () => {
+    let character = createLifeModuleCharacter('Outback', 5000)
+    character = applyStage0Affiliation(character, FEDERATED_SUNS_OUTBACK_ID, 'English', undefined, 'Protocol', 'Art/Drawing', 'no', undefined, undefined, undefined, FEDERATED_SUNS_OUTBACK_ID, 'Forest')
+    expect(character.xp.creation.remaining).toBe(4000)
+    expect(character.skills.filter((entry) => entry.address.skillId === 'skill.art' || entry.address.skillId === 'skill.interest')).toHaveLength(1)
+    expect(character.skills.some((entry) => entry.displayName === 'Art/Drawing')).toBe(true)
+    expect(character.skills.some((entry) => entry.displayName === 'Survival/Forest')).toBe(true)
+    expect(decodeCharacter(encodeCharacter(character)).skills.some((entry) => entry.displayName === 'Survival/Forest')).toBe(true)
+  })
+  it('commits the Outback Interest branch as Interest with one governed award', () => {
+    let character = createLifeModuleCharacter('Outback Interest', 5000)
+    character = applyStage0Affiliation(character, FEDERATED_SUNS_OUTBACK_ID, 'English', undefined, 'Protocol', 'Interest/Geology', 'no', undefined, undefined, undefined, FEDERATED_SUNS_OUTBACK_ID, 'Desert')
+    const branchSkills = character.skills.filter((entry) => entry.displayName === 'Art/Geology' || entry.displayName === 'Interest/Geology')
+    expect(branchSkills).toHaveLength(1)
+    expect(branchSkills[0]).toMatchObject({ address: { skillId: 'skill.interest', parameter: { value: 'Geology' } }, accumulatedXp: 10 })
+    expect(character.creation.lifeModules?.resolvedAwards.filter((entry) => entry.awardId === 'outback.skill.art-or-interest')).toHaveLength(1)
+    const restored = decodeCharacter(encodeCharacter(character))
+    expect(restored.skills.filter((entry) => entry.displayName === 'Interest/Geology')).toHaveLength(1)
+    expect(restored.skills.some((entry) => entry.displayName === 'Art/Geology')).toBe(false)
+  })
   it('creates a sourced draft with a separate module-purchasing pool', () => {
     const character = createLifeModuleCharacter('Xiang')
     expect(character.creation.method).toBe('life-modules')

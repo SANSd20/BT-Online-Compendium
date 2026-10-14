@@ -19,7 +19,7 @@ describe('Life Module affiliation framework', () => {
   })
 
   it('centralizes the supported Capellan and Federated Suns contexts', () => {
-    expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS).toEqual([CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, expect.objectContaining({ subAffiliationName: 'Capellan March' }), expect.objectContaining({ subAffiliationName: 'Draconis March' })])
+    expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS).toEqual([CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, expect.objectContaining({ subAffiliationName: 'Capellan March' }), expect.objectContaining({ subAffiliationName: 'Draconis March' }), expect.objectContaining({ subAffiliationName: 'Outback' })])
     expect(CAPELLAN_COMMONALITY_CONTEXT).toMatchObject({
       id: CAPELLAN_COMMONALITY_ID,
       affiliationId: 'affiliation.capellan-confederation',

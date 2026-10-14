@@ -45,7 +45,7 @@ import {
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues, modeledSkillChoiceOptions, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
 import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
-import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_CONTEXT, FEDERATED_SUNS_OUTBACK_ID, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
 import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
 import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, CLAN_MECHWARRIOR_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
@@ -780,13 +780,14 @@ export function applyStage0Affiliation(
   orderSecondaryLanguage?: string,
   orderTechnicianSubskill?: string,
   subAffiliationSelection?: string,
+  survivalSubject?: string,
 ): CharacterDefinition {
   const withUniversal = applyUniversalStage0(character, affiliationContextModuleId, affiliationLanguage)
   const includeSubAffiliation = subAffiliationSelection === undefined || subAffiliationSelection === affiliationContextModuleId
   const withBirth = affiliationContextModuleId === FEDERATED_SUNS_CRUCIS_MARCH_ID
     ? applyFederatedSunsCrucisMarch(withUniversal, davionNaturalAptitude, davionArt, includeSubAffiliation)
-    : affiliationContextModuleId === FEDERATED_SUNS_CAPELLAN_MARCH_ID || affiliationContextModuleId === FEDERATED_SUNS_DRACONIS_MARCH_ID
-      ? applyFederatedSunsMarch(withUniversal, affiliationContextModuleId, davionNaturalAptitude, davionArt, includeSubAffiliation)
+    : affiliationContextModuleId === FEDERATED_SUNS_CAPELLAN_MARCH_ID || affiliationContextModuleId === FEDERATED_SUNS_DRACONIS_MARCH_ID || affiliationContextModuleId === FEDERATED_SUNS_OUTBACK_ID
+      ? applyFederatedSunsMarch(withUniversal, affiliationContextModuleId, davionNaturalAptitude, davionArt, includeSubAffiliation, survivalSubject)
       : applyCapellanCommonality(withUniversal, capellanSecondaryLanguage, includeSubAffiliation)
   requireLifeModules(withBirth).stage0SubAffiliation = includeSubAffiliation ? affiliationContextModuleId : 'no'
   return applyOrderAffiliation(withBirth, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
@@ -941,7 +942,7 @@ export function applyFederatedSunsCrucisMarch(character: CharacterDefinition, na
   return next
 }
 
-export function applyFederatedSunsMarch(character: CharacterDefinition, marchId: typeof FEDERATED_SUNS_CAPELLAN_MARCH_ID | typeof FEDERATED_SUNS_DRACONIS_MARCH_ID, naturalAptitude?: 'Protocol' | 'Strategy', art?: string, includeSubAffiliation = true): CharacterDefinition {
+export function applyFederatedSunsMarch(character: CharacterDefinition, marchId: typeof FEDERATED_SUNS_CAPELLAN_MARCH_ID | typeof FEDERATED_SUNS_DRACONIS_MARCH_ID | typeof FEDERATED_SUNS_OUTBACK_ID, naturalAptitude?: 'Protocol' | 'Strategy', art?: string, includeSubAffiliation = true, survivalSubject = ''): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-0-affiliation') throw new Error('The Stage 0 affiliation is not the current legal action.')
   if (state.stage0AffiliationContext !== marchId) throw new Error('The selected Stage 0 affiliation package must match the explicit Universal affiliation context.')
@@ -963,6 +964,8 @@ export function applyFederatedSunsMarch(character: CharacterDefinition, marchId:
     resolutions['capellan-march.language'] = { type: 'skill', address: { skillId: 'skill.language', parameter: { kind: 'subskill', value: language } }, displayName: `Language/${language}` }
   }
   const draconisArt = includeSubAffiliation && marchId === FEDERATED_SUNS_DRACONIS_MARCH_ID && art?.trim()
+  const outbackSubject = includeSubAffiliation && marchId === FEDERATED_SUNS_OUTBACK_ID ? art?.trim() : ''
+  if (marchId === FEDERATED_SUNS_OUTBACK_ID && (!outbackSubject || !survivalSubject.trim() || outbackSubject === '__other__')) throw new Error('Choose an Outback Art or Interest subject and Survival environment.')
   let next = applyModule(character, module, resolutions)
   if (draconisArt) {
     const pendingArt = requireLifeModules(next).pendingAwards.find((award) => award.awardId === 'draconis-march.skill.art')
@@ -970,10 +973,20 @@ export function applyFederatedSunsMarch(character: CharacterDefinition, marchId:
     const destination: ResolvedLifeModuleDestination = { type: 'skill', targetId: 'skill.art', displayName: `Art/${art!.trim()}`, parameter: { kind: 'subskill', value: art!.trim() } }
     next = resolvePendingLifeModuleAward(next, pendingArt.id, destination)
   }
+  if (outbackSubject) {
+    const pending = requireLifeModules(next).pendingAwards.find((award) => award.awardId === 'outback.skill.art-or-interest')
+    const survival = requireLifeModules(next).pendingAwards.find((award) => award.awardId === 'outback.skill.survival')
+    if (!pending || !survival) throw new Error('Outback governed choices were not recorded.')
+    const isInterest = outbackSubject.startsWith('Interest/')
+    const subject = outbackSubject.replace(/^(Art|Interest)\//, '').trim()
+    if (!subject) throw new Error('Choose a valid Outback subject.')
+    next = resolvePendingLifeModuleAward(next, pending.id, { type: 'skill', targetId: isInterest ? 'skill.interest' : 'skill.art', displayName: `${isInterest ? 'Interest' : 'Art'}/${subject}`, parameter: { kind: 'subskill', value: subject } })
+    next = resolvePendingLifeModuleAward(next, survival.id, { type: 'skill', targetId: 'skill.survival', displayName: `Survival/${survivalSubject.trim()}`, parameter: { kind: 'subskill', value: survivalSubject.trim() } })
+  }
   const nextState = requireLifeModules(next)
   const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
   if (!provenanceId) throw new Error('Federated Suns March provenance was not recorded.')
-  next.affiliations.push({ affiliationId: FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT.affiliationId, role: 'birth', provenanceId }, { affiliationId: FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT.affiliationId, role: 'final', provenanceId })
+  next.affiliations.push({ affiliationId: FEDERATED_SUNS_OUTBACK_CONTEXT.affiliationId, role: 'birth', provenanceId }, { affiliationId: FEDERATED_SUNS_OUTBACK_CONTEXT.affiliationId, role: 'final', provenanceId })
   nextState.phase = 'stage-1-selection'
   nextState.currentStage = 1
   return next
@@ -1277,7 +1290,8 @@ export function resolvePendingLifeModuleAward(
   if (pendingIndex < 0) throw new Error(`Unknown pending Life Module award: ${pendingAwardId}`)
   const pending = state.pendingAwards[pendingIndex]
   const openSubject = pendingOpenSubject(pending)
-  const normalized = openSubject
+  const outbackArtOrInterest = pending.awardId === 'outback.skill.art-or-interest'
+  const normalized = openSubject && !outbackArtOrInterest
     ? openSkillSubjectDestination(openSubject.skillId, destination.parameter?.value ?? '')
     : normalizeResolvedDestination(destination)
   validateResolutionDestination(next, pending, normalized)
@@ -1677,6 +1691,7 @@ function homeworldHistoryDestination(character: CharacterDefinition): Extract<Li
 }
 
 function validateResolutionDestination(character: CharacterDefinition, pending: PendingLifeModuleAward, destination: ResolvedLifeModuleDestination): void {
+  const outbackArtOrInterest = pending.awardId === 'outback.skill.art-or-interest'
   if (!pending.allowedTargetTypes.includes(destination.type)) throw new Error(`${destination.type} is not an allowed target for this award.`)
   if (pending.excludedTargetIds?.includes(destination.targetId)) throw new Error(`${destination.targetId} is not a legal destination for this award.`)
   if (pending.allowedTargetIds && !pending.allowedTargetIds.includes(destination.targetId)) throw new Error(`${destination.targetId} is not a legal destination for this award.`)
@@ -1692,7 +1707,7 @@ function validateResolutionDestination(character: CharacterDefinition, pending: 
     if (!character.skills.some((entry) => entry.level !== null && skillKey(entry.address) === key)) throw new Error('The selected related Skill is no longer possessed.')
     return
   }
-  if (destination.type === 'skill' && pending.requiredSkillId && destination.targetId !== pending.requiredSkillId) throw new Error(`This award must resolve to ${pending.requiredSkillId}.`)
+  if (destination.type === 'skill' && pending.requiredSkillId && !outbackArtOrInterest && destination.targetId !== pending.requiredSkillId) throw new Error(`This award must resolve to ${pending.requiredSkillId}.`)
   if (pending.kind === 'modeled-skill-choice') {
     if (destination.type !== 'skill') throw new Error('This award must resolve to a Skill.')
     const available = modeledSkillChoiceOptions(character).filter((option) => !pending.allowedDestinationKeys || pending.allowedDestinationKeys.includes(option.value))
@@ -1717,7 +1732,7 @@ function validateResolutionDestination(character: CharacterDefinition, pending: 
   }
   const knownChoices = knownPendingChoiceValues(pending)
   const openSubject = pendingOpenSubject(pending)
-  if (openSubject) {
+  if (openSubject && !outbackArtOrInterest) {
     const canonical = openSkillSubjectDestination(openSubject.skillId, destination.parameter?.value ?? '')
     if (destination.targetId !== canonical.targetId || destination.displayName !== canonical.displayName || destination.parameter?.value !== canonical.parameter?.value) {
       throw new Error('Open subject destination must use its canonical parent Skill identity.')

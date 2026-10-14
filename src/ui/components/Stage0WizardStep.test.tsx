@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import { CAPELLAN_COMMONALITY_ID } from '../../domain/lifeModules/catalog'
+import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_OUTBACK_ID } from '../../domain/lifeModules/catalog'
 import { Stage0WizardStep } from './Stage0WizardStep'
 
 const handlers = {
@@ -9,6 +9,7 @@ const handlers = {
   onSecondaryLanguageChange: vi.fn(),
   onDavionNaturalAptitudeChange: vi.fn(),
   onDavionArtChange: vi.fn(),
+  onSurvivalSubjectChange: vi.fn(),
   onBirthAffiliationChange: vi.fn(),
   onOrderAffiliationChange: vi.fn(),
   onOrderNearestStateChange: vi.fn(),
@@ -21,6 +22,7 @@ const handlers = {
 const davionChoices = {
   davionNaturalAptitude: '',
   davionArt: '',
+  survivalSubject: '',
 }
 const orderChoices = {
   birthAffiliationId: '',
@@ -93,10 +95,13 @@ describe('merged Stage 0 wizard step', () => {
   })
 
   it('offers suggested Draconis Art specialties without narrowing the open domain', () => {
-    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext="stage0.federated-suns.draconis-march" subAffiliation="stage0.federated-suns.draconis-march" affiliationLanguage="English" secondaryLanguage="" davionNaturalAptitude="Strategy" davionArt="" {...orderChoices} birthAffiliationId="affiliation.federated-suns" {...handlers} />)
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext="stage0.federated-suns.draconis-march" subAffiliation="stage0.federated-suns.draconis-march" affiliationLanguage="English" secondaryLanguage="" davionNaturalAptitude="Strategy" davionArt="" survivalSubject="" {...orderChoices} birthAffiliationId="affiliation.federated-suns" {...handlers} />)
     for (const subject of ['Dance', 'Drawing', 'Music', 'Painting', 'Poetry', 'Sculpture', 'Songwriting', 'Writing']) expect(markup).toContain(`Art/${subject}`)
     expect(markup).toContain('Other (specify)')
     expect(markup).toContain('id="stage0-davion-art"')
     expect(markup).toContain('value="" selected=""')
+    const outback = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={FEDERATED_SUNS_OUTBACK_ID} subAffiliation={FEDERATED_SUNS_OUTBACK_ID} affiliationLanguage="English" secondaryLanguage="" davionNaturalAptitude="Strategy" davionArt="" survivalSubject="" {...orderChoices} birthAffiliationId="affiliation.federated-suns" {...handlers} />)
+    expect(outback).toContain('id="stage0-davion-art-outback"')
+    expect(outback).not.toContain('id="stage0-davion-art"')
   })
 })

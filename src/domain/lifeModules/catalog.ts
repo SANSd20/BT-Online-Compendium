@@ -1,6 +1,6 @@
 import type { SourceCitation } from '../rules/model'
 import type { ConditionalLifeModulePackageDefinition, LifeModuleAward, LifeModuleCatalogValidationIssue, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from './model'
-import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_CONTEXT, FEDERATED_SUNS_OUTBACK_ID, UNIVERSAL_LIFE_MODULE_CONTEXT, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
 import { ANALYSIS_FIELD_ID, ANTHROPOLOGIST_FIELD_ID, ARCHAEOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CARTOGRAPHER_FIELD_ID, CAVALRY_FIELD_ID, COMMUNICATIONS_FIELD_ID, COVERT_OPERATIONS_FIELD_ID, DETECTIVE_FIELD_ID, DOCTOR_FIELD_ID, ENGINEER_FIELD_ID, GENERAL_STUDIES_FIELD_ID, INFANTRY_FIELD_ID, INTELLIGENCE_FIELD_ID, JOURNALIST_FIELD_ID, LAWYER_FIELD_ID, MANAGER_FIELD_ID, MARINE_FIELD_ID, MECHWARRIOR_FIELD_ID, MEDICAL_ASSISTANT_FIELD_ID, MERCHANT_FIELD_ID, MERCHANT_MARINE_FIELD_ID, MILITARY_SCIENTIST_FIELD_ID, OFFICER_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, PILOT_AIRCRAFT_CIVILIAN_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, PILOT_DROPSHIP_FIELD_ID, PILOT_JUMPSHIP_FIELD_ID, PILOT_WARSHIP_FIELD_ID, POLICE_OFFICER_FIELD_ID, POLICE_TACTICAL_OFFICER_FIELD_ID, POLITICIAN_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID, SHIPS_CREW_FIELD_ID, SPECIAL_FORCES_FIELD_ID, TECHNICIAN_AEROSPACE_FIELD_ID, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_MECH_FIELD_ID, TECHNICIAN_MILITARY_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../skillFields/catalog'
 import { OFFICER_TRAINING_SCHOOL_ID, stage3SchoolClassification } from './stage3Schooling'
 import { INFANTRY_ANTI_MECH_FIELD_ID } from '../skillFields/catalog'
@@ -8,7 +8,7 @@ import { PILOT_AEROSPACE_CIVILIAN_FIELD_ID, PILOT_AEROSPACE_COMBAT_FIELD_ID, PIL
 import { HPG_TECHNICIAN_FIELD_ID } from '../skillFields/catalog'
 import { CLAN_AEROSPACE_WARRIOR_FIELD_ID, CLAN_BASIC_TRAINING_FIELD_ID, CLAN_ELEMENTAL_FIELD_ID, CLAN_MECHWARRIOR_FIELD_ID } from '../skillFields/catalog'
 
-export { CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
+export { CAPELLAN_COMMONALITY_ID, COMSTAR_ORDER_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_ID, UNIVERSAL_STAGE_0_ID, WORD_OF_BLAKE_ORDER_ID } from './affiliations'
 export { OFFICER_TRAINING_SCHOOL_ID } from './stage3Schooling'
 
 export interface ConditionalPackageCatalogValidationIssue {
@@ -138,6 +138,12 @@ export const LIFE_MODULE_CATALOG: readonly LifeModuleDefinition[] = [
     ],
     notes: ['Mandatory for every Life Module character.'],
     deferredRules: [],
+  },
+  {
+    id: FEDERATED_SUNS_OUTBACK_ID, displayName: 'Federated Suns / Outback', stage: 0, kind: 'affiliation', source: FEDERATED_SUNS_OUTBACK_CONTEXT.source, costXp: 150,
+    primaryLanguage: FEDERATED_SUNS_OUTBACK_CONTEXT.primaryLanguage, secondaryLanguages: [...FEDERATED_SUNS_OUTBACK_CONTEXT.secondaryLanguages], prerequisites: [{ id: 'fedsuns.natural-aptitude.int', kind: 'attribute-minimum', attributeId: 'INT', minimum: 4, description: 'Federated Suns Natural Aptitude choice: INT 4+' }],
+    awards: [fixed('outback.attribute.str', 50, attribute('STR')), fixed('outback.attribute.bod', 150, attribute('BOD')), fixed('outback.attribute.wil', 100, attribute('WIL')), fixed('outback.attribute.int', -100, attribute('INT')), fixed('outback.trait.illiterate', -50, trait('trait.illiterate', 'Illiterate')), fixed('outback.trait.reputation', -50, trait('trait.reputation', 'Reputation')), fixed('outback.trait.wealth', -100, trait('trait.wealth', 'Wealth')), { id: 'outback.skill.art-or-interest', kind: 'any-skill-choice', xp: 10, skillId: 'skill.art', displayName: 'Art/Any or Interest/Any', count: 1 }, fixed('outback.skill.streetwise', 10, skill('skill.streetwise', 'Streetwise/FedSuns', 'FedSuns')), { id: 'outback.skill.survival', kind: 'any-skill-choice', xp: 20, skillId: 'skill.survival', displayName: 'Survival/Any', count: 1 }],
+    notes: ['Federated Suns sub-affiliation; no additional module cost. Choose exactly one Art/Any or Interest/Any subject.'], deferredRules: [],
   },
   {
     id: CAPELLAN_COMMONALITY_ID,

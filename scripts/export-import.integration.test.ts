@@ -13,7 +13,7 @@ import { enterFinalTouches, markReadyForEquipmentReview } from '../src/engine/fi
 import { finalizeCharacterSnapshot } from '../src/domain/character/readiness'
 import { encodeCharacter } from '../src/persistence/characterCodec'
 import { addStasisEvent, createAnnualCheckOutcome, createFreezingCheckOutcome, createStasisEvent } from '../src/domain/character/stasis'
-import { B12_FIXTURES, V1D_FIXTURES, assertFixtureSummary, completeV1dFinalReview, completeV1dProgression, createMarchThroughStage0 } from './browserVerification.mjs'
+import { B12_FIXTURES, V1D_FIXTURES, assertFixtureSummary, completeV1dFinalReview, completeV1dProgression, createMarchThroughStage0, createOutbackThroughStage0 } from './browserVerification.mjs'
 
 const pwExpect = (locator: { waitFor: (options: { state: 'visible' }) => Promise<void>; count: () => Promise<number>; first: () => { waitFor: (options: { state: 'visible' }) => Promise<void> } }) => ({ toBeVisible: () => locator.first().waitFor({ state: 'visible' }), toHaveCount: async (expected: number) => { const actual = await locator.count(); if (actual !== expected) throw new Error(`Expected ${expected} matching elements, found ${actual}.`) } })
 
@@ -152,5 +152,17 @@ describe('browser export/import integration', () => {
         await resumed.close()
       } finally { await browser.close() }
     } finally { await server.close(); await rm(root, { recursive: true, force: true }) }
+  }, 120000)
+
+  it('verifies Outback Art and Interest branches, Survival resolution, and persistence', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'atow-outback-ui-')); const repo = fileURLToPath(new URL('..', import.meta.url)); const server = await startViteServer(repo)
+    try { const browser = await launchBrowser(); try {
+      for (const fixture of [{ name: 'B14 Outback Art', branch: 'art', subject: 'Sculpture', survival: 'Forest' }, { name: 'B14 Outback Interest', branch: 'interest', subject: 'Geology', survival: 'Desert' }]) {
+        const page = await browser.newPage({ acceptDownloads: true }); await page.goto(`${server.url}/#/`, { waitUntil: 'domcontentloaded' }); await createOutbackThroughStage0(page, fixture)
+        expect(await page.getByRole('button', { name: 'Continue' }).last().isEnabled()).toBe(true)
+        await page.getByRole('button', { name: 'Continue' }).last().click(); await page.getByText('Early Childhood module', { exact: false }).first().waitFor({ state: 'visible' })
+        const body = await page.locator('body').innerText(); expect(body).toContain(fixture.branch === 'art' ? 'Art/Sculpture' : 'Interest/Geology'); expect(body).toContain(`Survival/${fixture.survival}`); expect(body).toContain('Federated Suns / Outback'); await page.close()
+      }
+    } finally { await browser.close() } } finally { await server.close(); await rm(root, { recursive: true, force: true }) }
   }, 120000)
 })
