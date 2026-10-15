@@ -4,9 +4,10 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
 import { describe, expect, it } from 'vitest'
+import { createSianCitizenCharacter } from '../src/capellanFixture'
 import { createServer } from 'vite'
-import { createLifeModuleCharacter, applyUniversalStage0, applyCapellanCommonality, applyStage1Module, applyStage2Module, applyTechnicalCollege, applyAgitator, continueToStage2, continueToStage3, continueToStage4, resolvePendingLifeModuleAward } from '../src/engine/lifeModuleEngine'
-import { BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, STAGE_2_HIGH_SCHOOL_ID } from '../src/domain/lifeModules/catalog'
+import { createLifeModuleCharacter, applyStage1Module, applyStage2Module, applyTechnicalCollege, applyAgitator, continueToStage2, continueToStage3, continueToStage4, resolvePendingLifeModuleAward } from '../src/engine/lifeModuleEngine'
+import { BLUE_COLLAR_ID, STAGE_2_HIGH_SCHOOL_ID } from '../src/domain/lifeModules/catalog'
 import { getOptimizationPreview } from '../src/domain/lifeModules/finalReview'
 import { enterLifeModuleFinalReview } from '../src/engine/lifeModuleFinalReview'
 import { enterFinalTouches, markReadyForEquipmentReview } from '../src/engine/finalTouchesEngine'
@@ -21,8 +22,8 @@ const browserExecutablePath = process.env.ATOW_BROWSER_EXECUTABLE_PATH
 const launchBrowser = () => chromium.launch({ headless: true, ...(browserExecutablePath ? { executablePath: browserExecutablePath } : {}) })
 const award = (c: ReturnType<typeof createLifeModuleCharacter>, id: string, targetId: string, displayName: string, parameter?: string) => { const p = c.creation.lifeModules!.pendingAwards.find((x) => x.awardId === id)!; return resolvePendingLifeModuleAward(c, p.id, { type: p.allowedTargetTypes[0], targetId, displayName, ...(parameter ? { parameter: { kind: 'subskill', value: parameter } } : {}) }) }
 function fixture(includeStasis = true) {
-  let c = createLifeModuleCharacter('Export Import Fixture')
-  c = applyUniversalStage0(c, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'); c = applyCapellanCommonality(c, 'Russian'); c = applyStage1Module(c, BLUE_COLLAR_ID)
+  let c = createSianCitizenCharacter('Export Import Fixture')
+  c = applyStage1Module(c, BLUE_COLLAR_ID)
   c = award(c, 'commonality.language.fedsuns', 'skill.language', 'Language/French', 'French'); c = award(c, 'blue-collar.career', 'skill.career', 'Career/Technician', 'Technician'); c = award(c, 'blue-collar.interests', 'skill.interest', 'Interest/History', 'History'); c = award(c, 'blue-collar.interests', 'skill.interest', 'Interest/Science', 'Science')
   for (const id of ['STR', 'BOD', 'DEX', 'RFL']) c = award(c, 'blue-collar.flexible', id, id)
   c = applyStage2Module(continueToStage2(c), STAGE_2_HIGH_SCHOOL_ID); c = award(c, 'high-school.interest-40', 'skill.interest', 'Interest/Physics', 'Physics'); c = award(c, 'high-school.interest-35', 'skill.interest', 'Interest/Art', 'Art')

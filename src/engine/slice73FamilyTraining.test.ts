@@ -4,10 +4,11 @@ import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID } from '../domain/skillFields/catalog'
 import { applyCapellanCommonality, applyStage3School, applyUniversalStage0, createLifeModuleCharacter, resolvePendingLifeModuleAward } from './lifeModuleEngine'
 import { previewStageModuleChoiceSlots } from '../ui/components/stageModuleChoiceSlotsModel'
+import { asCapellanCitizen } from '../capellanFixture'
 
 function stage3Draft() {
   let character = createLifeModuleCharacter('Family Training')
-  character = applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian')
+  character = asCapellanCitizen(applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian'))
   character.creation.lifeModules!.phase = 'stage-3-selection'
   character.creation.lifeModules!.currentStage = 3
   character.creation.lifeModules!.pendingAwards = []

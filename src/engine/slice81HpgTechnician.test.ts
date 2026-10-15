@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import { asCapellanCitizen } from '../capellanFixture'
 import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSITY_ID } from '../domain/lifeModules/catalog'
 import { ANALYSIS_FIELD_ID, CARTOGRAPHER_FIELD_ID, COMMUNICATIONS_FIELD_ID, HPG_TECHNICIAN_FIELD_ID, SKILL_FIELD_CATALOG, skillFieldCost } from '../domain/skillFields/catalog'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
 import { applyStage0Affiliation, applyStage3School, createLifeModuleCharacter } from './lifeModuleEngine'
 
 function stage3Draft(order?: 'comstar' | 'word-of-blake') {
-  const character = applyStage0Affiliation(
+  const character = asCapellanCitizen(applyStage0Affiliation(
     createLifeModuleCharacter(order ?? 'No order'),
     CAPELLAN_COMMONALITY_ID,
     'Mandarin Chinese',
@@ -17,7 +18,7 @@ function stage3Draft(order?: 'comstar' | 'word-of-blake') {
     order ? 'French' : undefined,
     order ? 'Electronic' : undefined,
     'no',
-  )
+  ))
   character.creation.lifeModules!.phase = 'stage-3-selection'
   character.creation.lifeModules!.currentStage = 3
   character.creation.lifeModules!.pendingAwards = []

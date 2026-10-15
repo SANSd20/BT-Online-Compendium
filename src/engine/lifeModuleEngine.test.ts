@@ -7,11 +7,10 @@ import { validateCharacter } from '../validation/validateCharacter'
 import { applyAgitator, applyCapellanCommonality, applyFederatedSunsCrucisMarch, applyMilitaryAcademy, applyMilitaryEnlistment, applyStage0Affiliation, applyStage1Module, applyStage2Module, applyStage3School, applyStage4Module, applyTechnicalCollege, applyUniversalStage0, continueStage3Schooling, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, reevaluateLifeModulePrerequisites, resolvePendingLifeModuleAward } from './lifeModuleEngine'
 import { allocateFinalReviewXp, approveFinalReviewSpecialty, applyAllLifeModuleOptimizations, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, proposeFinalReviewSpecialty, purchaseAdditionalNegativeTraitXp, purchaseFinalReviewSkill, removeFinalReviewAllocation, removeFinalReviewSpecialty, removeAdditionalNegativeTraitXp, resolveLifeModuleOpposedTraits } from './lifeModuleFinalReview'
 import { createPointBuyCharacter } from './pointBuyEngine'
+import { createSianCitizenCharacter } from '../capellanFixture'
 
 function completeStage0(startingXp = 5000) {
-  let character = createLifeModuleCharacter('Xiang', startingXp)
-  character = applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
-  return applyCapellanCommonality(character, 'Russian')
+  return createSianCitizenCharacter('Xiang', startingXp)
 }
 
 function resolveByAward(character: ReturnType<typeof completeStage0>, awardId: string, targetId: string, displayName: string, parameter?: string) {

@@ -3,6 +3,7 @@ import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
 
 export const UNIVERSAL_STAGE_0_ID = 'stage0.universal-fixed-xp'
 export const CAPELLAN_COMMONALITY_ID = 'stage0.capellan-confederation.capellan-commonality'
+export const SIAN_COMMONALITY_ID = 'stage0.capellan-confederation.sian-commonality'
 export const FEDERATED_SUNS_CRUCIS_MARCH_ID = 'stage0.federated-suns.crucis-march'
 export const FEDERATED_SUNS_CAPELLAN_MARCH_ID = 'stage0.federated-suns.capellan-march'
 export const FEDERATED_SUNS_DRACONIS_MARCH_ID = 'stage0.federated-suns.draconis-march'
@@ -99,6 +100,24 @@ export const CAPELLAN_COMMONALITY_CONTEXT: LifeModuleAffiliationContext = {
   source: source(64, 'capellan-confederation-capellan-commonality'),
 }
 
+export const SIAN_COMMONALITY_CONTEXT: LifeModuleAffiliationContext = {
+  id: SIAN_COMMONALITY_ID,
+  kind: 'affiliation',
+  displayName: 'Capellan Confederation / Sian Commonality',
+  isAffiliation: true,
+  support: 'supported',
+  affiliationId: 'affiliation.capellan-confederation',
+  affiliationName: 'Capellan Confederation',
+  subAffiliationName: 'Sian Commonality',
+  primaryLanguage: 'Mandarin Chinese',
+  secondaryLanguages: LIFE_MODULE_LANGUAGE_SELECTOR_GROUPS['capellan-secondary'],
+  affiliationLanguageSelector: 'affiliation-languages',
+  secondaryLanguageSelector: 'capellan-secondary',
+  protocolContextLabel: 'Capellan',
+  streetwiseContextLabel: 'Capellan',
+  source: source(64, 'capellan-confederation-sian-commonality'),
+}
+
 export const FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT: LifeModuleAffiliationContext = {
   id: FEDERATED_SUNS_CRUCIS_MARCH_ID,
   kind: 'affiliation',
@@ -157,7 +176,7 @@ export const CLAN_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] 
   },
 ]
 
-export const SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_OUTBACK_CONTEXT]
+export const SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [CAPELLAN_COMMONALITY_CONTEXT, SIAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_OUTBACK_CONTEXT]
 
 export const ORDER_AFFILIATION_IDS = {
   comstar: 'affiliation.comstar',

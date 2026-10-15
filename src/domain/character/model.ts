@@ -595,6 +595,9 @@ export interface LifeModuleHistoryEntry {
   baseCostXp?: number
   fieldCostXp?: number
   chronologyYears?: number
+  actualDurationYears?: number
+  partialDurationReason?: 'campaign-deadline' | 'capellan-substitution'
+  sourceRelationId?: string
   repeatPolicy?: {
     sameModuleRepeat: 'allowed' | 'deferred'
     repeatCost: 'full-module-cost'
@@ -694,7 +697,9 @@ export interface CharacterDefinition {
   clanCastePackageId?: string
   phenotypeId: string
   lifeModuleHistory: LifeModuleHistoryEntry[]
-  chronology: Array<{ date: string; eventId: string; provenanceId: string }>
+  chronology: ChronologyEntry[]
+  /** Added in G1h-A; absent on older Alpha saves. */
+  chronologyProfile?: ChronologyProfile
   stasisHistory?: StasisHistoryEvent[]
   inventory: EquipmentItem[]
   cBills: number
@@ -703,4 +708,31 @@ export interface CharacterDefinition {
   personalDescription?: PersonalDescription
   playState?: PlayStateFoundation
   finalizedSnapshots?: FinalizedCharacterSnapshot[]
+}
+
+export type ChronologyMode = 'fixed-dob' | 'progression-derived'
+export interface ChronologyProfile {
+  version: 1
+  mode: ChronologyMode
+  fixedDob?: string
+  campaignReferenceDate?: string
+  campaignReferenceYear?: number
+  campaignReferencePrecision?: 'year' | 'date'
+  derivedAgeYears?: number
+  birthDateRange?: { earliest: string; latest: string }
+}
+export interface ChronologyEntry {
+  date: string
+  eventId: string
+  provenanceId: string
+  operation?: 'ADD_YEARS' | 'SET_AGE'
+  ageBefore?: number
+  ageAfter?: number
+  normalDurationYears?: number
+  elapsedDurationYears?: number
+  partialDurationReason?: 'campaign-deadline' | 'capellan-substitution'
+  moduleId?: string
+  stage?: 0 | 1 | 2 | 3 | 4
+  sourceRelationId?: string
+  source?: SourceCitation
 }

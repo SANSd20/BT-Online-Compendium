@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './catalog'
 import {
   CAPELLAN_COMMONALITY_CONTEXT,
+  SIAN_COMMONALITY_CONTEXT,
   CLAN_AFFILIATION_CONTEXTS,
   FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT,
   getLifeModuleLanguageSelectorOptions,
@@ -19,7 +20,7 @@ describe('Life Module affiliation framework', () => {
   })
 
   it('centralizes the supported Capellan and Federated Suns contexts', () => {
-    expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS).toEqual([CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, expect.objectContaining({ subAffiliationName: 'Capellan March' }), expect.objectContaining({ subAffiliationName: 'Draconis March' }), expect.objectContaining({ subAffiliationName: 'Outback' })])
+    expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS).toEqual([CAPELLAN_COMMONALITY_CONTEXT, SIAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, expect.objectContaining({ subAffiliationName: 'Capellan March' }), expect.objectContaining({ subAffiliationName: 'Draconis March' }), expect.objectContaining({ subAffiliationName: 'Outback' })])
     expect(CAPELLAN_COMMONALITY_CONTEXT).toMatchObject({
       id: CAPELLAN_COMMONALITY_ID,
       affiliationId: 'affiliation.capellan-confederation',

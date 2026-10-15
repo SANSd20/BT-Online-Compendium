@@ -71,8 +71,8 @@ export function previewStage0Affiliation(
     const preview = structuredClone(withUniversal)
     preview.creation.lifeModules!.stage0AffiliationContext = affiliationContext
     const includeSub = !subAffiliationSelection || subAffiliationSelection === affiliationContext
-    const birthPreview = applyCapellanCommonality(preview, secondaryLanguage || undefined, includeSub)
-    birthPreview.creation.lifeModules!.stage0SubAffiliation = includeSub ? affiliationContext : 'no'
+    const birthPreview = applyCapellanCommonality(preview, secondaryLanguage || undefined, includeSub, subAffiliationSelection || undefined)
+    birthPreview.creation.lifeModules!.stage0SubAffiliation = includeSub ? (subAffiliationSelection || affiliationContext) : 'no'
     return previewOrderAffiliation(birthPreview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
   } catch {
     return null

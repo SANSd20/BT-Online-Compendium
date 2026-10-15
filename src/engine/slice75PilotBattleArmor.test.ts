@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { asCapellanCitizen } from '../capellanFixture'
 import { BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FAMILY_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, SOLARIS_INTERNSHIP_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
 import { BASIC_TRAINING_FIELD_ID, INFANTRY_FIELD_ID, JOURNALIST_FIELD_ID, MANAGER_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID } from '../domain/skillFields/catalog'
 import { applyCapellanCommonality, applyStage1Module, applyStage2Module, applyStage3School, applyUniversalStage0, continueToStage2, continueToStage3, createLifeModuleCharacter, resolvePendingLifeModuleAward } from './lifeModuleEngine'
@@ -6,7 +7,7 @@ import { validateCharacter } from '../validation/validateCharacter'
 
 function stage3Draft() {
   let character = createLifeModuleCharacter('Pilot Battle Armor')
-  character = applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian')
+  character = asCapellanCitizen(applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian'))
   character.creation.lifeModules!.phase = 'stage-3-selection'
   character.creation.lifeModules!.currentStage = 3
   character.creation.lifeModules!.pendingAwards = []
@@ -24,7 +25,7 @@ function resolveByAward(character: ReturnType<typeof stage3Draft>, awardId: stri
 
 function completeStage2() {
   let character = createLifeModuleCharacter('Pilot Battle Armor')
-  character = applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian')
+  character = asCapellanCitizen(applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian'))
   character = applyStage1Module(character, BLUE_COLLAR_ID)
   character = resolveByAward(character, 'commonality.language.fedsuns', 'skill.language', 'Language/French', 'French')
   character = resolveByAward(character, 'blue-collar.career', 'skill.career', 'Career/Soldier', 'Soldier')

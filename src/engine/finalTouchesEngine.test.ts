@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, FAMILY_TRAINING_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
+import { AGITATOR_ID, BLUE_COLLAR_ID, FAMILY_TRAINING_ID, STAGE_2_HIGH_SCHOOL_ID } from '../domain/lifeModules/catalog'
 import { getOptimizationPreview as getDomainOptimizationPreview } from '../domain/lifeModules/finalReview'
 import { equipmentLimitsForEquipped, getEquipmentFoundationIssues, startingCBillsForWealth } from '../domain/finalTouches/rules'
 import { decodeCharacter, encodeCharacter } from '../persistence/characterCodec'
@@ -7,12 +7,10 @@ import { LocalStorageCharacterRepository, type StorageLike } from '../persistenc
 import { validateCharacter } from '../validation/validateCharacter'
 import { evaluateCharacterReadiness, finalizeCharacterSnapshot } from '../domain/character/readiness'
 import {
-  applyCapellanCommonality,
   applyStage1Module,
   applyStage2Module,
   applyStage4Module,
   applyTechnicalCollege,
-  applyUniversalStage0,
   continueToStage2,
   continueToStage3,
   continueToStage4,
@@ -20,6 +18,7 @@ import {
   resolvePendingLifeModuleAward,
 } from './lifeModuleEngine'
 import { enterLifeModuleFinalReview } from './lifeModuleFinalReview'
+import { createSianCitizenCharacter } from '../capellanFixture'
 import {
   addCatalogInventoryItem,
   addManualInventoryItem,
@@ -49,9 +48,7 @@ function resolveByAward(character: ReturnType<typeof createLifeModuleCharacter>,
 }
 
 function readyForFinalTouches() {
-  let character = createLifeModuleCharacter('Final Touches Fixture')
-  character = applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese')
-  character = applyCapellanCommonality(character, 'Russian')
+  let character = createSianCitizenCharacter('Final Touches Fixture')
   character = applyStage1Module(character, BLUE_COLLAR_ID)
   character = resolveByAward(character, 'commonality.language.fedsuns', 'skill.language', 'Language/French', 'French')
   character = resolveByAward(character, 'blue-collar.career', 'skill.career', 'Career/Technician', 'Technician')

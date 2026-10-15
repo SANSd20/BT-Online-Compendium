@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import { asCapellanCitizen } from '../capellanFixture'
 import { CAPELLAN_COMMONALITY_ID, FAMILY_TRAINING_ID, MILITARY_ACADEMY_ID, TECHNICAL_COLLEGE_ID } from '../domain/lifeModules/catalog'
 import { ANALYSIS_FIELD_ID, BASIC_TRAINING_FIELD_ID, PILOT_DROPSHIP_FIELD_ID, PILOT_JUMPSHIP_FIELD_ID, PILOT_WARSHIP_FIELD_ID, SKILL_FIELD_CATALOG, skillFieldCost } from '../domain/skillFields/catalog'
 import { applyCapellanCommonality, applyStage3School, applyUniversalStage0, createLifeModuleCharacter, reevaluateLifeModulePrerequisites } from './lifeModuleEngine'
 
 function stage3Draft() {
   let character = createLifeModuleCharacter('Spacecraft Pilot')
-  character = applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian')
+  character = asCapellanCitizen(applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian'))
   character.creation.lifeModules!.phase = 'stage-3-selection'
   character.creation.lifeModules!.currentStage = 3
   character.creation.lifeModules!.pendingAwards = []

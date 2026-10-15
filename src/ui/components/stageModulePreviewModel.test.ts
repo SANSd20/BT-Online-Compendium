@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { asCapellanCitizen } from '../../capellanFixture'
 import {
   AGITATOR_ID,
   BACK_WOODS_ID,
@@ -19,7 +20,7 @@ import { applySupportedStageModule, previewSupportedStageModule, stage3FieldSele
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
   let character = createLifeModuleCharacter(`Preview ${phase}`)
-  character = applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian')
+  character = asCapellanCitizen(applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian'))
   character.creation.lifeModules!.phase = phase
   character.creation.lifeModules!.currentStage = phase === 'stage-1-selection' ? 1 : phase === 'stage-2-selection' ? 2 : phase === 'stage-3-selection' ? 3 : 4
   return character

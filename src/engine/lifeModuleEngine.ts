@@ -1,5 +1,6 @@
 import type {
   CharacterDefinition,
+  ChronologyEntry,
   LifeModulePrerequisiteIssue,
   PendingLifeModuleAward,
   ProvenanceRecord,
@@ -33,6 +34,7 @@ import {
   TRUEBORN_CRECHE_ID,
   TRUEBORN_SIBKO_ID,
   CLAN_WATCH_OPERATIVE_ID,
+  CLAN_CIVILIAN_JOB_ID,
   STAGE_2_BACK_WOODS_ID,
   STAGE_2_HIGH_SCHOOL_ID,
   WAR_ORPHAN_ID,
@@ -45,7 +47,7 @@ import {
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues, modeledSkillChoiceOptions, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
 import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
-import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_CONTEXT, FEDERATED_SUNS_OUTBACK_ID, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_CONTEXT, FEDERATED_SUNS_OUTBACK_ID, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, SIAN_COMMONALITY_ID, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
 import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
 import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, CLAN_MECHWARRIOR_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
@@ -58,10 +60,24 @@ import { attributeLegality } from '../domain/character/attributeLegality'
 import { isHomeworldClanId, type HomeworldClanId } from '../domain/character/clanIdentity'
 import { HOMEWORLD_CLAN_PACKAGES } from '../domain/character/clanPackages'
 import { resolveClanDestination } from '../domain/character/clanDestinations'
+import { evaluateDurationEligibility } from '../domain/character/chronology'
+import { capellanCitizenshipEligibility } from '../domain/lifeModules/capellanRestrictions'
 
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
 
 export type LifeModuleTransactionOperation = {
+  kind: 'set-age'
+  ageYears: number
+  sourceRelationId?: string
+  source?: { sourceId: string; edition: string; page?: number; ruleId?: string }
+} | {
+  kind: 'grant-capellan-civilian-job'
+  relationId: 'relation.capellan.stage-2-civilian-job-substitution'
+} | {
+  kind: 'add-years'
+  years: number
+  source?: { sourceId: string; edition: string; page?: number; ruleId?: string }
+} | {
   kind: 'resolve-pending-award'
   pendingAwardId: string
   destination: ResolvedLifeModuleDestination
@@ -128,6 +144,41 @@ export interface LifeModuleTransaction {
   prospectiveState: CharacterDefinition | null
   errors: LifeModuleTransactionError[]
   status: 'built' | 'validated' | 'failed' | 'committed'
+}
+
+const SET_AGE_RELATIONS = new Set(['relation.capellan.stage-2-civilian-job-substitution'])
+const CAPELLAN_AFFILIATION_ID = 'affiliation.capellan-confederation'
+function currentProgressionAge(character: CharacterDefinition): number {
+  const explicit = character.chronology.at(-1)?.ageAfter
+  if (explicit !== undefined) return explicit
+  const ages = character.chronology.map((entry) => /^age:(\d+(?:\.\d+)?)$/.exec(entry.date)?.[1]).filter(Boolean).map(Number)
+  return ages.length ? Math.max(...ages) : 0
+}
+
+function applyChronologyOperation(character: CharacterDefinition, operation: Extract<LifeModuleTransactionOperation, { kind: 'set-age' | 'add-years' }>): CharacterDefinition {
+  const next = structuredClone(character)
+  const before = currentProgressionAge(next)
+  const after = operation.kind === 'set-age' ? operation.ageYears : before + operation.years
+  if (!Number.isFinite(after) || after < 0) throw new Error('Chronology age must be a finite non-negative number.')
+  if (operation.kind === 'add-years' && (!Number.isFinite(operation.years) || operation.years < 0)) throw new Error('Chronology duration must be a finite non-negative number.')
+  if (operation.kind === 'set-age' && operation.sourceRelationId && !SET_AGE_RELATIONS.has(operation.sourceRelationId)) throw new Error(`Unauthorized chronology source relation: ${operation.sourceRelationId}`)
+  const source = operation.source
+  const provenanceId = next.provenance.find((entry) => entry.source?.sourceId === source?.sourceId && entry.source?.page === source?.page)?.id ?? next.provenance[0]?.id ?? ''
+  const event: ChronologyEntry = { date: `age:${after}`, eventId: `chronology.${operation.kind}.${next.chronology.length}`, provenanceId, operation: operation.kind === 'set-age' ? 'SET_AGE' : 'ADD_YEARS', ageBefore: before, ageAfter: after, elapsedDurationYears: operation.kind === 'add-years' ? operation.years : 0, sourceRelationId: operation.kind === 'set-age' ? operation.sourceRelationId : undefined, source }
+  next.chronology.push(event)
+  if (next.chronologyProfile?.mode === 'progression-derived') next.chronologyProfile.derivedAgeYears = after
+  return next
+}
+
+function applyCapellanCivilianJobSubstitution(character: CharacterDefinition, relationId: string): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (relationId !== 'relation.capellan.stage-2-civilian-job-substitution') throw new Error(`Unsupported substitution relation: ${relationId}`)
+  if (state.phase !== 'stage-2-selection' || state.currentStage !== 2) throw new Error('Capellan Civilian Job substitution requires the active Stage 2 selection slot.')
+  if (!character.affiliations.some((entry) => entry.affiliationId === CAPELLAN_AFFILIATION_ID)) throw new Error('Capellan Civilian Job substitution requires Capellan Confederation affiliation.')
+  if (character.lifeModuleHistory.some((entry) => entry.stage === 2)) throw new Error('Exactly one Stage 2 module may be selected.')
+  const module = getLifeModule(CLAN_CIVILIAN_JOB_ID)
+  const next = applyModule(character, module, {}, { appliedStage: 2, sourceRelationId: relationId, actualDurationYears: 0, partialDurationReason: 'capellan-substitution' })
+  return applyChronologyOperation(next, { kind: 'set-age', ageYears: 18, sourceRelationId: relationId, source: { sourceId: 'atow-core-corrected-third', edition: 'Corrected Third Printing', page: 64, ruleId: relationId } })
 }
 
 export interface ConditionalLifeModulePackage {
@@ -599,6 +650,16 @@ export function buildLifeModuleTransaction(
   }
 
   for (const [operationIndex, operation] of operations.entries()) {
+    if (operation.kind === 'grant-capellan-civilian-job') {
+      try { transaction.prospectiveState = applyCapellanCivilianJobSubstitution(transaction.prospectiveState!, operation.relationId) }
+      catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
+      continue
+    }
+    if (operation.kind === 'set-age' || operation.kind === 'add-years') {
+      try { transaction.prospectiveState = applyChronologyOperation(transaction.prospectiveState!, operation) }
+      catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
+      continue
+    }
     if (operation.kind === 'grant-governed-field') {
       try {
         transaction.prospectiveState = applyGovernedFieldGrant(transaction.prospectiveState!, operation)
@@ -783,13 +844,13 @@ export function applyStage0Affiliation(
   survivalSubject?: string,
 ): CharacterDefinition {
   const withUniversal = applyUniversalStage0(character, affiliationContextModuleId, affiliationLanguage)
-  const includeSubAffiliation = subAffiliationSelection === undefined || subAffiliationSelection === affiliationContextModuleId
+  const includeSubAffiliation = subAffiliationSelection === undefined || subAffiliationSelection === affiliationContextModuleId || subAffiliationSelection === SIAN_COMMONALITY_ID
   const withBirth = affiliationContextModuleId === FEDERATED_SUNS_CRUCIS_MARCH_ID
     ? applyFederatedSunsCrucisMarch(withUniversal, davionNaturalAptitude, davionArt, includeSubAffiliation)
     : affiliationContextModuleId === FEDERATED_SUNS_CAPELLAN_MARCH_ID || affiliationContextModuleId === FEDERATED_SUNS_DRACONIS_MARCH_ID || affiliationContextModuleId === FEDERATED_SUNS_OUTBACK_ID
       ? applyFederatedSunsMarch(withUniversal, affiliationContextModuleId, davionNaturalAptitude, davionArt, includeSubAffiliation, survivalSubject)
-      : applyCapellanCommonality(withUniversal, capellanSecondaryLanguage, includeSubAffiliation)
-  requireLifeModules(withBirth).stage0SubAffiliation = includeSubAffiliation ? affiliationContextModuleId : 'no'
+      : applyCapellanCommonality(withUniversal, capellanSecondaryLanguage, includeSubAffiliation, subAffiliationSelection)
+  requireLifeModules(withBirth).stage0SubAffiliation = includeSubAffiliation ? (subAffiliationSelection ?? affiliationContextModuleId) : 'no'
   return applyOrderAffiliation(withBirth, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
 }
 
@@ -860,7 +921,7 @@ export function previewOrderAffiliation(
   }
 }
 
-export function applyCapellanCommonality(character: CharacterDefinition, capellanSecondaryLanguage?: string, includeSubAffiliation = true): CharacterDefinition {
+export function applyCapellanCommonality(character: CharacterDefinition, capellanSecondaryLanguage?: string, includeSubAffiliation = true, subAffiliationSelection?: string): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-0-affiliation') throw new Error('The Stage 0 affiliation is not the current legal action.')
   if (state.stage0AffiliationContext !== CAPELLAN_COMMONALITY_CONTEXT.id) {
@@ -877,7 +938,13 @@ export function applyCapellanCommonality(character: CharacterDefinition, capella
     }
   }
   const published = getLifeModule(CAPELLAN_COMMONALITY_ID)
-  const module = includeSubAffiliation ? published : {
+  const sianSelected = includeSubAffiliation && subAffiliationSelection === SIAN_COMMONALITY_ID
+  const module = sianSelected ? {
+    ...published,
+    displayName: 'Capellan Confederation / Sian Commonality',
+    source: { ...published.source, ruleId: 'capellan-confederation-sian-commonality' },
+    awards: [...published.awards, { id: 'sian.trait.citizenship', kind: 'fixed' as const, xp: 50, destination: { type: 'trait' as const, traitId: 'trait.citizenship', displayName: 'Citizenship', parameters: { subject: 'Capellan Confederation' } } }],
+  } : includeSubAffiliation ? published : {
     ...published,
     displayName: CAPELLAN_COMMONALITY_CONTEXT.affiliationName,
     awards: published.awards.filter((award) => award.id.startsWith('capellan.')),
@@ -1035,9 +1102,20 @@ export function applyStage2Module(
   if (state.phase !== 'stage-2-selection') throw new Error('A Stage 2 module is not the current legal action.')
   if (![STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, MILITARY_SCHOOL_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 2 module: ${moduleId}`)
   if (character.lifeModuleHistory.some((entry) => entry.stage === 2)) throw new Error('Exactly one Stage 2 module may be selected.')
+  const citizenship = capellanCitizenshipEligibility(character, 2, moduleId)
+  if (!citizenship.eligible) throw new Error(citizenship.reason)
   const next = applyModule(character, getLifeModule(moduleId), {})
   next.chronology.push({ date: 'age:16', eventId: `${moduleId}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })
   return updateLifeModuleProgress(next)
+}
+
+export function applyCapellanCivilianJob(
+  character: CharacterDefinition,
+): CharacterDefinition {
+  const transaction = buildLifeModuleTransaction(character, [{ kind: 'grant-capellan-civilian-job', relationId: 'relation.capellan.stage-2-civilian-job-substitution' }])
+  const validated = validateLifeModuleTransaction(transaction)
+  if (validated.status !== 'validated') throw new Error(validated.errors.map((entry) => entry.message).join(' '))
+  return commitLifeModuleTransaction(validated)
 }
 
 export function continueToStage3(character: CharacterDefinition): CharacterDefinition {
@@ -1074,7 +1152,7 @@ export function applyMilitaryEnlistment(
   return applyStage3SchoolDefinition(character, MILITARY_ENLISTMENT_ID, fieldIds)
 }
 
-function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: string, fieldIds: string[], personalDetail?: string): CharacterDefinition {
+function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: string, fieldIds: string[], personalDetail?: string, availableYears?: number): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-3-selection') throw new Error('A Stage 3 school is not the current legal action.')
   const preparedCharacter = structuredClone(character)
@@ -1096,6 +1174,8 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
     { completedFieldCategories: state.selectedSkillFields.map((grant) => grant.category) },
   )
   if (!eligibility.eligible) throw new Error(eligibility.reason)
+  const citizenship = capellanCitizenshipEligibility(character, 3, moduleId)
+  if (!citizenship.eligible) throw new Error(citizenship.reason)
   const conditional = publishedSchool.conditionalPriorModuleAwards
   const conditionalApplies = Boolean(conditional && conditional.absentModuleIds.every((id) => !character.lifeModuleHistory.some((entry) => entry.moduleId === id)))
   const school: LifeModuleDefinition = conditionalApplies
@@ -1105,6 +1185,9 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
   const selections = fieldIds.map((fieldId) => ({ field: getSkillField(fieldId), offer: school.skillFieldSelection!.offers.find((entry) => entry.fieldId === fieldId)! }))
   const fieldCostXp = selections.reduce((total, selection) => total + skillFieldCost(selection.field, selection.offer.costXpPerSkill), 0)
   const totalCostXp = school.costXp + fieldCostXp
+  const duration = selections.reduce((total, selection) => total + selection.offer.chronologyYears, 0)
+  const durationEligibility = evaluateDurationEligibility(character.chronologyProfile, duration, 3, availableYears)
+  if (!durationEligibility.eligible) throw new Error(durationEligibility.reason)
   const next = applyModule(preparedCharacter, school, {}, { totalCostXp, fieldCostXp })
   const selectedAt = next.lifeModuleHistory.at(-1)?.selectedAt ?? new Date().toISOString()
   for (const { field, offer } of selections) {
@@ -1174,9 +1257,9 @@ function applyStage3SchoolDefinition(character: CharacterDefinition, moduleId: s
   return updateLifeModuleProgress(next)
 }
 
-export function applyStage3School(character: CharacterDefinition, moduleId: string, fieldIds: string[], personalDetail?: string): CharacterDefinition {
+export function applyStage3School(character: CharacterDefinition, moduleId: string, fieldIds: string[], personalDetail?: string, availableYears?: number): CharacterDefinition {
   if (![TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, SOLARIS_INTERNSHIP_ID, POLICE_ACADEMY_ID, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, FAMILY_TRAINING_ID, OFFICER_TRAINING_SCHOOL_ID].includes(moduleId)) throw new Error(`Unknown Alpha Stage 3 school: ${moduleId}`)
-  return applyStage3SchoolDefinition(character, moduleId, fieldIds, personalDetail)
+  return applyStage3SchoolDefinition(character, moduleId, fieldIds, personalDetail, availableYears)
 }
 
 export function continueStage3Schooling(character: CharacterDefinition): CharacterDefinition {
@@ -1211,14 +1294,23 @@ export function continueToStage4(character: CharacterDefinition): CharacterDefin
   return next
 }
 
-export function applyAgitator(character: CharacterDefinition): CharacterDefinition {
+export function applyAgitator(character: CharacterDefinition, availableYears?: number): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-4-selection') throw new Error('A Stage 4 module is not the current legal action.')
   if (character.lifeModuleHistory.some((entry) => entry.moduleId === AGITATOR_ID)) {
     throw new Error('Repeated Agitator modules remain deferred.')
   }
   const module = getLifeModule(AGITATOR_ID)
+  const durationEligibility = evaluateDurationEligibility(character.chronologyProfile, module.chronologyYears ?? 0, 4, availableYears)
+  if (!durationEligibility.eligible) throw new Error(durationEligibility.reason)
   const next = applyModule(character, module, {})
+  if (durationEligibility.partial) {
+    const history = next.lifeModuleHistory.at(-1)!
+    history.actualDurationYears = durationEligibility.availableYears
+    history.partialDurationReason = 'campaign-deadline'
+    requireLifeModules(next).phase = 'alpha-stage-4-stop'
+    requireLifeModules(next).stopState = 'alpha-stage-4-stop'
+  }
   const stage3Years = requireLifeModules(next).selectedSkillFields.reduce((total, grant) => total + grant.chronologyYears, 0)
   const stage4Years = next.lifeModuleHistory
     .filter((entry) => entry.stage === 4)
@@ -1228,15 +1320,17 @@ export function applyAgitator(character: CharacterDefinition): CharacterDefiniti
   return updateLifeModuleProgress(next)
 }
 
-export function applyStage4Module(character: CharacterDefinition, moduleId: string): CharacterDefinition {
-  if (moduleId === AGITATOR_ID) return applyAgitator(character)
-  if (moduleId === TRAVEL_ID) return applyGenericStage4(character, TRAVEL_ID)
+export function applyStage4Module(character: CharacterDefinition, moduleId: string, availableYears?: number): CharacterDefinition {
+  if (moduleId === AGITATOR_ID) return applyAgitator(character, availableYears)
+  if (moduleId === TRAVEL_ID) return applyGenericStage4(character, TRAVEL_ID, availableYears)
   if (moduleId !== COMSTAR_WOB_SERVICE_ID) throw new Error(`Unknown Alpha Stage 4 module: ${moduleId}`)
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-4-selection') throw new Error('A Stage 4 module is not the current legal action.')
   const order = state.orderAffiliation
   if (order !== 'comstar' && order !== 'word-of-blake') throw new Error('ComStar/Word of Blake Service requires a committed ComStar or Word of Blake affiliation.')
   const published = getLifeModule(COMSTAR_WOB_SERVICE_ID)
+  const durationEligibility = evaluateDurationEligibility(character.chronologyProfile, published.chronologyYears ?? 0, 4, availableYears)
+  if (!durationEligibility.eligible) throw new Error(durationEligibility.reason)
   const repeat = character.lifeModuleHistory.some((entry) => entry.moduleId === COMSTAR_WOB_SERVICE_ID)
   const acquiredFieldProvenance = new Set(state.selectedSkillFields.map((field) => field.provenanceId))
   const fieldSkillKeys = [...new Set(character.skills.filter((entry) => entry.sourceAwards.some((award) => acquiredFieldProvenance.has(award.provenanceId))).map((entry) => `${entry.address.skillId}/${entry.address.parameter?.value ?? ''}`))]
@@ -1254,17 +1348,33 @@ export function applyStage4Module(character: CharacterDefinition, moduleId: stri
       .map((award) => award.id === 'service.branch.skills.any-four' && award.kind === 'modeled-skill-choice' && fieldSkillKeys.length > 0 ? { ...award, allowedDestinationKeys: fieldSkillKeys } : award),
   }
   const next = applyModule(character, module, {}, { allowRepeat: repeat })
+  if (durationEligibility.partial) {
+    const history = next.lifeModuleHistory.at(-1)!
+    history.actualDurationYears = durationEligibility.availableYears
+    history.partialDurationReason = 'campaign-deadline'
+    requireLifeModules(next).phase = 'alpha-stage-4-stop'
+    requireLifeModules(next).stopState = 'alpha-stage-4-stop'
+  }
   const years = next.lifeModuleHistory.filter((entry) => entry.stage === 3 || entry.stage === 4).reduce((total, entry) => total + (entry.chronologyYears ?? 0), 0)
   next.chronology.push({ date: `age:${16 + years}`, eventId: `${module.id}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })
   return updateLifeModuleProgress(next)
 }
 
-function applyGenericStage4(character: CharacterDefinition, moduleId: string): CharacterDefinition {
+function applyGenericStage4(character: CharacterDefinition, moduleId: string, availableYears?: number): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-4-selection') throw new Error('A Stage 4 module is not the current legal action.')
   const module = getLifeModule(moduleId)
+  const durationEligibility = evaluateDurationEligibility(character.chronologyProfile, module.chronologyYears ?? 0, 4, availableYears)
+  if (!durationEligibility.eligible) throw new Error(durationEligibility.reason)
   const repeat = character.lifeModuleHistory.some((entry) => entry.moduleId === moduleId)
   const next = applyModule(character, module, {}, { allowRepeat: repeat })
+  if (durationEligibility.partial) {
+    const history = next.lifeModuleHistory.at(-1)!
+    history.actualDurationYears = durationEligibility.availableYears
+    history.partialDurationReason = 'campaign-deadline'
+    requireLifeModules(next).phase = 'alpha-stage-4-stop'
+    requireLifeModules(next).stopState = 'alpha-stage-4-stop'
+  }
   const years = next.lifeModuleHistory.filter((entry) => entry.stage === 3 || entry.stage === 4).reduce((total, entry) => total + (entry.chronologyYears ?? 0), 0)
   next.chronology.push({ date: `age:${16 + years}`, eventId: `${module.id}.complete`, provenanceId: next.lifeModuleHistory.at(-1)?.provenanceIds[0] ?? '' })
   return updateLifeModuleProgress(next)
@@ -1357,7 +1467,7 @@ function applyModule(
   character: CharacterDefinition,
   module: LifeModuleDefinition,
   resolutions: Record<string, LifeModuleDestination>,
-  options: { totalCostXp?: number; fieldCostXp?: number; allowRepeat?: boolean } = {},
+  options: { totalCostXp?: number; fieldCostXp?: number; allowRepeat?: boolean; appliedStage?: 0 | 1 | 2 | 3 | 4; sourceRelationId?: string; actualDurationYears?: number; partialDurationReason?: 'campaign-deadline' | 'capellan-substitution' } = {},
 ): CharacterDefinition {
   const next = structuredClone(character)
   const state = requireLifeModules(next)
@@ -1397,10 +1507,13 @@ function applyModule(
   next.lifeModuleHistory.push({
     moduleId: module.id,
     displayName: module.displayName,
-    stage: module.stage,
+    stage: options.appliedStage ?? module.stage,
     costXp: totalCostXp,
     ...(options.totalCostXp !== undefined ? { baseCostXp: module.costXp, fieldCostXp: options.fieldCostXp ?? 0 } : {}),
     ...(module.chronologyYears !== undefined ? { chronologyYears: module.chronologyYears } : {}),
+    ...(options.actualDurationYears !== undefined ? { actualDurationYears: options.actualDurationYears } : {}),
+    ...(options.partialDurationReason ? { partialDurationReason: options.partialDurationReason } : {}),
+    ...(options.sourceRelationId ? { sourceRelationId: options.sourceRelationId } : {}),
     ...(module.repeatPolicy ? { repeatPolicy: structuredClone(module.repeatPolicy) } : {}),
     selectedAt,
     provenanceIds: [provenanceId],
@@ -1484,7 +1597,9 @@ function applyDestinationAward(character: CharacterDefinition, destination: Life
       character.traits.push(entry)
     }
     entry.accumulatedXp += xp
-    const attained = entry.traitId === 'trait.exceptional-attribute' && entry.accumulatedXp < 200 ? 0 : Math.trunc(entry.accumulatedXp / 100)
+    const attained = entry.traitId === 'trait.citizenship'
+      ? (entry.accumulatedXp >= 50 ? 1 : 0)
+      : entry.traitId === 'trait.exceptional-attribute' && entry.accumulatedXp < 200 ? 0 : Math.trunc(entry.accumulatedXp / 100)
     entry.attainedTp = attained === 0 ? null : attained
     entry.active = attained !== 0
     entry.sourceAwards.push(sourceAward)

@@ -6,6 +6,7 @@ import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, COMSTAR_WOB_SERVICE_ID, FAM
 import { getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
+import { capellanCitizenshipEligibility } from '../../domain/lifeModules/capellanRestrictions'
 import { TRAVEL_ID } from '../../domain/lifeModules/catalog'
 import { CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG } from '../../domain/lifeModules/catalog'
 import { characterSkillProgression, getFinalReviewBlockers, getModeledOpposedTraitConflicts, skillXpCosts } from '../../domain/lifeModules/finalReview'
@@ -17,7 +18,7 @@ import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../../domain/pointBuy/catalo
 import { lifeModuleGoalContributions, masterSkillFieldGoalStatus, setMasterSkillFieldGoal, SUPPORTED_MASTER_SKILL_FIELD_GOALS } from '../../domain/skillFields/goals'
 import { MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS, type MasterSkillFieldGoalCategory } from '../../domain/skillFields/goalCatalog'
 import { getSkillField, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID } from '../../domain/skillFields/catalog'
-import { applyStage0Affiliation, applyUniversalStage0, continueStage3Schooling, continueStage4Modules, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
+import { applyCapellanCivilianJob, applyStage0Affiliation, applyUniversalStage0, continueStage3Schooling, continueStage4Modules, continueToStage2, continueToStage3, continueToStage4, createLifeModuleCharacter, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 import { allocateFinalReviewXp, approveFinalReviewSpecialty, applyAllLifeModuleOptimizations, applyLifeModuleOptimization, enterLifeModuleFinalReview, previewLifeModuleOptimization, proposeFinalReviewSpecialty, purchaseAdditionalNegativeTraitXp, purchaseFinalReviewSkill, removeAdditionalNegativeTraitXp, removeFinalReviewAllocation, removeFinalReviewSpecialty, resolveLifeModuleOpposedTraits } from '../../engine/lifeModuleFinalReview'
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
@@ -214,10 +215,12 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
   const stageModulePendingAwards = stageModuleBasePreview?.creation.lifeModules?.pendingAwards.filter((entry) => entry.moduleId === stageModulePreviewId) ?? []
   const completedStage3ModuleIds = character?.lifeModuleHistory.filter((entry) => entry.stage === 3).map((entry) => entry.moduleId) ?? []
   const completedStage3FieldCategories = state?.selectedSkillFields.map((grant) => grant.category) ?? []
-  const additionalStage3Available = STAGE_3_SCHOOL_IDS.some((moduleId) => stage3SchoolEligibility(completedStage3ModuleIds, moduleId, { completedFieldCategories: completedStage3FieldCategories }).eligible)
   const activeBirthContext = state?.phase === 'stage-0-affiliation' ? stage0AffiliationContext : state?.stage0AffiliationContext ?? stage0AffiliationContext
   const activeOrderAffiliation: OrderAffiliationSelection = state?.phase === 'stage-0-affiliation' ? orderAffiliation : state?.orderAffiliation ?? 'no'
   const themeIdentity = lifeModulesThemeIdentity(activeBirthContext, activeOrderAffiliation)
+  const capellanStage2SubstitutionAvailable = character?.affiliations.some((entry) => entry.affiliationId === 'affiliation.capellan-confederation') === true
+  const capellanCitizenshipSatisfied = character ? capellanCitizenshipEligibility(character, 3, STAGE_3_SCHOOL_IDS[0]).eligible : true
+  const additionalStage3Available = STAGE_3_SCHOOL_IDS.some((moduleId) => stage3SchoolEligibility(completedStage3ModuleIds, moduleId, { completedFieldCategories: completedStage3FieldCategories, citizenshipSatisfied: capellanCitizenshipSatisfied }).eligible)
   const recordSheet = character ? deriveCharacterRecordSheet(character) : null
   const readiness = character ? evaluateCharacterReadiness(character) : null
 
@@ -281,7 +284,7 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
 
   function renderStage3School(schoolId: Stage3SchoolId) {
     const school = getLifeModule(schoolId)
-    const schoolEligibility = stage3SchoolEligibility(completedStage3ModuleIds, schoolId, { completedFieldCategories: completedStage3FieldCategories })
+    const schoolEligibility = stage3SchoolEligibility(completedStage3ModuleIds, schoolId, { completedFieldCategories: completedStage3FieldCategories, citizenshipSatisfied: capellanCitizenshipSatisfied })
     const availabilityId = `${schoolId}-availability`
     const offers = school.skillFieldSelection!.offers
     const isSelected = stageModulePreviewId === schoolId
@@ -684,6 +687,8 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
             {state.phase === 'stage-1-resolution' && <p className="notice">Stage 1 is selected. Resolve every source-bound choice and flexible grant below before reaching an Alpha partial stop.</p>}
             {state.phase === 'stage-1-prerequisite-review' && <p className="notice">All awards are resolved, but one or more module prerequisites remain outstanding for eventual final validation.</p>}
             {state.phase === 'alpha-partial-stop' && <div className="life-action"><p className="notice">Stage 0 and Stage 1 are complete. This is a valid Alpha partial stop—not a finalized Beta 1 character.</p><button className="button" type="button" onClick={() => operate(() => continueToStage2(character), 'Stage 2 continuation opened.')}>Continue to Stage 2</button></div>}
+            {state.phase === 'stage-2-selection' && capellanStage2SubstitutionAvailable && <section className="selected-module-detail" aria-label="Capellan Stage 2 substitution"><h3>Civilian Job substitution</h3><p>Capellan characters may use the canonical Stage 4 Civilian Job in the Stage 2 slot for 600 XP. It sets progression age to 18 and keeps Stage 3 available.</p><button className="button" type="button" onClick={() => operate(() => applyCapellanCivilianJob(character!), 'Capellan Civilian Job substitution committed.')}>Use Civilian Job substitution</button></section>}
+            {state.phase === 'stage-2-selection' && capellanStage2SubstitutionAvailable && !capellanCitizenshipSatisfied && <p className="notice">Capellan Military School is unavailable until a valid Citizenship trait is present.</p>}
             {state.phase === 'stage-2-selection' && (
               <><label className="catalog-selector" htmlFor="stage2-module">Late Childhood module
                 <select id="stage2-module" value={stageModulePreviewId.startsWith('stage2.') ? stageModulePreviewId : ''} onChange={(event) => event.target.value && selectStageModule(event.target.value as SupportedStageModuleId)}>

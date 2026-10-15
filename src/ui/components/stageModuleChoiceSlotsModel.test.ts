@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { asCapellanCitizen } from '../../capellanFixture'
 import { AGITATOR_ID, BLUE_COLLAR_ID, CAPELLAN_COMMONALITY_ID, MILITARY_ACADEMY_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID } from '../../domain/lifeModules/catalog'
 import { openSubjectChoiceOptions, pendingAwardOptions } from '../../domain/lifeModules/awardOptions'
 import { ANTHROPOLOGIST_FIELD_ID, BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, GENERAL_STUDIES_FIELD_ID, JOURNALIST_FIELD_ID, MECHWARRIOR_FIELD_ID, MERCHANT_FIELD_ID, PLANETARY_SURVEYOR_FIELD_ID, SCIENTIST_FIELD_ID, SCOUT_FIELD_ID } from '../../domain/skillFields/catalog'
@@ -8,7 +9,7 @@ import { emptyStageChoiceSlot, filterSiblingDestinationOptions, modeledOpenSubje
 
 function draftAt(phase: 'stage-1-selection' | 'stage-2-selection' | 'stage-3-selection' | 'stage-4-selection') {
   let character = createLifeModuleCharacter(`Slots ${phase}`)
-  character = applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian')
+  character = asCapellanCitizen(applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian'))
   character.creation.lifeModules!.phase = phase
   character.creation.lifeModules!.currentStage = phase === 'stage-1-selection' ? 1 : phase === 'stage-2-selection' ? 2 : phase === 'stage-3-selection' ? 3 : 4
   character.creation.lifeModules!.pendingAwards = []

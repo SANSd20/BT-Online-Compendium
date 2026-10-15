@@ -3,10 +3,11 @@ import { CAPELLAN_COMMONALITY_ID, TRADE_SCHOOL_ID } from '../domain/lifeModules/
 import { modeledSkillChoiceOptions } from '../domain/lifeModules/awardOptions'
 import { JOURNALIST_FIELD_ID, MERCHANT_FIELD_ID, skillFieldCost, getSkillField } from '../domain/skillFields/catalog'
 import { applyCapellanCommonality, applyStage3School, applyUniversalStage0, createLifeModuleCharacter, resolvePendingLifeModuleAward } from './lifeModuleEngine'
+import { asCapellanCitizen } from '../capellanFixture'
 
 function stage3Draft() {
   let character = createLifeModuleCharacter('Trade School')
-  character = applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian')
+  character = asCapellanCitizen(applyCapellanCommonality(applyUniversalStage0(character, CAPELLAN_COMMONALITY_ID, 'Mandarin Chinese'), 'Russian'))
   character.creation.lifeModules!.phase = 'stage-3-selection'
   character.creation.lifeModules!.currentStage = 3
   character.creation.lifeModules!.pendingAwards = []

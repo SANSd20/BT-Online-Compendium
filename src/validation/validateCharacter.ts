@@ -32,6 +32,7 @@ import {
   resolveLifeModuleAffiliationContext,
 } from '../domain/lifeModules/affiliations'
 import { stage3SchoolClassification, stage3SchoolEligibility, usedStage3SchoolFamilies } from '../domain/lifeModules/stage3Schooling'
+import { capellanCitizenshipEligibility } from '../domain/lifeModules/capellanRestrictions'
 import { getSkillField, skillFieldCost } from '../domain/skillFields/catalog'
 import { attributeLegality } from '../domain/character/attributeLegality'
 import { getMasterSkillFieldGoal } from '../domain/skillFields/goalCatalog'
@@ -665,7 +666,7 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
       calculatedCost += expectedCost
       if (
         entry.costXp !== expectedCost ||
-        entry.stage !== definition.stage ||
+        (entry.stage !== definition.stage && !(entry.moduleId === 'stage4.civilian-job' && entry.stage === 2 && entry.sourceRelationId === 'relation.capellan.stage-2-civilian-job-substitution')) ||
         !entry.source.sourceId ||
         (definition.chronologyYears !== undefined && entry.chronologyYears !== definition.chronologyYears) ||
         JSON.stringify(entry.repeatPolicy ?? null) !== JSON.stringify(definition.repeatPolicy ?? null) ||
@@ -735,6 +736,14 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   if (stage1Count !== 1) issues.push(issue('life-modules.stage-1.outstanding', 'lifeModuleHistory', 'Exactly one Stage 1 module is required.', { severity: stage1Count === 0 ? 'warning' : 'error' }))
   if (stage2Count > 1) issues.push(issue('life-modules.stage-2.multiple', 'lifeModuleHistory', 'No more than one Stage 2 module may be selected.'))
   if (state.currentStage === 2 && stage2Count === 0 && state.phase !== 'stage-2-selection') issues.push(issue('life-modules.stage-2.outstanding', 'lifeModuleHistory', 'Stage 2 has not been selected for this continuation.', { severity: 'warning' }))
+  if (character.lifeModuleHistory.some((entry) => entry.moduleId === 'stage2.military-school' || (entry.moduleId === 'stage4.civilian-job' && entry.stage === 2))) {
+    const eligibility = capellanCitizenshipEligibility(character, 2, 'stage2.military-school')
+    if (!eligibility.eligible && character.lifeModuleHistory.some((entry) => entry.moduleId === 'stage2.military-school')) issues.push(issue('restriction.scope.capellan-stage-2-military', 'lifeModuleHistory', eligibility.reason!))
+  }
+  if (stage3Entries.length > 0) {
+    const eligibility = capellanCitizenshipEligibility(character, 3, stage3Entries[0].moduleId)
+    if (!eligibility.eligible) issues.push(issue('restriction.scope.capellan-stage-3', 'lifeModuleHistory', eligibility.reason!))
+  }
   const governedStage3Families = stage3Entries.flatMap((entry) => {
     const school = stage3SchoolClassification(entry.moduleId)
     return school?.classification === 'general' ? [school.family] : []

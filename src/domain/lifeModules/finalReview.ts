@@ -88,6 +88,7 @@ export function deriveTraitPoints(xp: number): number | null {
 }
 
 export function deriveTraitPointsForTrait(traitId: string, xp: number): number | null {
+  if (traitId === 'trait.citizenship') return xp >= 50 ? 1 : null
   if (traitId === 'trait.exceptional-attribute' && xp < 200) return null
   return deriveTraitPoints(xp)
 }
@@ -238,6 +239,7 @@ function optimizedTraitXp(trait: TraitLedgerEntry): number | null {
 }
 
 function cappedPositiveTraitXp(trait: TraitLedgerEntry): number {
+  if (trait.traitId === 'trait.citizenship') return trait.accumulatedXp >= 50 ? 50 : 0
   const fullyAttained = Math.floor(trait.accumulatedXp / 100) * 100
   const range = traitModeledRange(trait.traitId)
   return range ? Math.min(fullyAttained, Math.max(0, range.maximum) * 100) : fullyAttained

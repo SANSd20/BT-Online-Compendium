@@ -15,6 +15,7 @@ export interface Stage3SecondarySchoolClassification {
 
 export interface Stage3SchoolEligibilityContext {
   completedFieldCategories?: readonly ('basic' | 'advanced' | 'special')[]
+  citizenshipSatisfied?: boolean
 }
 
 export type Stage3SchoolClassification = Stage3GeneralSchoolClassification | Stage3SecondarySchoolClassification
@@ -55,6 +56,7 @@ export function usedStage3SchoolFamilies(moduleIds: readonly string[]): Set<Stag
 export function stage3SchoolEligibility(completedModuleIds: readonly string[], candidateModuleId: string, context: Stage3SchoolEligibilityContext = {}): { eligible: boolean; reason?: string } {
   const candidate = stage3SchoolClassification(candidateModuleId)
   if (!candidate) return { eligible: false, reason: 'This Stage 3 school has no governed school-family classification.' }
+  if (context.citizenshipSatisfied === false) return { eligible: false, reason: 'Requires Capellan Citizenship.' }
   if (completedModuleIds.includes(candidateModuleId)) return { eligible: false, reason: `${candidate.displayName} has already been completed.` }
   if (candidate.classification === 'secondary') {
     const priorGeneralSchools = completedModuleIds.map(stage3SchoolClassification).filter((school): school is Stage3GeneralSchoolClassification => school?.classification === 'general')
