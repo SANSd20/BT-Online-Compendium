@@ -90,7 +90,7 @@ describe('merged Stage 0 wizard step', () => {
     expect(markup).toContain('stage0-birth-affiliation-region')
     expect(markup).toContain('stage0-birth-affiliation-details')
     expect(markup).toContain('stage0-order-region')
-    expect(markup).toContain('<option value="no" selected="">No</option>')
+    expect(markup).toContain('<option value="no" selected="">No Sub-affiliation</option>')
     expect(markup).toContain('full affiliation cost with no sub-affiliation awards')
   })
 
@@ -115,6 +115,9 @@ describe('merged Stage 0 wizard step', () => {
     }
     const parent = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={DRACONIS_COMBINE_ID} subAffiliation="no" affiliationLanguage="Japanese" secondaryLanguage="" draconisTraitChoice="Combat Sense" draconisWeaponChoice="Archery" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.draconis-combine" {...handlers} />)
     expect(parent).toContain('id="stage0-draconis-trait"')
-    expect(parent).toContain('<option value="no" selected="">No</option>')
+    expect(parent).toContain('<option value="no" selected="">No Sub-affiliation</option>')
+    expect(parent).not.toContain(`<option value="${DRACONIS_COMBINE_ID}">No sub-affiliation</option>`)
+    expect(parent.match(/>No Sub-affiliation<\/option>/g)).toHaveLength(1)
+    for (const child of [DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID]) expect(parent).toContain(`<option value="${child}"`)
   })
 })

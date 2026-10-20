@@ -1,6 +1,6 @@
 import type { CharacterDefinition } from '../../domain/character/model'
 import { CAPELLAN_COMMONALITY_ID, DRACONIS_COMBINE_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_ID } from '../../domain/lifeModules/catalog'
-import type { OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
+import { type OrderAffiliationSelection, resolveLifeModuleAffiliationContext } from '../../domain/lifeModules/affiliations'
 import { applyCapellanCommonality, applyDraconisCombine, applyFederatedSunsMarch, applyFederatedSunsCrucisMarch, applyUniversalStage0, previewFederatedSunsCrucisMarch, previewOrderAffiliation } from '../../engine/lifeModuleEngine'
 
 export type LifeModulesThemeIdentity = {
@@ -10,9 +10,13 @@ export type LifeModulesThemeIdentity = {
 }
 
 export function lifeModulesThemeIdentity(affiliationContext: string, orderAffiliation: OrderAffiliationSelection = 'no'): LifeModulesThemeIdentity {
-  const birth = affiliationContext === CAPELLAN_COMMONALITY_ID
+  const resolved = resolveLifeModuleAffiliationContext(affiliationContext)
+  const parentAffiliationId = resolved.support === 'supported' ? resolved.context.affiliationId : affiliationContext
+  const birth = parentAffiliationId === 'affiliation.capellan-confederation'
     ? { className: 'capellan-theme', secondaryClass: 'birth-capellan', label: 'Capellan Confederation' }
-    : [FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_ID].includes(affiliationContext)
+    : parentAffiliationId === 'affiliation.draconis-combine'
+      ? { className: 'draconis-theme', secondaryClass: 'birth-draconis', label: 'Draconis Combine' }
+      : [FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_ID].includes(affiliationContext)
       ? { className: 'davion-theme', secondaryClass: 'birth-davion', label: 'Federated Suns' }
       : { className: '', secondaryClass: '', label: '' }
   if (orderAffiliation === 'comstar') return { className: `order-theme comstar-theme ${birth.secondaryClass}`.trim(), dominantLabel: 'ComStar', birthLabel: birth.label }

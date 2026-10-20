@@ -49,7 +49,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
   const effectiveBirthAffiliationId = props.birthAffiliationId || context?.affiliationId || ''
   const effectiveOrderAffiliation = props.orderAffiliation ?? 'no'
   const birthAffiliations = getBirthAffiliationOptions()
-  const birthSubs = getBirthSubAffiliationOptions(effectiveBirthAffiliationId)
+  const birthSubs = getBirthSubAffiliationOptions(effectiveBirthAffiliationId).filter((entry) => entry.id !== DRACONIS_COMBINE_CONTEXT.id)
   const effectiveSubAffiliation = props.subAffiliation ?? 'no'
   const subSelected = effectiveSubAffiliation === context?.id
   const affiliationLanguages = context ? getLifeModuleLanguageSelectorOptions(context.affiliationLanguageSelector) : []
@@ -117,7 +117,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
               </label>
               <label htmlFor="stage0-affiliation-context">Affiliation Sub
                 <select id="stage0-affiliation-context" {...controlStatusProps(controlStatus({ resolved: Boolean(effectiveBirthAffiliationId), disabled: !effectiveBirthAffiliationId }))} value={effectiveSubAffiliation} disabled={!effectiveBirthAffiliationId} onChange={(event) => props.onSubAffiliationChange?.(event.target.value)} title={subSelected ? context?.displayName : 'No sub-affiliation'}>
-                  <option value="no">No</option>
+                  <option value="no">No Sub-affiliation</option>
                   {birthSubs.map((entry) => <option key={entry.id} value={entry.id}>{entry.subAffiliationName}</option>)}
                 </select>
               </label>

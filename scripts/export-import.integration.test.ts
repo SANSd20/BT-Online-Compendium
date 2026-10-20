@@ -122,11 +122,62 @@ describe('browser export/import integration', () => {
     const root = await mkdtemp(join(tmpdir(), 'atow-draconis-combine-ui-')); const exportPath = join(root, 'draconis-combine.json'); const repo = fileURLToPath(new URL('..', import.meta.url)); const server = await startViteServer(repo)
     try { const browser = await launchBrowser(); try {
       const page = await browser.newPage({ acceptDownloads: true }); await page.goto(`${server.url}/#/`, { waitUntil: 'domcontentloaded' }); await page.getByRole('link', { name: 'Start Life Modules' }).click(); await page.getByLabel('Character name').fill('C7 Draconis Combine'); await page.getByRole('button', { name: 'Create Life Module draft' }).click()
-      await page.selectOption('#stage0-affiliation', { label: 'Draconis Combine' }); await page.selectOption('#stage0-affiliation-language', { label: 'Japanese' }); await page.selectOption('#stage0-affiliation-context', { label: 'Azami' }); await pwExpect(page.locator('#stage0-draconis-trait')).toBeVisible(); await page.selectOption('#stage0-draconis-trait', { label: 'Combat Sense' }); await page.selectOption('#stage0-draconis-weapon', { label: 'Archery' }); await page.locator('#stage0-draconis-survival').fill('Desert'); await page.selectOption('#stage0-affiliation-context', { label: 'No' }); await pwExpect(page.locator('#stage0-draconis-trait')).toBeVisible(); expect(await page.getByLabel('Natural Aptitude award').count()).toBe(0); expect(await page.locator('#stage0-draconis-survival').count()).toBe(0); await page.selectOption('#stage0-affiliation-context', { label: 'Azami' }); expect(await page.locator('#stage0-affiliation-context').inputValue()).toBe('stage0.draconis-combine.azami'); await pwExpect(page.locator('#stage0-draconis-survival')).toBeVisible(); expect(await page.locator('#stage0-draconis-trait').inputValue()).toBe('Combat Sense'); await page.locator('#stage0-draconis-survival').fill('Desert'); await page.getByRole('button', { name: 'Continue' }).last().click(); await page.getByText('Early Childhood module', { exact: false }).first().waitFor({ state: 'visible' })
+      await page.selectOption('#stage0-affiliation', { label: 'Draconis Combine' }); await page.selectOption('#stage0-affiliation-language', { label: 'Japanese' }); await page.selectOption('#stage0-affiliation-context', { label: 'Azami' }); await pwExpect(page.locator('#stage0-draconis-trait')).toBeVisible(); await page.selectOption('#stage0-draconis-trait', { label: 'Combat Sense' }); await page.selectOption('#stage0-draconis-weapon', { label: 'Archery' }); await page.locator('#stage0-draconis-survival').fill('Desert'); await page.selectOption('#stage0-affiliation-context', { label: 'No Sub-affiliation' }); await pwExpect(page.locator('#stage0-draconis-trait')).toBeVisible(); expect(await page.getByLabel('Natural Aptitude award').count()).toBe(0); expect(await page.locator('#stage0-draconis-survival').count()).toBe(0); await page.selectOption('#stage0-affiliation-context', { label: 'Azami' }); expect(await page.locator('#stage0-affiliation-context').inputValue()).toBe('stage0.draconis-combine.azami'); await pwExpect(page.locator('#stage0-draconis-survival')).toBeVisible(); expect(await page.locator('#stage0-draconis-trait').inputValue()).toBe('Combat Sense'); await page.locator('#stage0-draconis-survival').fill('Desert'); await page.getByRole('button', { name: 'Continue' }).last().click(); await page.getByText('Early Childhood module', { exact: false }).first().waitFor({ state: 'visible' })
       const downloadPromise = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export character JSON' }).click(); await (await downloadPromise).saveAs(exportPath); const exported = JSON.parse(await readFile(exportPath, 'utf8')).character
       expect(exported.creation.lifeModules.stage0AffiliationContext).toBe('stage0.draconis-combine'); expect(exported.creation.lifeModules.stage0SubAffiliation).toBe('stage0.draconis-combine.azami'); expect(exported.creation.lifeModules.moduleXp.spent).toBe(1000); expect(exported.traits.some((entry: { traitId: string; active: boolean }) => entry.traitId === 'trait.combat-sense' && entry.active)).toBe(true); expect(exported.skills.some((entry: { address: { skillId: string; parameter?: { value: string } } }) => entry.address.skillId === 'skill.archery' || (entry.address.skillId === 'skill.survival' && entry.address.parameter?.value === 'Desert'))).toBe(true); expect(exported.provenance.some((entry: { source?: { ruleId?: string } }) => entry.source?.ruleId === 'draconis-combine')).toBe(true); expect(exported.provenance.some((entry: { source?: { ruleId?: string } }) => entry.source?.ruleId === 'draconis-combine-azami')).toBe(true)
       await page.close(); const resumed = await browser.newPage(); await resumed.goto(`${server.url}/#/`, { waitUntil: 'domcontentloaded' }); await resumed.locator('input[type=file]').setInputFiles(exportPath); await resumed.getByText('Imported C7 Draconis Combine.', { exact: true }).waitFor({ state: 'visible' }); await resumed.locator('li').filter({ hasText: 'C7 Draconis Combine' }).getByRole('button', { name: 'Resume' }).click(); await resumed.getByText('Early Childhood module', { exact: false }).first().waitFor({ state: 'visible' }); const resumedText = await resumed.locator('body').innerText(); expect(resumedText).toContain('Draconis Combine'); expect(resumedText).toContain('Azami'); await resumed.close()
     } finally { await browser.close() } } finally { await server.close(); await rm(root, { recursive: true, force: true }) }
+  }, 120000)
+
+  it('keeps faction themes parent-driven across supported Draconis and Federated Suns selections', async () => {
+    const repo = fileURLToPath(new URL('..', import.meta.url))
+    const server = await startViteServer(repo)
+    try {
+      const browser = await launchBrowser()
+      try {
+        const page = await browser.newPage()
+        await page.goto(`${server.url}/#/`, { waitUntil: 'domcontentloaded' })
+        await page.getByRole('link', { name: 'Start Life Modules' }).click()
+        await page.getByLabel('Character name').fill('D11 Theme Regression')
+        await page.getByRole('button', { name: 'Create Life Module draft' }).click()
+
+        const theme = page.locator('.life-modules-page')
+        const expectDraconis = async () => {
+          await pwExpect(theme).toBeVisible()
+          expect(await theme.getAttribute('class')).toContain('draconis-theme')
+          const values = await theme.evaluate((element) => {
+            const styles = getComputedStyle(element)
+            return Object.fromEntries(['--faction-primary', '--faction-primary-deep', '--faction-panel', '--faction-border', '--faction-accent', '--faction-foreground'].map((name) => [name, styles.getPropertyValue(name).trim().toUpperCase()]))
+          })
+          expect(values).toMatchObject({
+            '--faction-primary': '#9E2B2B',
+            '--faction-primary-deep': '#4A171A',
+            '--faction-panel': '#211D1E',
+            '--faction-border': '#A97879',
+            '--faction-accent': '#C8C4B8',
+            '--faction-foreground': '#F4EEEA',
+          })
+        }
+
+        await page.selectOption('#stage0-affiliation', { label: 'Draconis Combine' })
+        await page.selectOption('#stage0-affiliation-language', { label: 'Japanese' })
+        await expectDraconis()
+        const context = page.locator('#stage0-affiliation-context')
+        expect(await context.locator('option').filter({ hasText: 'No Sub-affiliation' }).count()).toBe(1)
+        for (const label of ['Azami', 'No Sub-affiliation', 'Benjamin District', 'Dieron District', 'New Samarkand (Galedon) District', 'Pesht District']) {
+          await context.selectOption({ label })
+          await expectDraconis()
+        }
+
+        await page.selectOption('#stage0-affiliation', { label: 'Federated Suns' })
+        await page.selectOption('#stage0-affiliation-language', { label: 'English' })
+        expect(await theme.getAttribute('class')).toContain('davion-theme')
+        expect(await theme.getAttribute('class')).not.toContain('draconis-theme')
+        await page.selectOption('#stage0-affiliation', { label: 'Draconis Combine' })
+        await expectDraconis()
+        await page.close()
+      } finally { await browser.close() }
+    } finally { await server.close() }
   }, 120000)
 
   it('executes the source-valid Capellan progression through legal final review', async () => {

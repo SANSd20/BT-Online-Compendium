@@ -5,6 +5,7 @@ describe('shared government/faction theme palettes', () => {
   it.each([
     ['capellan', ['#00a86b', '#0b3a2b', '#174c3b', '#173c2f', '#205242', '#4c9b7a', '#c9a83d', '#e2c36e', '#ecf5f0', '#111111']],
     ['davion', ['#d6ae3d', '#6b4d12', '#4b3a18', '#241f18', '#332a1d', '#806e48', '#a83a32', '#f0d77a', '#f4eedc', '#111111']],
+    ['draconis', ['#9E2B2B', '#4A171A', '#6D2226', '#211D1E', '#30292A', '#A97879', '#2A2D30', '#C8C4B8', '#F4EEEA', '#111111']],
     ['comstar', ['#aab5bf', '#4b555e', '#737d86', '#394249', '#596771', '#beccd4', '#22272b', '#bfc9ce', '#f1f6f8', '#111111']],
     ['wob', ['#22272b', '#121a20', '#191f25', '#131a1f', '#1c272e', '#bca752', '#b9c2c8', '#765a99', '#f1f6f8', '#111111']],
   ])('maps the current shared %s government UI record into explicit faction roles', (theme, colors) => {

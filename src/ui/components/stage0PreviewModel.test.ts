@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CAPELLAN_COMMONALITY_ID, DRACONIS_AZAMI_ID, DRACONIS_COMBINE_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID } from '../../domain/lifeModules/catalog'
+import { CAPELLAN_COMMONALITY_ID, DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_COMBINE_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID } from '../../domain/lifeModules/catalog'
 import { applyStage0Affiliation, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { decodeCharacter, encodeCharacter } from '../../persistence/characterCodec'
 import { committedLifeModulesThemeIdentity, lifeModulesAffiliationTheme, lifeModulesThemeIdentity, previewStage0Affiliation } from './stage0PreviewModel'
@@ -55,6 +55,19 @@ describe('Stage 0 preview model', () => {
     expect(lifeModulesAffiliationTheme(CAPELLAN_COMMONALITY_ID)).toBe('capellan-theme')
     expect(lifeModulesAffiliationTheme('')).toBe('')
     expect(lifeModulesAffiliationTheme('stage0.some-future-context')).toBe('')
+  })
+
+  it('resolves every Draconis parent and child context to the parent theme', () => {
+    const contexts = [DRACONIS_COMBINE_ID, DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID]
+    expect(contexts.map((context) => lifeModulesAffiliationTheme(context))).toEqual(contexts.map(() => 'draconis-theme'))
+    expect(lifeModulesAffiliationTheme(DRACONIS_COMBINE_ID, 'no')).toBe('draconis-theme')
+    expect(lifeModulesThemeIdentity(DRACONIS_AZAMI_ID)).toEqual({ className: 'draconis-theme', dominantLabel: 'Draconis Combine', birthLabel: 'Draconis Combine' })
+  })
+
+  it('changes only the parent-driven theme across Draconis and Federated Suns contexts', () => {
+    expect([DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_DIERON_ID, DRACONIS_PESHT_ID].map((context) => lifeModulesAffiliationTheme(context))).toEqual(['draconis-theme', 'draconis-theme', 'draconis-theme', 'draconis-theme'])
+    expect(lifeModulesAffiliationTheme(FEDERATED_SUNS_CRUCIS_MARCH_ID)).toBe('davion-theme')
+    expect(lifeModulesAffiliationTheme(DRACONIS_COMBINE_ID)).toBe('draconis-theme')
   })
 
   it('activates and previews the source-backed Davion context without leaking the Capellan theme', () => {
