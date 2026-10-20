@@ -10,6 +10,7 @@ import type {
   XpAward,
 } from '../domain/character/model'
 import type { ClanPackageHistoryRecord } from '../domain/character/clanPackageHistory'
+import type { SourceCitation } from '../domain/rules/model'
 import type { ConditionalLifeModulePackageDefinition, ConditionalPackageDraftState } from '../domain/lifeModules/model'
 import {
   AGITATOR_ID,
@@ -47,7 +48,8 @@ import {
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues, modeledSkillChoiceOptions, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
 import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
-import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_CONTEXT, FEDERATED_SUNS_OUTBACK_ID, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, SIAN_COMMONALITY_ID, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_COMBINE_CONTEXT, DRACONIS_COMBINE_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_CONTEXT, FEDERATED_SUNS_OUTBACK_ID, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, SIAN_COMMONALITY_ID, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
+import { DRACONIS_COMBINE_CATALOG_AWARDS, DRACONIS_SUB_AFFILIATION_CATALOG_AWARDS } from '../domain/lifeModules/catalog'
 import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
 import { BASIC_TRAINING_FIELD_ID, CAVALRY_FIELD_ID, CLAN_MECHWARRIOR_FIELD_ID, getSkillField, INFANTRY_FIELD_ID, MECHWARRIOR_FIELD_ID, PILOT_BATTLE_ARMOR_FIELD_ID, skillFieldCost, TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_SUBSKILLS, TECHNICIAN_VEHICLE_FIELD_ID } from '../domain/skillFields/catalog'
@@ -829,6 +831,58 @@ export function applyUniversalStage0(
   return next
 }
 
+type DraconisSubId = typeof DRACONIS_AZAMI_ID | typeof DRACONIS_BENJAMIN_ID | typeof DRACONIS_DIERON_ID | typeof DRACONIS_NEW_SAMARKAND_ID | typeof DRACONIS_PESHT_ID | 'no'
+
+export function applyDraconisCombine(
+  character: CharacterDefinition,
+  subAffiliation: DraconisSubId = 'no',
+  traitChoice?: 'Pain Resistance' | 'Combat Sense',
+  weaponChoice?: 'Archery' | 'Melee Weapons' | 'Thrown Weapons/Blade',
+  languageChoice?: string,
+  openChoices: Record<string, string> = {},
+): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-0-affiliation' || state.stage0AffiliationContext !== DRACONIS_COMBINE_ID) throw new Error('The Draconis Combine package requires the explicit Draconis Stage 0 context.')
+  if (!traitChoice || !['Pain Resistance', 'Combat Sense'].includes(traitChoice)) throw new Error('Choose Pain Resistance or Combat Sense.')
+  if (!weaponChoice || !['Archery', 'Melee Weapons', 'Thrown Weapons/Blade'].includes(weaponChoice)) throw new Error('Choose a supported Draconis flexible Skill.')
+  if (!languageChoice || !getLifeModuleLanguageSelectorOptions('draconis-languages').includes(languageChoice)) throw new Error('Choose a supported Draconis language.')
+  const requiredChoice = (key: string, label: string) => {
+    const value = openChoices[key]?.trim()
+    if (!value || value === 'Any' || value === 'Other') throw new Error(`Choose a concrete ${label} for the Draconis Combine package.`)
+    return value
+  }
+  if (subAffiliation === DRACONIS_AZAMI_ID) requiredChoice('survival', 'Survival subject')
+  if (subAffiliation === DRACONIS_DIERON_ID) {
+    requiredChoice('language', 'Language subject')
+    requiredChoice('art', 'Art subject')
+  }
+  const source = { ...DRACONIS_COMBINE_CONTEXT.source }
+  const skillDestination = (skillId: string, displayName: string, subject?: string): LifeModuleDestination => ({ type: 'skill', address: { skillId, ...(subject ? { parameter: { kind: 'subskill', value: subject } } : {}) }, displayName })
+  const awards: LifeModuleAward[] = DRACONIS_COMBINE_CATALOG_AWARDS.map((award): LifeModuleAward => {
+    if (award.id === 'draconis.trait.choice' && award.kind === 'choice-package') return { id: award.id, kind: 'fixed', xp: 100, destination: { type: 'trait', traitId: traitChoice === 'Pain Resistance' ? 'trait.pain-resistance' : 'trait.combat-sense', displayName: traitChoice } }
+    if (award.id === 'draconis.skill.weapon-choice' && award.kind === 'fixed') return { ...award, destination: skillDestination(weaponChoice === 'Archery' ? 'skill.archery' : weaponChoice === 'Melee Weapons' ? 'skill.melee-weapons' : 'skill.thrown-weapons', weaponChoice, weaponChoice === 'Thrown Weapons/Blade' ? 'Blade' : undefined) }
+    return award
+  })
+  awards.push({ id: 'draconis.language.primary', kind: 'fixed', xp: 0, destination: skillDestination('skill.language', `Language/${languageChoice}`, languageChoice) })
+  const subAwards = (DRACONIS_SUB_AFFILIATION_CATALOG_AWARDS[subAffiliation] ?? []).map((award): LifeModuleAward => {
+    if (award.id === 'azami.skill.survival' && award.kind === 'any-skill-choice') return { id: award.id, kind: 'fixed', xp: award.xp, destination: skillDestination('skill.survival', `Survival/${openChoices.survival}`, openChoices.survival) }
+    if (award.id === 'dieron.language.any' && award.kind === 'language-choice') return { id: award.id, kind: 'fixed', xp: award.xp, destination: skillDestination('skill.language', `Language/${openChoices.language}`, openChoices.language) }
+    if (award.id === 'dieron.skill.art' && award.kind === 'any-skill-choice') return { id: award.id, kind: 'fixed', xp: award.xp, destination: skillDestination('skill.art', `Art/${openChoices.art}`, openChoices.art) }
+    return award
+  })
+  const resolvedContext = subAffiliation === 'no' ? null : resolveLifeModuleAffiliationContext(subAffiliation)
+  const module: LifeModuleDefinition = { id: DRACONIS_COMBINE_ID, displayName: resolvedContext?.support === 'supported' ? resolvedContext.context.displayName : 'Draconis Combine / House Kurita', stage: 0, kind: 'affiliation', source, costXp: 150, primaryLanguage: 'Japanese', secondaryLanguages: [...DRACONIS_COMBINE_CONTEXT.secondaryLanguages], prerequisites: [], awards: [...awards, ...(subAffiliation !== 'no' ? subAwards : [])], notes: ['Child labor is legal. Civilian Job may replace a Stage 2 module and advances age to 18.'], deferredRules: ['Military/Stage 3 Citizenship dependencies remain governed by later-stage rules.'] }
+  const subSource = resolvedContext?.support === 'supported' ? resolvedContext.context.source : undefined
+  const next = applyModule(character, module, {}, subSource ? { awardSource: (awardId) => awardId.startsWith('draconis.') ? undefined : subSource } : {})
+  const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
+  if (!provenanceId) throw new Error('Draconis provenance was not recorded.')
+  next.affiliations.push({ affiliationId: DRACONIS_COMBINE_CONTEXT.affiliationId, role: 'birth', provenanceId }, { affiliationId: DRACONIS_COMBINE_CONTEXT.affiliationId, role: 'final', provenanceId })
+  requireLifeModules(next).stage0SubAffiliation = subAffiliation
+  requireLifeModules(next).phase = 'stage-1-selection'
+  requireLifeModules(next).currentStage = 1
+  return next
+}
+
 export function applyStage0Affiliation(
   character: CharacterDefinition,
   affiliationContextModuleId: string,
@@ -842,10 +896,18 @@ export function applyStage0Affiliation(
   orderTechnicianSubskill?: string,
   subAffiliationSelection?: string,
   survivalSubject?: string,
+  draconisTraitChoice?: 'Pain Resistance' | 'Combat Sense',
+  draconisWeaponChoice?: 'Archery' | 'Melee Weapons' | 'Thrown Weapons/Blade',
+  draconisChoices?: Record<string, string>,
 ): CharacterDefinition {
-  const withUniversal = applyUniversalStage0(character, affiliationContextModuleId, affiliationLanguage)
+  const resolvedAffiliation = resolveLifeModuleAffiliationContext(affiliationContextModuleId)
+  const draconisSelected = resolvedAffiliation.support === 'supported' && resolvedAffiliation.context.affiliationId === DRACONIS_COMBINE_CONTEXT.affiliationId
+  const universalContextId = draconisSelected ? DRACONIS_COMBINE_ID : affiliationContextModuleId
+  const withUniversal = applyUniversalStage0(character, universalContextId, affiliationLanguage)
   const includeSubAffiliation = subAffiliationSelection === undefined || subAffiliationSelection === affiliationContextModuleId || subAffiliationSelection === SIAN_COMMONALITY_ID
-  const withBirth = affiliationContextModuleId === FEDERATED_SUNS_CRUCIS_MARCH_ID
+  const withBirth = draconisSelected
+    ? applyDraconisCombine(withUniversal, subAffiliationSelection as DraconisSubId || 'no', draconisTraitChoice, draconisWeaponChoice, affiliationLanguage, draconisChoices)
+    : affiliationContextModuleId === FEDERATED_SUNS_CRUCIS_MARCH_ID
     ? applyFederatedSunsCrucisMarch(withUniversal, davionNaturalAptitude, davionArt, includeSubAffiliation)
     : affiliationContextModuleId === FEDERATED_SUNS_CAPELLAN_MARCH_ID || affiliationContextModuleId === FEDERATED_SUNS_DRACONIS_MARCH_ID || affiliationContextModuleId === FEDERATED_SUNS_OUTBACK_ID
       ? applyFederatedSunsMarch(withUniversal, affiliationContextModuleId, davionNaturalAptitude, davionArt, includeSubAffiliation, survivalSubject)
@@ -1467,7 +1529,7 @@ function applyModule(
   character: CharacterDefinition,
   module: LifeModuleDefinition,
   resolutions: Record<string, LifeModuleDestination>,
-  options: { totalCostXp?: number; fieldCostXp?: number; allowRepeat?: boolean; appliedStage?: 0 | 1 | 2 | 3 | 4; sourceRelationId?: string; actualDurationYears?: number; partialDurationReason?: 'campaign-deadline' | 'capellan-substitution' } = {},
+  options: { totalCostXp?: number; fieldCostXp?: number; allowRepeat?: boolean; appliedStage?: 0 | 1 | 2 | 3 | 4; sourceRelationId?: string; actualDurationYears?: number; partialDurationReason?: 'campaign-deadline' | 'capellan-substitution'; awardSource?: (awardId: string) => SourceCitation | undefined } = {},
 ): CharacterDefinition {
   const next = structuredClone(character)
   const state = requireLifeModules(next)
@@ -1478,8 +1540,20 @@ function applyModule(
   const provenanceId = makeId(undefined, `module-${module.id}`)
   const provenance: ProvenanceRecord = { id: provenanceId, kind: 'published', description: `${module.displayName} module awards`, source: { ...module.source } }
   next.provenance.push(provenance)
+  const provenanceIds = new Set([provenanceId])
+  const awardProvenanceId = (awardId: string) => {
+    const source = options.awardSource?.(awardId)
+    if (!source) return provenanceId
+    const id = makeId(undefined, `award-source-${source.ruleId}`)
+    if (!provenanceIds.has(id)) {
+      next.provenance.push({ id, kind: 'published', description: `${module.displayName} ${source.ruleId} awards`, source: { ...source } })
+      provenanceIds.add(id)
+    }
+    return id
+  }
 
   for (const award of module.awards) {
+    const awardProvenance = awardProvenanceId(award.id)
     const requiredGrants = awardGrantCount(award)
     if (requiredGrants !== null) state.choiceGrantRequirements.push({
       moduleId: module.id,
@@ -1488,10 +1562,10 @@ function applyModule(
       requiredGrants,
       ...(award.kind === 'flexible-xp' && award.allocationMode === 'pool' ? { requiredXp: award.totalXp, allocationMode: 'pool' as const } : {}),
     })
-    if (award.kind === 'fixed') applyDestinationAward(next, award.id === 'family-training.skill.homeworld-history' ? homeworldHistoryDestination(next) : award.destination, award.xp, provenanceId)
-    else if (award.kind === 'affiliation-bound-skill') applyDestinationAward(next, resolveAffiliationBoundLifeModuleDestination(next, award.skillId, award.displayName), award.xp, provenanceId)
+    if (award.kind === 'fixed') applyDestinationAward(next, award.id === 'family-training.skill.homeworld-history' ? homeworldHistoryDestination(next) : award.destination, award.xp, awardProvenance)
+    else if (award.kind === 'affiliation-bound-skill') applyDestinationAward(next, resolveAffiliationBoundLifeModuleDestination(next, award.skillId, award.displayName), award.xp, awardProvenance)
     else if (award.kind === 'language-choice' && resolutions[award.id]) {
-      applyDestinationAward(next, resolutions[award.id], award.xp, provenanceId)
+      applyDestinationAward(next, resolutions[award.id], award.xp, awardProvenance)
       const pendingShape = pendingAwardFrom(module, award, module.repeatPolicy?.sameModuleRepeat === 'allowed' ? provenanceId : undefined)
       const resolved = fromLifeModuleDestination(resolutions[award.id])
       recordResolvedAward(state.resolvedAwards, pendingShape, resolved, provenanceId)
@@ -1516,7 +1590,7 @@ function applyModule(
     ...(options.sourceRelationId ? { sourceRelationId: options.sourceRelationId } : {}),
     ...(module.repeatPolicy ? { repeatPolicy: structuredClone(module.repeatPolicy) } : {}),
     selectedAt,
-    provenanceIds: [provenanceId],
+      provenanceIds: [...provenanceIds],
     source: { ...module.source },
     notes: [...module.notes, ...module.deferredRules],
   })

@@ -8,6 +8,12 @@ export const FEDERATED_SUNS_CRUCIS_MARCH_ID = 'stage0.federated-suns.crucis-marc
 export const FEDERATED_SUNS_CAPELLAN_MARCH_ID = 'stage0.federated-suns.capellan-march'
 export const FEDERATED_SUNS_DRACONIS_MARCH_ID = 'stage0.federated-suns.draconis-march'
 export const FEDERATED_SUNS_OUTBACK_ID = 'stage0.federated-suns.outback'
+export const DRACONIS_COMBINE_ID = 'stage0.draconis-combine'
+export const DRACONIS_AZAMI_ID = 'stage0.draconis-combine.azami'
+export const DRACONIS_BENJAMIN_ID = 'stage0.draconis-combine.benjamin-district'
+export const DRACONIS_DIERON_ID = 'stage0.draconis-combine.dieron-district'
+export const DRACONIS_NEW_SAMARKAND_ID = 'stage0.draconis-combine.new-samarkand-galedon-district'
+export const DRACONIS_PESHT_ID = 'stage0.draconis-combine.pesht-district'
 export const COMSTAR_ORDER_ID = 'stage0.comstar-word-of-blake.comstar'
 export const WORD_OF_BLAKE_ORDER_ID = 'stage0.comstar-word-of-blake.word-of-blake'
 export type OrderAffiliationSelection = 'no' | 'comstar' | 'word-of-blake'
@@ -19,6 +25,7 @@ export type AffiliationLanguageSelectorGroupId =
   | 'capellan-secondary'
   | 'federated-suns-languages'
   | 'federated-suns-affiliation-languages'
+  | 'draconis-languages'
   | 'capellan-march-languages'
 
 export type AffiliationContextSupport = 'supported' | 'deferred'
@@ -66,6 +73,7 @@ export const LIFE_MODULE_LANGUAGE_SELECTOR_GROUPS: Readonly<Record<AffiliationLa
   'capellan-secondary': modeledLanguages('Russian', 'Cantonese', 'Vietnamese', 'English'),
   'federated-suns-languages': modeledLanguages('English', 'French'),
   'federated-suns-affiliation-languages': modeledLanguages('English', 'French', 'German', 'Hindi', 'Russian'),
+  'draconis-languages': modeledLanguages('Arabic', 'English', 'Japanese', 'Swedanese'),
   'capellan-march-languages': modeledLanguages('Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'),
 }
 
@@ -155,6 +163,25 @@ export const FEDERATED_SUNS_OUTBACK_CONTEXT: LifeModuleAffiliationContext = {
   primaryLanguage: 'English', secondaryLanguages: ['French', 'German', 'Hindi', 'Russian'], affiliationLanguageSelector: 'federated-suns-affiliation-languages',
   secondaryLanguageSelector: 'federated-suns-languages', protocolContextLabel: 'FedSuns', streetwiseContextLabel: 'FedSuns', source: source(65, 'federated-suns-outback'),
 }
+export const DRACONIS_COMBINE_CONTEXT: LifeModuleAffiliationContext = {
+  id: DRACONIS_COMBINE_ID, kind: 'affiliation', displayName: 'Draconis Combine / House Kurita', isAffiliation: true,
+  support: 'supported', affiliationId: 'affiliation.draconis-combine', affiliationName: 'Draconis Combine', subAffiliationName: 'No sub-affiliation',
+  primaryLanguage: 'Japanese', secondaryLanguages: ['Arabic', 'English', 'Swedanese'], affiliationLanguageSelector: 'draconis-languages', secondaryLanguageSelector: 'any-language',
+  protocolContextLabel: 'Combine', streetwiseContextLabel: 'Combine', source: source(64, 'draconis-combine'),
+}
+const draconisSub = (id: string, name: string, ruleId: string): LifeModuleAffiliationContext => ({
+  id, kind: 'affiliation', displayName: `Draconis Combine / ${name}`, isAffiliation: true, support: 'supported',
+  affiliationId: 'affiliation.draconis-combine', affiliationName: 'Draconis Combine', subAffiliationName: name,
+  primaryLanguage: 'Japanese', secondaryLanguages: ['Arabic', 'English', 'Swedanese'], affiliationLanguageSelector: 'draconis-languages', secondaryLanguageSelector: 'any-language',
+  protocolContextLabel: 'Combine', streetwiseContextLabel: 'Combine', source: source(64, ruleId),
+})
+export const DRACONIS_SUB_AFFILIATION_CONTEXTS = [
+  draconisSub(DRACONIS_AZAMI_ID, 'Azami', 'draconis-combine-azami'),
+  draconisSub(DRACONIS_BENJAMIN_ID, 'Benjamin District', 'draconis-combine-benjamin-district'),
+  draconisSub(DRACONIS_DIERON_ID, 'Dieron District', 'draconis-combine-dieron-district'),
+  draconisSub(DRACONIS_NEW_SAMARKAND_ID, 'New Samarkand (Galedon) District', 'draconis-combine-new-samarkand-galedon-district'),
+  draconisSub(DRACONIS_PESHT_ID, 'Pesht District', 'draconis-combine-pesht-district'),
+] as const
 
 /** Internal-only Clan context. It is deliberately excluded from player-facing birth-affiliation options. */
 export const CLAN_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [
@@ -176,7 +203,7 @@ export const CLAN_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] 
   },
 ]
 
-export const SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [CAPELLAN_COMMONALITY_CONTEXT, SIAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_OUTBACK_CONTEXT]
+export const SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [CAPELLAN_COMMONALITY_CONTEXT, SIAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_OUTBACK_CONTEXT, DRACONIS_COMBINE_CONTEXT, ...DRACONIS_SUB_AFFILIATION_CONTEXTS]
 
 export const ORDER_AFFILIATION_IDS = {
   comstar: 'affiliation.comstar',

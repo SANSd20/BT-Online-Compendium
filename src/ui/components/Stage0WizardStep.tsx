@@ -1,4 +1,4 @@
-import { CAPELLAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_OUTBACK_CONTEXT, getBirthAffiliationOptions, getBirthSubAffiliationOptions, getLifeModuleLanguageSelectorOptions, getNearestStateOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, DRACONIS_COMBINE_CONTEXT, DRACONIS_DIERON_ID, DRACONIS_AZAMI_ID, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_OUTBACK_CONTEXT, getBirthAffiliationOptions, getBirthSubAffiliationOptions, getLifeModuleLanguageSelectorOptions, getNearestStateOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { TECHNICIAN_SUBSKILLS } from '../../domain/skillFields/catalog'
 import { OPEN_ART_SUGGESTED_SUBJECTS } from '../../domain/skillFields/openSkillSubjects'
 import { controlStatus, controlStatusProps } from './controlStatus'
@@ -14,6 +14,10 @@ interface Stage0WizardStepProps {
   davionNaturalAptitude: string
   davionArt: string
   survivalSubject: string
+  draconisTraitChoice?: string
+  draconisWeaponChoice?: string
+  draconisLanguageSubject?: string
+  draconisArtSubject?: string
   orderAffiliation: OrderAffiliationSelection
   orderNearestStateContext: string
   orderSecondaryLanguage: string
@@ -26,6 +30,10 @@ interface Stage0WizardStepProps {
   onDavionNaturalAptitudeChange: (value: string) => void
   onDavionArtChange: (value: string) => void
   onSurvivalSubjectChange: (value: string) => void
+  onDraconisTraitChoiceChange?: (value: string) => void
+  onDraconisWeaponChoiceChange?: (value: string) => void
+  onDraconisLanguageSubjectChange?: (value: string) => void
+  onDraconisArtSubjectChange?: (value: string) => void
   onOrderAffiliationChange: (value: OrderAffiliationSelection) => void
   onOrderNearestStateChange: (value: string) => void
   onOrderSecondaryLanguageChange: (value: string) => void
@@ -49,6 +57,9 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
   const capellanMarchSelected = context?.id === FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT.id
   const draconisMarchSelected = context?.id === FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT.id
   const outbackSelected = context?.id === FEDERATED_SUNS_OUTBACK_CONTEXT.id
+  const draconisSelected = context?.affiliationId === DRACONIS_COMBINE_CONTEXT.affiliationId
+  const draconisAzamiSelected = effectiveSubAffiliation === DRACONIS_AZAMI_ID
+  const draconisDieronSelected = effectiveSubAffiliation === DRACONIS_DIERON_ID
   const outbackInterestSelected = outbackSelected && props.davionArt.startsWith('Interest/')
   const secondaryLanguages = capellanSelected ? getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector) : []
   const orderSelected = effectiveOrderAffiliation !== 'no'
@@ -60,7 +71,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
     context &&
     props.affiliationLanguage &&
     affiliationLanguages.includes(props.affiliationLanguage) &&
-    (capellanSelected ? secondaryLanguages.includes(props.secondaryLanguage) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && (!subSelected || (outbackSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' && props.davionArt !== 'Interest/Other' && Boolean(props.survivalSubject.trim()) : draconisMarchSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' : capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : props.davionArt === 'Painting'))) && orderReady,
+    (draconisSelected ? ['Pain Resistance', 'Combat Sense'].includes(props.draconisTraitChoice ?? 'Pain Resistance') && ['Archery', 'Melee Weapons', 'Thrown Weapons/Blade'].includes(props.draconisWeaponChoice ?? 'Melee Weapons') && (!draconisAzamiSelected || Boolean(props.survivalSubject?.trim())) && (!draconisDieronSelected || (Boolean(props.draconisLanguageSubject?.trim()) && Boolean(props.draconisArtSubject?.trim()))) : capellanSelected ? secondaryLanguages.includes(props.secondaryLanguage) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && (!subSelected || (outbackSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' && props.davionArt !== 'Interest/Other' && Boolean(props.survivalSubject.trim()) : draconisMarchSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' : capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : props.davionArt === 'Painting'))) && orderReady,
   )
   return <div className="stage0-package-stack">
     {!universalComplete && <section className="stage0-package-section current" aria-labelledby="stage0-universal-heading">
@@ -143,6 +154,19 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
                 </select>
                 <small>This award remains unresolved until you choose a listed language.</small>
               </label>
+            </div>}
+            {draconisSelected && <div className="stage0-secondary-action">
+              <div><h4>{subSelected ? context?.displayName : DRACONIS_COMBINE_CONTEXT.displayName}</h4><p>150 XP · source-defined Draconis Combine awards and required choices.</p></div>
+              <div className="stage0-choice-grid">
+                <label htmlFor="stage0-draconis-trait">Trait choice
+                  <select id="stage0-draconis-trait" value={props.draconisTraitChoice ?? 'Pain Resistance'} onChange={(event) => props.onDraconisTraitChoiceChange?.(event.target.value)}><option>Pain Resistance</option><option>Combat Sense</option></select>
+                </label>
+                <label htmlFor="stage0-draconis-weapon">+10 Skill choice
+                  <select id="stage0-draconis-weapon" value={props.draconisWeaponChoice ?? 'Melee Weapons'} onChange={(event) => props.onDraconisWeaponChoiceChange?.(event.target.value)}><option>Archery</option><option>Melee Weapons</option><option>Thrown Weapons/Blade</option></select>
+                </label>
+                {draconisAzamiSelected && <label htmlFor="stage0-draconis-survival">Azami Survival subject<input id="stage0-draconis-survival" value={props.survivalSubject} onChange={(event) => props.onSurvivalSubjectChange(event.target.value)} placeholder="Enter a Survival environment." /></label>}
+                {draconisDieronSelected && <><label htmlFor="stage0-draconis-language">Dieron Language subject<input id="stage0-draconis-language" value={props.draconisLanguageSubject ?? ''} onChange={(event) => props.onDraconisLanguageSubjectChange?.(event.target.value)} placeholder="Enter a language." /></label><label htmlFor="stage0-draconis-art">Dieron Art subject<input id="stage0-draconis-art" value={props.draconisArtSubject ?? ''} onChange={(event) => props.onDraconisArtSubjectChange?.(event.target.value)} placeholder="Enter an Art specialty." /></label></>}
+              </div>
             </div>}
             {davionSelected && <div className="stage0-secondary-action davion-choices">
               <div><h4>{subSelected ? context?.displayName : 'Federated Suns'}</h4><p>150 XP · full affiliation cost{subSelected ? ' with the selected March package' : ' with no sub-affiliation awards'}.</p></div>

@@ -44,6 +44,12 @@ import { BASIC_TRAINING_FIELD_ID, BASIC_TRAINING_NAVAL_FIELD_ID, CAVALRY_FIELD_I
 describe('Life Module Alpha catalog', () => {
   it('contains the audited Core entries through the minimal Stage 4 branch', () => {
     expect(LIFE_MODULE_CATALOG.map((entry) => entry.id)).toEqual([
+      'stage0.draconis-combine',
+      'stage0.draconis-combine.azami',
+      'stage0.draconis-combine.benjamin-district',
+      'stage0.draconis-combine.dieron-district',
+      'stage0.draconis-combine.new-samarkand-galedon-district',
+      'stage0.draconis-combine.pesht-district',
       FEDERATED_SUNS_CAPELLAN_MARCH_ID,
       FEDERATED_SUNS_DRACONIS_MARCH_ID,
       UNIVERSAL_STAGE_0_ID,

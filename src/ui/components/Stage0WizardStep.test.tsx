@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_OUTBACK_ID } from '../../domain/lifeModules/catalog'
+import { CAPELLAN_COMMONALITY_ID, DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_COMBINE_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID, FEDERATED_SUNS_OUTBACK_ID } from '../../domain/lifeModules/catalog'
 import { Stage0WizardStep } from './Stage0WizardStep'
 
 const handlers = {
@@ -103,5 +103,18 @@ describe('merged Stage 0 wizard step', () => {
     const outback = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={FEDERATED_SUNS_OUTBACK_ID} subAffiliation={FEDERATED_SUNS_OUTBACK_ID} affiliationLanguage="English" secondaryLanguage="" davionNaturalAptitude="Strategy" davionArt="" survivalSubject="" {...orderChoices} birthAffiliationId="affiliation.federated-suns" {...handlers} />)
     expect(outback).toContain('id="stage0-davion-art-outback"')
     expect(outback).not.toContain('id="stage0-davion-art"')
+  })
+
+  it('keeps Draconis parent choices visible for every supported sub-affiliation', () => {
+    for (const subAffiliation of [DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID]) {
+      const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={subAffiliation} subAffiliation={subAffiliation} affiliationLanguage="Japanese" secondaryLanguage="" draconisTraitChoice="Combat Sense" draconisWeaponChoice="Archery" draconisLanguageSubject={subAffiliation === DRACONIS_DIERON_ID ? 'English' : ''} draconisArtSubject={subAffiliation === DRACONIS_DIERON_ID ? 'Painting' : ''} {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.draconis-combine" {...handlers} />)
+      expect(markup).toContain('id="stage0-draconis-trait"')
+      expect(markup).toContain('id="stage0-draconis-weapon"')
+      expect(markup).toContain('Combat Sense')
+      expect(markup).toContain('Archery')
+    }
+    const parent = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={DRACONIS_COMBINE_ID} subAffiliation="no" affiliationLanguage="Japanese" secondaryLanguage="" draconisTraitChoice="Combat Sense" draconisWeaponChoice="Archery" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.draconis-combine" {...handlers} />)
+    expect(parent).toContain('id="stage0-draconis-trait"')
+    expect(parent).toContain('<option value="no" selected="">No</option>')
   })
 })

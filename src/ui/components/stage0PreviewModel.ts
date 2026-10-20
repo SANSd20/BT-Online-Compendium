@@ -1,7 +1,7 @@
 import type { CharacterDefinition } from '../../domain/character/model'
-import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_ID } from '../../domain/lifeModules/catalog'
+import { CAPELLAN_COMMONALITY_ID, DRACONIS_COMBINE_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_ID } from '../../domain/lifeModules/catalog'
 import type { OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
-import { applyCapellanCommonality, applyFederatedSunsMarch, applyFederatedSunsCrucisMarch, applyUniversalStage0, previewFederatedSunsCrucisMarch, previewOrderAffiliation } from '../../engine/lifeModuleEngine'
+import { applyCapellanCommonality, applyDraconisCombine, applyFederatedSunsMarch, applyFederatedSunsCrucisMarch, applyUniversalStage0, previewFederatedSunsCrucisMarch, previewOrderAffiliation } from '../../engine/lifeModuleEngine'
 
 export type LifeModulesThemeIdentity = {
   className: string
@@ -42,12 +42,20 @@ export function previewStage0Affiliation(
   orderTechnicianSubskill = '',
   subAffiliationSelection = '',
   survivalSubject = '',
+  draconisTraitChoice = 'Pain Resistance',
+  draconisWeaponChoice = 'Melee Weapons',
+  draconisChoices: Record<string, string> = {},
 ): CharacterDefinition | null {
   if (!affiliationContext) return null
   try {
     const withUniversal = affiliationLanguage
       ? applyUniversalStage0(character, affiliationContext, affiliationLanguage)
       : character
+    if (affiliationContext === DRACONIS_COMBINE_ID) {
+      if (!affiliationLanguage) return null
+      const preview = applyDraconisCombine(withUniversal, subAffiliationSelection === 'no' ? 'no' : subAffiliationSelection as Parameters<typeof applyDraconisCombine>[1], draconisTraitChoice as 'Pain Resistance' | 'Combat Sense', draconisWeaponChoice as 'Archery' | 'Melee Weapons' | 'Thrown Weapons/Blade', affiliationLanguage, draconisChoices)
+      return previewOrderAffiliation(preview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
+    }
     if (affiliationContext === FEDERATED_SUNS_CRUCIS_MARCH_ID) {
       const includeSub = !subAffiliationSelection || subAffiliationSelection === affiliationContext
       const birthPreview = davionNaturalAptitude && (!includeSub || davionArt)

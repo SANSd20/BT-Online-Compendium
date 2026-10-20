@@ -6,6 +6,7 @@
  * offer, not a claim about the complete BattleTech language universe.
  */
 export const MODELED_LANGUAGE_SUBSKILLS = [
+  'Arabic',
   'Cantonese',
   'English',
   'French',
@@ -16,6 +17,7 @@ export const MODELED_LANGUAGE_SUBSKILLS = [
   'Romanian',
   'Russian',
   'Spanish',
+  'Swedanese',
   'Vietnamese',
 ] as const
 

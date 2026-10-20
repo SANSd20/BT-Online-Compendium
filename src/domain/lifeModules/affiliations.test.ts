@@ -19,8 +19,8 @@ describe('Life Module affiliation framework', () => {
     expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.map((entry) => entry.id)).not.toContain(UNIVERSAL_STAGE_0_ID)
   })
 
-  it('centralizes the supported Capellan and Federated Suns contexts', () => {
-    expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS).toEqual([CAPELLAN_COMMONALITY_CONTEXT, SIAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, expect.objectContaining({ subAffiliationName: 'Capellan March' }), expect.objectContaining({ subAffiliationName: 'Draconis March' }), expect.objectContaining({ subAffiliationName: 'Outback' })])
+  it('centralizes the supported Core and Draconis Combine contexts', () => {
+    expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS).toEqual([CAPELLAN_COMMONALITY_CONTEXT, SIAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, expect.objectContaining({ subAffiliationName: 'Capellan March' }), expect.objectContaining({ subAffiliationName: 'Draconis March' }), expect.objectContaining({ subAffiliationName: 'Outback' }), expect.objectContaining({ affiliationName: 'Draconis Combine', subAffiliationName: 'No sub-affiliation' }), expect.objectContaining({ affiliationName: 'Draconis Combine', subAffiliationName: 'Azami' }), expect.objectContaining({ affiliationName: 'Draconis Combine', subAffiliationName: 'Benjamin District' }), expect.objectContaining({ affiliationName: 'Draconis Combine', subAffiliationName: 'Dieron District' }), expect.objectContaining({ affiliationName: 'Draconis Combine', subAffiliationName: 'New Samarkand (Galedon) District' }), expect.objectContaining({ affiliationName: 'Draconis Combine', subAffiliationName: 'Pesht District' })])
     expect(CAPELLAN_COMMONALITY_CONTEXT).toMatchObject({
       id: CAPELLAN_COMMONALITY_ID,
       affiliationId: 'affiliation.capellan-confederation',

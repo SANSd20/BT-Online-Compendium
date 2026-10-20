@@ -1053,7 +1053,8 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
     const targetIdValid = resolved.destination.type === 'attribute'
       ? LIFE_MODULE_ATTRIBUTE_IDS.includes(resolved.destination.targetId)
       : resolved.destination.targetId.startsWith(resolved.destination.type === 'trait' ? 'trait.' : 'skill.')
-    const languageValid = award.kind !== 'language-choice' || getLifeModuleLanguageSelectorOptions(award.choicesFrom).includes(resolved.destination.parameter?.value ?? '')
+    const draconisUniversalLanguage = resolved.moduleId === 'stage0.universal-fixed-xp' && resolved.awardId === 'universal.language.affiliation' && state.stage0AffiliationContext?.startsWith('stage0.draconis-combine')
+    const languageValid = award.kind !== 'language-choice' || (draconisUniversalLanguage ? resolved.destination.parameter?.value === state.affiliationLanguage : getLifeModuleLanguageSelectorOptions(award.choicesFrom).includes(resolved.destination.parameter?.value ?? ''))
     const knownChoices = knownPendingChoiceValues({
       kind: award.kind,
       choiceSource: award.kind === 'language-choice' ? award.choicesFrom : undefined,
@@ -1063,7 +1064,7 @@ function validateResolvedLifeModuleAwards(character: CharacterDefinition, issues
       kind: award.kind,
       requiredSkillId,
     })
-    const knownChoiceValid = state.awardSelectorVersion !== 1 || openSubject !== null || knownChoices.length === 0 || knownChoices.includes(resolved.destination.parameter?.value ?? '')
+    const knownChoiceValid = draconisUniversalLanguage || state.awardSelectorVersion !== 1 || openSubject !== null || knownChoices.length === 0 || knownChoices.includes(resolved.destination.parameter?.value ?? '')
     let openSubjectValid = true
     if (openSubject) {
       const selectedValue = resolved.destination.parameter?.value ?? ''

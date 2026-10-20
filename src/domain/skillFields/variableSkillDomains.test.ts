@@ -9,8 +9,8 @@ describe('variable Skill choice governance', () => {
       expect(new Set(domain.options).size).toBe(domain.options.length)
     }
     expect(VARIABLE_SKILL_DOMAINS.languages).toMatchObject({ semantics: 'modeled-bounded-subset', completeness: 'modeled-bounded' })
-    expect(VARIABLE_SKILL_DOMAINS.protocolAffiliations.options).toEqual(['Capellan', 'FedSuns'])
-    expect(VARIABLE_SKILL_DOMAINS.streetwiseAffiliations.options).toEqual(['Capellan', 'FedSuns'])
+    expect(VARIABLE_SKILL_DOMAINS.protocolAffiliations.options).toEqual(['Capellan', 'FedSuns', 'Combine'])
+    expect(VARIABLE_SKILL_DOMAINS.streetwiseAffiliations.options).toEqual(['Capellan', 'FedSuns', 'Combine'])
     expect(VARIABLE_SKILL_DOMAINS.tactics.options).toEqual(['Infantry', 'Land', 'Sea', 'Air', 'Space'])
     expect(VARIABLE_SKILL_DOMAINS.medTech.options).toEqual(['General', 'Veterinary'])
     expect(VARIABLE_SKILL_DOMAINS.aircraftPiloting).toMatchObject({ semantics: 'named-source-option-set', options: ['Air Vehicle', 'VTOL'] })
