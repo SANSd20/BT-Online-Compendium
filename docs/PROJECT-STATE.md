@@ -18,6 +18,8 @@ Saved characters must retain enough underlying information to reproduce and audi
 
 ## Workstream status
 
+An eventual Admin Panel is deferred until the base Core rules are fully implemented and verified. It must keep official published rules and custom content as separate categories. Until that checkpoint, no Admin Panel implementation, architecture or design work, backend, database, or scope expansion is authorized. Reassess this decision only after verified Core completion.
+
 | Workstream | Status | Notes |
 |---|---|---|
 | Repository bootstrap / durable state | Complete | Documentation authority established |

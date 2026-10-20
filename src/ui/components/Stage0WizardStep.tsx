@@ -1,6 +1,7 @@
 import { CAPELLAN_COMMONALITY_CONTEXT, DRACONIS_COMBINE_CONTEXT, DRACONIS_DIERON_ID, DRACONIS_AZAMI_ID, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_OUTBACK_CONTEXT, getBirthAffiliationOptions, getBirthSubAffiliationOptions, getLifeModuleLanguageSelectorOptions, getNearestStateOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { TECHNICIAN_SUBSKILLS } from '../../domain/skillFields/catalog'
 import { OPEN_ART_SUGGESTED_SUBJECTS } from '../../domain/skillFields/openSkillSubjects'
+import { validateOpenSkillSubject } from '../../domain/skillFields/openSkillSubjects'
 import { controlStatus, controlStatusProps } from './controlStatus'
 import { Stage0UniversalStep } from './Stage0UniversalStep'
 
@@ -71,7 +72,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
     context &&
     props.affiliationLanguage &&
     affiliationLanguages.includes(props.affiliationLanguage) &&
-    (draconisSelected ? ['Pain Resistance', 'Combat Sense'].includes(props.draconisTraitChoice ?? 'Pain Resistance') && ['Archery', 'Melee Weapons', 'Thrown Weapons/Blade'].includes(props.draconisWeaponChoice ?? 'Melee Weapons') && (!draconisAzamiSelected || Boolean(props.survivalSubject?.trim())) && (!draconisDieronSelected || (Boolean(props.draconisLanguageSubject?.trim()) && Boolean(props.draconisArtSubject?.trim()))) : capellanSelected ? secondaryLanguages.includes(props.secondaryLanguage) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && (!subSelected || (outbackSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' && props.davionArt !== 'Interest/Other' && Boolean(props.survivalSubject.trim()) : draconisMarchSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' : capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : props.davionArt === 'Painting'))) && orderReady,
+    (draconisSelected ? ['Pain Resistance', 'Combat Sense'].includes(props.draconisTraitChoice ?? 'Pain Resistance') && ['Archery', 'Melee Weapons', 'Thrown Weapons/Blade'].includes(props.draconisWeaponChoice ?? 'Melee Weapons') && (!draconisAzamiSelected || validateOpenSkillSubject(props.survivalSubject).error === null) && (!draconisDieronSelected || (Boolean(props.draconisLanguageSubject?.trim()) && Boolean(props.draconisArtSubject?.trim()))) : capellanSelected ? secondaryLanguages.includes(props.secondaryLanguage) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && (!subSelected || (outbackSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' && props.davionArt !== 'Interest/Other' && Boolean(props.survivalSubject.trim()) : draconisMarchSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' : capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : props.davionArt === 'Painting'))) && orderReady,
   )
   return <div className="stage0-package-stack">
     {!universalComplete && <section className="stage0-package-section current" aria-labelledby="stage0-universal-heading">

@@ -851,7 +851,8 @@ export function applyDraconisCombine(
     if (!value || value === 'Any' || value === 'Other') throw new Error(`Choose a concrete ${label} for the Draconis Combine package.`)
     return value
   }
-  if (subAffiliation === DRACONIS_AZAMI_ID) requiredChoice('survival', 'Survival subject')
+  const normalizedOpenChoices = { ...openChoices }
+  if (subAffiliation === DRACONIS_AZAMI_ID) normalizedOpenChoices.survival = openSkillSubjectDestination('skill.survival', requiredChoice('survival', 'Survival subject')).parameter!.value
   if (subAffiliation === DRACONIS_DIERON_ID) {
     requiredChoice('language', 'Language subject')
     requiredChoice('art', 'Art subject')
@@ -865,7 +866,7 @@ export function applyDraconisCombine(
   })
   awards.push({ id: 'draconis.language.primary', kind: 'fixed', xp: 0, destination: skillDestination('skill.language', `Language/${languageChoice}`, languageChoice) })
   const subAwards = (DRACONIS_SUB_AFFILIATION_CATALOG_AWARDS[subAffiliation] ?? []).map((award): LifeModuleAward => {
-    if (award.id === 'azami.skill.survival' && award.kind === 'any-skill-choice') return { id: award.id, kind: 'fixed', xp: award.xp, destination: skillDestination('skill.survival', `Survival/${openChoices.survival}`, openChoices.survival) }
+    if (award.id === 'azami.skill.survival' && award.kind === 'any-skill-choice') return { id: award.id, kind: 'fixed', xp: award.xp, destination: skillDestination('skill.survival', `Survival/${normalizedOpenChoices.survival}`, normalizedOpenChoices.survival) }
     if (award.id === 'dieron.language.any' && award.kind === 'language-choice') return { id: award.id, kind: 'fixed', xp: award.xp, destination: skillDestination('skill.language', `Language/${openChoices.language}`, openChoices.language) }
     if (award.id === 'dieron.skill.art' && award.kind === 'any-skill-choice') return { id: award.id, kind: 'fixed', xp: award.xp, destination: skillDestination('skill.art', `Art/${openChoices.art}`, openChoices.art) }
     return award
@@ -904,7 +905,9 @@ export function applyStage0Affiliation(
   const draconisSelected = resolvedAffiliation.support === 'supported' && resolvedAffiliation.context.affiliationId === DRACONIS_COMBINE_CONTEXT.affiliationId
   const universalContextId = draconisSelected ? DRACONIS_COMBINE_ID : affiliationContextModuleId
   const withUniversal = applyUniversalStage0(character, universalContextId, affiliationLanguage)
-  const includeSubAffiliation = subAffiliationSelection === undefined || subAffiliationSelection === affiliationContextModuleId || subAffiliationSelection === SIAN_COMMONALITY_ID
+  const includeSubAffiliation = draconisSelected
+    ? subAffiliationSelection !== undefined && subAffiliationSelection !== 'no'
+    : subAffiliationSelection === undefined || subAffiliationSelection === affiliationContextModuleId || subAffiliationSelection === SIAN_COMMONALITY_ID
   const withBirth = draconisSelected
     ? applyDraconisCombine(withUniversal, subAffiliationSelection as DraconisSubId || 'no', draconisTraitChoice, draconisWeaponChoice, affiliationLanguage, draconisChoices)
     : affiliationContextModuleId === FEDERATED_SUNS_CRUCIS_MARCH_ID

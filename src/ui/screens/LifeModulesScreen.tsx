@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalogSourceStatus, EquipmentOwnership, EquipmentRatingCode, PendingLifeModuleAward, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
-import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, COMSTAR_WOB_SERVICE_ID, FAMILY_TRAINING_ID, FARM_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, MILITARY_SCHOOL_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, SOLARIS_INTERNSHIP_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, WAR_ORPHAN_ID } from '../../domain/lifeModules/catalog'
-import { getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
+import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, COMSTAR_WOB_SERVICE_ID, FAMILY_TRAINING_ID, FARM_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, MILITARY_SCHOOL_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, SOLARIS_INTERNSHIP_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, WAR_ORPHAN_ID } from '../../domain/lifeModules/catalog'
+import { DRACONIS_AZAMI_ID, DRACONIS_COMBINE_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { capellanCitizenshipEligibility } from '../../domain/lifeModules/capellanRestrictions'
@@ -671,7 +671,13 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
                 orderTechnicianSubskill={orderTechnicianSubskill}
                 onBirthAffiliationChange={(value) => { const context = getLifeModuleAffiliationContextByAffiliationId(value); setBirthAffiliationId(value); setStage0AffiliationContext(context?.id ?? ''); setStage0SubAffiliation('no'); setAffiliationLanguage(''); setSecondaryLanguage(''); setDavionNaturalAptitude(''); setDavionArt(''); setSurvivalSubject(''); setOrderNearestStateContext(''); setOrderSecondaryLanguage('') }}
                 onContextChange={(value) => { setStage0AffiliationContext(value); setAffiliationLanguage(''); setSecondaryLanguage(''); setDavionNaturalAptitude(''); setDavionArt(''); setSurvivalSubject('') }}
-                onSubAffiliationChange={(value) => { setStage0SubAffiliation(value); setStage0AffiliationContext(value === 'no' ? FEDERATED_SUNS_CRUCIS_MARCH_ID : value); setDavionArt(''); setSurvivalSubject('') }}
+                onSubAffiliationChange={(value) => {
+                  const draconisParent = stage0AffiliationContext === DRACONIS_COMBINE_CONTEXT.id || getLifeModuleAffiliationContextByAffiliationId(birthAffiliationId)?.affiliationId === DRACONIS_COMBINE_CONTEXT.affiliationId
+                  setStage0SubAffiliation(value)
+                  if (!draconisParent && value !== 'no') setStage0AffiliationContext(value)
+                  setDavionArt('')
+                  if (value !== DRACONIS_AZAMI_ID) setSurvivalSubject('')
+                }}
                 onLanguageChange={setAffiliationLanguage}
                 onSecondaryLanguageChange={setSecondaryLanguage}
                 onDavionNaturalAptitudeChange={setDavionNaturalAptitude}

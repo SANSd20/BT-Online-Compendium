@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID } from '../../domain/lifeModules/catalog'
+import { CAPELLAN_COMMONALITY_ID, DRACONIS_AZAMI_ID, DRACONIS_COMBINE_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID } from '../../domain/lifeModules/catalog'
 import { applyStage0Affiliation, createLifeModuleCharacter } from '../../engine/lifeModuleEngine'
 import { decodeCharacter, encodeCharacter } from '../../persistence/characterCodec'
 import { committedLifeModulesThemeIdentity, lifeModulesAffiliationTheme, lifeModulesThemeIdentity, previewStage0Affiliation } from './stage0PreviewModel'
@@ -42,6 +42,13 @@ describe('Stage 0 preview model', () => {
       'commonality.language.fedsuns',
     ]))
     expect(JSON.stringify(character)).toBe(committedJson)
+  })
+
+  it('resolves Draconis child preview through the canonical parent context', () => {
+    const preview = previewStage0Affiliation(createLifeModuleCharacter('Draconis child preview'), DRACONIS_COMBINE_ID, 'Japanese', '', '', '', 'no', '', '', '', DRACONIS_AZAMI_ID, '', 'Combat Sense', 'Archery', { survival: '  Desert   ' })
+    expect(preview?.creation.lifeModules?.stage0AffiliationContext).toBe(DRACONIS_COMBINE_ID)
+    expect(preview?.creation.lifeModules?.stage0SubAffiliation).toBe(DRACONIS_AZAMI_ID)
+    expect(preview?.skills).toContainEqual(expect.objectContaining({ displayName: 'Survival/Desert' }))
   })
 
   it('activates the Capellan theme only for the Capellan context', () => {

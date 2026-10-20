@@ -69,6 +69,12 @@ Some paths require later stages, skip Stage 3, require Stage 4, or permit an ear
 
 Preserve module cost, fixed awards, mandatory destination choices, choice packages/groups, Flexible XP, conditional awards, prerequisites, chronology/time, Skill Fields, repeat rules, source-specific exceptions, and provenance.
 
+## Stage-entry architectural assessment standard
+
+Before implementing each new character-creation stage, assess the authoritative rules requirements and the existing architecture that stage will use.
+
+The assessment must cover reusable components, state ownership, data flow, transaction boundaries, validation, UI integration, persistence, test coverage, and known defects or dependencies. Reuse compatible systems and identify structural problems before implementation. Do not rebuild systems automatically without evidence. Preserve unsupported rules and unresolved decisions explicitly.
+
 ### Stage 0 universal package
 
 Stage 0 includes both the universal package and the chosen affiliation. The universal package costs 850 XP and establishes the basic foundation, including:

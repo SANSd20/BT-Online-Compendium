@@ -33,6 +33,14 @@ describe('Draconis Combine Stage 0 transaction', () => {
     expect(() => applyDraconisCombine(universal(), DRACONIS_DIERON_ID, 'Pain Resistance', 'Melee Weapons', 'Japanese', { language: 'English', art: 'Painting' })).not.toThrow()
   })
 
+  it('uses the shared open-subject validation for Azami Survival', () => {
+    for (const survival of ['', 'x'.repeat(61), 'Desert/Forest', 'Desert\u0000']) {
+      expect(() => applyDraconisCombine(universal(), DRACONIS_AZAMI_ID, 'Pain Resistance', 'Melee Weapons', 'Japanese', { survival })).toThrow()
+    }
+    const normalized = applyDraconisCombine(universal(), DRACONIS_AZAMI_ID, 'Pain Resistance', 'Melee Weapons', 'Japanese', { survival: '  Desert   ' })
+    expect(normalized.skills).toContainEqual(expect.objectContaining({ displayName: 'Survival/Desert', address: expect.objectContaining({ parameter: { kind: 'subskill', value: 'Desert' } }) }))
+  })
+
   it('preserves the selected sub-affiliation, XP, choices, and provenance through JSON round-trip', () => {
     const character = applyDraconisCombine(universal(), DRACONIS_AZAMI_ID, 'Combat Sense', 'Archery', 'Japanese', { survival: 'Desert' })
     const restored = decodeCharacter(encodeCharacter(character, '3071-01-02T00:00:00.000Z'))
