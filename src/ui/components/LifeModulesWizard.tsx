@@ -1,12 +1,12 @@
 import type { ReactNode, Ref } from 'react'
 import type { CharacterDefinition, PendingLifeModuleAward } from '../../domain/character/model'
-import { APP_PUBLIC_ALPHA_LABEL, APP_VERSION } from '../../appMetadata'
+import { APP_PUBLIC_ALPHA_LABEL } from '../../appMetadata'
 import { masterSkillFieldGoalStatus, type MasterSkillFieldGoalRequirementStatus, type MasterSkillFieldReferenceStatus } from '../../domain/skillFields/goals'
 import { getLifeModuleAffiliationContextByAffiliationId } from '../../domain/lifeModules/affiliations'
 import { LIFE_MODULE_WIZARD_STEPS, lifeModuleStagePresentation, lifeModuleWizardStepIndex } from './lifeModulesWizardModel'
 
 export function LifeModulesVersionBadge() {
-  return <p className="eyebrow">{APP_PUBLIC_ALPHA_LABEL} · v{APP_VERSION}</p>
+  return <p className="eyebrow">{APP_PUBLIC_ALPHA_LABEL}</p>
 }
 
 export function LifeModuleDashboard({ character, previewCharacter, previewSelections = [], toolbar, children }: { character: CharacterDefinition; previewCharacter?: CharacterDefinition | null; previewSelections?: string[]; toolbar: ReactNode; children: ReactNode }) {

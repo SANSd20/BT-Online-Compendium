@@ -1,4 +1,4 @@
-import { APP_PHASE, APP_PUBLIC_TITLE, APP_RELEASE_LABEL, APP_VERSION } from '../../appMetadata'
+import { APP_PHASE, APP_PUBLIC_TITLE, APP_RELEASE_LABEL } from '../../appMetadata'
 
 export function PublicAlphaNotice({ defaultExpanded = false }: { defaultExpanded?: boolean }) {
   return (
@@ -11,7 +11,6 @@ export function PublicAlphaNotice({ defaultExpanded = false }: { defaultExpanded
               <h2 id="public-alpha-title">Public Alpha Notice</h2>
               <p className="public-alpha-summary">Local-only Alpha · incomplete rules and equipment coverage</p>
             </div>
-            <span className="version-badge">v{APP_VERSION}</span>
           </div>
           <span className="public-alpha-toggle"><span className="when-closed">Show details</span><span className="when-open">Hide details</span></span>
         </summary>

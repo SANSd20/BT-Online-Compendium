@@ -15,9 +15,10 @@ function stage1Draft() {
 }
 
 describe('Life Modules wizard presentation', () => {
-  it('derives the Life Modules page badge from the current application version', () => {
+  it('preserves the Life Modules release-status badge without duplicating the application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
-    expect(markup).toContain('Public Alpha · Slice 165-B17 · v0.1.0-alpha.165-b17')
+    expect(markup).toContain('Public Alpha · Slice 165-B18')
+    expect(markup).not.toContain('v0.1.0-alpha.165-b18')
     expect(markup).not.toContain('Slice 22')
   })
 

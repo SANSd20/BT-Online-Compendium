@@ -25,4 +25,25 @@ describe('shared government/faction theme palettes', () => {
     expect(css).toContain('UI_ADAPTATION')
     for (const superseded of ['#9ae3bb', '#4a202d', '#713445', '#202b22', '#2b3829', '#687962', '#d7b66a', '#a7c979']) expect(css).not.toContain(superseded)
   })
+
+  it.each([
+    ['free-worlds-league', ['#7047A3', '#382550', '#49345F', '#282232', '#372E43', '#796A8A', '#3F7048', '#E5E2D8', '#F0EBF5', '#111111']],
+    ['lyran-commonwealth', ['#356DA8', '#1D3B5D', '#294F73', '#202B35', '#2B3A47', '#657F96', '#75624E', '#D8E2E8', '#F0F4F7', '#111111']],
+    ['free-rasalhague-republic', ['#6BAFC5', '#2C5968', '#477F92', '#20353D', '#2E4B55', '#8FB8C4', '#586671', '#B33A3A', '#F1F6F8', '#111111']],
+  ])('preserves the prepared %s successor-state palette roles', (theme, colors) => {
+    const css = readFileSync(new URL('./styles.css', import.meta.url), 'utf8')
+    const block = css.match(new RegExp(`\\.life-modules-page\\.${theme}-theme \\{([\\s\\S]*?)\\}`))?.[1] ?? ''
+    for (const color of colors) expect(block).toContain(color)
+    expect(block).toContain('--faction-primary:')
+    expect(block).toContain('--faction-panel:')
+    expect(block).toContain('--faction-accent:')
+    expect(block).toContain('--faction-foreground:')
+  })
+
+  it('keeps prepared successor-state palettes inactive in the public resolver', async () => {
+    const { lifeModulesAffiliationTheme } = await import('./ui/components/stage0PreviewModel')
+    expect(lifeModulesAffiliationTheme('affiliation.free-worlds-league')).toBe('')
+    expect(lifeModulesAffiliationTheme('affiliation.lyran-commonwealth')).toBe('')
+    expect(lifeModulesAffiliationTheme('affiliation.free-rasalhague-republic')).toBe('')
+  })
 })

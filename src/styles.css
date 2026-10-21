@@ -32,7 +32,6 @@ a { color: inherit; }
 .public-alpha-notice details > summary::-webkit-details-marker { display: none; }
 .public-alpha-heading { display: flex; justify-content: space-between; align-items: start; gap: 20px; }
 .public-alpha-heading h2 { margin-bottom: 6px; }
-.version-badge { flex: none; color: var(--amber); border: 1px solid #7b622d; padding: 7px 10px; font: 700 .78rem/1 ui-monospace, monospace; }
 .public-alpha-summary { margin: 0; font-size: .82rem; }
 .public-alpha-toggle { color: var(--amber); font-size: .8rem; font-weight: 800; }
 .public-alpha-toggle::before { content: '＋ '; }
@@ -294,6 +293,47 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .life-modules-page.davion-theme .life-summary-preview-status > strong { color: var(--faction-accent); }
 .life-modules-page.davion-theme .stage0-choice-grid select,
 .life-modules-page.davion-theme .stage0-secondary-action select { border-color: var(--faction-border); background: var(--faction-panel); }
+
+/* Prepared successor-state palettes from battletech-faction-colors at
+   e3cd8c9c9899b04aebd314a2a921ad3edd4092f1. These identities are deliberately
+   not returned by the active affiliation resolver until their rule coverage is
+   implemented. */
+.life-modules-page.free-worlds-league-theme {
+  --faction-primary: #7047A3;
+  --faction-primary-deep: #382550;
+  --faction-primary-surface: #49345F;
+  --faction-panel: #282232;
+  --faction-panel-alt: #372E43;
+  --faction-border: #796A8A;
+  --faction-secondary: #3F7048;
+  --faction-accent: #E5E2D8;
+  --faction-foreground: #F0EBF5;
+  --faction-ink: #111111;
+}
+.life-modules-page.lyran-commonwealth-theme {
+  --faction-primary: #356DA8;
+  --faction-primary-deep: #1D3B5D;
+  --faction-primary-surface: #294F73;
+  --faction-panel: #202B35;
+  --faction-panel-alt: #2B3A47;
+  --faction-border: #657F96;
+  --faction-secondary: #75624E;
+  --faction-accent: #D8E2E8;
+  --faction-foreground: #F0F4F7;
+  --faction-ink: #111111;
+}
+.life-modules-page.free-rasalhague-republic-theme {
+  --faction-primary: #6BAFC5;
+  --faction-primary-deep: #2C5968;
+  --faction-primary-surface: #477F92;
+  --faction-panel: #20353D;
+  --faction-panel-alt: #2E4B55;
+  --faction-border: #8FB8C4;
+  --faction-secondary: #586671;
+  --faction-accent: #B33A3A;
+  --faction-foreground: #F1F6F8;
+  --faction-ink: #111111;
+}
 .life-modules-page.comstar-theme {
   --faction-primary: #aab5bf;
   --faction-primary-deep: #4b555e;
