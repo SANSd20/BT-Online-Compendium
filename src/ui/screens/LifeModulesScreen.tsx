@@ -77,7 +77,13 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
   const stageHeadingRef = useRef<HTMLHeadingElement>(null)
   const previousPhaseRef = useRef<string | undefined>(undefined)
   const [name, setName] = useState('')
+  const [hairColor, setHairColor] = useState('Brown')
+  const [eyeColor, setEyeColor] = useState('Green')
+  const [gender, setGender] = useState<'' | 'Male' | 'Female' | 'Nonbinary' | 'Other'>('')
+  const [heightCm, setHeightCm] = useState('')
+  const [weightKg, setWeightKg] = useState('')
   const [startingXp, setStartingXp] = useState(5000)
+  const [startingXpLocked, setStartingXpLocked] = useState(true)
   const [masterSkillFieldGoalId, setMasterSkillFieldGoalId] = useState('')
   const [stage0AffiliationContext, setStage0AffiliationContext] = useState('')
   const [stage0SubAffiliation, setStage0SubAffiliation] = useState('no')
@@ -127,7 +133,20 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
   function start(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setStage3FieldIds([TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID])
-    operate(() => setMasterSkillFieldGoal(createLifeModuleCharacter(name, startingXp), masterSkillFieldGoalId || null), 'Life Module draft created and saved locally.')
+    operate(() => {
+      const draft = setMasterSkillFieldGoal(createLifeModuleCharacter(name, startingXp), masterSkillFieldGoalId || null)
+      draft.personalDescription = {
+        physicalDescription: '',
+        backgroundNotes: '',
+        homeworld: '',
+        hairColor,
+        eyeColor,
+        gender: gender || 'Other',
+        ...(heightCm ? { heightCm: Number(heightCm) } : {}),
+        ...(weightKg ? { weightKg: Number(weightKg) } : {}),
+      }
+      return draft
+    }, 'Life Module draft created and saved locally.')
   }
 
   function addStasisHistory() {
@@ -612,21 +631,39 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
       </section>
 
       {!character ? (
-        <section className="draft-panel">
-          <h2>Start a Life Modules draft</h2>
+        <section className="welcome-layout" aria-labelledby="welcome-heading">
+          <div className="welcome-artwork"><img src={`${import.meta.env.BASE_URL}assets/Androgynous%20Figure%20Construction%20Sketch.png`} alt="Androgynous figure construction sketch" /></div>
+          <div className="draft-panel welcome-content">
+          <p className="eyebrow">Character setup</p>
+          <h2 id="welcome-heading">Welcome to A Time of War</h2>
+          <p>Set up your character's identity and starting parameters before entering the audited Life Modules path.</p>
           <form onSubmit={start}>
+            <fieldset><legend>Character Start Parameters</legend>
             <label htmlFor="life-module-name">Character name</label>
             <input id="life-module-name" value={name} onChange={(event) => setName(event.target.value)} required />
+            <label htmlFor="life-module-hair">Hair color</label>
+            <select id="life-module-hair" value={hairColor} onChange={(event) => setHairColor(event.target.value)}>{['Brown', 'Black', 'Blond', 'Auburn', 'Chestnut', 'Red', 'Grey', 'White'].map((value) => <option key={value}>{value}</option>)}</select>
+            <label htmlFor="life-module-eyes">Eye color</label>
+            <select id="life-module-eyes" value={eyeColor} onChange={(event) => setEyeColor(event.target.value)}>{['Green', 'Grey', 'Blue', 'Brown', 'Red', 'Black'].map((value) => <option key={value}>{value}</option>)}</select>
+            <label htmlFor="life-module-gender">Gender</label>
+            <select id="life-module-gender" value={gender} onChange={(event) => setGender(event.target.value as typeof gender)}><option value="">Choose a gender</option>{['Male', 'Female', 'Nonbinary', 'Other'].map((value) => <option key={value}>{value}</option>)}</select>
+            <div className="welcome-field-grid"><label htmlFor="life-module-height">Height (cm)<input id="life-module-height" type="number" min="1" step="1" value={heightCm} onChange={(event) => setHeightCm(event.target.value)} /></label><label htmlFor="life-module-weight">Weight (kg)<input id="life-module-weight" type="number" min="1" step="1" value={weightKg} onChange={(event) => setWeightKg(event.target.value)} /></label></div>
+            </fieldset>
+            <fieldset><legend>Game Master Settings</legend>
             <label htmlFor="life-module-starting-xp">Starting XP</label>
-            <input id="life-module-starting-xp" type="number" min="1" step="1" value={startingXp} onChange={(event) => setStartingXp(Number(event.target.value))} required />
+            <input id="life-module-starting-xp" type="number" min="1" step="1" value={startingXp} onChange={(event) => setStartingXp(Number(event.target.value))} disabled={startingXpLocked} required />
+            <label><input id="life-module-starting-xp-locked" type="checkbox" checked={startingXpLocked} onChange={(event) => setStartingXpLocked(event.target.checked)} /> Locked</label>
+            <p className="scope-note">The Core default is 5,000 XP. Unlock to enter a GM-adjusted starting allotment; this is a local configuration control, not GM authentication.</p>
+            </fieldset>
             <label htmlFor="life-module-field-goal">Master Skill Field goal</label>
             <select id="life-module-field-goal" value={masterSkillFieldGoalId} onChange={(event) => setMasterSkillFieldGoalId(event.target.value)}>
               <option value="">No goal</option>
               {(Object.keys(MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS) as MasterSkillFieldGoalCategory[]).map((category) => <optgroup key={category} label={MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS[category]}>{SUPPORTED_MASTER_SKILL_FIELD_GOALS.filter((field) => field.category === category).map((field) => <option key={field.id} value={field.id}>{field.displayName}</option>)}</optgroup>)}
             </select>
-            <button className="button" type="submit">Create Life Module draft</button>
+            <div className="row-actions"><a className="button secondary" href="#/">Cancel</a><button className="button" type="submit">Next</button></div>
           </form>
-          <p className="scope-note">The Core default is 5,000 XP. The optional Field goal is guidance only: it grants no Field, awards, XP, or Stage 3 discount.</p>
+          <details className="welcome-help"><summary>Help</summary><p>Identity and appearance fields are descriptive. Starting XP defaults to 5,000; unlocking the field records a nonstandard allotment as GM-adjusted. Next saves one local draft before opening Stage 0.</p></details>
+          </div>
         </section>
       ) : state ? (
         <>

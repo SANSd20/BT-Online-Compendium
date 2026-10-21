@@ -517,7 +517,8 @@ function validateFinalTouches(character: CharacterDefinition, issues: Validation
   const state = character.creation.finalTouches
   const hasFinalTouchesInventory = character.inventory.some((entry) => entry.entryKind === 'manual' || entry.entryKind === 'catalog')
   if (!state) {
-    if (character.personalDescription || hasFinalTouchesInventory) issues.push(issue('final-touches.state.required', 'creation.finalTouches', 'Final Touches state is required for descriptive or equipment-draft data.'))
+    const lifeModuleSetupDescription = character.creation.method === 'life-modules'
+    if ((!lifeModuleSetupDescription && character.personalDescription) || hasFinalTouchesInventory) issues.push(issue('final-touches.state.required', 'creation.finalTouches', 'Final Touches state is required for descriptive or equipment-draft data.'))
     return
   }
   const lifeModules = character.creation.lifeModules

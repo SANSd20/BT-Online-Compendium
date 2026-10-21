@@ -39,7 +39,7 @@ export async function launchVerificationBrowser(chromium) {
 export async function createMarchThroughStage0(page, fixture) {
   await page.getByRole('link', { name: 'Start Life Modules' }).click()
   await page.getByLabel('Character name').fill(fixture.name)
-  await page.getByRole('button', { name: 'Create Life Module draft' }).click()
+  await page.getByRole('button', { name: 'Next' }).click()
   await page.selectOption('#stage0-affiliation', { label: fixture.affiliation })
   await page.selectOption('#stage0-affiliation-language', { label: fixture.language })
   await page.selectOption('#stage0-affiliation-context', { label: fixture.march })
@@ -56,7 +56,7 @@ export async function createMarchThroughStage0(page, fixture) {
 export async function createOutbackThroughStage0(page, fixture) {
   await page.getByRole('link', { name: 'Start Life Modules' }).click()
   await page.getByLabel('Character name').fill(fixture.name)
-  await page.getByRole('button', { name: 'Create Life Module draft' }).click()
+  await page.getByRole('button', { name: 'Next' }).click()
   await page.selectOption('#stage0-affiliation', { label: 'Federated Suns' })
   await page.selectOption('#stage0-affiliation-language', { value: fixture.language ?? 'English' })
   await page.selectOption('#stage0-affiliation-context', { label: 'Outback' })

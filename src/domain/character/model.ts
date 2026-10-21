@@ -178,6 +178,7 @@ export interface PersonalDescription {
   weightKg?: number
   hairColor?: string
   eyeColor?: string
+  gender?: 'Male' | 'Female' | 'Nonbinary' | 'Other'
 }
 
 export interface FinalTouchesState {

@@ -164,6 +164,13 @@ tbody th { color: #e8edf2; font-weight: 650; }
 :where(input, select, textarea)[data-control-status="disabled"] { box-shadow: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .life-modules-page { width: min(1760px, 96vw); max-width: none; padding-top: 28px; }
+.welcome-layout { display: grid; grid-template-columns: minmax(220px, 0.7fr) minmax(420px, 1.3fr); gap: 28px; align-items: stretch; }
+.welcome-artwork { display: flex; align-items: center; justify-content: center; min-height: 560px; overflow: hidden; background: var(--panel, #f6f6f6); border-radius: 12px; }
+.welcome-artwork img { display: block; width: min(100%, 454px); max-height: 720px; height: auto; object-fit: contain; }
+.welcome-content fieldset { display: grid; gap: 10px; margin: 0 0 16px; padding: 16px; border: 1px solid var(--border, #ccc); border-radius: 10px; }
+.welcome-content legend { padding: 0 6px; font-weight: 700; }
+.welcome-field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 760px) { .welcome-layout { grid-template-columns: 1fr; } .welcome-artwork { min-height: 280px; max-height: 420px; } .welcome-artwork img { max-height: 400px; } .welcome-field-grid { grid-template-columns: 1fr; } }
 /* Government/faction themes use PROVISIONAL UI_ADAPTATION roles. Slice 86 synchronizes ComStar/WoB from SANSd20/battletech-faction-colors palettes/government-ui.yaml at 8fb1dde0e10c2f455fef7d822b6bd6e2ae43d760. Exact hex values are not official BattleTech digital specifications. */
 .life-modules-page.capellan-theme {
   --faction-primary: #00a86b;
