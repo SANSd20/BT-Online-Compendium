@@ -1,8 +1,8 @@
 import { APP_PHASE, APP_PUBLIC_TITLE, APP_RELEASE_LABEL } from '../../appMetadata'
 
-export function PublicAlphaNotice({ defaultExpanded = false }: { defaultExpanded?: boolean }) {
+export function PublicAlphaNotice({ defaultExpanded = false, compact = false }: { defaultExpanded?: boolean; compact?: boolean }) {
   return (
-    <aside className="public-alpha-notice" aria-labelledby="public-alpha-title">
+    <aside className={`public-alpha-notice${compact ? ' public-alpha-notice-compact' : ''}`} aria-labelledby="public-alpha-title">
       <details open={defaultExpanded}>
         <summary>
           <div className="public-alpha-heading">

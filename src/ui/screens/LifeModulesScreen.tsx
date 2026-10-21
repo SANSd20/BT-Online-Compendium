@@ -625,44 +625,34 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
         <LifeModulesVersionBadge />
-        <h1>Life Modules</h1>
-        {activeOrderAffiliation !== 'no' && <p className="life-theme-identity" aria-label={`Dominant affiliation theme: ${themeIdentity.dominantLabel}. Birth affiliation: ${themeIdentity.birthLabel || 'Not selected'}.`}><strong>{themeIdentity.dominantLabel}</strong><span>Order identity · dominant theme</span>{themeIdentity.birthLabel && <small>Birth affiliation · {themeIdentity.birthLabel}</small>}</p>}
-        <p>Build through audited Core Life Modules including Agitator and ComStar/Word of Blake Service, complete final review, and use the 84-item audited equipment catalog with affiliation-adjusted access or manual fallback. Full catalog coverage and finalization remain deferred.</p>
+        {character && <><h1>Life Modules</h1>{activeOrderAffiliation !== 'no' && <p className="life-theme-identity" aria-label={`Dominant affiliation theme: ${themeIdentity.dominantLabel}. Birth affiliation: ${themeIdentity.birthLabel || 'Not selected'}.`}><strong>{themeIdentity.dominantLabel}</strong><span>Order identity · dominant theme</span>{themeIdentity.birthLabel && <small>Birth affiliation · {themeIdentity.birthLabel}</small>}</p>}<p>Build through audited Core Life Modules including Agitator and ComStar/Word of Blake Service, complete final review, and use the 84-item audited equipment catalog with affiliation-adjusted access or manual fallback. Full catalog coverage and finalization remain deferred.</p></>}
       </section>
 
       {!character ? (
         <section className="welcome-layout" aria-labelledby="welcome-heading">
           <div className="welcome-artwork"><img src={`${import.meta.env.BASE_URL}assets/Androgynous%20Figure%20Construction%20Sketch.png`} alt="Androgynous figure construction sketch" /></div>
           <div className="draft-panel welcome-content">
-          <p className="eyebrow">Character setup</p>
-          <h2 id="welcome-heading">Welcome to A Time of War</h2>
+          <h1 id="welcome-heading" className="welcome-page-heading">Welcome</h1>
           <p>Set up your character's identity and starting parameters before entering the audited Life Modules path.</p>
           <form onSubmit={start}>
             <fieldset><legend>Character Start Parameters</legend>
-            <label htmlFor="life-module-name">Character name</label>
-            <input id="life-module-name" value={name} onChange={(event) => setName(event.target.value)} required />
-            <label htmlFor="life-module-hair">Hair color</label>
-            <select id="life-module-hair" value={hairColor} onChange={(event) => setHairColor(event.target.value)}>{['Brown', 'Black', 'Blond', 'Auburn', 'Chestnut', 'Red', 'Grey', 'White'].map((value) => <option key={value}>{value}</option>)}</select>
-            <label htmlFor="life-module-eyes">Eye color</label>
-            <select id="life-module-eyes" value={eyeColor} onChange={(event) => setEyeColor(event.target.value)}>{['Green', 'Grey', 'Blue', 'Brown', 'Red', 'Black'].map((value) => <option key={value}>{value}</option>)}</select>
-            <label htmlFor="life-module-gender">Gender</label>
-            <select id="life-module-gender" value={gender} onChange={(event) => setGender(event.target.value as typeof gender)}><option value="">Choose a gender</option>{['Male', 'Female', 'Nonbinary', 'Other'].map((value) => <option key={value}>{value}</option>)}</select>
-            <div className="welcome-field-grid"><label htmlFor="life-module-height">Height (cm)<input id="life-module-height" type="number" min="1" step="1" value={heightCm} onChange={(event) => setHeightCm(event.target.value)} /></label><label htmlFor="life-module-weight">Weight (kg)<input id="life-module-weight" type="number" min="1" step="1" value={weightKg} onChange={(event) => setWeightKg(event.target.value)} /></label></div>
+            <label className="welcome-field-wide" htmlFor="life-module-name">Character name<input id="life-module-name" value={name} onChange={(event) => setName(event.target.value)} required /></label>
+            <label htmlFor="life-module-hair">Hair color<select id="life-module-hair" value={hairColor} onChange={(event) => setHairColor(event.target.value)}>{['Brown', 'Black', 'Blond', 'Auburn', 'Chestnut', 'Red', 'Grey', 'White'].map((value) => <option key={value}>{value}</option>)}</select></label>
+            <label htmlFor="life-module-height">Height (cm)<input id="life-module-height" type="number" min="1" step="1" value={heightCm} onChange={(event) => setHeightCm(event.target.value)} /></label>
+            <label htmlFor="life-module-eyes">Eye color<select id="life-module-eyes" value={eyeColor} onChange={(event) => setEyeColor(event.target.value)}>{['Green', 'Grey', 'Blue', 'Brown', 'Red', 'Black'].map((value) => <option key={value}>{value}</option>)}</select></label>
+            <label htmlFor="life-module-weight">Weight (kg)<input id="life-module-weight" type="number" min="1" step="1" value={weightKg} onChange={(event) => setWeightKg(event.target.value)} /></label>
+            <label className="welcome-field-wide" htmlFor="life-module-gender">Gender<select id="life-module-gender" value={gender} onChange={(event) => setGender(event.target.value as typeof gender)}><option value="">Choose a gender</option>{['Male', 'Female', 'Nonbinary', 'Other'].map((value) => <option key={value}>{value}</option>)}</select></label>
             </fieldset>
             <fieldset><legend>Game Master Settings</legend>
-            <label htmlFor="life-module-starting-xp">Starting XP</label>
-            <input id="life-module-starting-xp" type="number" min="1" step="1" value={startingXp} onChange={(event) => setStartingXp(Number(event.target.value))} disabled={startingXpLocked} required />
-            <label><input id="life-module-starting-xp-locked" type="checkbox" checked={startingXpLocked} onChange={(event) => setStartingXpLocked(event.target.checked)} /> Locked</label>
+            <div className="welcome-gm-row"><label className="welcome-xp-control" htmlFor="life-module-starting-xp">Starting XP<input id="life-module-starting-xp" type="number" min="1" step="1" value={startingXp} onChange={(event) => setStartingXp(Number(event.target.value))} disabled={startingXpLocked} required /></label><label className="welcome-lock-control" htmlFor="life-module-starting-xp-locked"><input id="life-module-starting-xp-locked" type="checkbox" checked={startingXpLocked} onChange={(event) => setStartingXpLocked(event.target.checked)} /> Locked</label></div>
             <p className="scope-note">The Core default is 5,000 XP. Unlock to enter a GM-adjusted starting allotment; this is a local configuration control, not GM authentication.</p>
             </fieldset>
-            <label htmlFor="life-module-field-goal">Master Skill Field goal</label>
-            <select id="life-module-field-goal" value={masterSkillFieldGoalId} onChange={(event) => setMasterSkillFieldGoalId(event.target.value)}>
+            <label className="welcome-field-goal" htmlFor="life-module-field-goal">Master Skill Field goal<select id="life-module-field-goal" value={masterSkillFieldGoalId} onChange={(event) => setMasterSkillFieldGoalId(event.target.value)}>
               <option value="">No goal</option>
               {(Object.keys(MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS) as MasterSkillFieldGoalCategory[]).map((category) => <optgroup key={category} label={MASTER_SKILL_FIELD_GOAL_CATEGORY_LABELS[category]}>{SUPPORTED_MASTER_SKILL_FIELD_GOALS.filter((field) => field.category === category).map((field) => <option key={field.id} value={field.id}>{field.displayName}</option>)}</optgroup>)}
-            </select>
-            <div className="row-actions"><a className="button secondary" href="#/">Cancel</a><button className="button" type="submit">Next</button></div>
+            </select></label>
+            <div className="welcome-navigation"><details className="welcome-help"><summary>Help</summary><p>Identity and appearance fields are descriptive. Starting XP defaults to 5,000; unlocking the field records a nonstandard allotment as GM-adjusted. Next saves one local draft before opening Stage 0.</p></details><div className="row-actions"><a className="button secondary" href="#/">Cancel</a><button className="button" type="submit">Next</button></div></div>
           </form>
-          <details className="welcome-help"><summary>Help</summary><p>Identity and appearance fields are descriptive. Starting XP defaults to 5,000; unlocking the field records a nonstandard allotment as GM-adjusted. Next saves one local draft before opening Stage 0.</p></details>
           </div>
         </section>
       ) : state ? (

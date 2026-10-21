@@ -45,6 +45,11 @@ a { color: inherit; }
 .public-alpha-notice li { break-inside: avoid; }
 .public-alpha-notice li + li { margin-top: 8px; }
 .public-alpha-notice strong { color: #e8edf2; }
+.public-alpha-notice-compact { width: min(1320px, 94vw); margin-top: 16px; padding: 14px 20px; }
+.public-alpha-notice-compact .public-alpha-heading h2 { margin: 0; font-size: 1.15rem; }
+.public-alpha-notice-compact .public-alpha-heading .eyebrow { margin-bottom: 5px; }
+.public-alpha-notice-compact .public-alpha-summary { font-size: .76rem; }
+.public-alpha-notice-compact .public-alpha-details { padding-top: 14px; margin-top: 14px; }
 main { width: min(1120px, 88vw); margin: 0 auto; flex: 1; padding: 64px 0 80px; }
 .hero { max-width: 760px; padding: 20px 0 64px; }
 .hero.compact { padding-bottom: 32px; }
@@ -164,13 +169,28 @@ tbody th { color: #e8edf2; font-weight: 650; }
 :where(input, select, textarea)[data-control-status="disabled"] { box-shadow: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .life-modules-page { width: min(1760px, 96vw); max-width: none; padding-top: 28px; }
-.welcome-layout { display: grid; grid-template-columns: minmax(220px, 0.7fr) minmax(420px, 1.3fr); gap: 28px; align-items: stretch; }
-.welcome-artwork { display: flex; align-items: center; justify-content: center; min-height: 560px; overflow: hidden; background: var(--panel, #f6f6f6); border-radius: 12px; }
-.welcome-artwork img { display: block; width: min(100%, 454px); max-height: 720px; height: auto; object-fit: contain; }
-.welcome-content fieldset { display: grid; gap: 10px; margin: 0 0 16px; padding: 16px; border: 1px solid var(--border, #ccc); border-radius: 10px; }
-.welcome-content legend { padding: 0 6px; font-weight: 700; }
-.welcome-field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media (max-width: 760px) { .welcome-layout { grid-template-columns: 1fr; } .welcome-artwork { min-height: 280px; max-height: 420px; } .welcome-artwork img { max-height: 400px; } .welcome-field-grid { grid-template-columns: 1fr; } }
+.welcome-layout { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(560px, 2fr); gap: clamp(24px, 4vw, 56px); align-items: stretch; }
+.welcome-artwork { display: flex; align-items: center; justify-content: center; min-height: 680px; overflow: hidden; border: 1px solid var(--line); background: #0d151d; }
+.welcome-artwork img { display: block; width: min(100%, 454px); max-height: 780px; height: auto; object-fit: contain; }
+.welcome-content { min-width: 0; padding: clamp(20px, 3vw, 40px); }
+.welcome-content h2 { margin-top: 4px; font-size: clamp(2rem, 4vw, 3.8rem); line-height: 1.05; }
+.welcome-page-heading { margin: 4px 0 26px; font-size: clamp(2.7rem, 7vw, 5.8rem); }
+.welcome-content > form { display: grid; grid-template-columns: 1fr; gap: 2px; }
+.welcome-content fieldset { display: grid; gap: 12px; margin: 0 0 16px; padding: clamp(16px, 2vw, 24px); border: 1px solid var(--line); background: #0d151d; }
+.welcome-content fieldset:first-of-type { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.welcome-content legend { padding: 0 8px; color: var(--amber); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.welcome-content fieldset label, .welcome-field-goal { display: grid; grid-column: auto; gap: 7px; color: var(--muted); font-size: .82rem; font-weight: 700; }
+.welcome-content fieldset input, .welcome-content fieldset select, .welcome-field-goal select { width: 100%; min-height: 46px; padding: 9px 12px; border: 1px solid var(--line); color: #fff; background: #091017; }
+.welcome-content fieldset .welcome-field-wide { grid-column: 1 / -1; }
+.welcome-xp-control { max-width: 18rem; }
+.welcome-gm-row { display: flex; align-items: end; gap: 24px; }
+.welcome-lock-control { display: flex !important; align-items: center; gap: 8px !important; min-height: 46px; white-space: nowrap; }
+.welcome-lock-control input { width: 20px !important; min-height: 20px !important; }
+.welcome-field-goal { margin: 0 0 16px; max-width: 32rem; }
+.welcome-navigation { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-top: 2px; }
+.welcome-navigation .row-actions { justify-content: flex-end; }
+@media (max-width: 980px) { .welcome-layout { grid-template-columns: minmax(220px, .85fr) minmax(460px, 1.15fr); gap: 24px; } .welcome-artwork { min-height: 600px; } }
+@media (max-width: 760px) { .welcome-layout { grid-template-columns: 1fr; gap: 18px; } .welcome-artwork { min-height: 280px; max-height: 420px; } .welcome-artwork img { max-height: 400px; } .welcome-content { padding: 20px; } .welcome-content fieldset:first-of-type { grid-template-columns: 1fr; } .welcome-content fieldset .welcome-field-wide { grid-column: auto; } .welcome-gm-row { align-items: start; flex-direction: column; gap: 10px; } .welcome-navigation { align-items: stretch; flex-direction: column; } .welcome-navigation .row-actions { justify-content: flex-start; } }
 /* Government/faction themes use PROVISIONAL UI_ADAPTATION roles. Slice 86 synchronizes ComStar/WoB from SANSd20/battletech-faction-colors palettes/government-ui.yaml at 8fb1dde0e10c2f455fef7d822b6bd6e2ae43d760. Exact hex values are not official BattleTech digital specifications. */
 .life-modules-page.capellan-theme {
   --faction-primary: #00a86b;

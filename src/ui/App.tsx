@@ -50,7 +50,7 @@ export function App() {
           <span className="header-version">v{APP_VERSION}</span>
         </div>
       </header>
-      <PublicAlphaNotice />
+      <PublicAlphaNotice compact={route === '/life-modules' && !openedCharacter} />
       {method === 'archetype' ? (
         <ArchetypeScreen onSave={save} initialCharacter={openedCharacter} />
       ) : method === 'point-buy' ? (
