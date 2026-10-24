@@ -47,13 +47,35 @@ describe('merged Stage 0 wizard step', () => {
     expect(selected).toContain('id="stage0-affiliation-context" data-control-status="valid"')
   })
 
-  it('keeps the Order selector valid while marking its specific unresolved children', () => {
+  it('keeps the ComStar/WoB surface unavailable for new characters', () => {
     const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation="no" affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...davionChoices} {...orderChoices} orderAffiliation="comstar" birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
-    expect(markup).toContain('id="stage0-order-affiliation" data-control-status="valid"')
-    expect(markup).toContain('id="stage0-order-nearest-state" data-control-status="required-unresolved" aria-required="true"')
-    expect(markup).toContain('id="stage0-order-language" data-control-status="disabled"')
-    expect(markup).not.toContain('id="stage0-order-language" data-control-status="disabled" aria-invalid')
-    expect(markup).toContain('id="stage0-order-technician" data-control-status="required-unresolved" aria-required="true"')
+    expect(markup).toContain('id="stage0-order-enabled" type="checkbox" disabled=""')
+    expect(markup).toContain('id="stage0-order-comstar" type="radio" disabled=""')
+    expect(markup).toContain('id="stage0-order-wob" type="radio" disabled=""')
+    expect(markup).not.toContain('id="stage0-order-nearest-state"')
+    expect(markup).toContain('ComStar and Word of Blake character creation will be available in a future release.')
+  })
+
+  it('uses an unchecked master control for No order with disabled visible choices', () => {
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation="no" affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...davionChoices} {...orderChoices} {...handlers} />)
+    expect(markup).toContain('id="stage0-order-enabled" type="checkbox" disabled=""')
+    expect(markup).toContain('id="stage0-order-comstar" type="radio" disabled=""')
+    expect(markup).toContain('id="stage0-order-wob" type="radio" disabled=""')
+    expect(markup).not.toContain('id="stage0-order-nearest-state"')
+  })
+
+  it('does not expose order controls through a requested open state', () => {
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation="no" affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...davionChoices} {...orderChoices} orderSelectorOpen {...handlers} />)
+    expect(markup).toContain('id="stage0-order-enabled" type="checkbox" disabled=""')
+    expect(markup).toContain('id="stage0-order-comstar" type="radio" disabled=""')
+    expect(markup).toContain('id="stage0-order-wob" type="radio" disabled=""')
+  })
+
+  it('does not expose nearest-state choices while order creation is unavailable', () => {
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation="no" affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...davionChoices} {...orderChoices} orderAffiliation="comstar" orderSelectorOpen {...handlers} />)
+    expect(markup).not.toContain('id="stage0-order-nearest-state"')
+    expect(markup).not.toContain('id="stage0-order-language"')
+    expect(markup).not.toContain('id="stage0-order-technician"')
   })
 
   it('shows both packages while Universal is active without a silent default', () => {
@@ -75,6 +97,7 @@ describe('merged Stage 0 wizard step', () => {
     expect(markup).toContain('award remains unresolved until you choose a listed language')
     expect(markup).not.toContain('Required before continuing:')
     expect(markup).not.toContain('Choose a Capellan secondary language.')
+    expect(markup).toContain('<div class="stage0-requirements" role="status">')
     expect(markup).toContain('<button class="button" type="button" disabled="">Continue</button>')
   })
 
@@ -82,6 +105,7 @@ describe('merged Stage 0 wizard step', () => {
     const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation={CAPELLAN_COMMONALITY_ID} affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
     expect(markup).toContain('Previewing selected Stage 0 choices')
     expect(markup).toContain('Continue to apply them and advance to Stage 1')
+    expect(markup).toContain('<div class="stage0-requirements ready" role="status">')
     expect(markup).toContain('<button class="button" type="button">Continue</button>')
   })
 
@@ -103,6 +127,17 @@ describe('merged Stage 0 wizard step', () => {
     const outback = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={FEDERATED_SUNS_OUTBACK_ID} subAffiliation={FEDERATED_SUNS_OUTBACK_ID} affiliationLanguage="English" secondaryLanguage="" davionNaturalAptitude="Strategy" davionArt="" survivalSubject="" {...orderChoices} birthAffiliationId="affiliation.federated-suns" {...handlers} />)
     expect(outback).toContain('id="stage0-davion-art-outback"')
     expect(outback).not.toContain('id="stage0-davion-art"')
+  })
+
+  it('offers governed Survival environments while preserving Other and saved custom subjects', () => {
+    const base = { phase: 'stage-0-affiliation' as const, affiliationContext: DRACONIS_AZAMI_ID, subAffiliation: DRACONIS_AZAMI_ID, affiliationLanguage: 'Japanese', secondaryLanguage: '', survivalSubject: '', draconisTraitChoice: 'Combat Sense' as const, draconisWeaponChoice: 'Archery' as const, davionNaturalAptitude: 'Strategy' as const, davionArt: '', ...orderChoices, ...handlers, birthAffiliationId: 'affiliation.draconis-combine' }
+    const empty = renderToStaticMarkup(<Stage0WizardStep {...base} />)
+    for (const subject of ['Arctic', 'Desert', 'Forests', 'Jungle', 'Mountain', 'Ocean', 'Steppe']) expect(empty).toContain(`Survival/${subject}`)
+    expect(empty).toContain('Other (specify)')
+    expect(empty).toContain('Choose a Survival environment')
+    const custom = renderToStaticMarkup(<Stage0WizardStep {...base} survivalSubject="Swamp" />)
+    expect(custom).toContain('value="__other__" selected=""')
+    expect(custom).toContain('value="Swamp"')
   })
 
   it('keeps Draconis parent choices visible for every supported sub-affiliation', () => {

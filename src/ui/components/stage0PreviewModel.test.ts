@@ -51,6 +51,19 @@ describe('Stage 0 preview model', () => {
     expect(preview?.skills).toContainEqual(expect.objectContaining({ displayName: 'Survival/Desert' }))
   })
 
+  it('previews fixed Azami awards while Survival remains pending', () => {
+    const committed = createLifeModuleCharacter('Partial Azami preview')
+    const preview = previewStage0Affiliation(committed, DRACONIS_COMBINE_ID, 'Japanese', '', '', '', 'no', '', '', '', DRACONIS_AZAMI_ID, '', 'Combat Sense', 'Archery', {})!
+    expect(preview).not.toBeNull()
+    expect(preview.attributes.find((entry) => entry.attributeId === 'WIL')?.accumulatedXp).toBe(340)
+    expect(preview.traits).toContainEqual(expect.objectContaining({ displayName: 'Compulsion/Xenophobia', accumulatedXp: -150 }))
+    expect(preview.skills.some((entry) => entry.displayName === 'Survival/Desert')).toBe(false)
+    expect(preview.creation.lifeModules?.pendingAwards).toContainEqual(expect.objectContaining({ awardId: 'azami.skill.survival', requiredSkillId: 'skill.survival' }))
+    expect(preview.creation.lifeModules?.moduleXp).toMatchObject({ spent: 1000, remaining: 4000 })
+    expect(committed.creation.lifeModules?.stage0AffiliationContext).toBeUndefined()
+    expect(committed.attributes.find((entry) => entry.attributeId === 'WIL')?.accumulatedXp).toBe(100)
+  })
+
   it('activates the Capellan theme only for the Capellan context', () => {
     expect(lifeModulesAffiliationTheme(CAPELLAN_COMMONALITY_ID)).toBe('capellan-theme')
     expect(lifeModulesAffiliationTheme('')).toBe('')

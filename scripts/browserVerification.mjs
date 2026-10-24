@@ -68,7 +68,7 @@ export async function createOutbackThroughStage0(page, fixture) {
   } else {
     await outbackArt.selectOption({ value: fixture.subject ?? 'Sculpture' })
   }
-  await page.locator('#stage0-survival').fill(fixture.survival ?? 'Forest')
+  await page.selectOption('#stage0-survival', { value: fixture.survival ?? 'Forest' })
   return page
 }
 export async function assertFixtureSummary(page, fixture) {

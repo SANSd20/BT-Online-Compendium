@@ -56,8 +56,12 @@ export function previewStage0Affiliation(
       ? applyUniversalStage0(character, affiliationContext, affiliationLanguage)
       : character
     if (affiliationContext === DRACONIS_COMBINE_ID) {
-      if (!affiliationLanguage) return null
-      const preview = applyDraconisCombine(withUniversal, subAffiliationSelection === 'no' ? 'no' : subAffiliationSelection as Parameters<typeof applyDraconisCombine>[1], draconisTraitChoice as 'Pain Resistance' | 'Combat Sense', draconisWeaponChoice as 'Archery' | 'Melee Weapons' | 'Thrown Weapons/Blade', affiliationLanguage, draconisChoices)
+      const draconisBase = structuredClone(withUniversal)
+      if (!affiliationLanguage) {
+        draconisBase.creation.lifeModules!.stage0AffiliationContext = DRACONIS_COMBINE_ID
+        draconisBase.creation.lifeModules!.phase = 'stage-0-affiliation'
+      }
+      const preview = applyDraconisCombine(draconisBase, subAffiliationSelection === 'no' ? 'no' : subAffiliationSelection as Parameters<typeof applyDraconisCombine>[1], draconisTraitChoice as 'Pain Resistance' | 'Combat Sense' | undefined, draconisWeaponChoice as 'Archery' | 'Melee Weapons' | 'Thrown Weapons/Blade' | undefined, affiliationLanguage || undefined, draconisChoices, true)
       return previewOrderAffiliation(preview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
     }
     if (affiliationContext === FEDERATED_SUNS_CRUCIS_MARCH_ID) {

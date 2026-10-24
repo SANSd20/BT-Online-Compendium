@@ -23,7 +23,7 @@ import { allocateFinalReviewXp, approveFinalReviewSpecialty, applyAllLifeModuleO
 import { addCatalogInventoryItem, addManualInventoryItem, enterFinalTouches, markReadyForEquipmentReview, removeInventoryItem, setEquipmentAccessProfile, setIssuedGearEnabled, updatePersonalDescription } from '../../engine/finalTouchesEngine'
 import { downloadCharacter } from '../../persistence/browserFiles'
 import { validateCharacter } from '../../validation/validateCharacter'
-import { LifeModuleAuditDrawer, LifeModuleDashboard, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from '../components/LifeModulesWizard'
+import { LifeModuleAccumulatedValues, LifeModuleAuditDrawer, LifeModuleDashboard, LifeModuleReviewSummary, LifeModulesVersionBadge, LifeModuleStageHeading, LifeModuleStageStatus } from '../components/LifeModulesWizard'
 import { controlStatus, controlStatusProps } from '../components/controlStatus'
 import { genericPendingAwardsForPhase, lifeModuleStagePresentation, nonControlPendingAwards } from '../components/lifeModulesWizardModel'
 import { Stage0WizardStep } from '../components/Stage0WizardStep'
@@ -98,6 +98,7 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
   const [draconisLanguageSubject, setDraconisLanguageSubject] = useState('')
   const [draconisArtSubject, setDraconisArtSubject] = useState('')
   const [orderAffiliation, setOrderAffiliation] = useState<OrderAffiliationSelection>('no')
+  const [orderSelectorOpen, setOrderSelectorOpen] = useState(false)
   const [orderNearestStateContext, setOrderNearestStateContext] = useState('')
   const [orderSecondaryLanguage, setOrderSecondaryLanguage] = useState('')
   const [orderTechnicianSubskill, setOrderTechnicianSubskill] = useState('')
@@ -625,7 +626,7 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
       <a className="back-link" href="#/">← Character Creator</a>
       <section className="hero compact">
         <LifeModulesVersionBadge />
-        {character && <><h1>Life Modules</h1>{activeOrderAffiliation !== 'no' && <p className="life-theme-identity" aria-label={`Dominant affiliation theme: ${themeIdentity.dominantLabel}. Birth affiliation: ${themeIdentity.birthLabel || 'Not selected'}.`}><strong>{themeIdentity.dominantLabel}</strong><span>Order identity · dominant theme</span>{themeIdentity.birthLabel && <small>Birth affiliation · {themeIdentity.birthLabel}</small>}</p>}<p>Build through audited Core Life Modules including Agitator and ComStar/Word of Blake Service, complete final review, and use the 84-item audited equipment catalog with affiliation-adjusted access or manual fallback. Full catalog coverage and finalization remain deferred.</p></>}
+        {character && <><h1>Life Modules</h1><p>Build through audited Core Life Modules including Agitator and ComStar/Word of Blake Service, complete final review, and use the 84-item audited equipment catalog with affiliation-adjusted access or manual fallback. Full catalog coverage and finalization remain deferred.</p></>}
       </section>
 
       {!character ? (
@@ -693,10 +694,11 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
                 draconisLanguageSubject={draconisLanguageSubject}
                 draconisArtSubject={draconisArtSubject}
                 orderAffiliation={orderAffiliation}
+                orderSelectorOpen={orderSelectorOpen}
                 orderNearestStateContext={orderNearestStateContext}
                 orderSecondaryLanguage={orderSecondaryLanguage}
                 orderTechnicianSubskill={orderTechnicianSubskill}
-                onBirthAffiliationChange={(value) => { const context = getLifeModuleAffiliationContextByAffiliationId(value); setBirthAffiliationId(value); setStage0AffiliationContext(context?.id ?? ''); setStage0SubAffiliation('no'); setAffiliationLanguage(''); setSecondaryLanguage(''); setDavionNaturalAptitude(''); setDavionArt(''); setSurvivalSubject(''); setOrderNearestStateContext(''); setOrderSecondaryLanguage('') }}
+                onBirthAffiliationChange={(value) => { const context = getLifeModuleAffiliationContextByAffiliationId(value); setBirthAffiliationId(value); setStage0AffiliationContext(context?.id ?? ''); setStage0SubAffiliation('no'); setAffiliationLanguage(''); setSecondaryLanguage(''); setDavionNaturalAptitude(''); setDavionArt(''); setSurvivalSubject(''); setOrderSelectorOpen(false); setOrderAffiliation('no'); setOrderNearestStateContext(''); setOrderSecondaryLanguage('') }}
                 onContextChange={(value) => { setStage0AffiliationContext(value); setAffiliationLanguage(''); setSecondaryLanguage(''); setDavionNaturalAptitude(''); setDavionArt(''); setSurvivalSubject('') }}
                 onSubAffiliationChange={(value) => {
                   const draconisParent = stage0AffiliationContext === DRACONIS_COMBINE_CONTEXT.id || getLifeModuleAffiliationContextByAffiliationId(birthAffiliationId)?.affiliationId === DRACONIS_COMBINE_CONTEXT.affiliationId
@@ -714,12 +716,14 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
                 onDraconisWeaponChoiceChange={setDraconisWeaponChoice}
                 onDraconisLanguageSubjectChange={setDraconisLanguageSubject}
                 onDraconisArtSubjectChange={setDraconisArtSubject}
-                onOrderAffiliationChange={(value) => { setOrderAffiliation(value); setOrderNearestStateContext(''); setOrderSecondaryLanguage(''); setOrderTechnicianSubskill('') }}
+                onOrderAffiliationChange={(value) => { setOrderAffiliation(value); setOrderSelectorOpen(value !== 'no'); setOrderNearestStateContext(''); setOrderSecondaryLanguage(''); setOrderTechnicianSubskill('') }}
+                onOrderSelectorOpenChange={setOrderSelectorOpen}
                 onOrderNearestStateChange={(value) => { setOrderNearestStateContext(value); setOrderSecondaryLanguage('') }}
                 onOrderSecondaryLanguageChange={setOrderSecondaryLanguage}
                 onOrderTechnicianSubskillChange={setOrderTechnicianSubskill}
                 onApplyUniversal={() => operate(() => applyUniversalStage0(character, stage0AffiliationContext, affiliationLanguage), 'Universal Stage 0 package applied with explicit affiliation context.')}
                 onApplyAffiliation={() => operate(() => applyStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude ? davionNaturalAptitude as 'Protocol' | 'Strategy' : undefined, davionArt || undefined, orderAffiliation, orderNearestStateContext || undefined, orderSecondaryLanguage || undefined, orderTechnicianSubskill || undefined, stage0SubAffiliation, survivalSubject, draconisTraitChoice as 'Pain Resistance' | 'Combat Sense', draconisWeaponChoice as 'Archery' | 'Melee Weapons' | 'Thrown Weapons/Blade', { survival: survivalSubject, language: draconisLanguageSubject, art: draconisArtSubject }), 'Stage 0 birth, optional sub-affiliation, and optional order affiliation packages applied with explicit choices.')}
+                accumulatedValues={<LifeModuleAccumulatedValues character={character} previewCharacter={activePreview} />}
               />
             )}
             {state.phase === 'stage-1-selection' && (

@@ -840,19 +840,23 @@ export function applyDraconisCombine(
   weaponChoice?: 'Archery' | 'Melee Weapons' | 'Thrown Weapons/Blade',
   languageChoice?: string,
   openChoices: Record<string, string> = {},
+  previewOnly = false,
 ): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-0-affiliation' || state.stage0AffiliationContext !== DRACONIS_COMBINE_ID) throw new Error('The Draconis Combine package requires the explicit Draconis Stage 0 context.')
-  if (!traitChoice || !['Pain Resistance', 'Combat Sense'].includes(traitChoice)) throw new Error('Choose Pain Resistance or Combat Sense.')
-  if (!weaponChoice || !['Archery', 'Melee Weapons', 'Thrown Weapons/Blade'].includes(weaponChoice)) throw new Error('Choose a supported Draconis flexible Skill.')
-  if (!languageChoice || !getLifeModuleLanguageSelectorOptions('draconis-languages').includes(languageChoice)) throw new Error('Choose a supported Draconis language.')
+  if (!previewOnly && (!traitChoice || !['Pain Resistance', 'Combat Sense'].includes(traitChoice))) throw new Error('Choose Pain Resistance or Combat Sense.')
+  if (!previewOnly && (!weaponChoice || !['Archery', 'Melee Weapons', 'Thrown Weapons/Blade'].includes(weaponChoice))) throw new Error('Choose a supported Draconis flexible Skill.')
+  if (!previewOnly && (!languageChoice || !getLifeModuleLanguageSelectorOptions('draconis-languages').includes(languageChoice))) throw new Error('Choose a supported Draconis language.')
   const requiredChoice = (key: string, label: string) => {
     const value = openChoices[key]?.trim()
-    if (!value || value === 'Any' || value === 'Other') throw new Error(`Choose a concrete ${label} for the Draconis Combine package.`)
+    if (!previewOnly && (!value || value === 'Any' || value === 'Other')) throw new Error(`Choose a concrete ${label} for the Draconis Combine package.`)
     return value
   }
   const normalizedOpenChoices = { ...openChoices }
-  if (subAffiliation === DRACONIS_AZAMI_ID) normalizedOpenChoices.survival = openSkillSubjectDestination('skill.survival', requiredChoice('survival', 'Survival subject')).parameter!.value
+  if (subAffiliation === DRACONIS_AZAMI_ID) {
+    const survival = requiredChoice('survival', 'Survival subject')
+    if (survival) normalizedOpenChoices.survival = openSkillSubjectDestination('skill.survival', survival).parameter!.value
+  }
   if (subAffiliation === DRACONIS_DIERON_ID) {
     requiredChoice('language', 'Language subject')
     requiredChoice('art', 'Art subject')
@@ -860,13 +864,14 @@ export function applyDraconisCombine(
   const source = { ...DRACONIS_COMBINE_CONTEXT.source }
   const skillDestination = (skillId: string, displayName: string, subject?: string): LifeModuleDestination => ({ type: 'skill', address: { skillId, ...(subject ? { parameter: { kind: 'subskill', value: subject } } : {}) }, displayName })
   const awards: LifeModuleAward[] = DRACONIS_COMBINE_CATALOG_AWARDS.map((award): LifeModuleAward => {
-    if (award.id === 'draconis.trait.choice' && award.kind === 'choice-package') return { id: award.id, kind: 'fixed', xp: 100, destination: { type: 'trait', traitId: traitChoice === 'Pain Resistance' ? 'trait.pain-resistance' : 'trait.combat-sense', displayName: traitChoice } }
-    if (award.id === 'draconis.skill.weapon-choice' && award.kind === 'fixed') return { ...award, destination: skillDestination(weaponChoice === 'Archery' ? 'skill.archery' : weaponChoice === 'Melee Weapons' ? 'skill.melee-weapons' : 'skill.thrown-weapons', weaponChoice, weaponChoice === 'Thrown Weapons/Blade' ? 'Blade' : undefined) }
+    if (award.id === 'draconis.trait.choice' && award.kind === 'choice-package' && traitChoice) return { id: award.id, kind: 'fixed', xp: 100, destination: { type: 'trait', traitId: traitChoice === 'Pain Resistance' ? 'trait.pain-resistance' : 'trait.combat-sense', displayName: traitChoice } }
+    if (award.id === 'draconis.skill.weapon-choice' && award.kind === 'fixed' && weaponChoice) return { ...award, destination: skillDestination(weaponChoice === 'Archery' ? 'skill.archery' : weaponChoice === 'Melee Weapons' ? 'skill.melee-weapons' : 'skill.thrown-weapons', weaponChoice, weaponChoice === 'Thrown Weapons/Blade' ? 'Blade' : undefined) }
+    if (award.id === 'draconis.skill.weapon-choice' && award.kind === 'fixed' && !weaponChoice) return { id: award.id, kind: 'any-skill-choice', xp: award.xp, skillId: 'skill.melee-weapons', displayName: 'Draconis weapon Skill', count: 1 }
     return award
   })
-  awards.push({ id: 'draconis.language.primary', kind: 'fixed', xp: 0, destination: skillDestination('skill.language', `Language/${languageChoice}`, languageChoice) })
+  if (languageChoice) awards.push({ id: 'draconis.language.primary', kind: 'fixed', xp: 0, destination: skillDestination('skill.language', `Language/${languageChoice}`, languageChoice) })
   const subAwards = (DRACONIS_SUB_AFFILIATION_CATALOG_AWARDS[subAffiliation] ?? []).map((award): LifeModuleAward => {
-    if (award.id === 'azami.skill.survival' && award.kind === 'any-skill-choice') return { id: award.id, kind: 'fixed', xp: award.xp, destination: skillDestination('skill.survival', `Survival/${normalizedOpenChoices.survival}`, normalizedOpenChoices.survival) }
+    if (award.id === 'azami.skill.survival' && award.kind === 'any-skill-choice' && normalizedOpenChoices.survival) return { id: award.id, kind: 'fixed', xp: award.xp, destination: skillDestination('skill.survival', `Survival/${normalizedOpenChoices.survival}`, normalizedOpenChoices.survival) }
     if (award.id === 'dieron.language.any' && award.kind === 'language-choice') return { id: award.id, kind: 'fixed', xp: award.xp, destination: skillDestination('skill.language', `Language/${openChoices.language}`, openChoices.language) }
     if (award.id === 'dieron.skill.art' && award.kind === 'any-skill-choice') return { id: award.id, kind: 'fixed', xp: award.xp, destination: skillDestination('skill.art', `Art/${openChoices.art}`, openChoices.art) }
     return award

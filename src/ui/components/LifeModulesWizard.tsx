@@ -11,19 +11,19 @@ export function LifeModulesVersionBadge() {
 
 export function LifeModuleDashboard({ character, previewCharacter, previewSelections = [], toolbar, children }: { character: CharacterDefinition; previewCharacter?: CharacterDefinition | null; previewSelections?: string[]; toolbar: ReactNode; children: ReactNode }) {
   const state = character.creation.lifeModules!
-  return <section className="life-dashboard" aria-label="Life Modules compact dashboard">
+  const stage0 = state.phase.startsWith('stage-0')
+  return <section className={`life-dashboard${stage0 ? ' stage0-dashboard' : ''}`} aria-label="Life Modules compact dashboard">
     <header className="life-dashboard-header">
       <section className="xp-dashboard" aria-label="Life Module XP status">
         <div><span>Module pool</span><strong>{state.moduleXp.starting.toLocaleString()}</strong></div>
         <div><span>Module costs</span><strong>{state.moduleXp.spent.toLocaleString()}</strong></div>
-        <div><span>Remaining</span><strong>{state.moduleXp.remaining.toLocaleString()}</strong></div>
-        <div><span>Stat XP (net)</span><strong>{character.xp.creation.allocated.toLocaleString()}</strong></div>
+        <div><span>Free XP</span><strong>{(previewCharacter?.creation.lifeModules?.moduleXp.remaining ?? state.moduleXp.remaining).toLocaleString()}</strong></div>
       </section>
       <LifeModuleProgress phase={state.phase} />
       <div className="life-dashboard-toolbar" aria-label="Life Modules navigation and draft actions">{toolbar}</div>
     </header>
     <div className="life-wizard-layout">
-      <LifeModuleCharacterSummary character={character} previewCharacter={previewCharacter} previewSelections={previewSelections} />
+      <LifeModuleCharacterSummary character={character} previewCharacter={previewCharacter} previewSelections={previewSelections} showAccumulatedValues={!stage0} />
       <div className="life-wizard-workspace" aria-label="Current Life Modules stage">{children}</div>
     </div>
   </section>
@@ -50,7 +50,7 @@ export function LifeModuleProgress({ phase }: { phase: string }) {
 export function LifeModuleStageHeading({ phase, headingRef }: { phase: string; headingRef?: Ref<HTMLHeadingElement> }) {
   const presentation = lifeModuleStagePresentation(phase)
   return <header className="life-stage-heading">
-    <h2 id="life-stage-heading" ref={headingRef} tabIndex={-1}>{presentation.title}</h2>
+    <h2 id="life-stage-heading" ref={headingRef} tabIndex={-1}>{phase.startsWith('stage-0') ? 'Stage 0: Affiliation' : presentation.title}</h2>
     <p>{presentation.instruction}</p>
   </header>
 }
@@ -62,18 +62,15 @@ export function LifeModuleReviewSummary({ character }: { character: CharacterDef
     <div><span>Selected modules</span><strong>{character.lifeModuleHistory.length}</strong></div>
     <div><span>Pending choices</span><strong>{state.pendingAwards.length}</strong></div>
     <div><span>Final warnings</span><strong>{warnings.length}</strong></div>
-    <div><span>Module XP left</span><strong>{state.moduleXp.remaining.toLocaleString()}</strong></div>
+    <div><span>Free XP</span><strong>{state.moduleXp.remaining.toLocaleString()}</strong></div>
     <ol>{character.lifeModuleHistory.map((entry) => <li key={entry.moduleId}><span>Stage {entry.stage}</span><strong>{entry.displayName}</strong></li>)}</ol>
   </section>
 }
 
-export function LifeModuleCharacterSummary({ character, previewCharacter, previewSelections = [] }: { character: CharacterDefinition; previewCharacter?: CharacterDefinition | null; previewSelections?: string[] }) {
+export function LifeModuleCharacterSummary({ character, previewCharacter, previewSelections = [], showAccumulatedValues = true }: { character: CharacterDefinition; previewCharacter?: CharacterDefinition | null; previewSelections?: string[]; showAccumulatedValues?: boolean }) {
   const effectiveCharacter = previewCharacter ?? character
   const effectiveState = effectiveCharacter.creation.lifeModules!
   const previewActive = previewSelections.length > 0 || Boolean(previewCharacter)
-  const isPreviewAttribute = (attributeId: string, xp: number) => previewCharacter?.attributes.some((entry) => entry.attributeId === attributeId && entry.accumulatedXp === xp) && character.attributes.find((entry) => entry.attributeId === attributeId)?.accumulatedXp !== xp
-  const isPreviewTrait = (traitId: string, displayName: string | undefined, xp: number) => Boolean(previewCharacter) && !character.traits.some((entry) => entry.traitId === traitId && entry.displayName === displayName && entry.accumulatedXp === xp)
-  const isPreviewSkill = (displayName: string | undefined, xp: number) => Boolean(previewCharacter) && !character.skills.some((entry) => entry.displayName === displayName && entry.accumulatedXp === xp)
   const committedModules = new Set(character.lifeModuleHistory.map((entry) => entry.moduleId))
   const previewPendingAwards = previewCharacter
     ? effectiveState.pendingAwards
@@ -84,8 +81,6 @@ export function LifeModuleCharacterSummary({ character, previewCharacter, previe
   const affiliationName = finalAffiliation ? getLifeModuleAffiliationContextByAffiliationId(finalAffiliation.affiliationId)?.affiliationName ?? finalAffiliation.affiliationId : 'Not established'
   const orderName = orderAffiliation ? getLifeModuleAffiliationContextByAffiliationId(orderAffiliation.affiliationId)?.affiliationName ?? orderAffiliation.affiliationId : null
   const currentAge = effectiveCharacter.chronology.map((entry) => Number(entry.date.match(/^age:(\d+)$/)?.[1])).filter(Number.isFinite).at(-1)
-  const sortedTraits = [...effectiveCharacter.traits].sort((a, b) => (a.displayName ?? a.traitId).localeCompare(b.displayName ?? b.traitId, undefined, { sensitivity: 'base' }))
-  const sortedSkills = [...effectiveCharacter.skills].sort((a, b) => (a.displayName ?? a.address.skillId).localeCompare(b.displayName ?? b.address.skillId, undefined, { sensitivity: 'base' }))
   return <aside className="life-summary" aria-label="Current character summary">
     <p className="eyebrow">Character summary</p>
     <h2>{character.displayName || 'Unnamed character'}</h2>
@@ -96,14 +91,10 @@ export function LifeModuleCharacterSummary({ character, previewCharacter, previe
       {previewCharacter && effectiveState.pendingAwards.length > 0 && <p>Known package effects are shown now; choice-dependent awards remain pending.</p>}
     </section>}
     <dl className="life-summary-xp">
-      <div><dt>Module XP left</dt><dd>{effectiveState.moduleXp.remaining.toLocaleString()}</dd></div>
-      <div><dt>Net stat XP</dt><dd>{effectiveCharacter.xp.creation.allocated.toLocaleString()}</dd></div>
       <div><dt>Pending choices</dt><dd>{effectiveState.pendingAwards.length}</dd></div>
     </dl>
     {goalStatus && <details open className="life-summary-goal"><summary>{goalStatus.displayName} goal · {goalStatus.satisfied} / {goalStatus.total}</summary><GoalRequirementSections requirements={goalStatus.requirements} prerequisiteFields={goalStatus.prerequisiteFields} /><p className="scope-note">Guidance only. Field Skills are listed separately from prerequisites, and the selected Field is not acquired until a legal Stage 3 purchase grants it.</p></details>}
-    <details open className="life-summary-attributes"><summary>Attributes</summary><ul>{effectiveCharacter.attributes.map((entry) => <li key={entry.attributeId} className={isPreviewAttribute(entry.attributeId, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.attributeId}</span><strong>{entry.accumulatedXp.toLocaleString()}</strong></li>)}</ul></details>
-    <details open><summary>Traits ({effectiveCharacter.traits.length})</summary><ul>{sortedTraits.map((entry, index) => <li key={`${entry.traitId}-${index}`} className={isPreviewTrait(entry.traitId, entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.traitId}{entry.active && entry.attainedTp !== null ? ` (${entry.attainedTp})` : ''}</span><strong>{entry.active ? `${entry.accumulatedXp.toLocaleString()} XP` : entry.accumulatedXp !== 0 ? `pending · ${entry.accumulatedXp.toLocaleString()} XP` : 'pending'}</strong></li>)}</ul></details>
-    <details open><summary>Skills ({effectiveCharacter.skills.length})</summary><ul>{sortedSkills.map((entry, index) => <li key={`${entry.address.skillId}-${index}`} className={isPreviewSkill(entry.displayName, entry.accumulatedXp) ? 'preview-row' : ''}><span>{entry.displayName ?? entry.address.skillId}</span><strong>{entry.accumulatedXp.toLocaleString()} XP</strong></li>)}</ul></details>
+    {showAccumulatedValues && <LifeModuleAccumulatedValues character={character} previewCharacter={previewCharacter} />}
     <details open><summary>Chosen modules</summary>{effectiveCharacter.lifeModuleHistory.length === 0 ? <p>None yet.</p> : <ol>{effectiveCharacter.lifeModuleHistory.map((entry) => <li key={entry.moduleId} className={!committedModules.has(entry.moduleId) ? 'preview-row' : ''}>{entry.displayName}</li>)}</ol>}{previewPendingAwards.length > 0 && <div className="life-summary-pending"><h3>Pending preview choices</h3><ul>{previewPendingAwards.map((entry) => <li key={entry.id} className="preview-row pending-row"><span>{entry.description}</span><strong>pending · {(entry.allocationMode === 'pool' ? entry.remainingXp : entry.xpPerGrant * entry.remainingGrants)?.toLocaleString()} XP</strong></li>)}</ul></div>}</details>
     <details><summary>Defining features and background</summary>
       <dl className="life-summary-details">
@@ -116,6 +107,40 @@ export function LifeModuleCharacterSummary({ character, previewCharacter, previe
     </details>
     {effectiveCharacter.creation.finalTouches && <details><summary>Final Touches readiness</summary><p>{effectiveCharacter.creation.finalTouches.equipmentReviewState === 'ready-for-equipment-review' ? 'Equipment draft ready for equipment review.' : 'Mechanical character creation complete; Final Touches remains an editable draft.'}</p><p>{effectiveCharacter.inventory.length} inventory item{effectiveCharacter.inventory.length === 1 ? '' : 's'} · {effectiveCharacter.creation.finalTouches.remainingCBillTotal.toLocaleString()} C-bills remaining.</p></details>}
   </aside>
+}
+
+export function LifeModuleAccumulatedValues({ character, previewCharacter }: { character: CharacterDefinition; previewCharacter?: CharacterDefinition | null }) {
+  const effectiveCharacter = previewCharacter ?? character
+  const sortedTraits = [...effectiveCharacter.traits].sort((a, b) => (a.displayName ?? a.traitId).localeCompare(b.displayName ?? b.traitId, undefined, { sensitivity: 'base' }))
+  const sortedSkills = [...effectiveCharacter.skills].sort((a, b) => (a.displayName ?? a.address.skillId).localeCompare(b.displayName ?? b.address.skillId, undefined, { sensitivity: 'base' }))
+  return <section className="stage0-accumulated-values" aria-label="Current accumulated values">
+    <h3 className="life-summary-values-heading">Current Accumulated Values</h3>
+    <div className="life-summary-stat-panels">
+      <section className="life-summary-stat-panel"><h4>Attributes</h4><ul>{effectiveCharacter.attributes.map((entry) => <li key={entry.attributeId}><span>{entry.attributeId}</span><strong className={hasPreviewAttributeChanged(character, previewCharacter, entry.attributeId, entry.accumulatedXp) ? 'preview-value' : undefined}>{entry.accumulatedXp.toLocaleString()}</strong></li>)}</ul></section>
+      <section className="life-summary-stat-panel"><h4>Traits ({effectiveCharacter.traits.length})</h4><ul>{sortedTraits.map((entry, index) => <li key={`${entry.traitId}-${index}`}><span>{entry.displayName ?? entry.traitId}{entry.active && entry.attainedTp !== null ? ` (${entry.attainedTp})` : ''}</span><strong className={hasPreviewTraitChanged(character, previewCharacter, entry, entry.accumulatedXp) ? 'preview-value' : undefined}>{entry.accumulatedXp.toLocaleString()} XP</strong></li>)}</ul></section>
+      <section className="life-summary-stat-panel"><h4>Skills ({effectiveCharacter.skills.length})</h4><ul>{sortedSkills.map((entry, index) => <li key={`${entry.address.skillId}-${entry.address.parameter?.value ?? index}`}><span>{entry.displayName ?? entry.address.skillId}</span><strong className={hasPreviewSkillChanged(character, previewCharacter, entry.address.skillId, entry.address.parameter?.value, entry.accumulatedXp) ? 'preview-value' : undefined}>{entry.accumulatedXp.toLocaleString()} XP</strong></li>)}</ul></section>
+    </div>
+  </section>
+}
+
+function hasPreviewAttributeChanged(character: CharacterDefinition, previewCharacter: CharacterDefinition | null | undefined, attributeId: string, xp: number): boolean {
+  return Boolean(previewCharacter && previewCharacter.attributes.some((entry) => entry.attributeId === attributeId)) && character.attributes.find((entry) => entry.attributeId === attributeId)?.accumulatedXp !== xp
+}
+
+function hasPreviewTraitChanged(character: CharacterDefinition, previewCharacter: CharacterDefinition | null | undefined, entry: CharacterDefinition['traits'][number], xp: number): boolean {
+  return Boolean(previewCharacter && !character.traits.some((baseline) => traitKey(baseline) === traitKey(entry) && baseline.accumulatedXp === xp))
+}
+
+function hasPreviewSkillChanged(character: CharacterDefinition, previewCharacter: CharacterDefinition | null | undefined, skillId: string, parameter: string | undefined, xp: number): boolean {
+  return Boolean(previewCharacter && !character.skills.some((baseline) => skillKey(baseline.address.skillId, baseline.address.parameter?.value) === skillKey(skillId, parameter) && baseline.accumulatedXp === xp))
+}
+
+function traitKey(entry: CharacterDefinition['traits'][number]): string {
+  return `${entry.traitId}|${entry.identityId ?? ''}|${JSON.stringify(entry.parameters)}`
+}
+
+function skillKey(skillId: string, parameter: string | undefined): string {
+  return `${skillId}|${parameter ?? ''}`
 }
 
 function GoalRequirementSections({ requirements, prerequisiteFields }: { requirements: MasterSkillFieldGoalRequirementStatus[]; prerequisiteFields: MasterSkillFieldReferenceStatus[] }) {
