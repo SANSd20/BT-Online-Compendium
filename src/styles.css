@@ -27,6 +27,13 @@ a { color: inherit; }
 .local-badge { color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 6px 10px; font-size: .78rem; }
 .site-status { display: flex; align-items: center; gap: 10px; }
 .header-version { color: var(--muted); font: 650 .76rem/1 ui-monospace, monospace; }
+.build-identity { color: var(--muted); font: 650 .72rem/1.2 ui-monospace, monospace; position: relative; }
+.build-identity summary { cursor: pointer; white-space: nowrap; }
+.build-identity-details { background: var(--panel); border: 1px solid var(--line); display: grid; gap: .35rem; min-width: 16rem; padding: .7rem; position: absolute; right: 0; top: 1.5rem; z-index: 5; }
+@media (max-width: 640px) {
+  .site-status { align-items: flex-end; flex-wrap: wrap; gap: .35rem; }
+  .build-identity-details { right: 0; max-width: calc(100vw - 2rem); min-width: 0; overflow-wrap: anywhere; }
+}
 .public-alpha-notice { width: min(1320px, 94vw); margin: 28px auto 0; padding: clamp(20px, 3vw, 34px); border: 1px solid #7b622d; background: linear-gradient(145deg, #211b0f, #111922); }
 .public-alpha-notice details > summary { display: grid; grid-template-columns: 1fr auto; gap: 12px 24px; align-items: center; cursor: pointer; list-style: none; }
 .public-alpha-notice details > summary::-webkit-details-marker { display: none; }
@@ -538,14 +545,13 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .stage0-affiliation-layout > .stage0-package-section.current > .stage0-affiliation-form { display: contents; }
 .stage0-affiliation-layout .stage0-package-heading { grid-column: 1 / -1; }
 .stage0-affiliation-layout .stage0-affiliation-form > p { grid-column: 1 / -1; }
-.stage0-affiliation-layout .stage0-affiliation-order-grid { display: contents; }
+.stage0-affiliation-layout .stage0-affiliation-order-grid { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .75fr); }
 .stage0-affiliation-layout .stage0-birth-affiliation-region { grid-column: 1; }
-.stage0-affiliation-layout .stage0-order-region { display: contents; }
-.stage0-affiliation-layout .stage0-order-fieldset { grid-column: 2; grid-row: 3; }
-.stage0-affiliation-layout .stage0-order-attributes { grid-column: 2; grid-row: 6; }
-.stage0-affiliation-layout .stage0-contextual-section { grid-column: 2; padding-top: 12px; border-top: 1px solid var(--line); }
-.stage0-affiliation-layout .stage0-affiliation-attributes { grid-row: 4; }
-.stage0-affiliation-layout .stage0-sub-affiliation-attributes { grid-row: 5; }
+.stage0-affiliation-layout .stage0-order-region { grid-column: 2; }
+.stage0-affiliation-layout .stage0-order-fieldset { grid-column: auto; }
+.stage0-affiliation-layout .stage0-order-attributes { grid-column: 2; grid-row: auto; align-self: start; }
+.stage0-affiliation-layout .stage0-contextual-stack { grid-column: 2; grid-row: auto; display: grid; align-self: start; gap: 12px; min-width: 0; }
+.stage0-affiliation-layout .stage0-contextual-section { padding-top: 12px; border-top: 1px solid var(--line); }
 .stage0-contextual-section h4, .stage0-order-attributes h4 { margin: 0; color: var(--amber); font-size: .78rem; letter-spacing: .05em; text-transform: uppercase; }
 .stage0-contextual-section .stage0-secondary-action { margin-top: 10px; }
 .stage0-affiliation-layout .stage0-contextual-section .stage0-choice-grid { grid-template-columns: minmax(0, 1fr); }
@@ -555,7 +561,7 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .stage0-affiliation-layout .stage0-order-fieldset .is-disabled { opacity: .72; }
 .stage0-affiliation-layout .stage0-secondary-action { grid-column: 2; }
 .stage0-affiliation-layout .stage0-requirements { grid-column: 1 / -1; }
-.stage0-affiliation-layout .stage0-accumulated-values { grid-column: 1; grid-row: 4; }
+.stage0-affiliation-layout .stage0-accumulated-values { grid-column: 1; grid-row: auto; align-self: start; }
 .stage0-package-section { padding: clamp(14px, 1.7vw, 20px); border: 1px solid var(--line); background: #0b1219; }
 .stage0-package-section.current { border-color: #87642d; }
 .stage0-package-section.complete { border-color: #376d49; background: #0d1913; }
@@ -615,13 +621,13 @@ tbody th { color: #e8edf2; font-weight: 650; }
 
 @media (min-width: 761px) and (max-width: 1000px) {
   .stage0-affiliation-layout { grid-template-columns: minmax(0, 1fr); }
-  .stage0-affiliation-layout .stage0-birth-affiliation-region { grid-column: 1; grid-row: 3; }
-  .stage0-affiliation-layout .stage0-accumulated-values { grid-column: 1; grid-row: 4; }
-  .stage0-affiliation-layout .stage0-order-fieldset { grid-column: 1; grid-row: 5; }
-  .stage0-affiliation-layout .stage0-affiliation-attributes { grid-column: 1; grid-row: 6; }
-  .stage0-affiliation-layout .stage0-sub-affiliation-attributes { grid-column: 1; grid-row: 7; }
-  .stage0-affiliation-layout .stage0-order-attributes { grid-column: 1; grid-row: 8; }
-  .stage0-affiliation-layout .stage0-requirements { grid-column: 1; grid-row: 9; }
+  .stage0-affiliation-layout .stage0-affiliation-order-grid,
+  .stage0-affiliation-layout .stage0-birth-affiliation-region,
+  .stage0-affiliation-layout .stage0-order-region,
+  .stage0-affiliation-layout .stage0-accumulated-values,
+  .stage0-affiliation-layout .stage0-contextual-stack,
+  .stage0-affiliation-layout .stage0-order-attributes,
+  .stage0-affiliation-layout .stage0-requirements { grid-column: 1; grid-row: auto; }
   .stage0-affiliation-layout .stage0-secondary-action { grid-template-columns: minmax(0, 1fr); }
   .stage0-affiliation-layout .stage0-secondary-action > div { min-width: 0; overflow-wrap: anywhere; }
   .stage0-affiliation-layout .stage0-contextual-section .stage0-secondary-action .stage0-choice-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -712,11 +718,16 @@ footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--mute
   .stage0-affiliation-layout > .stage0-package-section.current { display: block; }
   .stage0-affiliation-layout > .stage0-package-section.current > .stage0-package-heading,
   .stage0-affiliation-layout > .stage0-package-section.current > .stage0-affiliation-form { display: grid; }
-  .stage0-affiliation-layout .stage0-affiliation-order-grid { display: grid; }
+  .stage0-affiliation-layout .stage0-affiliation-form,
+  .stage0-affiliation-layout .stage0-affiliation-order-grid,
+  .stage0-affiliation-layout .stage0-birth-affiliation-region,
+  .stage0-affiliation-layout .stage0-order-region { min-width: 0; width: 100%; }
+  .stage0-affiliation-layout .stage0-affiliation-order-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
   .stage0-affiliation-layout .stage0-birth-affiliation-region,
   .stage0-affiliation-layout .stage0-order-region,
   .stage0-affiliation-layout .stage0-order-fieldset,
   .stage0-affiliation-layout .stage0-order-attributes,
+  .stage0-affiliation-layout .stage0-contextual-stack,
   .stage0-affiliation-layout .stage0-contextual-section,
   .stage0-affiliation-layout .stage0-secondary-action,
   .stage0-affiliation-layout .stage0-requirements,

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { CharacterDefinition, CreationMethod } from '../domain/character/model'
 import { LocalStorageCharacterRepository } from '../persistence/characterRepository'
 import { APP_PHASE, APP_PUBLIC_TITLE, APP_RELEASE_LABEL, APP_VERSION } from '../appMetadata'
+import { BUILD_METADATA } from '../buildMetadata'
 import { PublicAlphaNotice } from './components/PublicAlphaNotice'
 import { ArchetypeScreen } from './screens/ArchetypeScreen'
 import { HomeScreen } from './screens/HomeScreen'
@@ -48,6 +49,15 @@ export function App() {
         <div className="site-status">
           <span className="local-badge">{APP_PHASE} · Local-first</span>
           <span className="header-version">v{APP_VERSION}</span>
+          <details className="build-identity">
+            <summary>Build identity</summary>
+            <div className="build-identity-details" aria-label="Build identity details">
+              <span>Mode: {BUILD_METADATA.mode}</span>
+              <span>Revision: {BUILD_METADATA.revision}</span>
+              <span>Source: {BUILD_METADATA.worktree}</span>
+              <span>Candidate: {BUILD_METADATA.candidate}</span>
+            </div>
+          </details>
         </div>
       </header>
       <PublicAlphaNotice compact={route === '/life-modules' && !openedCharacter} />

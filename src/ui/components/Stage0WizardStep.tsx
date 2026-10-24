@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { CAPELLAN_COMMONALITY_CONTEXT, DRACONIS_COMBINE_CONTEXT, DRACONIS_DIERON_ID, DRACONIS_AZAMI_ID, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_OUTBACK_CONTEXT, getBirthAffiliationOptions, getBirthSubAffiliationOptions, getLifeModuleLanguageSelectorOptions, getNearestStateOptions, SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { TECHNICIAN_SUBSKILLS } from '../../domain/skillFields/catalog'
-import { OPEN_ART_SUGGESTED_SUBJECTS } from '../../domain/skillFields/openSkillSubjects'
+import { APPROVED_ART_ANY_SUBJECTS } from '../../domain/skillFields/openSkillSubjects'
 import { validateOpenSkillSubject } from '../../domain/skillFields/openSkillSubjects'
 
 const SURVIVAL_SUBJECT_OPTIONS = ['Arctic', 'Desert', 'Forest', 'Jungle', 'Mountain', 'Ocean', 'Steppe'] as const
@@ -47,6 +47,7 @@ interface Stage0WizardStepProps {
   onApplyUniversal: () => void
   onApplyAffiliation: () => void
   accumulatedValues?: ReactNode
+  previewFailed?: boolean
 }
 
 export function Stage0WizardStep(props: Stage0WizardStepProps) {
@@ -59,7 +60,8 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
   const effectiveSubAffiliation = props.subAffiliation ?? 'no'
   const subSelected = effectiveSubAffiliation === context?.id
   const affiliationLanguages = context ? getLifeModuleLanguageSelectorOptions(context.affiliationLanguageSelector) : []
-  const capellanSelected = context?.id === CAPELLAN_COMMONALITY_CONTEXT.id
+  const capellanSelected = context?.affiliationId === CAPELLAN_COMMONALITY_CONTEXT.affiliationId
+  const capellanSpecialSelected = capellanSelected && subSelected && context?.id !== CAPELLAN_COMMONALITY_CONTEXT.id
   const davionSelected = context?.affiliationId === 'affiliation.federated-suns'
   const capellanMarchSelected = context?.id === FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT.id
   const draconisMarchSelected = context?.id === FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT.id
@@ -68,7 +70,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
   const draconisAzamiSelected = effectiveSubAffiliation === DRACONIS_AZAMI_ID
   const draconisDieronSelected = effectiveSubAffiliation === DRACONIS_DIERON_ID
   const outbackInterestSelected = outbackSelected && props.davionArt.startsWith('Interest/')
-  const secondaryLanguages = capellanSelected ? getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector) : []
+  const secondaryLanguages = capellanSelected ? getLifeModuleLanguageSelectorOptions(context?.subAffiliationName === 'Victoria Commonality' ? 'any-language' : context?.subAffiliationName === 'St. Ives Commonality' ? 'federated-suns-languages' : context?.subAffiliationName === 'Liao Commonality' ? 'capellan-liao-language' : CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector) : []
   // The order-affiliation rules remain modeled for saved characters and future
   // activation, but new character selection is intentionally unavailable in
   // this release.
@@ -91,11 +93,12 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
   </label>
   const requirementDescriptionId = 'stage0-requirements-summary'
   const affiliationReady = Boolean(
+    !props.previewFailed &&
     context &&
     props.affiliationLanguage &&
     affiliationLanguages.includes(props.affiliationLanguage) &&
-    (draconisSelected ? ['Pain Resistance', 'Combat Sense'].includes(props.draconisTraitChoice ?? 'Pain Resistance') && ['Archery', 'Melee Weapons', 'Thrown Weapons/Blade'].includes(props.draconisWeaponChoice ?? 'Melee Weapons') && (!draconisAzamiSelected || validateOpenSkillSubject(props.survivalSubject).error === null) && (!draconisDieronSelected || (Boolean(props.draconisLanguageSubject?.trim()) && Boolean(props.draconisArtSubject?.trim()))) : capellanSelected ? secondaryLanguages.includes(props.secondaryLanguage) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && (!subSelected || (outbackSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' && props.davionArt !== 'Interest/Other' && Boolean(props.survivalSubject.trim()) : draconisMarchSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' : capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : props.davionArt === 'Painting'))) && orderReady,
-  )
+    (draconisSelected ? ['Pain Resistance', 'Combat Sense'].includes(props.draconisTraitChoice ?? 'Pain Resistance') && ['Archery', 'Melee Weapons', 'Thrown Weapons/Blade'].includes(props.draconisWeaponChoice ?? 'Melee Weapons') && (!draconisAzamiSelected || validateOpenSkillSubject(props.survivalSubject).error === null) && (!draconisDieronSelected || (Boolean(props.draconisLanguageSubject?.trim()) && Boolean(props.draconisArtSubject?.trim()))) : capellanSelected ? (capellanSpecialSelected ? Boolean(props.draconisLanguageSubject?.trim()) && (context?.subAffiliationName !== 'Liao Commonality' || ['FedSuns', 'Lyran'].includes(props.davionNaturalAptitude)) && (!['Liao Commonality', 'St. Ives Commonality'].includes(context?.subAffiliationName ?? '') || Boolean(props.draconisArtSubject?.trim())) : secondaryLanguages.includes(props.secondaryLanguage)) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && (!subSelected || (outbackSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' && props.davionArt !== 'Interest/Other' && Boolean(props.survivalSubject.trim()) : draconisMarchSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' : capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : APPROVED_ART_ANY_SUBJECTS.includes(props.davionArt as (typeof APPROVED_ART_ANY_SUBJECTS)[number]))) && orderReady
+  ))
   return <div className={`stage0-package-stack${universalComplete ? ' stage0-affiliation-layout' : ''}`}>
     {!universalComplete && <section className="stage0-package-section current" aria-labelledby="stage0-universal-heading">
       <header className="stage0-package-heading">
@@ -151,37 +154,25 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
                   </div>
                   {!orderSelectorOpen && <small>ComStar and Word of Blake character creation will be available in a future release.</small>}
                 </fieldset>
-            <div className={`order-affiliation-choices stage0-order-attributes${orderSelected ? '' : ' is-disabled'}`}>
-              <h4>ComStar/WoB Attributes</h4>
-              {orderSelected ? <>
-               <div><h4>{effectiveOrderAffiliation === 'comstar' ? 'ComStar' : 'Word of Blake'} affiliation layer</h4><p>50 XP in addition to the full birth-affiliation package. Nearest state is an explicit bounded choice because geographic resolution remains deferred.</p></div>
-              <div className="stage0-choice-grid">
-                <label htmlFor="stage0-order-nearest-state">Nearest modeled state
-                  <select id="stage0-order-nearest-state" {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(nearestState) }), requirementDescriptionId)} value={props.orderNearestStateContext} onChange={(event) => props.onOrderNearestStateChange(event.target.value)}><option value="">Choose a state…</option>{getNearestStateOptions().map((entry) => <option key={entry.id} value={entry.id}>{nearestStateLabel(entry.displayName)}</option>)}</select>
-                </label>
-                <label htmlFor="stage0-order-language">Nearest-state language
-                  <select id="stage0-order-language" {...controlStatusProps(controlStatus({ required: true, resolved: nearestLanguages.includes(props.orderSecondaryLanguage), disabled: !nearestState }), requirementDescriptionId)} value={props.orderSecondaryLanguage} disabled={!nearestState} onChange={(event) => props.onOrderSecondaryLanguageChange(event.target.value)}><option value="">{nearestState ? 'Choose a language…' : 'Choose a state first…'}</option>{nearestLanguages.map((language) => <option key={language}>{language}</option>)}</select>
-                </label>
-                <label htmlFor="stage0-order-technician">Technician subskill
-                  <select id="stage0-order-technician" {...controlStatusProps(controlStatus({ required: true, resolved: TECHNICIAN_SUBSKILLS.includes(props.orderTechnicianSubskill as (typeof TECHNICIAN_SUBSKILLS)[number]) }), requirementDescriptionId)} value={props.orderTechnicianSubskill} onChange={(event) => props.onOrderTechnicianSubskillChange(event.target.value)}><option value="">Choose a Technician subskill…</option>{TECHNICIAN_SUBSKILLS.map((skill) => <option key={skill}>{skill}</option>)}</select>
-                </label>
-              </div>
-               <small>Characters with this affiliation may not possess Extra Income or Property.</small>
-              </> : <p className="stage0-inactive-choice">ComStar and Word of Blake character creation will be available in a future release.</p>}
-            </div>
               </div>
             </div>
-            <section className={`stage0-contextual-section ${subSelected ? 'stage0-sub-affiliation-attributes' : 'stage0-affiliation-attributes'}`}>
-              <h4>{subSelected ? 'Sub-Affiliation Attributes' : 'Affiliation Attributes'}</h4>
+            {props.accumulatedValues}
+            <div className="stage0-contextual-stack">
+            <section className="stage0-contextual-section stage0-affiliation-attributes">
+              <h4>Affiliation Attributes</h4>
             {capellanSelected && <div className="stage0-secondary-action">
-              <div><h4>{subSelected ? 'Capellan Confederation / Capellan Commonality' : 'Capellan Confederation'}</h4><p>150 XP · full affiliation cost{subSelected ? ' with the selected sub-affiliation package' : ' with no sub-affiliation awards'}.</p></div>
+              <div><h4>{subSelected ? context?.displayName : 'Capellan Confederation'}</h4><p>150 XP · full affiliation cost{subSelected ? ' with the selected sub-affiliation package' : ' with no sub-affiliation awards'}.</p></div>
               <label htmlFor="stage0-secondary-language">Capellan secondary-language award
-                <select id="stage0-secondary-language" {...controlStatusProps(controlStatus({ required: true, resolved: secondaryLanguages.includes(props.secondaryLanguage) }), requirementDescriptionId)} value={props.secondaryLanguage} onChange={(event) => props.onSecondaryLanguageChange(event.target.value)}>
+                <select id="stage0-secondary-language" {...controlStatusProps(controlStatus({ required: true, resolved: secondaryLanguages.includes(capellanSpecialSelected ? (props.draconisLanguageSubject ?? '') : props.secondaryLanguage) }), requirementDescriptionId)} value={capellanSpecialSelected ? (props.draconisLanguageSubject ?? '') : props.secondaryLanguage} onChange={(event) => capellanSpecialSelected ? props.onDraconisLanguageSubjectChange?.(event.target.value) : props.onSecondaryLanguageChange(event.target.value)}>
                   <option value="" disabled>Choose a secondary language…</option>
                   {secondaryLanguages.map((language) => <option key={language}>{language}</option>)}
                 </select>
                 <small>This award remains unresolved until you choose a listed language.</small>
               </label>
+            </div>}
+              {capellanSpecialSelected && <div className="stage0-secondary-action">
+              {context?.subAffiliationName === 'Liao Commonality' && <label htmlFor="stage0-capellan-protocol">Liao Protocol destination<select id="stage0-capellan-protocol" value={props.davionNaturalAptitude} onChange={(event) => props.onDavionNaturalAptitudeChange(event.target.value)}><option value="">Choose a destination.</option><option>FedSuns</option><option>Lyran</option></select></label>}
+              {(context?.subAffiliationName === 'Liao Commonality' || context?.subAffiliationName === 'St. Ives Commonality') && <label htmlFor="stage0-capellan-art">Art/Any subject<input id="stage0-capellan-art" value={props.draconisArtSubject ?? ''} placeholder="Enter an Art specialty." onChange={(event) => props.onDraconisArtSubjectChange?.(event.target.value)} /></label>}
             </div>}
             {draconisSelected && <div className="stage0-secondary-action">
               <div><h4>{subSelected ? context?.displayName : DRACONIS_COMBINE_CONTEXT.displayName}</h4><p>150 XP · source-defined Draconis Combine awards and required choices.</p></div>
@@ -205,34 +196,51 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
                   </select>
                 </label>
                 {subSelected && !draconisMarchSelected && !outbackSelected && <label htmlFor="stage0-davion-art">{capellanMarchSelected ? 'Capellan March language award' : 'Crucis March Art award'}
-                  <select id="stage0-davion-art" {...controlStatusProps(controlStatus({ required: true, resolved: capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : props.davionArt === 'Painting' }), requirementDescriptionId)} value={props.davionArt} onChange={(event) => props.onDavionArtChange(event.target.value)}>
-                    <option value="">{capellanMarchSelected ? 'Choose a language…' : 'Choose a supported Art subskill…'}</option>{(capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'] : ['Painting']).map((value) => <option key={value}>{value}</option>)}
+                  <select id="stage0-davion-art" {...controlStatusProps(controlStatus({ required: true, resolved: capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : APPROVED_ART_ANY_SUBJECTS.includes(props.davionArt as (typeof APPROVED_ART_ANY_SUBJECTS)[number]) }), requirementDescriptionId)} value={props.davionArt} onChange={(event) => props.onDavionArtChange(event.target.value)}>
+                    <option value="">{capellanMarchSelected ? 'Choose a language…' : 'Choose a supported Art subskill…'}</option>{(capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'] : APPROVED_ART_ANY_SUBJECTS).map((value) => <option key={value}>{value}</option>)}
                   </select>
                 </label>}
                 {subSelected && (draconisMarchSelected || outbackSelected) && <label htmlFor={outbackSelected ? 'stage0-davion-art-outback' : 'stage0-davion-art'}>{outbackSelected ? 'Outback Art/Any or Interest/Any subject' : 'Draconis March Art/Any subject'}
-                  <select id={outbackSelected ? 'stage0-davion-art-outback' : 'stage0-davion-art'} {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' && props.davionArt !== 'Interest/Other' }), requirementDescriptionId)} value={outbackSelected && props.davionArt.startsWith('Art/') ? props.davionArt.slice('Art/'.length) : OPEN_ART_SUGGESTED_SUBJECTS.includes(props.davionArt as (typeof OPEN_ART_SUGGESTED_SUBJECTS)[number]) ? props.davionArt : props.davionArt === 'Interest/Other' || outbackInterestSelected ? '__interest_other__' : props.davionArt ? '__other__' : ''} onChange={(event) => props.onDavionArtChange(event.target.value === '__other__' || event.target.value === '__interest_other__' ? event.target.value === '__interest_other__' ? 'Interest/Other' : '__other__' : outbackSelected ? `Art/${event.target.value}` : event.target.value)}>
+                  <select id={outbackSelected ? 'stage0-davion-art-outback' : 'stage0-davion-art'} {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' && props.davionArt !== 'Interest/Other' }), requirementDescriptionId)} value={outbackSelected && props.davionArt.startsWith('Art/') ? props.davionArt.slice('Art/'.length) : APPROVED_ART_ANY_SUBJECTS.includes(props.davionArt as (typeof APPROVED_ART_ANY_SUBJECTS)[number]) ? props.davionArt : props.davionArt === 'Interest/Other' || outbackInterestSelected ? '__interest_other__' : props.davionArt ? '__other__' : ''} onChange={(event) => props.onDavionArtChange(event.target.value === '__other__' || event.target.value === '__interest_other__' ? event.target.value === '__interest_other__' ? 'Interest/Other' : '__other__' : outbackSelected ? `Art/${event.target.value}` : event.target.value)}>
                     <option value="">Choose an Art specialty…</option>
-                    {OPEN_ART_SUGGESTED_SUBJECTS.map((subject) => <option key={subject} value={subject}>{`Art/${subject}`}</option>)}
+                    {APPROVED_ART_ANY_SUBJECTS.map((subject) => <option key={subject} value={subject}>{`Art/${subject}`}</option>)}
                     {outbackSelected && <option value="__interest_other__">Interest/Other (specify)</option>}
-                    <option value="__other__">Other (specify)</option>
                   </select>
-                  {props.davionArt && !OPEN_ART_SUGGESTED_SUBJECTS.includes(props.davionArt as (typeof OPEN_ART_SUGGESTED_SUBJECTS)[number]) && <input id="stage0-davion-art-other" aria-label={outbackInterestSelected ? 'Other Interest subject' : 'Other Art specialty'} value={props.davionArt === '__other__' || props.davionArt === 'Interest/Other' ? '' : outbackInterestSelected ? props.davionArt.slice('Interest/'.length) : props.davionArt} placeholder={outbackInterestSelected ? 'Enter an Interest subject…' : 'Enter an Art specialty…'} onChange={(event) => props.onDavionArtChange(outbackInterestSelected ? `Interest/${event.target.value}` : event.target.value)} />}
+                  {props.davionArt && !APPROVED_ART_ANY_SUBJECTS.includes(props.davionArt as (typeof APPROVED_ART_ANY_SUBJECTS)[number]) && <input id="stage0-davion-art-other" aria-label={outbackInterestSelected ? 'Other Interest subject' : 'Other Art specialty'} value={props.davionArt === '__other__' || props.davionArt === 'Interest/Other' ? '' : outbackInterestSelected ? props.davionArt.slice('Interest/'.length) : props.davionArt} placeholder={outbackInterestSelected ? 'Enter an Interest subject…' : 'Enter an Art specialty…'} onChange={(event) => props.onDavionArtChange(outbackInterestSelected ? `Interest/${event.target.value}` : event.target.value)} />}
                 </label>}
                 {subSelected && outbackSelected && survivalSubjectControl('stage0-survival', 'Outback Survival/Any subject')}
               </div>
             </div>}
             {!context && <p className="stage0-inactive-choice">Choose an affiliation to view applicable attributes.</p>}
             </section>
-            <section className={`stage0-contextual-section ${subSelected ? 'stage0-affiliation-attributes' : 'stage0-sub-affiliation-attributes'} is-inactive`}>
-              <h4>{subSelected ? 'Affiliation Attributes' : 'Sub-Affiliation Attributes'}</h4>
+            <section className="stage0-contextual-section stage0-sub-affiliation-attributes is-inactive">
+              <h4>Sub-Affiliation Attributes</h4>
               <p className="stage0-inactive-choice">{subSelected ? 'Parent affiliation attributes are shown in the selected context.' : 'No sub-affiliation selected.'}</p>
             </section>
+            </div>
+            <div className={`order-affiliation-choices stage0-order-attributes${orderSelected ? '' : ' is-disabled'}`}>
+              <h4>ComStar/WoB Attributes</h4>
+              {orderSelected ? <>
+               <div><h4>{effectiveOrderAffiliation === 'comstar' ? 'ComStar' : 'Word of Blake'} affiliation layer</h4><p>50 XP in addition to the full birth-affiliation package. Nearest state is an explicit bounded choice because geographic resolution remains deferred.</p></div>
+              <div className="stage0-choice-grid">
+                <label htmlFor="stage0-order-nearest-state">Nearest modeled state
+                  <select id="stage0-order-nearest-state" {...controlStatusProps(controlStatus({ required: true, resolved: Boolean(nearestState) }), requirementDescriptionId)} value={props.orderNearestStateContext} onChange={(event) => props.onOrderNearestStateChange(event.target.value)}><option value="">Choose a state…</option>{getNearestStateOptions().map((entry) => <option key={entry.id} value={entry.id}>{nearestStateLabel(entry.displayName)}</option>)}</select>
+                </label>
+                <label htmlFor="stage0-order-language">Nearest-state language
+                  <select id="stage0-order-language" {...controlStatusProps(controlStatus({ required: true, resolved: nearestLanguages.includes(props.orderSecondaryLanguage), disabled: !nearestState }), requirementDescriptionId)} value={props.orderSecondaryLanguage} disabled={!nearestState} onChange={(event) => props.onOrderSecondaryLanguageChange(event.target.value)}><option value="">{nearestState ? 'Choose a language…' : 'Choose a state first…'}</option>{nearestLanguages.map((language) => <option key={language}>{language}</option>)}</select>
+                </label>
+                <label htmlFor="stage0-order-technician">Technician subskill
+                  <select id="stage0-order-technician" {...controlStatusProps(controlStatus({ required: true, resolved: TECHNICIAN_SUBSKILLS.includes(props.orderTechnicianSubskill as (typeof TECHNICIAN_SUBSKILLS)[number]) }), requirementDescriptionId)} value={props.orderTechnicianSubskill} onChange={(event) => props.onOrderTechnicianSubskillChange(event.target.value)}><option value="">Choose a Technician subskill…</option>{TECHNICIAN_SUBSKILLS.map((skill) => <option key={skill}>{skill}</option>)}</select>
+                </label>
+              </div>
+               <small>Characters with this affiliation may not possess Extra Income or Property.</small>
+              </> : <p className="stage0-inactive-choice">ComStar and Word of Blake character creation will be available in a future release.</p>}
+            </div>
             <p id={requirementDescriptionId} className="sr-only">Complete each marked required control before continuing. Disabled controls become available after their prerequisite selection.</p>
-            <div className={`stage0-requirements${affiliationReady ? ' ready' : ''}`} role="status"><p>{affiliationReady ? 'Previewing selected Stage 0 choices. Continue to apply them and advance to Stage 1.' : 'Complete each marked required control before continuing.'}</p><button className="button" type="button" disabled={!affiliationReady} onClick={props.onApplyAffiliation}>Continue</button></div>
+            <div className={`stage0-requirements${affiliationReady ? ' ready' : ''}`} role="status">{props.previewFailed ? <p role="alert">The selected Stage 0 choices could not be previewed. Adjust the selections before continuing.</p> : <p>{affiliationReady ? 'Previewing selected Stage 0 choices. Continue to apply them and advance to Stage 1.' : 'Complete each marked required control before continuing.'}</p>}<button className="button" type="button" disabled={!affiliationReady} onClick={props.onApplyAffiliation}>Continue</button></div>
           </div>
         : <p className="stage0-package-pending">Complete the legacy compatibility step above to unlock the affiliation package.</p>}
     </section>
-    {universalComplete && props.accumulatedValues}
   </div>
 }
 

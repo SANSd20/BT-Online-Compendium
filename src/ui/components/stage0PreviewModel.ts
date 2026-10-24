@@ -1,7 +1,7 @@
-import type { CharacterDefinition } from '../../domain/character/model'
+import type { CharacterDefinition, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { CAPELLAN_COMMONALITY_ID, DRACONIS_COMBINE_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_ID } from '../../domain/lifeModules/catalog'
 import { type OrderAffiliationSelection, resolveLifeModuleAffiliationContext } from '../../domain/lifeModules/affiliations'
-import { applyCapellanCommonality, applyDraconisCombine, applyFederatedSunsMarch, applyFederatedSunsCrucisMarch, applyUniversalStage0, previewFederatedSunsCrucisMarch, previewOrderAffiliation } from '../../engine/lifeModuleEngine'
+import { applyCapellanCommonality, applyDraconisCombine, applyFederatedSunsMarch, applyFederatedSunsCrucisMarch, applyUniversalStage0, previewFederatedSunsCrucisMarch, previewOrderAffiliation, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 
 export type LifeModulesThemeIdentity = {
   className: string
@@ -52,7 +52,7 @@ export function previewStage0Affiliation(
 ): CharacterDefinition | null {
   if (!affiliationContext) return null
   try {
-    const withUniversal = affiliationLanguage
+    const withUniversal = affiliationLanguage && affiliationContext !== 'affiliation.federated-suns'
       ? applyUniversalStage0(character, affiliationContext, affiliationLanguage)
       : character
     if (affiliationContext === DRACONIS_COMBINE_ID) {
@@ -64,11 +64,47 @@ export function previewStage0Affiliation(
       const preview = applyDraconisCombine(draconisBase, subAffiliationSelection === 'no' ? 'no' : subAffiliationSelection as Parameters<typeof applyDraconisCombine>[1], draconisTraitChoice as 'Pain Resistance' | 'Combat Sense' | undefined, draconisWeaponChoice as 'Archery' | 'Melee Weapons' | 'Thrown Weapons/Blade' | undefined, affiliationLanguage || undefined, draconisChoices, true)
       return previewOrderAffiliation(preview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
     }
+    if (affiliationContext === 'affiliation.federated-suns') {
+      const federatedSunsBase = structuredClone(affiliationLanguage
+        ? applyUniversalStage0(character, FEDERATED_SUNS_CRUCIS_MARCH_ID, affiliationLanguage)
+        : character)
+      federatedSunsBase.creation.lifeModules!.stage0AffiliationContext = FEDERATED_SUNS_CRUCIS_MARCH_ID
+      const preview = previewFederatedSunsCrucisMarch(federatedSunsBase, false)
+      preview.creation.lifeModules!.stage0AffiliationContext = affiliationContext
+      if (davionNaturalAptitude === 'Protocol' || davionNaturalAptitude === 'Strategy') {
+        const pending = preview.creation.lifeModules!.pendingAwards.find((award) => award.awardId === 'fedsuns.trait.natural-aptitude')
+        if (!pending) throw new Error('Federated Suns Natural Aptitude preview award was not recorded.')
+        pending.provenanceId = preview.lifeModuleHistory.at(-1)?.provenanceIds[0]
+        const destination: ResolvedLifeModuleDestination = {
+          type: 'trait',
+          targetId: 'trait.natural-aptitude',
+          displayName: `Natural Aptitude/${davionNaturalAptitude}`,
+          parameters: { skill: davionNaturalAptitude },
+        }
+        return previewOrderAffiliation(resolvePendingLifeModuleAward(preview, pending.id, destination), orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
+      }
+      return previewOrderAffiliation(preview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
+    }
     if (affiliationContext === FEDERATED_SUNS_CRUCIS_MARCH_ID) {
       const includeSub = !subAffiliationSelection || subAffiliationSelection === affiliationContext
-      const birthPreview = davionNaturalAptitude && (!includeSub || davionArt)
-        ? applyFederatedSunsCrucisMarch(withUniversal, davionNaturalAptitude as 'Protocol' | 'Strategy', davionArt, includeSub)
-        : previewFederatedSunsCrucisMarch(withUniversal, includeSub)
+      const federatedSunsBase = structuredClone(withUniversal)
+      federatedSunsBase.creation.lifeModules!.stage0AffiliationContext = FEDERATED_SUNS_CRUCIS_MARCH_ID
+      let birthPreview = davionNaturalAptitude && (!includeSub || davionArt)
+        ? applyFederatedSunsCrucisMarch(federatedSunsBase, davionNaturalAptitude as 'Protocol' | 'Strategy', davionArt, includeSub)
+        : previewFederatedSunsCrucisMarch(federatedSunsBase, includeSub)
+      if (davionNaturalAptitude && birthPreview.creation.lifeModules) {
+        const pending = birthPreview.creation.lifeModules.pendingAwards.find((award) => award.awardId === 'fedsuns.trait.natural-aptitude')
+        if (pending) birthPreview = resolvePendingLifeModuleAward(birthPreview, pending.id, {
+          type: 'trait', targetId: 'trait.natural-aptitude', displayName: `Natural Aptitude/${davionNaturalAptitude}`,
+          parameters: { skill: davionNaturalAptitude },
+        })
+      }
+      if (includeSub && davionArt && birthPreview.creation.lifeModules) {
+        const pending = birthPreview.creation.lifeModules.pendingAwards.find((award) => award.awardId === 'crucis.skill.art')
+        if (pending) birthPreview = resolvePendingLifeModuleAward(birthPreview, pending.id, {
+          type: 'skill', targetId: 'skill.art', displayName: `Art/${davionArt}`, parameter: { kind: 'subskill', value: davionArt },
+        })
+      }
       birthPreview.creation.lifeModules!.stage0SubAffiliation = includeSub ? affiliationContext : 'no'
       return previewOrderAffiliation(birthPreview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
     }
@@ -83,11 +119,13 @@ export function previewStage0Affiliation(
       birthPreview.creation.lifeModules!.stage0SubAffiliation = includeSub ? affiliationContext : 'no'
       return previewOrderAffiliation(birthPreview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
     }
-    if (affiliationContext !== CAPELLAN_COMMONALITY_ID) return null
+    const capellanContext = resolveLifeModuleAffiliationContext(affiliationContext)
+    if (capellanContext.support !== 'supported' || capellanContext.context.affiliationId !== 'affiliation.capellan-confederation') return null
     const preview = structuredClone(withUniversal)
-    preview.creation.lifeModules!.stage0AffiliationContext = affiliationContext
+    preview.creation.lifeModules!.stage0AffiliationContext = CAPELLAN_COMMONALITY_ID
     const includeSub = !subAffiliationSelection || subAffiliationSelection === affiliationContext
-    const birthPreview = applyCapellanCommonality(preview, secondaryLanguage || undefined, includeSub, subAffiliationSelection || undefined)
+    const birthPreview = applyCapellanCommonality(preview, secondaryLanguage || undefined, includeSub, subAffiliationSelection || undefined, draconisChoices)
+    birthPreview.creation.lifeModules!.stage0AffiliationContext = affiliationContext
     birthPreview.creation.lifeModules!.stage0SubAffiliation = includeSub ? (subAffiliationSelection || affiliationContext) : 'no'
     return previewOrderAffiliation(birthPreview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
   } catch {

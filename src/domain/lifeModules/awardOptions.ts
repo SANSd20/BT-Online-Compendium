@@ -3,7 +3,7 @@ import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../pointBuy/catalog'
 import { getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions } from './affiliations'
 import { getSkillField, TECHNICIAN_SUBSKILLS } from '../skillFields/catalog'
 import { MASTER_SKILL_FIELD_GOAL_CATALOG } from '../skillFields/goalCatalog'
-import { OPEN_ART_SUGGESTED_SUBJECTS, openSkillSubjectLabel } from '../skillFields/openSkillSubjects'
+import { APPROVED_ART_ANY_SUBJECTS, openSkillSubjectLabel } from '../skillFields/openSkillSubjects'
 import { getVariableSkillDomain, VARIABLE_SKILL_DOMAIN_CATALOG } from '../skillFields/variableSkillDomains'
 
 export interface PendingAwardOption extends ResolvedLifeModuleDestination {
@@ -113,7 +113,7 @@ export function openSubjectChoiceOptions(pending: PendingLifeModuleAward, charac
     .filter((entry) => entry.inputMode !== 'open-subject')
     .sort((left, right) => Number(existingValues.has(right.value)) - Number(existingValues.has(left.value)) || left.displayName.localeCompare(right.displayName))
   const suggestedArt = metadata.skillId === 'skill.art'
-    ? OPEN_ART_SUGGESTED_SUBJECTS.map((subject) => skillOption('skill.art', 'Art', subject))
+    ? APPROVED_ART_ANY_SUBJECTS.map((subject) => skillOption('skill.art', 'Art', subject))
     : []
   const other = candidates.find((entry) => entry.inputMode === 'open-subject')
   return [...known, ...suggestedArt, ...(other ? [other] : [])]

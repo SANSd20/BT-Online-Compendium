@@ -9,7 +9,7 @@ describe('Public Alpha notice', () => {
     const markup = renderToStaticMarkup(<PublicAlphaNotice />)
 
     expect(APP_RELEASE_LABEL).toBe('Alpha Slice 165-B21')
-    expect(APP_VERSION).toBe('0.1.0-alpha.165-b21')
+    expect(APP_VERSION).toBe('0.1.0-alpha.165-b22')
     expect(markup).toContain('<details>')
     expect(markup).not.toContain('<details open="">')
     expect(markup).toContain('Public Alpha Notice')

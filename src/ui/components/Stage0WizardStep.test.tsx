@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import { CAPELLAN_COMMONALITY_ID, DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_COMBINE_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID, FEDERATED_SUNS_OUTBACK_ID } from '../../domain/lifeModules/catalog'
+import { CAPELLAN_COMMONALITY_ID, DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_COMBINE_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID, FEDERATED_SUNS_OUTBACK_ID, LIAO_COMMONALITY_ID, SIAN_COMMONALITY_ID, ST_IVES_COMMONALITY_ID, VICTORIA_COMMONALITY_ID } from '../../domain/lifeModules/catalog'
 import { Stage0WizardStep } from './Stage0WizardStep'
 
 const handlers = {
@@ -33,6 +33,28 @@ const orderChoices = {
 }
 
 describe('merged Stage 0 wizard step', () => {
+  it('renders the selected Capellan Commonality detail heading without stale context', () => {
+    const cases = [
+      [CAPELLAN_COMMONALITY_ID, 'Capellan Confederation / Capellan Commonality'],
+      [LIAO_COMMONALITY_ID, 'Capellan Confederation / Liao Commonality'],
+      [SIAN_COMMONALITY_ID, 'Capellan Confederation / Sian Commonality'],
+      [ST_IVES_COMMONALITY_ID, 'Capellan Confederation / St. Ives Commonality'],
+      [VICTORIA_COMMONALITY_ID, 'Capellan Confederation / Victoria Commonality'],
+    ] as const
+    for (const [contextId, heading] of cases) {
+      const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={contextId} subAffiliation={contextId} affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
+      expect(markup).toContain(heading)
+      expect(markup).not.toContain(contextId === CAPELLAN_COMMONALITY_ID ? 'Capellan Confederation / Liao Commonality' : 'Capellan Confederation / Capellan Commonality')
+    }
+  })
+
+  it('gates only the Commonalities with published Art/Any choices', () => {
+    const sian = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={SIAN_COMMONALITY_ID} subAffiliation={SIAN_COMMONALITY_ID} affiliationLanguage="Mandarin Chinese" secondaryLanguage="" draconisLanguageSubject="Russian" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
+    expect(sian).toContain('<div class="stage0-requirements ready" role="status">')
+    const liao = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={LIAO_COMMONALITY_ID} subAffiliation={LIAO_COMMONALITY_ID} affiliationLanguage="Mandarin Chinese" secondaryLanguage="" {...davionChoices} davionNaturalAptitude="Lyran" draconisLanguageSubject="German" draconisArtSubject="Painting" {...orderChoices} birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
+    expect(liao).toContain('<div class="stage0-requirements ready" role="status">')
+  })
+
   it('marks only the most specific enabled unresolved Stage 0 control required', () => {
     const initial = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext="" affiliationLanguage="" secondaryLanguage="" {...davionChoices} {...orderChoices} {...handlers} />)
     expect(initial).toContain('id="stage0-affiliation" data-control-status="required-unresolved" aria-required="true"')
@@ -109,6 +131,13 @@ describe('merged Stage 0 wizard step', () => {
     expect(markup).toContain('<button class="button" type="button">Continue</button>')
   })
 
+  it('surfaces a failed active preview without showing committed values or enabling Continue', () => {
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={FEDERATED_SUNS_OUTBACK_ID} subAffiliation="no" affiliationLanguage="English" secondaryLanguage="" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.federated-suns" previewFailed {...handlers} />)
+    expect(markup).toContain('The selected Stage 0 choices could not be previewed.')
+    expect(markup).toContain('role="alert"')
+    expect(markup).toContain('<button class="button" type="button" disabled="">Continue</button>')
+  })
+
   it('uses No as the optional sub-affiliation default and preserves the approved hierarchy', () => {
     const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={CAPELLAN_COMMONALITY_ID} subAffiliation="no" affiliationLanguage="Mandarin Chinese" secondaryLanguage="Russian" {...davionChoices} {...orderChoices} birthAffiliationId="affiliation.capellan-confederation" {...handlers} />)
     expect(markup).toContain('stage0-birth-affiliation-region')
@@ -120,8 +149,9 @@ describe('merged Stage 0 wizard step', () => {
 
   it('offers suggested Draconis Art specialties without narrowing the open domain', () => {
     const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext="stage0.federated-suns.draconis-march" subAffiliation="stage0.federated-suns.draconis-march" affiliationLanguage="English" secondaryLanguage="" davionNaturalAptitude="Strategy" davionArt="" survivalSubject="" {...orderChoices} birthAffiliationId="affiliation.federated-suns" {...handlers} />)
-    for (const subject of ['Dance', 'Drawing', 'Music', 'Painting', 'Poetry', 'Sculpture', 'Songwriting', 'Writing']) expect(markup).toContain(`Art/${subject}`)
-    expect(markup).toContain('Other (specify)')
+    for (const subject of ['Dance', 'Drawing', 'Music', 'Painting', 'Poetry', 'Sculpture', 'Writing']) expect(markup).toContain(`Art/${subject}`)
+    expect(markup).not.toContain('Art/Songwriting')
+    expect(markup).not.toContain('Other (specify)')
     expect(markup).toContain('id="stage0-davion-art"')
     expect(markup).toContain('value="" selected=""')
     const outback = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={FEDERATED_SUNS_OUTBACK_ID} subAffiliation={FEDERATED_SUNS_OUTBACK_ID} affiliationLanguage="English" secondaryLanguage="" davionNaturalAptitude="Strategy" davionArt="" survivalSubject="" {...orderChoices} birthAffiliationId="affiliation.federated-suns" {...handlers} />)
@@ -154,5 +184,34 @@ describe('merged Stage 0 wizard step', () => {
     expect(parent).not.toContain(`<option value="${DRACONIS_COMBINE_ID}">No sub-affiliation</option>`)
     expect(parent.match(/>No Sub-affiliation<\/option>/g)).toHaveLength(1)
     for (const child of [DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID]) expect(parent).toContain(`<option value="${child}"`)
+  })
+
+  it('keeps the Stage 0 semantic sections in one stable DOM order', () => {
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext="" subAffiliation="no" affiliationLanguage="" secondaryLanguage="" {...davionChoices} {...orderChoices} accumulatedValues={<section aria-label="Current accumulated values">values</section>} {...handlers} />)
+    const order = [
+      'stage0-affiliation-order-grid',
+      'Current accumulated values',
+      'stage0-contextual-stack',
+      'stage0-order-attributes',
+      'class="stage0-requirements',
+    ].map((marker) => markup.indexOf(marker))
+    expect(order.every((index) => index >= 0)).toBe(true)
+    expect(order).toEqual([...order].sort((a, b) => a - b))
+    expect(markup.match(/>Continue<\/button>/g)).toHaveLength(1)
+    expect(markup.match(/aria-label="Current accumulated values"/g)).toHaveLength(1)
+  })
+
+  it.each([
+    ['Capellan', CAPELLAN_COMMONALITY_ID, 'no'],
+    ['Federated Suns', FEDERATED_SUNS_OUTBACK_ID, FEDERATED_SUNS_OUTBACK_ID],
+    ['Draconis', DRACONIS_AZAMI_ID, DRACONIS_AZAMI_ID],
+  ])('keeps %s affiliation and sub-affiliation panels in fixed DOM order', (_label, context, subAffiliation) => {
+    const markup = renderToStaticMarkup(<Stage0WizardStep phase="stage-0-affiliation" affiliationContext={context} subAffiliation={subAffiliation} affiliationLanguage="English" secondaryLanguage="" {...davionChoices} {...orderChoices} accumulatedValues={<section aria-label="Current accumulated values">values</section>} {...handlers} />)
+    const affiliationPanel = markup.indexOf('class="stage0-contextual-section stage0-affiliation-attributes"')
+    const subAffiliationPanel = markup.indexOf('class="stage0-contextual-section stage0-sub-affiliation-attributes')
+    expect(affiliationPanel).toBeGreaterThanOrEqual(0)
+    expect(subAffiliationPanel).toBeGreaterThan(affiliationPanel)
+    expect(markup.indexOf('>Affiliation Attributes</h4>', affiliationPanel)).toBeGreaterThan(affiliationPanel)
+    expect(markup.indexOf('>Sub-Affiliation Attributes</h4>', subAffiliationPanel)).toBeGreaterThan(subAffiliationPanel)
   })
 })

@@ -93,6 +93,73 @@ describe('Stage 0 preview model', () => {
     expect(preview?.creation.lifeModules?.pendingAwards.map((entry) => entry.awardId)).toEqual(expect.arrayContaining(['fedsuns.trait.natural-aptitude', 'crucis.skill.art']))
   })
 
+  it('keeps Federated Suns parent preview awards stable across the complete partial-choice sequence', () => {
+    const committed = createLifeModuleCharacter('Federated Suns parent partial preview')
+    const committedJson = JSON.stringify(committed)
+    const preview = (language = '', aptitude = '') => previewStage0Affiliation(committed, 'affiliation.federated-suns', language, '', aptitude, '', 'no')!
+    const protocol = (language = '') => preview(language, 'Protocol')
+    const strategy = (language = '') => preview(language, 'Strategy')
+
+    const unresolved = preview()
+    expect(unresolved.skills.find((entry) => entry.displayName === 'Protocol/FedSuns')?.accumulatedXp).toBe(10)
+    expect(unresolved.traits).toHaveLength(0)
+    expect(unresolved.creation.lifeModules?.pendingAwards.map((entry) => entry.awardId)).toContain('fedsuns.trait.natural-aptitude')
+
+    for (const selected of [protocol(), strategy(), protocol()]) {
+      expect(selected.skills.find((entry) => entry.displayName === 'Protocol/FedSuns')?.accumulatedXp).toBe(10)
+      expect(selected.traits.filter((entry) => (entry.displayName ?? '').startsWith('Natural Aptitude/'))).toHaveLength(1)
+      expect(selected.creation.lifeModules?.pendingAwards.some((entry) => entry.awardId === 'fedsuns.trait.natural-aptitude')).toBe(false)
+    }
+
+    const cleared = preview()
+    expect(cleared.skills.find((entry) => entry.displayName === 'Protocol/FedSuns')?.accumulatedXp).toBe(10)
+    expect(cleared.traits).toHaveLength(0)
+
+    const resolved = protocol('English')
+    expect(resolved.skills.find((entry) => entry.displayName === 'Protocol/FedSuns')?.accumulatedXp).toBe(10)
+    expect(resolved.skills.find((entry) => entry.displayName === 'Language/English')?.accumulatedXp).toBe(40)
+    expect(resolved.traits).toContainEqual(expect.objectContaining({ displayName: 'Natural Aptitude/Protocol', accumulatedXp: 100 }))
+    expect(resolved.creation.lifeModules?.pendingAwards).toHaveLength(0)
+
+    const languageCleared = protocol()
+    expect(languageCleared.skills.find((entry) => entry.displayName === 'Protocol/FedSuns')?.accumulatedXp).toBe(10)
+    expect(languageCleared.traits).toContainEqual(expect.objectContaining({ displayName: 'Natural Aptitude/Protocol', accumulatedXp: 100 }))
+    expect(JSON.stringify(committed)).toBe(committedJson)
+  })
+
+  it('supports the actual Federated Suns parent UI context before language resolution', () => {
+    const committed = createLifeModuleCharacter('Federated Suns UI state')
+    const protocol = previewStage0Affiliation(committed, FEDERATED_SUNS_CRUCIS_MARCH_ID, '', '', 'Protocol', '', 'no', '', '', '', 'no')!
+    expect(protocol).not.toBeNull()
+    expect(protocol.skills).toContainEqual(expect.objectContaining({ displayName: 'Protocol/FedSuns', accumulatedXp: 10 }))
+    expect(protocol.traits).toContainEqual(expect.objectContaining({ displayName: 'Natural Aptitude/Protocol', accumulatedXp: 100 }))
+    expect(protocol.creation.lifeModules?.pendingAwards).toContainEqual(expect.objectContaining({ awardId: 'universal.language.affiliation' }))
+    expect(committed.creation.lifeModules?.phase).toBe('stage-0-affiliation')
+  })
+
+  it('resolves Crucis Natural Aptitude and Art independently during partial preview', () => {
+    const committed = createLifeModuleCharacter('Crucis independent awards')
+    const preview = (aptitude: string, art: string) => previewStage0Affiliation(
+      committed, FEDERATED_SUNS_CRUCIS_MARCH_ID, '', '', aptitude, art, 'no', '', '', '', FEDERATED_SUNS_CRUCIS_MARCH_ID,
+    )!
+
+    const aptitudeFirst = preview('Protocol', '')
+    expect(aptitudeFirst.traits).toContainEqual(expect.objectContaining({ displayName: 'Natural Aptitude/Protocol', accumulatedXp: 100 }))
+    expect(aptitudeFirst.skills).not.toContainEqual(expect.objectContaining({ displayName: 'Art/Painting' }))
+    expect(aptitudeFirst.creation.lifeModules?.pendingAwards.map((award) => award.awardId)).toContain('crucis.skill.art')
+
+    const artFirst = preview('', 'Drawing')
+    expect(artFirst.skills).toContainEqual(expect.objectContaining({ displayName: 'Art/Drawing', accumulatedXp: 10 }))
+    expect(artFirst.traits).not.toContainEqual(expect.objectContaining({ displayName: 'Natural Aptitude/Protocol' }))
+    expect(artFirst.creation.lifeModules?.pendingAwards.map((award) => award.awardId)).toContain('fedsuns.trait.natural-aptitude')
+
+    const complete = preview('Strategy', 'Sculpture')
+    expect(complete.traits).toContainEqual(expect.objectContaining({ displayName: 'Natural Aptitude/Strategy', accumulatedXp: 100 }))
+    expect(complete.skills).toContainEqual(expect.objectContaining({ displayName: 'Art/Sculpture', accumulatedXp: 10 }))
+    expect(complete.creation.lifeModules?.pendingAwards).toHaveLength(1)
+    expect(committed.creation.lifeModules?.phase).toBe('stage-0-affiliation')
+  })
+
   it('gives canonical Order affiliation priority while retaining birth identity as secondary', () => {
     expect(lifeModulesThemeIdentity(FEDERATED_SUNS_CRUCIS_MARCH_ID, 'no')).toEqual({ className: 'davion-theme', dominantLabel: 'Federated Suns', birthLabel: 'Federated Suns' })
     expect(lifeModulesThemeIdentity(CAPELLAN_COMMONALITY_ID, 'no')).toEqual({ className: 'capellan-theme', dominantLabel: 'Capellan Confederation', birthLabel: 'Capellan Confederation' })

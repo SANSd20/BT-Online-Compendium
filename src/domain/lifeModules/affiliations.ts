@@ -4,6 +4,9 @@ import { MODELED_LANGUAGE_SUBSKILLS } from '../skills/languages'
 export const UNIVERSAL_STAGE_0_ID = 'stage0.universal-fixed-xp'
 export const CAPELLAN_COMMONALITY_ID = 'stage0.capellan-confederation.capellan-commonality'
 export const SIAN_COMMONALITY_ID = 'stage0.capellan-confederation.sian-commonality'
+export const LIAO_COMMONALITY_ID = 'stage0.capellan-confederation.liao-commonality'
+export const ST_IVES_COMMONALITY_ID = 'stage0.capellan-confederation.st-ives-commonality'
+export const VICTORIA_COMMONALITY_ID = 'stage0.capellan-confederation.victoria-commonality'
 export const FEDERATED_SUNS_CRUCIS_MARCH_ID = 'stage0.federated-suns.crucis-march'
 export const FEDERATED_SUNS_CAPELLAN_MARCH_ID = 'stage0.federated-suns.capellan-march'
 export const FEDERATED_SUNS_DRACONIS_MARCH_ID = 'stage0.federated-suns.draconis-march'
@@ -23,6 +26,7 @@ export type AffiliationLanguageSelectorGroupId =
   | 'affiliation-languages'
   | 'any-language'
   | 'capellan-secondary'
+  | 'capellan-liao-language'
   | 'federated-suns-languages'
   | 'federated-suns-affiliation-languages'
   | 'draconis-languages'
@@ -71,6 +75,7 @@ export const LIFE_MODULE_LANGUAGE_SELECTOR_GROUPS: Readonly<Record<AffiliationLa
   'affiliation-languages': modeledLanguages('Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English'),
   'any-language': modeledLanguages('Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English'),
   'capellan-secondary': modeledLanguages('Russian', 'Cantonese', 'Vietnamese', 'English'),
+  'capellan-liao-language': modeledLanguages('Mandarin Chinese', 'Russian', 'Cantonese', 'Vietnamese', 'English', 'German'),
   'federated-suns-languages': modeledLanguages('English', 'French'),
   'federated-suns-affiliation-languages': modeledLanguages('English', 'French', 'German', 'Hindi', 'Russian'),
   'draconis-languages': modeledLanguages('Arabic', 'English', 'Japanese', 'Swedanese'),
@@ -125,6 +130,16 @@ export const SIAN_COMMONALITY_CONTEXT: LifeModuleAffiliationContext = {
   streetwiseContextLabel: 'Capellan',
   source: source(64, 'capellan-confederation-sian-commonality'),
 }
+const capellanSub = (id: string, name: string, ruleId: string): LifeModuleAffiliationContext => ({
+  id, kind: 'affiliation', displayName: `Capellan Confederation / ${name}`, isAffiliation: true, support: 'supported',
+  affiliationId: 'affiliation.capellan-confederation', affiliationName: 'Capellan Confederation', subAffiliationName: name,
+  primaryLanguage: 'Mandarin Chinese', secondaryLanguages: LIFE_MODULE_LANGUAGE_SELECTOR_GROUPS['capellan-secondary'],
+  affiliationLanguageSelector: 'affiliation-languages', secondaryLanguageSelector: 'capellan-secondary',
+  protocolContextLabel: 'Capellan', streetwiseContextLabel: 'Capellan', source: source(64, ruleId),
+})
+export const LIAO_COMMONALITY_CONTEXT = capellanSub(LIAO_COMMONALITY_ID, 'Liao Commonality', 'capellan-confederation-liao-commonality')
+export const ST_IVES_COMMONALITY_CONTEXT = capellanSub(ST_IVES_COMMONALITY_ID, 'St. Ives Commonality', 'capellan-confederation-st-ives-commonality')
+export const VICTORIA_COMMONALITY_CONTEXT = capellanSub(VICTORIA_COMMONALITY_ID, 'Victoria Commonality', 'capellan-confederation-victoria-commonality')
 
 export const FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT: LifeModuleAffiliationContext = {
   id: FEDERATED_SUNS_CRUCIS_MARCH_ID,
@@ -203,7 +218,7 @@ export const CLAN_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] 
   },
 ]
 
-export const SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [CAPELLAN_COMMONALITY_CONTEXT, SIAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_OUTBACK_CONTEXT, DRACONIS_COMBINE_CONTEXT, ...DRACONIS_SUB_AFFILIATION_CONTEXTS]
+export const SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS: readonly LifeModuleAffiliationContext[] = [CAPELLAN_COMMONALITY_CONTEXT, LIAO_COMMONALITY_CONTEXT, SIAN_COMMONALITY_CONTEXT, ST_IVES_COMMONALITY_CONTEXT, VICTORIA_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_CONTEXT, FEDERATED_SUNS_OUTBACK_CONTEXT, DRACONIS_COMBINE_CONTEXT, ...DRACONIS_SUB_AFFILIATION_CONTEXTS]
 
 export const ORDER_AFFILIATION_IDS = {
   comstar: 'affiliation.comstar',

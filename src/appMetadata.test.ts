@@ -8,7 +8,7 @@ describe('current application release metadata', () => {
     expect(APP_RELEASE_LABEL).toBe('Alpha Slice 165-B21')
     expect(APP_PHASE).toBe('Public Alpha')
     expect(APP_PUBLIC_ALPHA_LABEL).toContain('165-B21')
-    expect(APP_VERSION).toBe('0.1.0-alpha.165-b21')
+    expect(APP_VERSION).toBe('0.1.0-alpha.165-b22')
     expect(APP_DOCUMENT_TITLE).toContain('165-B21')
   })
 })

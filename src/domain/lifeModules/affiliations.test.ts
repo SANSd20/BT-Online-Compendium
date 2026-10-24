@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, UNIVERSAL_STAGE_0_ID } from './catalog'
 import {
   CAPELLAN_COMMONALITY_CONTEXT,
-  SIAN_COMMONALITY_CONTEXT,
   CLAN_AFFILIATION_CONTEXTS,
   FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT,
   getLifeModuleLanguageSelectorOptions,
@@ -20,7 +19,7 @@ describe('Life Module affiliation framework', () => {
   })
 
   it('centralizes the supported Core and Draconis Combine contexts', () => {
-    expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS).toEqual([CAPELLAN_COMMONALITY_CONTEXT, SIAN_COMMONALITY_CONTEXT, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, expect.objectContaining({ subAffiliationName: 'Capellan March' }), expect.objectContaining({ subAffiliationName: 'Draconis March' }), expect.objectContaining({ subAffiliationName: 'Outback' }), expect.objectContaining({ affiliationName: 'Draconis Combine', subAffiliationName: 'No sub-affiliation' }), expect.objectContaining({ affiliationName: 'Draconis Combine', subAffiliationName: 'Azami' }), expect.objectContaining({ affiliationName: 'Draconis Combine', subAffiliationName: 'Benjamin District' }), expect.objectContaining({ affiliationName: 'Draconis Combine', subAffiliationName: 'Dieron District' }), expect.objectContaining({ affiliationName: 'Draconis Combine', subAffiliationName: 'New Samarkand (Galedon) District' }), expect.objectContaining({ affiliationName: 'Draconis Combine', subAffiliationName: 'Pesht District' })])
+    expect(SUPPORTED_LIFE_MODULE_AFFILIATION_CONTEXTS.map((entry) => entry.subAffiliationName)).toEqual(['Capellan Commonality', 'Liao Commonality', 'Sian Commonality', 'St. Ives Commonality', 'Victoria Commonality', 'Crucis March', 'Capellan March', 'Draconis March', 'Outback', 'No sub-affiliation', 'Azami', 'Benjamin District', 'Dieron District', 'New Samarkand (Galedon) District', 'Pesht District'])
     expect(CAPELLAN_COMMONALITY_CONTEXT).toMatchObject({
       id: CAPELLAN_COMMONALITY_ID,
       affiliationId: 'affiliation.capellan-confederation',

@@ -47,8 +47,8 @@ import {
 } from '../domain/lifeModules/catalog'
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues, modeledSkillChoiceOptions, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
-import { isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
-import { CAPELLAN_COMMONALITY_CONTEXT, DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_COMBINE_CONTEXT, DRACONIS_COMBINE_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_CONTEXT, FEDERATED_SUNS_OUTBACK_ID, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, SIAN_COMMONALITY_ID, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
+import { APPROVED_ART_ANY_SUBJECTS, isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
+import { CAPELLAN_COMMONALITY_CONTEXT, DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_COMBINE_CONTEXT, DRACONIS_COMBINE_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_CONTEXT, FEDERATED_SUNS_OUTBACK_ID, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, LIAO_COMMONALITY_ID, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, SIAN_COMMONALITY_ID, ST_IVES_COMMONALITY_ID, VICTORIA_COMMONALITY_ID, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
 import { DRACONIS_COMBINE_CATALOG_AWARDS, DRACONIS_SUB_AFFILIATION_CATALOG_AWARDS } from '../domain/lifeModules/catalog'
 import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
@@ -919,7 +919,7 @@ export function applyStage0Affiliation(
     ? applyFederatedSunsCrucisMarch(withUniversal, davionNaturalAptitude, davionArt, includeSubAffiliation)
     : affiliationContextModuleId === FEDERATED_SUNS_CAPELLAN_MARCH_ID || affiliationContextModuleId === FEDERATED_SUNS_DRACONIS_MARCH_ID || affiliationContextModuleId === FEDERATED_SUNS_OUTBACK_ID
       ? applyFederatedSunsMarch(withUniversal, affiliationContextModuleId, davionNaturalAptitude, davionArt, includeSubAffiliation, survivalSubject)
-      : applyCapellanCommonality(withUniversal, capellanSecondaryLanguage, includeSubAffiliation, subAffiliationSelection)
+      : applyCapellanCommonality(withUniversal, capellanSecondaryLanguage, includeSubAffiliation, subAffiliationSelection, draconisChoices)
   requireLifeModules(withBirth).stage0SubAffiliation = includeSubAffiliation ? (subAffiliationSelection ?? affiliationContextModuleId) : 'no'
   return applyOrderAffiliation(withBirth, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
 }
@@ -991,16 +991,19 @@ export function previewOrderAffiliation(
   }
 }
 
-export function applyCapellanCommonality(character: CharacterDefinition, capellanSecondaryLanguage?: string, includeSubAffiliation = true, subAffiliationSelection?: string): CharacterDefinition {
+export function applyCapellanCommonality(character: CharacterDefinition, capellanSecondaryLanguage?: string, includeSubAffiliation = true, subAffiliationSelection?: string, choices: Record<string, string> = {}): CharacterDefinition {
   const state = requireLifeModules(character)
   if (state.phase !== 'stage-0-affiliation') throw new Error('The Stage 0 affiliation is not the current legal action.')
-  if (state.stage0AffiliationContext !== CAPELLAN_COMMONALITY_CONTEXT.id) {
+  const selectedContext = resolveLifeModuleAffiliationContext(state.stage0AffiliationContext ?? '')
+  if (selectedContext.support !== 'supported' || selectedContext.context.affiliationId !== CAPELLAN_COMMONALITY_CONTEXT.affiliationId) {
     throw new Error('The selected Stage 0 affiliation package must match the explicit Universal affiliation context.')
   }
   const resolutions: Record<string, LifeModuleDestination> = {}
-  const language = capellanSecondaryLanguage?.trim()
+  const selected = includeSubAffiliation ? subAffiliationSelection ?? 'no' : 'no'
+  const language = (selected === LIAO_COMMONALITY_ID ? choices.language : selected === ST_IVES_COMMONALITY_ID || selected === VICTORIA_COMMONALITY_ID ? choices.language : capellanSecondaryLanguage)?.trim()
   if (language) {
-    if (!getLifeModuleLanguageSelectorOptions(CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector).includes(language)) {
+    const selector = selected === VICTORIA_COMMONALITY_ID ? 'any-language' : selected === ST_IVES_COMMONALITY_ID ? 'federated-suns-languages' : selected === LIAO_COMMONALITY_ID ? 'capellan-liao-language' : CAPELLAN_COMMONALITY_CONTEXT.secondaryLanguageSelector
+    if (!getLifeModuleLanguageSelectorOptions(selector).includes(language)) {
       throw new Error('Capellan secondary-language award must resolve to a listed secondary language.')
     }
     resolutions['capellan.language.secondary'] = {
@@ -1008,8 +1011,14 @@ export function applyCapellanCommonality(character: CharacterDefinition, capella
     }
   }
   const published = getLifeModule(CAPELLAN_COMMONALITY_ID)
-  const sianSelected = includeSubAffiliation && subAffiliationSelection === SIAN_COMMONALITY_ID
-  const module = sianSelected ? {
+  const sub = selected !== 'no' && selected !== CAPELLAN_COMMONALITY_ID && selected !== SIAN_COMMONALITY_ID ? getLifeModule(selected) : undefined
+  const sianSelected = selected === SIAN_COMMONALITY_ID
+  const module = sub ? {
+    ...published,
+    displayName: sub.displayName,
+    source: { ...published.source, ruleId: sub.source.ruleId },
+    awards: [...published.awards.filter((award) => award.id.startsWith('capellan.')), ...sub.awards],
+  } : sianSelected ? {
     ...published,
     displayName: 'Capellan Confederation / Sian Commonality',
     source: { ...published.source, ruleId: 'capellan-confederation-sian-commonality' },
@@ -1018,6 +1027,11 @@ export function applyCapellanCommonality(character: CharacterDefinition, capella
     ...published,
     displayName: CAPELLAN_COMMONALITY_CONTEXT.affiliationName,
     awards: published.awards.filter((award) => award.id.startsWith('capellan.')),
+  }
+  if (selected === LIAO_COMMONALITY_ID) {
+    const protocol = choices.protocol?.trim()
+    if (protocol !== 'FedSuns' && protocol !== 'Lyran') throw new Error('Choose the Liao Protocol destination.')
+    resolutions['liao.protocol.choice'] = { type: 'skill', address: { skillId: 'skill.protocol', parameter: { kind: 'subskill', value: protocol } }, displayName: `Protocol/${protocol}` }
   }
   const next = applyModule(character, module, resolutions)
   const nextState = requireLifeModules(next)
@@ -1037,7 +1051,7 @@ export function applyFederatedSunsCrucisMarch(character: CharacterDefinition, na
   if (state.phase !== 'stage-0-affiliation') throw new Error('The Stage 0 affiliation is not the current legal action.')
   if (state.stage0AffiliationContext !== FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT.id) throw new Error('The selected Stage 0 affiliation package must match the explicit Universal affiliation context.')
   if (naturalAptitude !== 'Protocol' && naturalAptitude !== 'Strategy') throw new Error('Choose the published Federated Suns Natural Aptitude option.')
-  if (includeSubAffiliation && art !== 'Painting') throw new Error('Choose a supported Crucis March Art subskill.')
+  if (includeSubAffiliation && !APPROVED_ART_ANY_SUBJECTS.includes(art as (typeof APPROVED_ART_ANY_SUBJECTS)[number])) throw new Error('Choose a supported Crucis March Art subskill.')
   const published = getLifeModule(FEDERATED_SUNS_CRUCIS_MARCH_ID)
   const module: LifeModuleDefinition = {
     ...published,
@@ -1057,7 +1071,7 @@ export function applyFederatedSunsCrucisMarch(character: CharacterDefinition, na
     const artDestination: ResolvedLifeModuleDestination = {
     type: 'skill',
     targetId: 'skill.art',
-    displayName: 'Art/Painting',
+    displayName: `Art/${art!}`,
     parameter: { kind: 'subskill', value: art! },
   }
     nextState.choiceGrantRequirements.push({ moduleId: published.id, awardId: 'crucis.skill.art', requiredGrants: 1 })
@@ -1102,6 +1116,8 @@ export function applyFederatedSunsMarch(character: CharacterDefinition, marchId:
   }
   const draconisArt = includeSubAffiliation && marchId === FEDERATED_SUNS_DRACONIS_MARCH_ID && art?.trim()
   const outbackSubject = includeSubAffiliation && marchId === FEDERATED_SUNS_OUTBACK_ID ? art?.trim() : ''
+  if (marchId === FEDERATED_SUNS_DRACONIS_MARCH_ID && draconisArt && !APPROVED_ART_ANY_SUBJECTS.includes(art!.trim() as (typeof APPROVED_ART_ANY_SUBJECTS)[number])) throw new Error('Choose a supported Draconis March Art subskill.')
+  if (marchId === FEDERATED_SUNS_OUTBACK_ID && outbackSubject?.startsWith('Art/') && !APPROVED_ART_ANY_SUBJECTS.includes(outbackSubject.slice('Art/'.length).trim() as (typeof APPROVED_ART_ANY_SUBJECTS)[number])) throw new Error('Choose a supported Outback Art subskill.')
   if (marchId === FEDERATED_SUNS_OUTBACK_ID && (!outbackSubject || !survivalSubject.trim() || outbackSubject === '__other__')) throw new Error('Choose an Outback Art or Interest subject and Survival environment.')
   let next = applyModule(character, module, resolutions)
   if (draconisArt) {

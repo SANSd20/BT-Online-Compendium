@@ -18,7 +18,7 @@ describe('Life Modules wizard presentation', () => {
   it('preserves the Life Modules release-status badge without duplicating the application version', () => {
     const markup = renderToStaticMarkup(<LifeModulesVersionBadge />)
     expect(markup).toContain('Public Alpha · Slice 165-B21')
-    expect(markup).not.toContain('v0.1.0-alpha.165-b21')
+    expect(markup).not.toContain('v0.1.0-alpha.165-b22')
     expect(markup).not.toContain('Slice 22')
   })
 

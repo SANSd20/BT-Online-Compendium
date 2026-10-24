@@ -3,7 +3,7 @@ import type { CharacterDefinition, EquipmentAffiliationCategory, EquipmentCatalo
 import { EQUIPMENT_CATALOG, EQUIPMENT_CATALOG_CATEGORIES, filterEquipmentCatalog } from '../../domain/equipment/catalog'
 import { adjustedOwnedEquipmentLimits, calculateEquipmentAccess } from '../../domain/finalTouches/rules'
 import { AGITATOR_ID, BACK_WOODS_ID, BLUE_COLLAR_ID, COMSTAR_WOB_SERVICE_ID, FAMILY_TRAINING_ID, FARM_ID, getLifeModule, INTELLIGENCE_OPERATIVE_TRAINING_ID, MILITARY_ACADEMY_ID, MILITARY_ENLISTMENT_ID, MILITARY_SCHOOL_ID, OFFICER_TRAINING_SCHOOL_ID, POLICE_ACADEMY_ID, SOLARIS_INTERNSHIP_ID, STAGE_2_BACK_WOODS_ID, STAGE_2_HIGH_SCHOOL_ID, TECHNICAL_COLLEGE_ID, TRADE_SCHOOL_ID, UNIVERSITY_ID, WAR_ORPHAN_ID } from '../../domain/lifeModules/catalog'
-import { DRACONIS_AZAMI_ID, DRACONIS_COMBINE_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
+import { DRACONIS_COMBINE_CONTEXT, getLifeModuleAffiliationContextByAffiliationId, type OrderAffiliationSelection } from '../../domain/lifeModules/affiliations'
 import { openSubjectChoiceOptions, pendingAwardOptions, pendingAwardUnsupportedMessage, pendingOpenSubject, type PendingAwardOption } from '../../domain/lifeModules/awardOptions'
 import { stage3SchoolEligibility } from '../../domain/lifeModules/stage3Schooling'
 import { capellanCitizenshipEligibility } from '../../domain/lifeModules/capellanRestrictions'
@@ -203,7 +203,7 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
   const stageExistingFallbackAwards = genericPendingAwards.filter((pending) => !stageExistingSlotAwards.some((candidate) => candidate.id === pending.id))
   const stagePresentation = state ? lifeModuleStagePresentation(state.phase) : null
   const stage0Preview = useMemo(() => character && state?.phase === 'stage-0-affiliation'
-    ? previewStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude, davionArt, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill, stage0SubAffiliation, survivalSubject, draconisTraitChoice, draconisWeaponChoice, { survival: survivalSubject, language: draconisLanguageSubject, art: draconisArtSubject })
+    ? previewStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude, davionArt, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill, stage0SubAffiliation, survivalSubject, draconisTraitChoice, draconisWeaponChoice, { survival: survivalSubject, language: draconisLanguageSubject, art: draconisArtSubject, protocol: davionNaturalAptitude })
     : null, [character, state?.phase, stage0AffiliationContext, stage0SubAffiliation, affiliationLanguage, secondaryLanguage, davionNaturalAptitude, davionArt, survivalSubject, draconisTraitChoice, draconisWeaponChoice, draconisLanguageSubject, draconisArtSubject, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill])
   const stage0PreviewSelections = state?.phase === 'stage-0-affiliation' ? [
     ...(stage0AffiliationContext ? ['Affiliation context selected'] : []),
@@ -219,7 +219,8 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
   const stageModulePreview = useMemo(() => character
     ? previewStageModuleChoiceSlots(character, stageModulePreviewId, stageChoiceSlotValues, stage3FieldIds, stage3PersonalDetail)
     : null, [character, stageModulePreviewId, stageChoiceSlotValues, stage3FieldIds, stage3PersonalDetail])
-  const activePreview = stage0Preview ?? stageModulePreview?.character ?? null
+  const stage0PreviewFailed = Boolean(character && state?.phase === 'stage-0-affiliation' && stage0AffiliationContext && stage0Preview === null)
+  const activePreview = stage0PreviewFailed ? null : stage0Preview ?? stageModulePreview?.character ?? null
   const activePreviewSelections = stage0PreviewSelections.length > 0
     ? stage0PreviewSelections
     : stageModulePreviewId ? [`Selected module: ${stageModulePreview?.character.lifeModuleHistory.at(-1)?.displayName ?? stageModulePreviewId}`] : []
@@ -704,8 +705,12 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
                   const draconisParent = stage0AffiliationContext === DRACONIS_COMBINE_CONTEXT.id || getLifeModuleAffiliationContextByAffiliationId(birthAffiliationId)?.affiliationId === DRACONIS_COMBINE_CONTEXT.affiliationId
                   setStage0SubAffiliation(value)
                   if (!draconisParent && value !== 'no') setStage0AffiliationContext(value)
+                  setSecondaryLanguage('')
                   setDavionArt('')
-                  if (value !== DRACONIS_AZAMI_ID) setSurvivalSubject('')
+                  setDavionNaturalAptitude('')
+                  setSurvivalSubject('')
+                  setDraconisLanguageSubject('')
+                  setDraconisArtSubject('')
                 }}
                 onLanguageChange={setAffiliationLanguage}
                 onSecondaryLanguageChange={setSecondaryLanguage}
@@ -722,7 +727,8 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
                 onOrderSecondaryLanguageChange={setOrderSecondaryLanguage}
                 onOrderTechnicianSubskillChange={setOrderTechnicianSubskill}
                 onApplyUniversal={() => operate(() => applyUniversalStage0(character, stage0AffiliationContext, affiliationLanguage), 'Universal Stage 0 package applied with explicit affiliation context.')}
-                onApplyAffiliation={() => operate(() => applyStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude ? davionNaturalAptitude as 'Protocol' | 'Strategy' : undefined, davionArt || undefined, orderAffiliation, orderNearestStateContext || undefined, orderSecondaryLanguage || undefined, orderTechnicianSubskill || undefined, stage0SubAffiliation, survivalSubject, draconisTraitChoice as 'Pain Resistance' | 'Combat Sense', draconisWeaponChoice as 'Archery' | 'Melee Weapons' | 'Thrown Weapons/Blade', { survival: survivalSubject, language: draconisLanguageSubject, art: draconisArtSubject }), 'Stage 0 birth, optional sub-affiliation, and optional order affiliation packages applied with explicit choices.')}
+                onApplyAffiliation={() => operate(() => applyStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude ? davionNaturalAptitude as 'Protocol' | 'Strategy' : undefined, davionArt || undefined, orderAffiliation, orderNearestStateContext || undefined, orderSecondaryLanguage || undefined, orderTechnicianSubskill || undefined, stage0SubAffiliation, survivalSubject, draconisTraitChoice as 'Pain Resistance' | 'Combat Sense', draconisWeaponChoice as 'Archery' | 'Melee Weapons' | 'Thrown Weapons/Blade', { survival: survivalSubject, language: draconisLanguageSubject, art: draconisArtSubject, protocol: davionNaturalAptitude }), 'Stage 0 birth, optional sub-affiliation, and optional order affiliation packages applied with explicit choices.')}
+                previewFailed={stage0PreviewFailed}
                 accumulatedValues={<LifeModuleAccumulatedValues character={character} previewCharacter={activePreview} />}
               />
             )}
