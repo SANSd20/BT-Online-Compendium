@@ -46,8 +46,8 @@ function canonicalExportDevPlugin() {
         const file = request.url === '/__canonical-export/fwl' ? 'free-worlds-league-export.json' : request.url === '/__canonical-export/capellan' ? 'capellan-confederation-export.json' : ''
         if (!file) { next(); return }
         try {
-          const root = resolve(process.cwd(), '..', 'AToW-Reference-Data')
-          const value = JSON.parse(readFileSync(resolve(root, 'exports', file), 'utf8'))
+          const root = resolve(process.cwd(), 'src', 'experimental', 'generated', 'canonical')
+          const value = JSON.parse(readFileSync(resolve(root, file), 'utf8'))
           const normalized = normalizeCanonicalExport(value, 'c83652c36cb5078aaadc072dea5f57dcad1fd563')
           response.setHeader('Content-Type', 'application/json')
           response.end(JSON.stringify(normalized))

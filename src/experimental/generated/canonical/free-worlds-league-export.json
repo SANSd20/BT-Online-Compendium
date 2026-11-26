@@ -1,0 +1,1098 @@
+{
+  "exportFormatVersion": "0.1.0",
+  "canonicalSchemaVersion": "0.4b",
+  "referenceRepository": {
+    "name": "SANSd20/AToW-Reference-Data",
+    "revision": "c83652c36cb5078aaadc072dea5f57dcad1fd563"
+  },
+  "family": "free-worlds-league",
+  "records": [
+    {
+      "schemaVersion": "0.4b",
+      "id": "affiliation.free-worlds-league",
+      "recordType": "affiliation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Free Worlds League",
+      "claimRefs": [
+        "affiliation.free-worlds-league.page-66"
+      ],
+      "claims": [
+        {
+          "id": "affiliation.free-worlds-league.page-66",
+          "claimKind": "OBSERVATION",
+          "subjectId": "affiliation.free-worlds-league",
+          "semanticTarget": {
+            "recordId": "affiliation.free-worlds-league",
+            "path": "/mechanics"
+          },
+          "value": "Corrected Third Printing page 66: Free Worlds League effective Stage 0 mechanics.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "66",
+              "pdfPageIndex": 67,
+              "section": "Free Worlds League (House Marik)"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "EXPORT_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "costXp": 150
+      },
+      "mechanics": {
+        "stage": 0,
+        "conditions": [],
+        "effects": [],
+        "choices": [
+          {
+            "id": "choice.fwl.secondary-language",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.fwl.secondary-language.selection",
+                "domainId": "domain.great-house.secondary-language",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "ALLOW",
+                "required": true,
+                "resolutionTiming": "TRANSACTION",
+                "award": {
+                  "quantity": {
+                    "unit": "XP",
+                    "value": 15
+                  },
+                  "destinationBinding": "SELECTED_CHOICE",
+                  "claimRefs": [
+                    "affiliation.free-worlds-league.page-66"
+                  ],
+                  "repeatBehavior": "FIRST_ONLY"
+                }
+              }
+            ]
+          },
+          {
+            "id": "choice.fwl.art",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.fwl.art.selection",
+                "domainId": "domain.skill.art.any",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "ALLOW",
+                "required": true,
+                "resolutionTiming": "TRANSACTION",
+                "award": {
+                  "quantity": {
+                    "unit": "XP",
+                    "value": 10
+                  },
+                  "destinationBinding": "SELECTED_CHOICE",
+                  "claimRefs": [
+                    "affiliation.free-worlds-league.page-66"
+                  ],
+                  "repeatBehavior": "FIRST_ONLY"
+                }
+              }
+            ]
+          }
+        ],
+        "composition": {
+          "includes": []
+        }
+      }
+    },
+    {
+      "schemaVersion": "0.4b",
+      "id": "affiliation.free-worlds-league.duchy-of-andurien",
+      "recordType": "affiliation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Duchy of Andurien",
+      "claimRefs": [
+        "affiliation.free-worlds-league.duchy-of-andurien.page-66"
+      ],
+      "claims": [
+        {
+          "id": "affiliation.free-worlds-league.duchy-of-andurien.page-66",
+          "claimKind": "OBSERVATION",
+          "subjectId": "affiliation.free-worlds-league.duchy-of-andurien",
+          "semanticTarget": {
+            "recordId": "affiliation.free-worlds-league.duchy-of-andurien",
+            "path": "/mechanics"
+          },
+          "value": "Corrected Third Printing page 66: Duchy of Andurien effective mechanics.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "66",
+              "pdfPageIndex": 67,
+              "section": "Free Worlds League (House Marik)"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "EXPORT_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "costXp": 0,
+        "parentId": "affiliation.free-worlds-league"
+      },
+      "mechanics": {
+        "stage": 0,
+        "conditions": [],
+        "effects": [
+          {
+            "id": "andurien.wil",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "ATTRIBUTE",
+              "entityId": "attribute.wil"
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 50
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.duchy-of-andurien.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "andurien.combat-sense",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.combat-sense"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 215
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.duchy-of-andurien.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "andurien.hatred-liao",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.compulsion",
+                "parameters": [
+                  {
+                    "name": "subject",
+                    "value": "Hatred of House Liao"
+                  }
+                ]
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": -100
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.duchy-of-andurien.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "andurien.atrean",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.compulsion",
+                "parameters": [
+                  {
+                    "name": "subject",
+                    "value": "Atrean Opponent"
+                  }
+                ]
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": -50
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.duchy-of-andurien.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "andurien.reputation",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.reputation"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": -30
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.duchy-of-andurien.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "andurien.negotiation",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.negotiation"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 15
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.duchy-of-andurien.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "andurien.perception",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.perception"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 10
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.duchy-of-andurien.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "andurien.protocol",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.protocol",
+                "subject": {
+                  "kind": "CANONICAL",
+                  "id": "subject.free-worlds"
+                }
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 15
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.duchy-of-andurien.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          }
+        ],
+        "choices": [],
+        "composition": {
+          "includes": [
+            {
+              "packageId": "affiliation.free-worlds-league",
+              "mergePolicy": "ACCUMULATE_COMPATIBLE"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "schemaVersion": "0.4b",
+      "id": "affiliation.free-worlds-league.duchy-of-oriente",
+      "recordType": "affiliation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Duchy of Oriente",
+      "claimRefs": [
+        "affiliation.free-worlds-league.duchy-of-oriente.page-66"
+      ],
+      "claims": [
+        {
+          "id": "affiliation.free-worlds-league.duchy-of-oriente.page-66",
+          "claimKind": "OBSERVATION",
+          "subjectId": "affiliation.free-worlds-league.duchy-of-oriente",
+          "semanticTarget": {
+            "recordId": "affiliation.free-worlds-league.duchy-of-oriente",
+            "path": "/mechanics"
+          },
+          "value": "Corrected Third Printing page 66: Duchy of Oriente effective mechanics.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "66",
+              "pdfPageIndex": 67,
+              "section": "Free Worlds League (House Marik)"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "EXPORT_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "costXp": 0,
+        "parentId": "affiliation.free-worlds-league"
+      },
+      "mechanics": {
+        "stage": 0,
+        "conditions": [],
+        "effects": [
+          {
+            "id": "oriente.reputation",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.reputation"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 100
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.duchy-of-oriente.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "oriente.appraisal",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.appraisal"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 5
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.duchy-of-oriente.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "oriente.negotiation",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.negotiation"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 15
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.duchy-of-oriente.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          }
+        ],
+        "choices": [
+          {
+            "id": "choice.oriente.technician",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.oriente.technician.selection",
+                "domainId": "domain.skill.any",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "ALLOW",
+                "required": true,
+                "resolutionTiming": "TRANSACTION",
+                "award": {
+                  "quantity": {
+                    "unit": "XP",
+                    "value": 5
+                  },
+                  "destinationBinding": "SELECTED_CHOICE",
+                  "claimRefs": [
+                    "affiliation.free-worlds-league.duchy-of-oriente.page-66"
+                  ],
+                  "repeatBehavior": "FIRST_ONLY"
+                }
+              }
+            ]
+          }
+        ],
+        "composition": {
+          "includes": [
+            {
+              "packageId": "affiliation.free-worlds-league",
+              "mergePolicy": "ACCUMULATE_COMPATIBLE"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "schemaVersion": "0.4b",
+      "id": "affiliation.free-worlds-league.marik-commonwealth",
+      "recordType": "affiliation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Marik Commonwealth",
+      "claimRefs": [
+        "affiliation.free-worlds-league.marik-commonwealth.page-66"
+      ],
+      "claims": [
+        {
+          "id": "affiliation.free-worlds-league.marik-commonwealth.page-66",
+          "claimKind": "OBSERVATION",
+          "subjectId": "affiliation.free-worlds-league.marik-commonwealth",
+          "semanticTarget": {
+            "recordId": "affiliation.free-worlds-league.marik-commonwealth",
+            "path": "/mechanics"
+          },
+          "value": "Corrected Third Printing page 66: Marik Commonwealth effective mechanics.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "66",
+              "pdfPageIndex": 67,
+              "section": "Free Worlds League (House Marik)"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "EXPORT_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "costXp": 0,
+        "parentId": "affiliation.free-worlds-league"
+      },
+      "mechanics": {
+        "stage": 0,
+        "conditions": [],
+        "effects": [
+          {
+            "id": "marik.wealth",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.wealth"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 100
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.marik-commonwealth.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "marik.equipped",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.equipped"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 100
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.marik-commonwealth.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "marik.reputation",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.reputation"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": -100
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.marik-commonwealth.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "marik.appraisal",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.appraisal"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 5
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.marik-commonwealth.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "marik.negotiation",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.negotiation"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 10
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.marik-commonwealth.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "marik.protocol",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.protocol",
+                "subject": {
+                  "kind": "CANONICAL",
+                  "id": "subject.free-worlds"
+                }
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 10
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.marik-commonwealth.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          }
+        ],
+        "choices": [],
+        "composition": {
+          "includes": [
+            {
+              "packageId": "affiliation.free-worlds-league",
+              "mergePolicy": "ACCUMULATE_COMPATIBLE"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "schemaVersion": "0.4b",
+      "id": "affiliation.free-worlds-league.other-fwl-worlds",
+      "recordType": "affiliation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Other FWL Worlds",
+      "claimRefs": [
+        "affiliation.free-worlds-league.other-fwl-worlds.page-66"
+      ],
+      "claims": [
+        {
+          "id": "affiliation.free-worlds-league.other-fwl-worlds.page-66",
+          "claimKind": "OBSERVATION",
+          "subjectId": "affiliation.free-worlds-league.other-fwl-worlds",
+          "semanticTarget": {
+            "recordId": "affiliation.free-worlds-league.other-fwl-worlds",
+            "path": "/mechanics"
+          },
+          "value": "Corrected Third Printing page 66: Other FWL Worlds requires one Trait choice, two independent Skills, and one Attribute, Trait, or restricted Language Skill flexible destination.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "66",
+              "pdfPageIndex": 67,
+              "section": "Free Worlds League (House Marik)"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "EXPORT_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "costXp": 0,
+        "parentId": "affiliation.free-worlds-league"
+      },
+      "mechanics": {
+        "stage": 0,
+        "conditions": [],
+        "effects": [
+          {
+            "id": "other.appraisal",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.appraisal"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 15
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.other-fwl-worlds.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "other.protocol",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.protocol",
+                "subject": {
+                  "kind": "CANONICAL",
+                  "id": "subject.free-worlds"
+                }
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 10
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.other-fwl-worlds.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          }
+        ],
+        "choices": [
+          {
+            "id": "choice.other.language",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.other.language.selection",
+                "domainId": "domain.skill.language.any",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "ALLOW",
+                "required": true,
+                "resolutionTiming": "TRANSACTION",
+                "award": {
+                  "quantity": {
+                    "unit": "XP",
+                    "value": 20
+                  },
+                  "destinationBinding": "SELECTED_CHOICE",
+                  "claimRefs": [
+                    "affiliation.free-worlds-league.other-fwl-worlds.page-66"
+                  ],
+                  "repeatBehavior": "FIRST_ONLY"
+                }
+              }
+            ]
+          },
+          {
+            "id": "choice.other.trait",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.other.trait.selection",
+                "domainId": "domain.trait.any",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "ALLOW",
+                "required": true,
+                "resolutionTiming": "TRANSACTION",
+                "award": {
+                  "quantity": {
+                    "unit": "XP",
+                    "value": 35
+                  },
+                  "destinationBinding": "SELECTED_CHOICE",
+                  "claimRefs": [
+                    "affiliation.free-worlds-league.other-fwl-worlds.page-66"
+                  ],
+                  "repeatBehavior": "FIRST_ONLY"
+                }
+              }
+            ]
+          },
+          {
+            "id": "choice.other.skill.1",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.other.skill.1.selection",
+                "domainId": "domain.skill.any",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "ALLOW",
+                "required": true,
+                "resolutionTiming": "TRANSACTION",
+                "award": {
+                  "quantity": {
+                    "unit": "XP",
+                    "value": 10
+                  },
+                  "destinationBinding": "SELECTED_CHOICE",
+                  "claimRefs": [
+                    "affiliation.free-worlds-league.other-fwl-worlds.page-66"
+                  ],
+                  "repeatBehavior": "FIRST_ONLY"
+                }
+              }
+            ]
+          },
+          {
+            "id": "choice.other.skill.2",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.other.skill.2.selection",
+                "domainId": "domain.skill.any",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "ALLOW",
+                "required": true,
+                "resolutionTiming": "TRANSACTION",
+                "award": {
+                  "quantity": {
+                    "unit": "XP",
+                    "value": 10
+                  },
+                  "destinationBinding": "SELECTED_CHOICE",
+                  "claimRefs": [
+                    "affiliation.free-worlds-league.other-fwl-worlds.page-66"
+                  ],
+                  "repeatBehavior": "FIRST_ONLY"
+                }
+              }
+            ]
+          },
+          {
+            "id": "choice.other.flexible",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.other.flexible.selection",
+                "domainId": "domain.flexible-attribute-trait-skill",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "ALLOW",
+                "required": true,
+                "resolutionTiming": "TRANSACTION",
+                "award": {
+                  "quantity": {
+                    "unit": "XP",
+                    "value": 25
+                  },
+                  "destinationBinding": "SELECTED_CHOICE",
+                  "claimRefs": [
+                    "affiliation.free-worlds-league.other-fwl-worlds.page-66"
+                  ],
+                  "repeatBehavior": "FIRST_ONLY"
+                }
+              }
+            ]
+          }
+        ],
+        "composition": {
+          "includes": [
+            {
+              "packageId": "affiliation.free-worlds-league",
+              "mergePolicy": "ACCUMULATE_COMPATIBLE"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "schemaVersion": "0.4b",
+      "id": "affiliation.free-worlds-league.principality-of-regulus",
+      "recordType": "affiliation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Principality of Regulus",
+      "claimRefs": [
+        "affiliation.free-worlds-league.principality-of-regulus.page-66"
+      ],
+      "claims": [
+        {
+          "id": "affiliation.free-worlds-league.principality-of-regulus.page-66",
+          "claimKind": "OBSERVATION",
+          "subjectId": "affiliation.free-worlds-league.principality-of-regulus",
+          "semanticTarget": {
+            "recordId": "affiliation.free-worlds-league.principality-of-regulus",
+            "path": "/mechanics"
+          },
+          "value": "Corrected Third Printing page 66: Principality of Regulus effective mechanics.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "66",
+              "pdfPageIndex": 67,
+              "section": "Free Worlds League (House Marik)"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "EXPORT_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "costXp": 0,
+        "parentId": "affiliation.free-worlds-league"
+      },
+      "mechanics": {
+        "stage": 0,
+        "conditions": [],
+        "effects": [
+          {
+            "id": "regulus.wil",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "ATTRIBUTE",
+              "entityId": "attribute.wil"
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 75
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.principality-of-regulus.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "regulus.gregarious",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.gregarious"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 75
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.principality-of-regulus.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "regulus.atrean",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.compulsion",
+                "parameters": [
+                  {
+                    "name": "subject",
+                    "value": "Atrean Opponent"
+                  }
+                ]
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": -50
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.principality-of-regulus.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "regulus.reputation",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.reputation"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": -50
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.principality-of-regulus.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "regulus.interest",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.interest",
+                "subject": {
+                  "kind": "CANONICAL",
+                  "id": "subject.regulan-history"
+                }
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 20
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.principality-of-regulus.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "regulus.negotiation",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.negotiation"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 25
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.principality-of-regulus.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "regulus.perception",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.perception"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 15
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.principality-of-regulus.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "regulus.protocol",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.protocol",
+                "subject": {
+                  "kind": "CANONICAL",
+                  "id": "subject.free-worlds"
+                }
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 15
+            },
+            "claimRefs": [
+              "affiliation.free-worlds-league.principality-of-regulus.page-66"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          }
+        ],
+        "choices": [],
+        "composition": {
+          "includes": [
+            {
+              "packageId": "affiliation.free-worlds-league",
+              "mergePolicy": "ACCUMULATE_COMPATIBLE"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "restrictionRecords": [],
+  "restrictionDependencyIds": [],
+  "contentDigest": "417f2ed690a021e85348a8733f51bb5d5ee047d47c1fae0707e7eb1f209ef229"
+}

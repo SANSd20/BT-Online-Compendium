@@ -1,0 +1,1433 @@
+{
+  "exportFormatVersion": "0.1.0",
+  "canonicalSchemaVersion": "0.4b",
+  "referenceRepository": {
+    "name": "SANSd20/AToW-Reference-Data",
+    "revision": "c83652c36cb5078aaadc072dea5f57dcad1fd563"
+  },
+  "family": "capellan-confederation",
+  "records": [
+    {
+      "schemaVersion": "0.4b",
+      "id": "affiliation.capellan-confederation",
+      "recordType": "affiliation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Capellan Confederation",
+      "claimRefs": [
+        "claim.affiliation.capellan-confederation.page-64"
+      ],
+      "claims": [
+        {
+          "id": "claim.affiliation.capellan-confederation.page-64",
+          "claimKind": "OBSERVATION",
+          "subjectId": "affiliation.capellan-confederation",
+          "semanticTarget": {
+            "recordId": "affiliation.capellan-confederation",
+            "path": "/mechanics"
+          },
+          "value": "Corrected Third Printing page 64: Capellan Confederation effective mechanics; stale second-printing transcription excluded.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "64",
+              "pdfPageIndex": 65,
+              "section": "Capellan Confederation (House Liao)"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "EXPORT_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "costXp": 150
+      },
+      "mechanics": {
+        "stage": 0,
+        "conditions": [],
+        "effects": [
+          {
+            "id": "affiliation.capellan-confederation.wil",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "ATTRIBUTE",
+              "entityId": "attribute.wil"
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 50
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.compulsion",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.compulsion",
+                "parameters": [
+                  {
+                    "name": "subject",
+                    "value": "paranoia"
+                  }
+                ]
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": -100
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.exceptional",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.exceptional-attribute",
+                "parameters": [
+                  {
+                    "name": "subject",
+                    "value": "EDG"
+                  }
+                ]
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 100
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.protocol",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.protocol",
+                "subject": {
+                  "kind": "CANONICAL",
+                  "id": "subject.capellan"
+                }
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 10
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.martial-arts",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.martial-arts"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 5
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.language",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.language"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 10
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          }
+        ],
+        "choices": [],
+        "composition": {
+          "includes": []
+        }
+      }
+    },
+    {
+      "schemaVersion": "0.4b",
+      "id": "affiliation.capellan-confederation.capellan-commonality",
+      "recordType": "affiliation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Capellan Commonality",
+      "claimRefs": [
+        "claim.affiliation.capellan-confederation.capellan-commonality.page-64"
+      ],
+      "claims": [
+        {
+          "id": "claim.affiliation.capellan-confederation.capellan-commonality.page-64",
+          "claimKind": "OBSERVATION",
+          "subjectId": "affiliation.capellan-confederation.capellan-commonality",
+          "semanticTarget": {
+            "recordId": "affiliation.capellan-confederation.capellan-commonality",
+            "path": "/mechanics"
+          },
+          "value": "Corrected Third Printing page 64: Capellan Commonality effective mechanics; stale second-printing transcription excluded.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "64",
+              "pdfPageIndex": 65,
+              "section": "Capellan Confederation (House Liao)"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "EXPORT_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "costXp": 0,
+        "parentId": "affiliation.capellan-confederation"
+      },
+      "mechanics": {
+        "stage": 0,
+        "conditions": [],
+        "effects": [
+          {
+            "id": "affiliation.capellan-confederation.capellan-commonality.edg",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "ATTRIBUTE",
+              "entityId": "attribute.edg"
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 50
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.capellan-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.capellan-commonality.wealth",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.wealth"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 15
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.capellan-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.capellan-commonality.language",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.language",
+                "subject": {
+                  "kind": "CANONICAL",
+                  "id": "subject.fedsuns"
+                }
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 5
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.capellan-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.capellan-commonality.protocol",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.protocol",
+                "subject": {
+                  "kind": "CANONICAL",
+                  "id": "subject.fedsuns"
+                }
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 5
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.capellan-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          }
+        ],
+        "choices": [],
+        "composition": {
+          "includes": [
+            {
+              "packageId": "affiliation.capellan-confederation",
+              "mergePolicy": "ACCUMULATE_COMPATIBLE"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "schemaVersion": "0.4b",
+      "id": "affiliation.capellan-confederation.liao-commonality",
+      "recordType": "affiliation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Liao Commonality",
+      "claimRefs": [
+        "claim.affiliation.capellan-confederation.liao-commonality.page-64"
+      ],
+      "claims": [
+        {
+          "id": "claim.affiliation.capellan-confederation.liao-commonality.page-64",
+          "claimKind": "OBSERVATION",
+          "subjectId": "affiliation.capellan-confederation.liao-commonality",
+          "semanticTarget": {
+            "recordId": "affiliation.capellan-confederation.liao-commonality",
+            "path": "/mechanics"
+          },
+          "value": "Corrected Third Printing page 64: Liao Commonality effective mechanics; stale second-printing transcription excluded.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "64",
+              "pdfPageIndex": 65,
+              "section": "Capellan Confederation (House Liao)"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "EXPORT_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "costXp": 0,
+        "parentId": "affiliation.capellan-confederation"
+      },
+      "mechanics": {
+        "stage": 0,
+        "conditions": [],
+        "effects": [
+          {
+            "id": "affiliation.capellan-confederation.liao-commonality.int",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "ATTRIBUTE",
+              "entityId": "attribute.int"
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 50
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.liao-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.liao-commonality.reputation",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.reputation"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": -25
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.liao-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.liao-commonality.art",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.art"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 10
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.liao-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.liao-commonality.martial-arts",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.martial-arts"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 15
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.liao-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          }
+        ],
+        "choices": [
+          {
+            "id": "choice.affiliation.capellan-confederation.liao-commonality.1",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.affiliation.capellan-confederation.liao-commonality.1.selection",
+                "domainId": "domain.great-house.capellan.secondary-language",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "PROHIBIT",
+                "required": true,
+                "resolutionTiming": "TRANSACTION"
+              }
+            ]
+          },
+          {
+            "id": "choice.affiliation.capellan-confederation.liao-commonality.2",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.affiliation.capellan-confederation.liao-commonality.2.selection",
+                "domainId": "domain.great-house.protocol-context",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "PROHIBIT",
+                "required": true,
+                "resolutionTiming": "TRANSACTION"
+              }
+            ]
+          }
+        ],
+        "composition": {
+          "includes": [
+            {
+              "packageId": "affiliation.capellan-confederation",
+              "mergePolicy": "ACCUMULATE_COMPATIBLE"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "schemaVersion": "0.4b",
+      "id": "affiliation.capellan-confederation.sian-commonality",
+      "recordType": "affiliation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Sian Commonality",
+      "claimRefs": [
+        "claim.affiliation.capellan-confederation.sian-commonality.page-64"
+      ],
+      "claims": [
+        {
+          "id": "claim.affiliation.capellan-confederation.sian-commonality.page-64",
+          "claimKind": "OBSERVATION",
+          "subjectId": "affiliation.capellan-confederation.sian-commonality",
+          "semanticTarget": {
+            "recordId": "affiliation.capellan-confederation.sian-commonality",
+            "path": "/mechanics"
+          },
+          "value": "Corrected Third Printing page 64: Sian Commonality effective mechanics; stale second-printing transcription excluded.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "64",
+              "pdfPageIndex": 65,
+              "section": "Capellan Confederation (House Liao)"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "EXPORT_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "costXp": 0,
+        "parentId": "affiliation.capellan-confederation"
+      },
+      "mechanics": {
+        "stage": 0,
+        "conditions": [],
+        "effects": [
+          {
+            "id": "affiliation.capellan-confederation.sian-commonality.wil",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "ATTRIBUTE",
+              "entityId": "attribute.wil"
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 75
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.sian-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.sian-commonality.compulsion",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.compulsion",
+                "parameters": [
+                  {
+                    "name": "subject",
+                    "value": "hatred-federated-suns"
+                  }
+                ]
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": -135
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.sian-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.sian-commonality.citizenship",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.citizenship",
+                "parameters": [
+                  {
+                    "name": "subject",
+                    "value": "capellan"
+                  }
+                ]
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 50
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.sian-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.sian-commonality.connections",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.connections",
+                "parameters": [
+                  {
+                    "name": "subject",
+                    "value": "capellan"
+                  }
+                ]
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 50
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.sian-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.sian-commonality.interest",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.interest",
+                "subject": {
+                  "kind": "CANONICAL",
+                  "id": "subject.capellan-history"
+                }
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 10
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.sian-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.sian-commonality.protocol",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.protocol",
+                "subject": {
+                  "kind": "CANONICAL",
+                  "id": "subject.capellan"
+                }
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 15
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.sian-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.sian-commonality.language",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.language"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 10
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.sian-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          }
+        ],
+        "choices": [
+          {
+            "id": "choice.affiliation.capellan-confederation.sian-commonality.1",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.affiliation.capellan-confederation.sian-commonality.1.selection",
+                "domainId": "domain.great-house.capellan.secondary-language",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "PROHIBIT",
+                "required": true,
+                "resolutionTiming": "TRANSACTION"
+              }
+            ]
+          }
+        ],
+        "composition": {
+          "includes": [
+            {
+              "packageId": "affiliation.capellan-confederation",
+              "mergePolicy": "ACCUMULATE_COMPATIBLE"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "schemaVersion": "0.4b",
+      "id": "affiliation.capellan-confederation.st-ives-commonality",
+      "recordType": "affiliation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "St. Ives Commonality",
+      "claimRefs": [
+        "claim.affiliation.capellan-confederation.st-ives-commonality.page-64"
+      ],
+      "claims": [
+        {
+          "id": "claim.affiliation.capellan-confederation.st-ives-commonality.page-64",
+          "claimKind": "OBSERVATION",
+          "subjectId": "affiliation.capellan-confederation.st-ives-commonality",
+          "semanticTarget": {
+            "recordId": "affiliation.capellan-confederation.st-ives-commonality",
+            "path": "/mechanics"
+          },
+          "value": "Corrected Third Printing page 64: St. Ives Commonality effective mechanics; stale second-printing transcription excluded.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "64",
+              "pdfPageIndex": 65,
+              "section": "Capellan Confederation (House Liao)"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "EXPORT_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "costXp": 0,
+        "parentId": "affiliation.capellan-confederation"
+      },
+      "mechanics": {
+        "stage": 0,
+        "conditions": [],
+        "effects": [
+          {
+            "id": "affiliation.capellan-confederation.st-ives-commonality.wil",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "ATTRIBUTE",
+              "entityId": "attribute.wil"
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 50
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.st-ives-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.st-ives-commonality.edg",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "ATTRIBUTE",
+              "entityId": "attribute.edg"
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 50
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.st-ives-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.st-ives-commonality.reputation",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.reputation"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": -100
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.st-ives-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.st-ives-commonality.wealth",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.wealth"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 50
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.st-ives-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.st-ives-commonality.protocol-capellan",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.protocol",
+                "subject": {
+                  "kind": "CANONICAL",
+                  "id": "subject.capellan"
+                }
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": -15
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.st-ives-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.st-ives-commonality.protocol-fedsuns",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.protocol",
+                "subject": {
+                  "kind": "CANONICAL",
+                  "id": "subject.fedsuns"
+                }
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 10
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.st-ives-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.st-ives-commonality.art",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.art"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 5
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.st-ives-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.st-ives-commonality.martial-arts",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.martial-arts"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 10
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.st-ives-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          }
+        ],
+        "choices": [
+          {
+            "id": "choice.affiliation.capellan-confederation.st-ives-commonality.1",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.affiliation.capellan-confederation.st-ives-commonality.1.selection",
+                "domainId": "domain.great-house.federated-suns.language",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "PROHIBIT",
+                "required": true,
+                "resolutionTiming": "TRANSACTION"
+              }
+            ]
+          }
+        ],
+        "composition": {
+          "includes": [
+            {
+              "packageId": "affiliation.capellan-confederation",
+              "mergePolicy": "ACCUMULATE_COMPATIBLE"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "schemaVersion": "0.4b",
+      "id": "affiliation.capellan-confederation.victoria-commonality",
+      "recordType": "affiliation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Victoria Commonality",
+      "claimRefs": [
+        "claim.affiliation.capellan-confederation.victoria-commonality.page-64"
+      ],
+      "claims": [
+        {
+          "id": "claim.affiliation.capellan-confederation.victoria-commonality.page-64",
+          "claimKind": "OBSERVATION",
+          "subjectId": "affiliation.capellan-confederation.victoria-commonality",
+          "semanticTarget": {
+            "recordId": "affiliation.capellan-confederation.victoria-commonality",
+            "path": "/mechanics"
+          },
+          "value": "Corrected Third Printing page 64: Victoria Commonality effective mechanics; stale second-printing transcription excluded.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "64",
+              "pdfPageIndex": 65,
+              "section": "Capellan Confederation (House Liao)"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "EXPORT_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "costXp": 0,
+        "parentId": "affiliation.capellan-confederation"
+      },
+      "mechanics": {
+        "stage": 0,
+        "conditions": [],
+        "effects": [
+          {
+            "id": "affiliation.capellan-confederation.victoria-commonality.wil",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "ATTRIBUTE",
+              "entityId": "attribute.wil"
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 35
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.victoria-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.victoria-commonality.connections",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.connections",
+                "parameters": [
+                  {
+                    "name": "subject",
+                    "value": "victoria"
+                  }
+                ]
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 50
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.victoria-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.victoria-commonality.wealth",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "TRAIT",
+              "address": {
+                "traitId": "trait.wealth"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": -50
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.victoria-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.victoria-commonality.language",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.language"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 15
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.victoria-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.victoria-commonality.negotiation",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.negotiation"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 10
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.victoria-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          },
+          {
+            "id": "affiliation.capellan-confederation.victoria-commonality.martial-arts",
+            "effectType": "XP_AWARD",
+            "destination": {
+              "kind": "SKILL",
+              "address": {
+                "skillId": "skill.martial-arts"
+              }
+            },
+            "quantity": {
+              "unit": "XP",
+              "value": 15
+            },
+            "claimRefs": [
+              "claim.affiliation.capellan-confederation.victoria-commonality.page-64"
+            ],
+            "repeatBehavior": "FIRST_ONLY"
+          }
+        ],
+        "choices": [
+          {
+            "id": "choice.affiliation.capellan-confederation.victoria-commonality.1",
+            "semantics": "MUTUALLY_EXCLUSIVE_BRANCH",
+            "choices": [
+              {
+                "id": "choice.affiliation.capellan-confederation.victoria-commonality.1.selection",
+                "domainId": "domain.skill.language.any",
+                "minimum": 1,
+                "maximum": 1,
+                "duplicatePolicy": "PROHIBIT",
+                "required": true,
+                "resolutionTiming": "TRANSACTION"
+              }
+            ]
+          }
+        ],
+        "composition": {
+          "includes": [
+            {
+              "packageId": "affiliation.capellan-confederation",
+              "mergePolicy": "ACCUMULATE_COMPATIBLE"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "restrictionRecords": [
+    {
+      "schemaVersion": "0.4b",
+      "id": "relation.capellan.stage-2-civilian-job-substitution",
+      "recordType": "relation",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Capellan Stage 2 Civilian Job substitution",
+      "claimRefs": [
+        "claim.relation.capellan.stage-2-civilian-job-substitution"
+      ],
+      "claims": [
+        {
+          "id": "claim.relation.capellan.stage-2-civilian-job-substitution",
+          "claimKind": "OBSERVATION",
+          "subjectId": "relation.capellan.stage-2-civilian-job-substitution",
+          "semanticTarget": {
+            "recordId": "relation.capellan.stage-2-civilian-job-substitution",
+            "path": "/contract"
+          },
+          "value": "A Capellan character may apply the Stage 4 Civilian Job module in place of a Stage 2 module and immediately becomes age 18.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "64",
+              "pdfPageIndex": 65,
+              "section": "Capellan Confederation"
+            },
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "85",
+              "pdfPageIndex": 86,
+              "section": "Stage 4 Modules: Real Life — Civilian Job"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "MECHANICALLY_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "sourceModuleId": "module.stage-4.civilian-job",
+        "sourceStage": 4,
+        "targetSelectionId": "progression.stage-2.selection-slot",
+        "appliedStage": 2,
+        "scopeAffiliationId": "affiliation.capellan-confederation",
+        "costXp": 600,
+        "awardBehavior": "NORMAL_CIVILIAN_JOB_AWARDS",
+        "chronology": {
+          "operation": "SET_AGE",
+          "ageYears": 18,
+          "suppressSourceDuration": true
+        },
+        "stage3Behavior": "REMAINS_AVAILABLE",
+        "provenancePages": [
+          "64",
+          "85"
+        ]
+      },
+      "mechanics": {
+        "stage": 2,
+        "conditions": [
+          {
+            "op": "PREDICATE",
+            "predicate": "AFFILIATION_IS",
+            "timing": "FINAL_DESIGN",
+            "arguments": {
+              "id": "affiliation.capellan-confederation"
+            }
+          }
+        ],
+        "effects": [
+          {
+            "id": "effect.relation.capellan.stage-2-civilian-job-substitution.set-age",
+            "effectType": "CHRONOLOGY",
+            "operation": "SET_AGE",
+            "quantity": {
+              "unit": "AGE_YEARS",
+              "value": 18
+            },
+            "claimRefs": [
+              "claim.relation.capellan.stage-2-civilian-job-substitution"
+            ],
+            "repeatBehavior": "PROHIBITED"
+          }
+        ],
+        "choices": [],
+        "composition": {
+          "includes": []
+        }
+      }
+    },
+    {
+      "schemaVersion": "0.4b",
+      "id": "restriction.scope.capellan-stage-2-military",
+      "recordType": "restriction",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Capellan Stage 2 Military School Citizenship restriction",
+      "claimRefs": [
+        "claim.restriction.scope.capellan-stage-2-military"
+      ],
+      "claims": [
+        {
+          "id": "claim.restriction.scope.capellan-stage-2-military",
+          "claimKind": "OBSERVATION",
+          "subjectId": "restriction.scope.capellan-stage-2-military",
+          "semanticTarget": {
+            "recordId": "restriction.scope.capellan-stage-2-military",
+            "path": "/contract"
+          },
+          "value": "Capellan Stage 2 Military School requires Citizenship.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "64",
+              "pdfPageIndex": 65,
+              "section": "Capellan Confederation"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "MECHANICALLY_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "scopeAffiliationId": "affiliation.capellan-confederation",
+        "targetId": "progression.stage-2.military-school",
+        "requiredTraitId": "trait.citizenship",
+        "enforcement": [
+          "TRANSACTION_ELIGIBILITY",
+          "FINAL_DESIGN_VALIDATION",
+          "VISIBLE_INELIGIBILITY_REASON"
+        ]
+      },
+      "mechanics": {
+        "stage": 2,
+        "conditions": [
+          {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "PREDICATE",
+                "predicate": "AFFILIATION_IS",
+                "timing": "FINAL_DESIGN",
+                "arguments": {
+                  "id": "affiliation.capellan-confederation"
+                }
+              },
+              {
+                "op": "PREDICATE",
+                "predicate": "TRAIT_PRESENT",
+                "timing": "FINAL_DESIGN",
+                "arguments": {
+                  "id": "trait.citizenship"
+                }
+              }
+            ]
+          }
+        ],
+        "effects": [
+          {
+            "id": "effect.restriction.scope.capellan-stage-2-military.require-citizenship",
+            "effectType": "RESTRICTION",
+            "operation": "REQUIRE",
+            "condition": {
+              "op": "PREDICATE",
+              "predicate": "TRAIT_PRESENT",
+              "timing": "FINAL_DESIGN",
+              "arguments": {
+                "id": "trait.citizenship"
+              }
+            },
+            "claimRefs": [
+              "claim.restriction.scope.capellan-stage-2-military"
+            ],
+            "repeatBehavior": "PROHIBITED"
+          }
+        ],
+        "choices": [],
+        "composition": {
+          "includes": []
+        }
+      }
+    },
+    {
+      "schemaVersion": "0.4b",
+      "id": "restriction.scope.capellan-stage-3",
+      "recordType": "restriction",
+      "classification": "CANONICAL_RULE",
+      "displayName": "Capellan Stage 3 Citizenship restriction",
+      "claimRefs": [
+        "claim.restriction.scope.capellan-stage-3"
+      ],
+      "claims": [
+        {
+          "id": "claim.restriction.scope.capellan-stage-3",
+          "claimKind": "OBSERVATION",
+          "subjectId": "restriction.scope.capellan-stage-3",
+          "semanticTarget": {
+            "recordId": "restriction.scope.capellan-stage-3",
+            "path": "/contract"
+          },
+          "value": "Capellan Stage 3 module selection requires Citizenship.",
+          "sourceLocators": [
+            {
+              "sourceId": "source.atow-corrected-third-printing",
+              "printedPage": "64",
+              "pdfPageIndex": 65,
+              "section": "Capellan Confederation"
+            }
+          ],
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "relationships": []
+        }
+      ],
+      "verification": {
+        "status": "VERIFIED"
+      },
+      "completeness": "MECHANICALLY_COMPLETE",
+      "approval": {
+        "status": "REVIEWED"
+      },
+      "contract": {
+        "scopeAffiliationId": "affiliation.capellan-confederation",
+        "targetId": "progression.stage-3.selection",
+        "requiredTraitId": "trait.citizenship",
+        "enforcement": [
+          "TRANSACTION_ELIGIBILITY",
+          "FINAL_DESIGN_VALIDATION",
+          "VISIBLE_INELIGIBILITY_REASON"
+        ]
+      },
+      "mechanics": {
+        "stage": 3,
+        "conditions": [
+          {
+            "op": "ALL",
+            "conditions": [
+              {
+                "op": "PREDICATE",
+                "predicate": "AFFILIATION_IS",
+                "timing": "FINAL_DESIGN",
+                "arguments": {
+                  "id": "affiliation.capellan-confederation"
+                }
+              },
+              {
+                "op": "PREDICATE",
+                "predicate": "TRAIT_PRESENT",
+                "timing": "FINAL_DESIGN",
+                "arguments": {
+                  "id": "trait.citizenship"
+                }
+              }
+            ]
+          }
+        ],
+        "effects": [
+          {
+            "id": "effect.restriction.scope.capellan-stage-3.require-citizenship",
+            "effectType": "RESTRICTION",
+            "operation": "REQUIRE",
+            "condition": {
+              "op": "PREDICATE",
+              "predicate": "TRAIT_PRESENT",
+              "timing": "FINAL_DESIGN",
+              "arguments": {
+                "id": "trait.citizenship"
+              }
+            },
+            "claimRefs": [
+              "claim.restriction.scope.capellan-stage-3"
+            ],
+            "repeatBehavior": "PROHIBITED"
+          }
+        ],
+        "choices": [],
+        "composition": {
+          "includes": []
+        }
+      }
+    }
+  ],
+  "restrictionDependencyIds": [
+    "affiliation.capellan-confederation",
+    "module.stage-4.civilian-job",
+    "progression.stage-2.military-school",
+    "progression.stage-2.selection-slot",
+    "progression.stage-3.selection",
+    "trait.citizenship"
+  ],
+  "contentDigest": "8f0f0cd84d3b5f4f1a81724b615a67d0d2a5a90a456010073c76e27ab0c17cb7"
+}
