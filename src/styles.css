@@ -711,6 +711,10 @@ tbody th { color: #e8edf2; font-weight: 650; }
 .equipment-catalog-grid .error { color: #ffb1b1; }
 footer { padding: 24px 6vw; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
 
+.experimental-stage0-pilot { min-width: 0; overflow-wrap: anywhere; }
+.experimental-stage0-pilot select { max-width: 100%; min-width: 0; }
+.experimental-stage0-pilot code { overflow-wrap: anywhere; }
+
 @media (max-width: 760px) {
   .stage0-requirements { align-items: stretch; flex-direction: column; }
   .stage0-requirements .button { align-self: flex-start; }
