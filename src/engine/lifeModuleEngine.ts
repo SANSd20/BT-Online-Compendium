@@ -48,7 +48,7 @@ import {
 import type { LifeModuleAward, LifeModuleDefinition, LifeModuleDestination, LifeModulePrerequisite } from '../domain/lifeModules/model'
 import { knownPendingChoiceValues, modeledSkillChoiceOptions, pendingOpenSubject } from '../domain/lifeModules/awardOptions'
 import { APPROVED_ART_ANY_SUBJECTS, isOpenSubjectSkillId, openSkillSubjectDestination } from '../domain/skillFields/openSkillSubjects'
-import { CAPELLAN_COMMONALITY_CONTEXT, DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_COMBINE_CONTEXT, DRACONIS_COMBINE_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_CONTEXT, FEDERATED_SUNS_OUTBACK_ID, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, LIAO_COMMONALITY_ID, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, SIAN_COMMONALITY_ID, ST_IVES_COMMONALITY_ID, VICTORIA_COMMONALITY_ID, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
+import { CAPELLAN_COMMONALITY_CONTEXT, DEEP_PERIPHERY_CASTILIAN_ID, DEEP_PERIPHERY_CONTEXT, DEEP_PERIPHERY_HANSEATIC_ID, DEEP_PERIPHERY_ID, DEEP_PERIPHERY_JARNFOLK_ID, DEEP_PERIPHERY_UMAYYAD_ID, FREE_RASALHAGUE_REPUBLIC_CONTEXT, FREE_RASALHAGUE_REPUBLIC_ID, RASALHAGUE_CLAN_WAR_EXPATRIATE_ID, RASALHAGUE_GHOST_BEAR_ID, MINOR_PERIPHERY_CONTEXT, MINOR_PERIPHERY_ID, MINOR_PERIPHERY_RANDIS_ID, MINOR_PERIPHERY_FRANKLIN_ID, MINOR_PERIPHERY_MICA_ID, MINOR_PERIPHERY_NIOPS_ID, MINOR_PERIPHERY_RIM_ID, MAJOR_PERIPHERY_CONTEXT, MAJOR_PERIPHERY_ID, MAJOR_PERIPHERY_CIRCINUS_ID, MAJOR_PERIPHERY_CANOPUS_ID, MAJOR_PERIPHERY_MARIAN_ID, MAJOR_PERIPHERY_OUTWORLDS_ID, MAJOR_PERIPHERY_TAURIAN_ID, DRACONIS_AZAMI_ID, DRACONIS_BENJAMIN_ID, DRACONIS_COMBINE_CONTEXT, DRACONIS_COMBINE_ID, DRACONIS_DIERON_ID, DRACONIS_NEW_SAMARKAND_ID, DRACONIS_PESHT_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_CONTEXT, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_CONTEXT, FEDERATED_SUNS_OUTBACK_ID, FREE_WORLDS_LEAGUE_CONTEXT, FREE_WORLDS_LEAGUE_ID, FWL_OTHER_WORLDS_ID, LYRAN_ALLIANCE_CONTEXT, LYRAN_ALLIANCE_ID, LYRAN_ALARION_ID, LYRAN_BOLAN_ID, LYRAN_COVENTRY_ID, LYRAN_DONEGAL_ID, LYRAN_SKYE_ID, getLifeModuleAffiliationContextByAffiliationId, getLifeModuleLanguageSelectorOptions, LIAO_COMMONALITY_ID, ORDER_AFFILIATION_IDS, resolveLifeModuleAffiliationContext, SIAN_COMMONALITY_ID, ST_IVES_COMMONALITY_ID, VICTORIA_COMMONALITY_ID, type OrderAffiliationSelection } from '../domain/lifeModules/affiliations'
 import { DRACONIS_COMBINE_CATALOG_AWARDS, DRACONIS_SUB_AFFILIATION_CATALOG_AWARDS } from '../domain/lifeModules/catalog'
 import { stage3SchoolEligibility } from '../domain/lifeModules/stage3Schooling'
 import { STANDARD_SKILL_XP_COSTS } from '../domain/pointBuy/catalog'
@@ -64,10 +64,20 @@ import { HOMEWORLD_CLAN_PACKAGES } from '../domain/character/clanPackages'
 import { resolveClanDestination } from '../domain/character/clanDestinations'
 import { evaluateDurationEligibility } from '../domain/character/chronology'
 import { capellanCitizenshipEligibility } from '../domain/lifeModules/capellanRestrictions'
+import { reevaluateDeferredEligibility, setDeferredEligibility, hasIneligibleDeferredEligibility, type DeferredEligibilityRecord } from '../domain/character/deferredEligibility'
+import { TERRAN_ID, TERRAN_VENUSIAN_ID, TERRAN_CONTEXT } from '../domain/lifeModules/affiliations'
 
 const ATTRIBUTE_IDS = ['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'] as const
 
 export type LifeModuleTransactionOperation = {
+  kind: 'set-deferred-eligibility'
+  record: DeferredEligibilityRecord
+  values: Record<string, number | undefined>
+} | {
+  kind: 'reevaluate-deferred-eligibility'
+  id: string
+  values: Record<string, number | undefined>
+} | {
   kind: 'set-age'
   ageYears: number
   sourceRelationId?: string
@@ -652,6 +662,18 @@ export function buildLifeModuleTransaction(
   }
 
   for (const [operationIndex, operation] of operations.entries()) {
+    if (operation.kind === 'set-deferred-eligibility') {
+      try {
+        const nextRecord = { ...operation.record, status: operation.values[operation.record.rule.field] === undefined ? 'pending' as const : operation.values[operation.record.rule.field]! <= operation.record.rule.maximum ? 'eligible' as const : 'ineligible' as const }
+        transaction.prospectiveState = setDeferredEligibility(transaction.prospectiveState!, nextRecord)
+      } catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
+      continue
+    }
+    if (operation.kind === 'reevaluate-deferred-eligibility') {
+      try { transaction.prospectiveState = reevaluateDeferredEligibility(transaction.prospectiveState!, operation.id, operation.values) }
+      catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
+      continue
+    }
     if (operation.kind === 'grant-capellan-civilian-job') {
       try { transaction.prospectiveState = applyCapellanCivilianJobSubstitution(transaction.prospectiveState!, operation.relationId) }
       catch (error) { transaction.errors.push({ kind: 'invalid-operation', operationIndex, message: error instanceof Error ? error.message : String(error) }) }
@@ -889,6 +911,288 @@ export function applyDraconisCombine(
   return next
 }
 
+export function applyFreeWorldsLeague(character: CharacterDefinition, affiliationContextModuleId: string, _affiliationLanguage: string, includeSubAffiliation = false, languageSubject?: string, artSubject?: string, choices: Record<string, string> = {}): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-0-affiliation') throw new Error('The Stage 0 affiliation is not the current legal action.')
+  if (state.stage0AffiliationContext !== affiliationContextModuleId && affiliationContextModuleId !== FREE_WORLDS_LEAGUE_ID) throw new Error('The selected Free Worlds context does not match the current Stage 0 context.')
+  const language = languageSubject?.trim()
+  if (!getLifeModuleLanguageSelectorOptions('fwl-languages').includes(language ?? '')) throw new Error('Choose a listed Free Worlds language.')
+  const contextId = includeSubAffiliation ? affiliationContextModuleId : FREE_WORLDS_LEAGUE_ID
+  const parent = getLifeModule(FREE_WORLDS_LEAGUE_ID)
+  const published = contextId === FREE_WORLDS_LEAGUE_ID ? parent : getLifeModule(contextId)
+  const resolutions: Record<string, LifeModuleDestination> = {}
+  resolutions['fwl.language.secondary'] = { type: 'skill', address: { skillId: 'skill.language', parameter: { kind: 'subskill', value: language! } }, displayName: `Language/${language}` }
+  const parentAwards = parent.awards.map((award) => award.id === 'fwl.skill.art' && artSubject
+    ? { id: 'fwl.skill.art', kind: 'fixed' as const, xp: 10, destination: { type: 'skill' as const, address: { skillId: 'skill.art', parameter: { kind: 'subskill' as const, value: artSubject } }, displayName: `Art/${artSubject}` } }
+    : award)
+  const module = contextId === FREE_WORLDS_LEAGUE_ID ? { ...parent, awards: parentAwards } : { ...published, awards: [...parentAwards, ...published.awards] }
+  if (contextId === FWL_OTHER_WORLDS_ID) {
+    const selectedLanguage = choices.language?.trim()
+    if (!selectedLanguage || !getLifeModuleLanguageSelectorOptions('fwl-languages').includes(selectedLanguage)) throw new Error('Choose a listed Other FWL Worlds language.')
+    resolutions['other-fwl.language'] = { type: 'skill', address: { skillId: 'skill.language', parameter: { kind: 'subskill', value: selectedLanguage } }, displayName: `Language/${selectedLanguage}` }
+  }
+  let next = applyModule(character, module, resolutions)
+  if (contextId === FWL_OTHER_WORLDS_ID) {
+    const destination = (value: string, type: 'trait' | 'skill' | 'attribute'): ResolvedLifeModuleDestination => {
+      if (type === 'attribute') return { type, targetId: value, displayName: value }
+      if (type === 'trait') return { type, targetId: value, displayName: value }
+      const [skillId, parameter] = value.split('|')
+      const label = skillId === 'skill.art' ? 'Art' : skillId === 'skill.protocol' ? 'Protocol' : skillId.replace(/^skill\./, '')
+      return { type, targetId: skillId, parameter: parameter ? { kind: 'subskill', value: parameter } : undefined, displayName: parameter ? `${label}/${parameter}` : label }
+    }
+    const resolveByAward = (awardId: string, value: string, type: 'trait' | 'skill' | 'attribute', xp?: number) => {
+      const pending = requireLifeModules(next).pendingAwards.find((entry) => entry.awardId === awardId)
+      if (!pending) throw new Error(`Other FWL Worlds award is already resolved or unavailable: ${awardId}`)
+      next = resolvePendingLifeModuleAward(next, pending.id, destination(value, type), xp)
+    }
+    resolveByAward('other-fwl.trait', choices.traitId?.trim() ?? '', 'trait', 35)
+    resolveByAward('other-fwl.skills', choices.skillOne?.trim() ?? '', 'skill', 10)
+    resolveByAward('other-fwl.skills', choices.skillTwo?.trim() ?? '', 'skill', 10)
+    const flexibleType = choices.flexibleTargetType as 'attribute' | 'trait' | 'skill' | undefined
+    const flexibleXp = Number(choices.flexibleXp)
+    if (!flexibleType || !choices.flexibleTargetId?.trim() || !Number.isFinite(flexibleXp) || flexibleXp <= 0 || flexibleXp > 25) throw new Error('Choose a valid Other FWL Worlds flexible XP allocation.')
+    resolveByAward('other-fwl.flexible', choices.flexibleTargetId.trim(), flexibleType, flexibleXp)
+  }
+  const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
+  if (!provenanceId) throw new Error('Free Worlds League provenance was not recorded.')
+  next.affiliations.push({ affiliationId: FREE_WORLDS_LEAGUE_CONTEXT.affiliationId, role: 'birth', provenanceId }, { affiliationId: FREE_WORLDS_LEAGUE_CONTEXT.affiliationId, role: 'final', provenanceId })
+  requireLifeModules(next).stage0SubAffiliation = includeSubAffiliation ? affiliationContextModuleId : 'no'
+  requireLifeModules(next).phase = 'stage-1-selection'; requireLifeModules(next).currentStage = 1
+  return next
+}
+
+export function applyLyranAlliance(character: CharacterDefinition, affiliationContextModuleId: string, affiliationLanguage: string, traitChoice: 'Combat Paralysis' | 'Glass Jaw' = 'Combat Paralysis', choices: Record<string, string> = {}): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-0-affiliation' || state.stage0AffiliationContext !== affiliationContextModuleId) throw new Error('The Lyran Alliance package requires the explicit Lyran Stage 0 context.')
+  if (!getLifeModuleLanguageSelectorOptions('lyran-languages').includes(affiliationLanguage)) throw new Error('Choose a listed Lyran language.')
+  const subId = choices.subAffiliation && choices.subAffiliation !== 'no' ? choices.subAffiliation : 'no'
+  const allowedSubs = [LYRAN_ALARION_ID, LYRAN_BOLAN_ID, LYRAN_COVENTRY_ID, LYRAN_DONEGAL_ID, LYRAN_SKYE_ID]
+  if (subId !== 'no' && !allowedSubs.includes(subId)) throw new Error('Choose a supported Lyran province.')
+  const parent = getLifeModule(LYRAN_ALLIANCE_ID)
+  const sub = subId === 'no' ? undefined : getLifeModule(subId)
+  const parentAwards = parent.awards.map((award) => award.id === 'lyran.trait.choice' ? { id: award.id, kind: 'fixed' as const, xp: 100, destination: { type: 'trait' as const, traitId: traitChoice === 'Glass Jaw' ? 'trait.glass-jaw' : 'trait.combat-paralysis', displayName: traitChoice } } : award)
+  const subAwards = (sub?.awards ?? []).map((award) => {
+    if (award.kind === 'language-choice') return { id: award.id, kind: 'fixed' as const, xp: award.xp, destination: { type: 'skill' as const, address: { skillId: 'skill.language', parameter: { kind: 'subskill' as const, value: choices.languageSubject || affiliationLanguage } }, displayName: 'Language/' + (choices.languageSubject || affiliationLanguage) } }
+    if (award.kind === 'any-skill-choice') return { id: award.id, kind: 'fixed' as const, xp: award.xp, destination: { type: 'skill' as const, address: { skillId: award.skillId, parameter: { kind: 'subskill' as const, value: choices.interestSubject || 'General' } }, displayName: 'Interest/' + (choices.interestSubject || 'General') } }
+    return award
+  })
+  const module: LifeModuleDefinition = { ...parent, displayName: sub?.displayName ?? parent.displayName, awards: [...parentAwards, ...subAwards] }
+  const next = applyModule(character, module, {})
+  const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
+  if (!provenanceId) throw new Error('Lyran provenance was not recorded.')
+  next.affiliations.push({ affiliationId: LYRAN_ALLIANCE_CONTEXT.affiliationId, role: 'birth', provenanceId }, { affiliationId: LYRAN_ALLIANCE_CONTEXT.affiliationId, role: 'final', provenanceId })
+  requireLifeModules(next).stage0SubAffiliation = subId
+  requireLifeModules(next).phase = 'stage-1-selection'; requireLifeModules(next).currentStage = 1
+  return next
+}
+
+export function applyFreeRasalhagueRepublic(character: CharacterDefinition, affiliationContextModuleId: string, affiliationLanguage: string, choices: Record<string, string> = {}): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-0-affiliation' || state.stage0AffiliationContext !== affiliationContextModuleId) throw new Error('The Free Rasalhague Republic package requires the explicit Stage 0 context.')
+  if (!getLifeModuleLanguageSelectorOptions('rasalhague-languages').includes(affiliationLanguage)) throw new Error('Choose a listed Rasalhague language.')
+  const subId = choices.subAffiliation && choices.subAffiliation !== 'no' ? choices.subAffiliation : 'no'
+  if (![RASALHAGUE_CLAN_WAR_EXPATRIATE_ID, RASALHAGUE_GHOST_BEAR_ID, 'no'].includes(subId)) throw new Error('Choose a supported Rasalhague sub-affiliation.')
+  const parent = getLifeModule(FREE_RASALHAGUE_REPUBLIC_ID)
+  const sub = subId === 'no' ? undefined : getLifeModule(subId)
+  const destination = (skillId: string, label: string, parameter?: string): LifeModuleDestination => ({ type: 'skill', address: { skillId, ...(parameter ? { parameter: { kind: 'subskill', value: parameter } } : {}) }, displayName: label })
+  const resolveInterest = (award: LifeModuleAward): LifeModuleAward => {
+    if (award.kind !== 'any-skill-choice') return award
+    const value = choices.interestSubject?.trim()
+    if (!value || value === 'Any') throw new Error('Choose a concrete Interest subject.')
+    return { id: award.id, kind: 'fixed', xp: award.xp, destination: destination(award.skillId, `Interest/${value}`, value) }
+  }
+  const parentAwards = parent.awards.map(resolveInterest)
+  const subAwards = (sub?.awards ?? []).map((award): LifeModuleAward => {
+    if (subId === RASALHAGUE_CLAN_WAR_EXPATRIATE_ID && award.id === 'rasalhague-expatriate.language.choice') {
+      const value = choices.languageSubject?.trim()
+      if (!value || !getLifeModuleLanguageSelectorOptions('rasalhague-choice-languages').includes(value)) throw new Error('Choose a Lyran or Draconis language for the Clan War Expatriate.')
+      return { id: award.id, kind: 'fixed', xp: 'xp' in award ? award.xp : 0, destination: destination('skill.language', `Language/${value}`, value) }
+    }
+    if (subId === RASALHAGUE_CLAN_WAR_EXPATRIATE_ID && award.id === 'rasalhague-expatriate.protocol.choice') {
+      const value = choices.protocolSubject?.trim()
+      if (value !== 'Lyran' && value !== 'Draconis') throw new Error('Choose Protocol/Lyran or Protocol/Draconis.')
+      return { id: award.id, kind: 'fixed', xp: 10, destination: destination('skill.protocol', `Protocol/${value}`, value === 'Draconis' ? 'Combine' : value) }
+    }
+    return resolveInterest(award)
+  })
+  const module: LifeModuleDefinition = { ...parent, displayName: sub?.displayName ?? parent.displayName, awards: [...parentAwards, ...subAwards] }
+  const next = applyModule(character, module, {})
+  const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
+  if (!provenanceId) throw new Error('Rasalhague provenance was not recorded.')
+  next.affiliations.push({ affiliationId: FREE_RASALHAGUE_REPUBLIC_CONTEXT.affiliationId, role: 'birth', provenanceId }, { affiliationId: FREE_RASALHAGUE_REPUBLIC_CONTEXT.affiliationId, role: 'final', provenanceId })
+  requireLifeModules(next).stage0SubAffiliation = subId
+  requireLifeModules(next).phase = 'stage-1-selection'; requireLifeModules(next).currentStage = 1
+  return next
+}
+
+export function applyMinorPeriphery(character: CharacterDefinition, affiliationContextModuleId: string, affiliationLanguage: string, choices: Record<string, string> = {}): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-0-affiliation' || state.stage0AffiliationContext !== affiliationContextModuleId) throw new Error('The Minor Periphery package requires the explicit Stage 0 context.')
+  if (!getLifeModuleLanguageSelectorOptions('minor-periphery-languages').includes(affiliationLanguage)) throw new Error('Choose a listed Minor Periphery language.')
+  const subId = choices.subAffiliation && choices.subAffiliation !== 'no' ? choices.subAffiliation : 'no'
+  const allowedSubs = [MINOR_PERIPHERY_RANDIS_ID, MINOR_PERIPHERY_FRANKLIN_ID, MINOR_PERIPHERY_MICA_ID, MINOR_PERIPHERY_NIOPS_ID, MINOR_PERIPHERY_RIM_ID]
+  if (subId !== 'no' && !allowedSubs.includes(subId)) throw new Error('Choose a supported Minor Periphery realm.')
+  const parent = getLifeModule(MINOR_PERIPHERY_ID)
+  const sub = subId === 'no' ? undefined : getLifeModule(subId)
+  const destination = (value: string, type: 'attribute' | 'trait' | 'skill', displayName = value): ResolvedLifeModuleDestination => {
+    if (type === 'attribute') return { type, targetId: value, displayName }
+    if (type === 'trait') return { type, targetId: value, displayName }
+    return { type, targetId: value, displayName }
+  }
+  const resolveAny = (award: LifeModuleAward): LifeModuleAward => {
+    if (award.kind !== 'any-skill-choice') return award
+    const key = award.id.includes('survival') ? 'survivalSubject' : award.id.includes('medtech') ? 'medtechSubject' : award.id.includes('interest') ? 'interestSubject' : 'technicianSubject'
+    const subject = choices[key]?.trim()
+    if (!subject) throw new Error(`Choose a concrete ${award.displayName} subject.`)
+    return { id: award.id, kind: 'fixed', xp: award.xp, destination: { type: 'skill', address: { skillId: award.skillId, parameter: { kind: 'subskill', value: subject } }, displayName: `${award.displayName.split('/')[0]}/${subject}` } }
+  }
+  const resolveModeled = (award: LifeModuleAward): LifeModuleAward => {
+    if (award.kind !== 'modeled-skill-choice') return award
+    const values = award.count === 1 ? [choices.skillChoice] : [choices.skillOne, choices.skillTwo]
+    if (values.some((value) => !value?.trim()) || new Set(values).size !== values.length) throw new Error(`Choose ${award.count} distinct Minor Periphery Skills.`)
+    const selected = values[0] as string
+    const parts = selected.split('|')
+    return { id: award.id, kind: 'fixed', xp: award.xp * award.count, destination: { type: 'skill', address: { skillId: parts[0], ...(parts[1] ? { parameter: { kind: 'subskill', value: parts[1] } } : {}) }, displayName: selected } }
+  }
+  let next = applyModule(character, { ...parent, displayName: sub?.displayName ?? parent.displayName, awards: [...parent.awards, ...(sub?.awards ?? [])].map(resolveAny).map(resolveModeled) }, {})
+  const flexible = requireLifeModules(next).pendingAwards.filter((entry) => entry.awardId === 'minor-periphery.flexible')
+  for (let i = 0; i < flexible.length; i++) {
+    const type = choices[`flexible${i + 1}Type`] as 'attribute' | 'trait' | undefined
+    const id = choices[`flexible${i + 1}Id`]?.trim()
+    if (!type || !id) throw new Error('Allocate all three Minor Periphery flexible awards.')
+    next = resolvePendingLifeModuleAward(next, flexible[i].id, destination(id, type), 25)
+  }
+  const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
+  if (!provenanceId) throw new Error('Minor Periphery provenance was not recorded.')
+  next.affiliations.push({ affiliationId: MINOR_PERIPHERY_CONTEXT.affiliationId, role: 'birth', provenanceId }, { affiliationId: MINOR_PERIPHERY_CONTEXT.affiliationId, role: 'final', provenanceId })
+  requireLifeModules(next).stage0SubAffiliation = subId
+  requireLifeModules(next).phase = 'stage-1-selection'; requireLifeModules(next).currentStage = 1
+  return next
+}
+
+export function applyMajorPeriphery(character: CharacterDefinition, affiliationContextModuleId: string, affiliationLanguage: string, choices: Record<string, string> = {}): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-0-affiliation' || state.stage0AffiliationContext !== affiliationContextModuleId) throw new Error('The Major Periphery package requires the explicit Stage 0 context.')
+  if (!getLifeModuleLanguageSelectorOptions('affiliation-languages').includes(affiliationLanguage)) throw new Error('Choose a listed Major Periphery language.')
+  const subId = choices.subAffiliation && choices.subAffiliation !== 'no' ? choices.subAffiliation : 'no'
+  const allowed = [MAJOR_PERIPHERY_CIRCINUS_ID, MAJOR_PERIPHERY_CANOPUS_ID, MAJOR_PERIPHERY_MARIAN_ID, MAJOR_PERIPHERY_OUTWORLDS_ID, MAJOR_PERIPHERY_TAURIAN_ID]
+  if (subId !== 'no' && !allowed.includes(subId)) throw new Error('Choose a supported Major Periphery realm.')
+  const parent = getLifeModule(MAJOR_PERIPHERY_ID)
+  const sub = subId === 'no' ? undefined : getLifeModule(subId)
+  const resolveChoice = (award: LifeModuleAward): LifeModuleAward => {
+    if (award.kind === 'choice-package') {
+      const selected = choices[award.id]?.trim()
+      const option = award.options.find((entry) => entry.some((destination) => {
+        const key = destination.type === 'skill' ? destination.address.skillId : destination.type === 'trait' ? destination.traitId : destination.attributeId
+        return key === selected || key?.replace(/^skill\./, '') === selected
+      }))
+      if (!option) throw new Error(`Choose a valid Major Periphery option for ${award.id}.`)
+      return { id: award.id, kind: 'conditional', description: award.description, awards: option.map((destination, index) => ({ id: `${award.id}.${index}`, kind: 'fixed' as const, xp: award.id.includes('choice') ? 15 : 0, destination })) }
+    }
+    if (award.kind === 'multi-skill-choice') {
+      const selected = [choices.skillOne, choices.skillTwo, choices.skillThree].filter((value): value is string => Boolean(value?.trim()))
+      if (selected.length !== award.count || new Set(selected).size !== selected.length) throw new Error(`Choose ${award.count} distinct Major Periphery skills.`)
+      return { id: award.id, kind: 'conditional', description: award.displayName, awards: selected.map((value, index) => ({ id: `${award.id}.${index}`, kind: 'fixed' as const, xp: award.xp, destination: { type: 'skill' as const, address: { skillId: value.includes('|') ? value.split('|')[0] : value, ...(value.includes('|') ? { parameter: { kind: 'subskill' as const, value: value.split('|')[1]! } } : {}) }, displayName: value } })) }
+    }
+    return award
+  }
+  const resolvedAwards = [...parent.awards, ...(sub?.awards ?? [])].map(resolveChoice).flatMap((award) => award.kind === 'conditional' ? award.awards : [award])
+  let next = applyModule(character, { ...parent, displayName: sub?.displayName ?? parent.displayName, awards: resolvedAwards }, {})
+  let flexibleIndex = 0
+  while (requireLifeModules(next).pendingAwards.some((entry) => entry.awardId === 'major-periphery.flexible' || entry.awardId === 'taurian.flexible')) {
+    const pending = requireLifeModules(next).pendingAwards.find((entry) => entry.awardId === 'major-periphery.flexible' || entry.awardId === 'taurian.flexible')!
+    const i = flexibleIndex++
+    const type = choices[`flexible${i + 1}Type`] as 'attribute' | 'trait' | 'skill' | undefined
+    const id = choices[`flexible${i + 1}Id`]?.trim()
+    if (!type || !id) throw new Error('Allocate all Major Periphery flexible awards.')
+    next = resolvePendingLifeModuleAward(next, pending.id, { type, targetId: id, displayName: id }, 15)
+  }
+  const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
+  if (!provenanceId) throw new Error('Major Periphery provenance was not recorded.')
+  next.affiliations.push({ affiliationId: MAJOR_PERIPHERY_CONTEXT.affiliationId, role: 'birth', provenanceId }, { affiliationId: MAJOR_PERIPHERY_CONTEXT.affiliationId, role: 'final', provenanceId })
+  requireLifeModules(next).stage0SubAffiliation = subId
+  requireLifeModules(next).phase = 'stage-1-selection'; requireLifeModules(next).currentStage = 1
+  return next
+}
+
+export function applyDeepPeriphery(character: CharacterDefinition, affiliationContextModuleId: string, affiliationLanguage: string, choices: Record<string, string> = {}): CharacterDefinition {
+  const state = requireLifeModules(character)
+  if (state.phase !== 'stage-0-affiliation' || state.stage0AffiliationContext !== affiliationContextModuleId) throw new Error('The Deep Periphery package requires the explicit Stage 0 context.')
+  if (!getLifeModuleLanguageSelectorOptions('deep-periphery-languages').includes(affiliationLanguage)) throw new Error('Choose a listed Deep Periphery language.')
+  const subId = choices.subAffiliation && choices.subAffiliation !== 'no' ? choices.subAffiliation : 'no'
+  const allowed = [DEEP_PERIPHERY_HANSEATIC_ID, DEEP_PERIPHERY_CASTILIAN_ID, DEEP_PERIPHERY_UMAYYAD_ID, DEEP_PERIPHERY_JARNFOLK_ID]
+  if (subId !== 'no' && !allowed.includes(subId)) throw new Error('Choose a supported Deep Periphery realm.')
+  const parent = getLifeModule(DEEP_PERIPHERY_ID); const sub = subId === 'no' ? undefined : getLifeModule(subId)
+  const resolvedAwards = [...parent.awards, ...(sub?.awards ?? [])].map((award) => {
+    if (award.kind !== 'choice-package') return award
+    const selected = choices[award.id]?.trim()
+    const option = award.options.find((entry) => entry.some((destination) => destination.type === 'skill' && (destination.address.skillId === selected || destination.address.skillId.replace(/^skill\./, '') === selected)))
+    if (!option) throw new Error(`Choose a valid Deep Periphery option for ${award.id}.`)
+    return { id: award.id, kind: 'conditional' as const, description: award.description, awards: option.map((destination, index) => ({ id: `${award.id}.${index}`, kind: 'fixed' as const, xp: 10, destination })) }
+  }).flatMap((award) => award.kind === 'conditional' ? award.awards : [award])
+  let next = applyModule(character, { ...parent, displayName: sub?.displayName ?? parent.displayName, awards: resolvedAwards }, {})
+  let i = 0
+  while (requireLifeModules(next).pendingAwards.some((entry) => entry.awardId === 'deep-periphery.flexible')) {
+    const pending = requireLifeModules(next).pendingAwards.find((entry) => entry.awardId === 'deep-periphery.flexible')!
+    const type = choices[`flexible${i + 1}Type`] as 'attribute' | 'trait' | 'skill' | undefined; const id = choices[`flexible${i + 1}Id`]?.trim()
+    if (!type || !id) throw new Error('Allocate all Deep Periphery flexible awards.')
+    next = resolvePendingLifeModuleAward(next, pending.id, { type, targetId: id, displayName: id }, 10); i++
+  }
+  const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
+  if (!provenanceId) throw new Error('Deep Periphery provenance was not recorded.')
+  next.affiliations.push({ affiliationId: DEEP_PERIPHERY_CONTEXT.affiliationId, role: 'birth', provenanceId }, { affiliationId: DEEP_PERIPHERY_CONTEXT.affiliationId, role: 'final', provenanceId })
+  requireLifeModules(next).stage0SubAffiliation = subId; requireLifeModules(next).phase = 'stage-1-selection'; requireLifeModules(next).currentStage = 1
+  return next
+}
+
+function terranChoiceDestination(value: string): LifeModuleDestination {
+  const [target, parameter] = value.trim().split('|')
+  if (!target) throw new Error('Terran choices require a concrete destination.')
+  if (['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'].includes(target)) return { type: 'attribute', attributeId: target }
+  if (target.startsWith('trait.')) return { type: 'trait', traitId: target, displayName: parameter ?? target.slice(6) }
+  return { type: 'skill', address: { skillId: target.startsWith('skill.') ? target : `skill.${target}`, ...(parameter ? { parameter: { kind: 'subskill', value: parameter } } : {}) }, displayName: parameter ? `${target.replace(/^skill\./, '')}/${parameter}` : target.replace(/^skill\./, '') }
+}
+
+export function applyTerranAffiliation(character: CharacterDefinition, contextId: string, secondaryLanguage: string | undefined, choices: Record<string, string> = {}): CharacterDefinition {
+  const parent = getLifeModule(TERRAN_ID)
+  const subId = contextId === TERRAN_ID ? 'no' : contextId
+  const sub = subId === 'no' ? undefined : getLifeModule(subId)
+  const selected = (key: string): string => { const value = choices[key]?.trim(); if (!value) throw new Error(`Choose a concrete Terran ${key}.`); return value }
+  const fixedChoice = (id: string, xp: number, value: string): LifeModuleAward => ({ id, kind: 'fixed', xp, destination: terranChoiceDestination(value) })
+  const parentAwards = parent.awards.flatMap((award): LifeModuleAward[] => {
+    if (award.id === 'terran.attributes') return [fixedChoice('terran.attribute.one', 50, selected('attributeOne')), fixedChoice('terran.attribute.two', 50, selected('attributeTwo'))]
+    if (award.id === 'terran.languages') return [fixedChoice('terran.language.one', 15, `skill.language|${selected('languageOne')}`), fixedChoice('terran.language.two', 15, `skill.language|${selected('languageTwo')}`)]
+    return [award]
+  })
+  const subAwards = (sub?.awards ?? []).flatMap((award): LifeModuleAward[] => {
+    if (award.kind === 'flexible-xp' && award.allocationMode !== 'pool') return [fixedChoice(`${award.id}.resolved`, award.xpPerGrant, selected(award.id === 'belter.attribute' ? 'attributeOne' : 'skillOne'))]
+    if (award.kind === 'modeled-skill-choice') return [fixedChoice(`${award.id}.one`, award.xp, selected('traitOne')), fixedChoice(`${award.id}.two`, award.xp, selected('traitTwo'))]
+    if (award.kind === 'multi-skill-choice') return Array.from({ length: award.count }, (_, index) => fixedChoice(`${award.id}.${index}`, award.xp, selected(`skill${index + 1}`)))
+    if (award.kind === 'any-skill-choice') return [fixedChoice(`${award.id}.resolved`, award.xp, selected('skillOne'))]
+    if (award.id.endsWith('language-secondary') && 'xp' in award) {
+      const language = (choices.secondaryLanguage ?? secondaryLanguage)?.trim()
+      if (!language) throw new Error('Choose the previously selected secondary Language for Terran eligibility.')
+      return [{ id: award.id, kind: 'fixed', xp: award.xp, destination: terranChoiceDestination(`skill.language|${language}`) }]
+    }
+    return [award]
+  })
+  const module: LifeModuleDefinition = { ...parent, id: contextId, displayName: sub?.displayName ?? parent.displayName, source: sub?.source ?? parent.source, awards: [...parentAwards, ...subAwards] }
+  let next = applyModule(character, module, {})
+  const state = requireLifeModules(next)
+  if (contextId === TERRAN_VENUSIAN_ID) {
+    const birthYear = choices.birthYear === undefined || choices.birthYear.trim() === '' ? undefined : Number(choices.birthYear)
+    const record: DeferredEligibilityRecord = { id: 'terran.venusian.birth-year', stage: 0, subjectId: TERRAN_VENUSIAN_ID, requirementId: 'terran.venusian.birth-year-cutoff', dependencyKeys: ['birthYear'], rule: { kind: 'numeric-cutoff', field: 'birthYear', maximum: 3059 }, status: birthYear === undefined ? 'pending' : birthYear <= 3059 ? 'eligible' : 'ineligible', deferredResolutionAllowed: true, requiredInformation: 'Birth Year must be selected from the chronology-derived range', source: { ...TERRAN_CONTEXT.source, ruleId: 'terran-venusian-birth-year-cutoff' } }
+    next = setDeferredEligibility(next, record)
+  }
+  state.stage0SubAffiliation = subId
+  state.phase = 'stage-1-selection'
+  state.currentStage = 1
+  const provenanceId = next.lifeModuleHistory.at(-1)?.provenanceIds[0]
+  if (!provenanceId) throw new Error('Terran provenance was not recorded.')
+  next.affiliations.push({ affiliationId: TERRAN_CONTEXT.affiliationId, role: 'birth', provenanceId }, { affiliationId: TERRAN_CONTEXT.affiliationId, role: 'final', provenanceId })
+  return next
+}
+
 export function applyStage0Affiliation(
   character: CharacterDefinition,
   affiliationContextModuleId: string,
@@ -902,19 +1206,43 @@ export function applyStage0Affiliation(
   orderTechnicianSubskill?: string,
   subAffiliationSelection?: string,
   survivalSubject?: string,
-  draconisTraitChoice?: 'Pain Resistance' | 'Combat Sense',
+  draconisTraitChoice?: string,
   draconisWeaponChoice?: 'Archery' | 'Melee Weapons' | 'Thrown Weapons/Blade',
   draconisChoices?: Record<string, string>,
+  fwlChoices?: Record<string, string>,
 ): CharacterDefinition {
   const resolvedAffiliation = resolveLifeModuleAffiliationContext(affiliationContextModuleId)
   const draconisSelected = resolvedAffiliation.support === 'supported' && resolvedAffiliation.context.affiliationId === DRACONIS_COMBINE_CONTEXT.affiliationId
   const universalContextId = draconisSelected ? DRACONIS_COMBINE_ID : affiliationContextModuleId
   const withUniversal = applyUniversalStage0(character, universalContextId, affiliationLanguage)
+  const fwlContext = resolvedAffiliation.support === 'supported' && resolvedAffiliation.context.affiliationId === FREE_WORLDS_LEAGUE_CONTEXT.affiliationId
   const includeSubAffiliation = draconisSelected
     ? subAffiliationSelection !== undefined && subAffiliationSelection !== 'no'
+    : fwlContext ? affiliationContextModuleId !== FREE_WORLDS_LEAGUE_ID && subAffiliationSelection === affiliationContextModuleId
     : subAffiliationSelection === undefined || subAffiliationSelection === affiliationContextModuleId || subAffiliationSelection === SIAN_COMMONALITY_ID
-  const withBirth = draconisSelected
-    ? applyDraconisCombine(withUniversal, subAffiliationSelection as DraconisSubId || 'no', draconisTraitChoice, draconisWeaponChoice, affiliationLanguage, draconisChoices)
+  const fwlSelected = fwlContext
+  const lyranSelected = resolvedAffiliation.support === 'supported' && resolvedAffiliation.context.affiliationId === LYRAN_ALLIANCE_CONTEXT.affiliationId
+  const rasalhagueSelected = resolvedAffiliation.support === 'supported' && resolvedAffiliation.context.affiliationId === FREE_RASALHAGUE_REPUBLIC_CONTEXT.affiliationId
+  const minorPeripherySelected = resolvedAffiliation.support === 'supported' && resolvedAffiliation.context.affiliationId === 'affiliation.minor-periphery'
+  const majorPeripherySelected = resolvedAffiliation.support === 'supported' && resolvedAffiliation.context.affiliationId === 'affiliation.major-periphery'
+  const deepPeripherySelected = resolvedAffiliation.support === 'supported' && resolvedAffiliation.context.affiliationId === 'affiliation.deep-periphery'
+  const terranSelected = resolvedAffiliation.support === 'supported' && resolvedAffiliation.context.affiliationId === TERRAN_CONTEXT.affiliationId
+  const withBirth = lyranSelected
+    ? applyLyranAlliance(withUniversal, affiliationContextModuleId, affiliationLanguage, (draconisTraitChoice as string) === 'Glass Jaw' ? 'Glass Jaw' : 'Combat Paralysis', { subAffiliation: subAffiliationSelection ?? 'no', languageSubject: fwlChoices?.languageSubject ?? affiliationLanguage, interestSubject: fwlChoices?.interestSubject ?? 'General' })
+    : rasalhagueSelected
+    ? applyFreeRasalhagueRepublic(withUniversal, affiliationContextModuleId, affiliationLanguage, { subAffiliation: subAffiliationSelection ?? 'no', languageSubject: draconisChoices?.language ?? '', protocolSubject: draconisChoices?.protocol ?? '', interestSubject: draconisChoices?.interest ?? '' })
+    : deepPeripherySelected
+    ? applyDeepPeriphery(withUniversal, affiliationContextModuleId, affiliationLanguage, { ...(draconisChoices ?? {}), subAffiliation: subAffiliationSelection ?? 'no' })
+    : majorPeripherySelected
+    ? applyMajorPeriphery(withUniversal, affiliationContextModuleId, affiliationLanguage, { ...(draconisChoices ?? {}), subAffiliation: subAffiliationSelection ?? 'no' })
+    : terranSelected
+    ? applyTerranAffiliation(withUniversal, affiliationContextModuleId, capellanSecondaryLanguage, draconisChoices)
+    : minorPeripherySelected
+    ? applyMinorPeriphery(withUniversal, affiliationContextModuleId, affiliationLanguage, { ...(draconisChoices ?? {}), subAffiliation: subAffiliationSelection ?? 'no', survivalSubject: survivalSubject ?? '' })
+    : draconisSelected
+    ? applyDraconisCombine(withUniversal, subAffiliationSelection as DraconisSubId || 'no', draconisTraitChoice as 'Pain Resistance' | 'Combat Sense' | undefined, draconisWeaponChoice, affiliationLanguage, draconisChoices ?? {})
+    : fwlSelected
+    ? applyFreeWorldsLeague(withUniversal, affiliationContextModuleId, affiliationLanguage, includeSubAffiliation, capellanSecondaryLanguage, davionArt, fwlChoices)
     : affiliationContextModuleId === FEDERATED_SUNS_CRUCIS_MARCH_ID
     ? applyFederatedSunsCrucisMarch(withUniversal, davionNaturalAptitude, davionArt, includeSubAffiliation)
     : affiliationContextModuleId === FEDERATED_SUNS_CAPELLAN_MARCH_ID || affiliationContextModuleId === FEDERATED_SUNS_DRACONIS_MARCH_ID || affiliationContextModuleId === FEDERATED_SUNS_OUTBACK_ID
@@ -1170,6 +1498,7 @@ export function applyStage1Module(character: CharacterDefinition, moduleId: type
 export function continueToStage2(character: CharacterDefinition): CharacterDefinition {
   const next = structuredClone(character)
   const state = requireLifeModules(next)
+  if (hasIneligibleDeferredEligibility(state)) throw new Error('Stage 2 continuation requires correction of an ineligible deferred condition.')
   if (state.phase !== 'alpha-partial-stop' || state.stopState !== 'alpha-partial-stop') {
     throw new Error('Stage 2 continuation requires a resolved, prerequisite-satisfied Stage 1 Alpha stop.')
   }
@@ -1207,6 +1536,7 @@ export function applyCapellanCivilianJob(
 export function continueToStage3(character: CharacterDefinition): CharacterDefinition {
   const next = structuredClone(character)
   const state = requireLifeModules(next)
+  if (hasIneligibleDeferredEligibility(state)) throw new Error('Stage 3 continuation requires correction of an ineligible deferred condition.')
   if (state.phase !== 'alpha-stage-2-stop' || state.stopState !== 'alpha-stage-2-stop') {
     throw new Error('Stage 3 continuation requires a resolved, prerequisite-satisfied Stage 2 Alpha stop.')
   }
@@ -1370,6 +1700,7 @@ export function continueStage3Schooling(character: CharacterDefinition): Charact
 export function continueToStage4(character: CharacterDefinition): CharacterDefinition {
   const next = structuredClone(character)
   const state = requireLifeModules(next)
+  if (hasIneligibleDeferredEligibility(state)) throw new Error('Stage 4 continuation requires correction of an ineligible deferred condition.')
   if (state.phase !== 'alpha-stage-3-stop' || state.stopState !== 'alpha-stage-3-stop') {
     throw new Error('Stage 4 continuation requires a resolved, prerequisite-satisfied Stage 3 Alpha stop.')
   }
@@ -1485,6 +1816,13 @@ export function resolvePendingLifeModuleAward(
   const pendingIndex = state.pendingAwards.findIndex((entry) => entry.id === pendingAwardId)
   if (pendingIndex < 0) throw new Error(`Unknown pending Life Module award: ${pendingAwardId}`)
   const pending = state.pendingAwards[pendingIndex]
+  if (pending.dependsOn) {
+    const dependency = state.resolvedAwards.find((entry) => entry.moduleId === pending.moduleId && entry.awardId === pending.dependsOn!.awardId)
+    if (!dependency) throw new Error(`Resolve prerequisite choice ${pending.dependsOn.awardId} before this award.`)
+    if (pending.dependsOn.parameter && dependency.destination.parameter?.value !== pending.dependsOn.parameter) {
+      throw new Error(`This choice requires the prerequisite selection ${pending.dependsOn.parameter}.`)
+    }
+  }
   const openSubject = pendingOpenSubject(pending)
   const outbackArtOrInterest = pending.awardId === 'outback.skill.art-or-interest'
   const normalized = openSubject && !outbackArtOrInterest
@@ -1549,7 +1887,7 @@ export function resolvePendingLifeModuleAward(
   return updateLifeModuleProgress(next)
 }
 
-function applyModule(
+export function applyModule(
   character: CharacterDefinition,
   module: LifeModuleDefinition,
   resolutions: Record<string, LifeModuleDestination>,
@@ -1738,6 +2076,7 @@ function pendingAwardFrom(module: LifeModuleDefinition, award: Exclude<LifeModul
     ...(kind === 'flexible-xp' && !isPool && award.excludedTargetIds ? { excludedTargetIds: [...award.excludedTargetIds] } : {}),
     ...(kind === 'flexible-xp' && !isPool && award.allowedTargetIds ? { allowedTargetIds: [...award.allowedTargetIds] } : {}),
     ...(kind === 'modeled-skill-choice' ? { distinctDestinations: award.distinct, ...(award.allowedDestinationKeys ? { allowedDestinationKeys: [...award.allowedDestinationKeys] } : {}) } : {}),
+    ...('dependsOn' in award && award.dependsOn ? { dependsOn: { ...award.dependsOn } } : {}),
     ...(kind === 'language-choice' ? { choiceSource: award.choicesFrom, requiredSkillId: 'skill.language' } : {}),
     ...(kind === 'affiliation-skill-choice' || kind === 'any-skill-choice' || kind === 'multi-skill-choice' ? { requiredSkillId: award.skillId } : {}),
     source: { ...module.source },

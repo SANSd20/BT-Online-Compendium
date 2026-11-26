@@ -1,7 +1,7 @@
 import type { CharacterDefinition, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { CAPELLAN_COMMONALITY_ID, DRACONIS_COMBINE_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_ID } from '../../domain/lifeModules/catalog'
 import { type OrderAffiliationSelection, resolveLifeModuleAffiliationContext } from '../../domain/lifeModules/affiliations'
-import { applyCapellanCommonality, applyDraconisCombine, applyFederatedSunsMarch, applyFederatedSunsCrucisMarch, applyUniversalStage0, previewFederatedSunsCrucisMarch, previewOrderAffiliation, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
+import { applyCapellanCommonality, applyDraconisCombine, applyFederatedSunsMarch, applyFederatedSunsCrucisMarch, applyFreeRasalhagueRepublic, applyFreeWorldsLeague, applyUniversalStage0, previewFederatedSunsCrucisMarch, previewOrderAffiliation, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 
 export type LifeModulesThemeIdentity = {
   className: string
@@ -16,6 +16,8 @@ export function lifeModulesThemeIdentity(affiliationContext: string, orderAffili
     ? { className: 'capellan-theme', secondaryClass: 'birth-capellan', label: 'Capellan Confederation' }
     : parentAffiliationId === 'affiliation.draconis-combine'
       ? { className: 'draconis-theme', secondaryClass: 'birth-draconis', label: 'Draconis Combine' }
+      : parentAffiliationId === 'affiliation.free-worlds-league'
+        ? { className: 'fwl-theme', secondaryClass: 'birth-fwl', label: 'Free Worlds League' }
       : [FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_ID].includes(affiliationContext)
       ? { className: 'davion-theme', secondaryClass: 'birth-davion', label: 'Federated Suns' }
       : { className: '', secondaryClass: '', label: '' }
@@ -119,7 +121,23 @@ export function previewStage0Affiliation(
       birthPreview.creation.lifeModules!.stage0SubAffiliation = includeSub ? affiliationContext : 'no'
       return previewOrderAffiliation(birthPreview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
     }
+    const fwlContext = resolveLifeModuleAffiliationContext(affiliationContext)
+    if (fwlContext.support === 'supported' && fwlContext.context.affiliationId === 'affiliation.free-worlds-league') {
+      const includeSub = Boolean(subAffiliationSelection && subAffiliationSelection !== 'no' && subAffiliationSelection === affiliationContext)
+      const ready = Boolean(affiliationLanguage && secondaryLanguage && davionArt)
+      const preview = ready ? applyFreeWorldsLeague(withUniversal, affiliationContext, affiliationLanguage, includeSub, secondaryLanguage, davionArt) : withUniversal
+      preview.creation.lifeModules!.stage0AffiliationContext = affiliationContext
+      preview.creation.lifeModules!.stage0SubAffiliation = includeSub ? affiliationContext : 'no'
+      return previewOrderAffiliation(preview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
+    }
     const capellanContext = resolveLifeModuleAffiliationContext(affiliationContext)
+    if (capellanContext.support === 'supported' && capellanContext.context.affiliationId === 'affiliation.free-rasalhague-republic') {
+      const ready = Boolean(affiliationLanguage && draconisArtSubjectForRasalhague(draconisChoices) && (subAffiliationSelection !== 'stage0.free-rasalhague-republic.clan-war-expatriate' || (draconisLanguageSubjectForRasalhague(draconisChoices) && ['Lyran', 'Draconis'].includes(draconisTraitChoice))))
+      const preview = ready ? applyFreeRasalhagueRepublic(withUniversal, affiliationContext, affiliationLanguage, { subAffiliation: subAffiliationSelection || 'no', languageSubject: draconisLanguageSubjectForRasalhague(draconisChoices), protocolSubject: draconisTraitChoice, interestSubject: draconisArtSubjectForRasalhague(draconisChoices) }) : withUniversal
+      preview.creation.lifeModules!.stage0AffiliationContext = affiliationContext
+      preview.creation.lifeModules!.stage0SubAffiliation = subAffiliationSelection || 'no'
+      return previewOrderAffiliation(preview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
+    }
     if (capellanContext.support !== 'supported' || capellanContext.context.affiliationId !== 'affiliation.capellan-confederation') return null
     const preview = structuredClone(withUniversal)
     preview.creation.lifeModules!.stage0AffiliationContext = CAPELLAN_COMMONALITY_ID
@@ -132,3 +150,6 @@ export function previewStage0Affiliation(
     return null
   }
 }
+
+function draconisArtSubjectForRasalhague(choices: Record<string, string>): string { return choices.interest ?? '' }
+function draconisLanguageSubjectForRasalhague(choices: Record<string, string>): string { return choices.language ?? '' }

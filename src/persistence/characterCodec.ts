@@ -4,7 +4,7 @@ import { getCoreArchetype } from '../domain/archetypes/coreArchetypes'
 import { CAPELLAN_COMMONALITY_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, getLifeModule, UNIVERSAL_STAGE_0_ID } from '../domain/lifeModules/catalog'
 import { STANDARD_SKILL_XP_COSTS, XP_COST_TABLE_SOURCE } from '../domain/pointBuy/catalog'
 import { calculateArchetypeAdjustmentNetXp, evaluateSharedXpAccounting } from '../domain/pointBuy/calculations'
-import { validateCharacter } from '../validation/validateCharacter'
+import { validateCharacter, type CharacterValidationOptions } from '../validation/validateCharacter'
 import {
   CHARACTER_FILE_FORMAT,
   CHARACTER_SCHEMA_VERSION,
@@ -80,6 +80,7 @@ export function encodeCharacter(character: CharacterDefinition, exportedAt = new
 
 export interface DecodeCharacterOptions {
   allowInternalClanRecord?: boolean
+  lifeModuleHistoryAuthority?: CharacterValidationOptions['lifeModuleHistoryAuthority']
 }
 
 const INTERNAL_CLAN_READINESS_ISSUES = new Set([
@@ -101,7 +102,7 @@ export function decodeCharacter(json: string, options: DecodeCharacterOptions = 
   migrateDrivingAliases(parsed.character)
   const isInternalClanRecord = options.allowInternalClanRecord === true && Boolean(parsed.character.clanIdentity)
   if (parsed.character.clanIdentity && !isInternalClanRecord) throw new Error('Clan character import is not enabled in this Public Alpha foundation.')
-  const validation = validateCharacter(parsed.character)
+  const validation = validateCharacter(parsed.character, { lifeModuleHistoryAuthority: options.lifeModuleHistoryAuthority })
   const blockingIssues = validation.issues.filter((item) => item.severity === 'error' && !(isInternalClanRecord && INTERNAL_CLAN_READINESS_ISSUES.has(item.id)))
   if (blockingIssues.length > 0) {
     throw new Error(`Character file failed validation: ${blockingIssues.map((item) => item.message).join(' ')}`)

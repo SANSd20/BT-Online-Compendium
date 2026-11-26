@@ -6,6 +6,7 @@ import type {
 } from '../character/model'
 import { POINT_BUY_TRAITS, STANDARD_SKILL_XP_COSTS } from '../pointBuy/catalog'
 import { attributeLegality } from '../character/attributeLegality'
+import { hasBlockingDeferredEligibility } from '../character/deferredEligibility'
 import type { SourceCitation } from '../rules/model'
 
 export const FINAL_REVIEW_RULES_SOURCE: SourceCitation = {
@@ -206,6 +207,7 @@ export function getFinalReviewBlockers(character: CharacterDefinition): FinalRev
   if (state.pendingAwards.length > 0) blockers.push({ id: 'pending-awards', message: 'All pending module awards must be resolved.' })
   if (review.allocationPool.remaining !== 0) blockers.push({ id: 'unallocated-xp', message: `${review.allocationPool.remaining} final-allocation XP remains unspent.` })
   if (state.prerequisiteIssues.some((entry) => entry.status === 'outstanding')) blockers.push({ id: 'prerequisites', message: 'One or more final prerequisites remain outstanding.' })
+  if (hasBlockingDeferredEligibility(state)) blockers.push({ id: 'deferred-eligibility', message: 'One or more source-defined eligibility conditions remain pending or ineligible.' })
   if (getOptimizationPreview(character).length > 0) blockers.push({ id: 'optimization', message: 'Optimization opportunities remain unresolved.' })
   if (getModeledOpposedTraitConflicts(character).length > 0) blockers.push({ id: 'opposed-traits', message: 'Modeled opposed Traits must be resolved before Optimization is complete.' })
   if (character.attributes.some((entry) => (deriveAttributeLevel(entry.accumulatedXp) ?? 0) < 1)) blockers.push({ id: 'attribute-minimum', message: 'Every Attribute must attain a score of at least 1.' })

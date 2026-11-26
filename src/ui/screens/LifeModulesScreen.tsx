@@ -12,6 +12,7 @@ import { CONDITIONAL_LIFE_MODULE_PACKAGE_CATALOG } from '../../domain/lifeModule
 import { characterSkillProgression, getFinalReviewBlockers, getModeledOpposedTraitConflicts, skillXpCosts } from '../../domain/lifeModules/finalReview'
 import { deriveCharacterRecordSheet } from '../../domain/character/recordSheet'
 import { deriveAging, deriveBiologicalAge, deriveCharacterAge } from '../../domain/character/aging'
+import { parseCampaignYear } from '../../domain/character/campaignYear'
 import { createAnnualCheckOutcome, createPowerInterruptionOutcome, createStasisEvent, addStasisEvent, createFreezingCheckOutcome } from '../../domain/character/stasis'
 import { evaluateCharacterReadiness, finalizeCharacterSnapshot } from '../../domain/character/readiness'
 import { POINT_BUY_SKILLS, POINT_BUY_TRAITS } from '../../domain/pointBuy/catalog'
@@ -82,6 +83,8 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
   const [gender, setGender] = useState<'' | 'Male' | 'Female' | 'Nonbinary' | 'Other'>('')
   const [heightCm, setHeightCm] = useState('')
   const [weightKg, setWeightKg] = useState('')
+  const [campaignYear, setCampaignYear] = useState('')
+  const [campaignYearError, setCampaignYearError] = useState('')
   const [startingXp, setStartingXp] = useState(5000)
   const [startingXpLocked, setStartingXpLocked] = useState(true)
   const [masterSkillFieldGoalId, setMasterSkillFieldGoalId] = useState('')
@@ -133,9 +136,16 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
 
   function start(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const parsedCampaignYear = parseCampaignYear(campaignYear)
+    if (parsedCampaignYear === null) {
+      setCampaignYearError('Enter a whole-number Campaign Year before continuing.')
+      return
+    }
+    setCampaignYearError('')
     setStage3FieldIds([TECHNICIAN_CIVILIAN_FIELD_ID, TECHNICIAN_VEHICLE_FIELD_ID])
     operate(() => {
       const draft = setMasterSkillFieldGoal(createLifeModuleCharacter(name, startingXp), masterSkillFieldGoalId || null)
+      draft.creation.campaignYear = parsedCampaignYear
       draft.personalDescription = {
         physicalDescription: '',
         backgroundNotes: '',
@@ -203,7 +213,7 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
   const stageExistingFallbackAwards = genericPendingAwards.filter((pending) => !stageExistingSlotAwards.some((candidate) => candidate.id === pending.id))
   const stagePresentation = state ? lifeModuleStagePresentation(state.phase) : null
   const stage0Preview = useMemo(() => character && state?.phase === 'stage-0-affiliation'
-    ? previewStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude, davionArt, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill, stage0SubAffiliation, survivalSubject, draconisTraitChoice, draconisWeaponChoice, { survival: survivalSubject, language: draconisLanguageSubject, art: draconisArtSubject, protocol: davionNaturalAptitude })
+    ? previewStage0Affiliation(character, stage0AffiliationContext, affiliationLanguage, secondaryLanguage, davionNaturalAptitude, davionArt, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill, stage0SubAffiliation, survivalSubject, draconisTraitChoice, draconisWeaponChoice, { survival: survivalSubject, language: draconisLanguageSubject, art: draconisArtSubject, protocol: draconisTraitChoice })
     : null, [character, state?.phase, stage0AffiliationContext, stage0SubAffiliation, affiliationLanguage, secondaryLanguage, davionNaturalAptitude, davionArt, survivalSubject, draconisTraitChoice, draconisWeaponChoice, draconisLanguageSubject, draconisArtSubject, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill])
   const stage0PreviewSelections = state?.phase === 'stage-0-affiliation' ? [
     ...(stage0AffiliationContext ? ['Affiliation context selected'] : []),
@@ -643,7 +653,9 @@ export function LifeModulesScreen({ onSave, initialCharacter = null }: LifeModul
             <label htmlFor="life-module-height">Height (cm)<input id="life-module-height" type="number" min="1" step="1" value={heightCm} onChange={(event) => setHeightCm(event.target.value)} /></label>
             <label htmlFor="life-module-eyes">Eye color<select id="life-module-eyes" value={eyeColor} onChange={(event) => setEyeColor(event.target.value)}>{['Green', 'Grey', 'Blue', 'Brown', 'Red', 'Black'].map((value) => <option key={value}>{value}</option>)}</select></label>
             <label htmlFor="life-module-weight">Weight (kg)<input id="life-module-weight" type="number" min="1" step="1" value={weightKg} onChange={(event) => setWeightKg(event.target.value)} /></label>
+            <label htmlFor="life-module-campaign-year">Campaign Year<input id="life-module-campaign-year" type="number" step="1" value={campaignYear} onChange={(event) => { setCampaignYear(event.target.value); setCampaignYearError('') }} required aria-invalid={campaignYearError ? 'true' : 'false'} aria-describedby={campaignYearError ? 'life-module-campaign-year-error' : undefined} /></label>
             <label className="welcome-field-wide" htmlFor="life-module-gender">Gender<select id="life-module-gender" value={gender} onChange={(event) => setGender(event.target.value as typeof gender)}><option value="">Choose a gender</option>{['Male', 'Female', 'Nonbinary', 'Other'].map((value) => <option key={value}>{value}</option>)}</select></label>
+            {campaignYearError && <p id="life-module-campaign-year-error" role="alert" className="field-error">{campaignYearError}</p>}
             </fieldset>
             <fieldset><legend>Game Master Settings</legend>
             <div className="welcome-gm-row"><label className="welcome-xp-control" htmlFor="life-module-starting-xp">Starting XP<input id="life-module-starting-xp" type="number" min="1" step="1" value={startingXp} onChange={(event) => setStartingXp(Number(event.target.value))} disabled={startingXpLocked} required /></label><label className="welcome-lock-control" htmlFor="life-module-starting-xp-locked"><input id="life-module-starting-xp-locked" type="checkbox" checked={startingXpLocked} onChange={(event) => setStartingXpLocked(event.target.checked)} /> Locked</label></div>

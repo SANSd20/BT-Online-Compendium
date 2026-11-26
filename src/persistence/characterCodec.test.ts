@@ -17,6 +17,13 @@ function character() {
 }
 
 describe('character codec', () => {
+  it('round-trips an explicit Campaign Year without inventing a default', () => {
+    const source = character()
+    expect(source.creation.campaignYear).toBeUndefined()
+    source.creation.campaignYear = 3059
+    const restored = decodeCharacter(encodeCharacter(source))
+    expect(restored.creation.campaignYear).toBe(3059)
+  })
   it('round-trips a versioned character envelope', () => {
     const source = character()
     const encoded = encodeCharacter(source, '3025-01-02T00:00:00.000Z')

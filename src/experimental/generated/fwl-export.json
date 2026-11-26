@@ -1,0 +1,291 @@
+{
+  "exportFormatVersion": "0.1.0",
+  "canonicalSchemaVersion": "0.4a",
+  "referenceRepository": {
+    "name": "SANSd20/AToW-Reference-Data",
+    "revision": "c83652c36cb5078aaadc072dea5f57dcad1fd563"
+  },
+  "sourceResolution": {
+    "policy": "verified-page-66-overrides-stale-legacy-transcription",
+    "issues": [
+      {
+        "path": "legacy-data/Stage 0 - Affiliation/56 Free Worlds League (House Marik).txt",
+        "observation": "Protocol/Free Worlds=10",
+        "resolution": "Excluded from effective parent mechanics by verified Page 66 audit."
+      }
+    ]
+  },
+  "records": [
+    {
+      "id": "affiliation.fwl.parent",
+      "displayName": "Free Worlds League",
+      "source": {
+        "path": "legacy-data/Stage 0 - Affiliation/56 Free Worlds League (House Marik).txt",
+        "printedPage": "56",
+        "legacyObservation": "9fbe37e5b2a5528b014f77dcd66abf49054578f1cf9aca28a932c48ef8f62fa3",
+        "reconciliation": "The legacy parent Protocol/Free Worlds=10 observation is excluded: verified Page 66 source audit has no parent Protocol award."
+      },
+      "costXp": 150,
+      "awards": [
+        {
+          "kind": "skill",
+          "target": "Art/Any",
+          "xp": 10
+        }
+      ],
+      "choices": [
+        {
+          "id": "secondary-language",
+          "kind": "language",
+          "required": true,
+          "domain": "fwl-secondary-languages"
+        },
+        {
+          "id": "art-any",
+          "kind": "skill-subject",
+          "required": true,
+          "domain": "art-any"
+        }
+      ]
+    },
+    {
+      "id": "affiliation.fwl.duchy-of-andurien",
+      "displayName": "Duchy of Andurien",
+      "parentId": "affiliation.fwl.parent",
+      "source": {
+        "path": "legacy-data/Stage 0 - Sub-Affiliation/56 Free Worlds League (House Marik) - Duchy of Andurien.txt",
+        "printedPage": "66",
+        "legacyObservation": "86e2f50749699fb6c069b83efec022a51d93b9a45021e9832da8ede6edbc91d7"
+      },
+      "costXp": 0,
+      "awards": [
+        {
+          "kind": "attribute",
+          "target": "WIL",
+          "xp": 50
+        },
+        {
+          "kind": "trait",
+          "target": "Combat Sense",
+          "xp": 215
+        },
+        {
+          "kind": "trait",
+          "target": "Compulsion/Hatred of Capellan Confederation",
+          "xp": -100
+        },
+        {
+          "kind": "trait",
+          "target": "Compulsion/Atrean Opponent",
+          "xp": -50
+        },
+        {
+          "kind": "trait",
+          "target": "Reputation",
+          "xp": -30
+        },
+        {
+          "kind": "skill",
+          "target": "Protocol/Free Worlds League",
+          "xp": 15
+        }
+      ],
+      "choices": []
+    },
+    {
+      "id": "affiliation.fwl.duchy-of-oriente",
+      "displayName": "Duchy of Oriente",
+      "parentId": "affiliation.fwl.parent",
+      "source": {
+        "path": "legacy-data/Stage 0 - Sub-Affiliation/56 Free Worlds League (House Marik) - Duchy of Oriente.txt",
+        "printedPage": "66",
+        "legacyObservation": "b279f12fc80182616e05115d0b643b517cf582af8a8157b2a825a75296c5bc19"
+      },
+      "costXp": 0,
+      "awards": [
+        {
+          "kind": "trait",
+          "target": "Reputation",
+          "xp": 100
+        },
+        {
+          "kind": "skill",
+          "target": "Appraisal",
+          "xp": 5
+        },
+        {
+          "kind": "skill",
+          "target": "Technician/Any",
+          "xp": 5
+        }
+      ],
+      "choices": []
+    },
+    {
+      "id": "affiliation.fwl.marik-commonwealth",
+      "displayName": "Marik Commonwealth",
+      "parentId": "affiliation.fwl.parent",
+      "source": {
+        "path": "legacy-data/Stage 0 - Sub-Affiliation/56 Free Worlds League (House Marik) - Marik Commonwealth.txt",
+        "printedPage": "66",
+        "legacyObservation": "e554ca1849e09941f44e5eb1c0f300c38d9ccd0dde450fa8df166df462a95acf"
+      },
+      "costXp": 0,
+      "awards": [
+        {
+          "kind": "trait",
+          "target": "Wealth",
+          "xp": 100
+        },
+        {
+          "kind": "trait",
+          "target": "Equipped",
+          "xp": 100
+        },
+        {
+          "kind": "trait",
+          "target": "Reputation",
+          "xp": -100
+        },
+        {
+          "kind": "skill",
+          "target": "Appraisal",
+          "xp": 5
+        },
+        {
+          "kind": "skill",
+          "target": "Protocol/Free Worlds League",
+          "xp": 10
+        }
+      ],
+      "choices": []
+    },
+    {
+      "id": "affiliation.fwl.other-fwl-worlds",
+      "displayName": "Other FWL Worlds",
+      "parentId": "affiliation.fwl.parent",
+      "source": {
+        "path": "legacy-data/Stage 0 - Sub-Affiliation/56 Free Worlds League (House Marik) - Other FWL Worlds.txt",
+        "printedPage": "66",
+        "legacyObservation": "6271c0888b533987993b29920b8833ffeb9816215a496b4391d4b26993d97932",
+        "reconciliation": "Verified Page 66 source audit governs the sub-affiliation: one Trait choice at +35 XP; two other Skills at +10 XP each; and +25 XP to one Attribute, Trait, or Language Skill."
+      },
+      "costXp": 0,
+      "awards": [
+        {
+          "kind": "attribute",
+          "target": "ANY",
+          "xp": 35
+        },
+        {
+          "kind": "skill",
+          "target": "Appraisal",
+          "xp": 15
+        },
+        {
+          "kind": "skill",
+          "target": "Language/Any",
+          "xp": 20
+        },
+        {
+          "kind": "skill",
+          "target": "Protocol/Free Worlds League",
+          "xp": 10
+        },
+        {
+          "kind": "flexible",
+          "xp": 25,
+          "targetTypes": [
+            "attribute",
+            "trait",
+            "language-skill"
+          ]
+        },
+        {
+          "kind": "choice",
+          "target": "skill.any",
+          "xp": 10,
+          "count": 2
+        },
+        {
+          "kind": "choice",
+          "target": "trait.any",
+          "xp": 35,
+          "count": 1
+        }
+      ],
+      "choices": [
+        {
+          "id": "language-any",
+          "kind": "language",
+          "required": true,
+          "domain": "language-any"
+        },
+        {
+          "id": "skill-any",
+          "kind": "skill",
+          "required": true,
+          "count": 2,
+          "domain": "skill-any"
+        },
+        {
+          "id": "trait-any",
+          "kind": "trait",
+          "required": true,
+          "domain": "trait-any"
+        },
+        {
+          "id": "flexible",
+          "kind": "flexible-xp",
+          "required": true,
+          "domain": "attribute-trait-language-skill"
+        }
+      ]
+    },
+    {
+      "id": "affiliation.fwl.principality-of-regulus",
+      "displayName": "Principality of Regulus",
+      "parentId": "affiliation.fwl.parent",
+      "source": {
+        "path": "legacy-data/Stage 0 - Sub-Affiliation/56 Free Worlds League (House Marik) - Principality of Regulus.txt",
+        "printedPage": "66",
+        "legacyObservation": "031ee61ccc53fb332d8c72452d6dea327bcd6a028bdbe5e95434ee5760fa9fff"
+      },
+      "costXp": 0,
+      "awards": [
+        {
+          "kind": "attribute",
+          "target": "WIL",
+          "xp": 75
+        },
+        {
+          "kind": "trait",
+          "target": "Gregarious",
+          "xp": 75
+        },
+        {
+          "kind": "trait",
+          "target": "Compulsion/Atrean Opponent",
+          "xp": -50
+        },
+        {
+          "kind": "trait",
+          "target": "Reputation",
+          "xp": -50
+        },
+        {
+          "kind": "skill",
+          "target": "Interest/Regulan History",
+          "xp": 20
+        },
+        {
+          "kind": "skill",
+          "target": "Protocol/Free Worlds League",
+          "xp": 15
+        }
+      ],
+      "choices": []
+    }
+  ],
+  "contentDigest": "e48a2b5859fbf2bca453a901908a7c2102a38d5bfa05d5a90d06c0d09f6f51e9"
+}

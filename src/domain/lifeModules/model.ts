@@ -7,6 +7,11 @@ export type LifeModuleStage = 0 | 1 | 2 | 3 | 4
 export type LifeModuleKind = 'universal' | 'affiliation' | 'early-childhood' | 'late-childhood' | 'higher-education' | 'real-life'
 export type AwardTargetType = 'attribute' | 'trait' | 'skill'
 
+export interface LifeModuleChoiceDependency {
+  awardId: string
+  parameter?: string
+}
+
 export type LifeModuleDestination =
   | { type: 'attribute'; attributeId: string }
   | { type: 'trait'; traitId: string; displayName: string; parameters?: Record<string, string | number | boolean> }
@@ -15,11 +20,11 @@ export type LifeModuleDestination =
 export type LifeModuleAward =
   | { id: string; kind: 'fixed'; xp: number; destination: LifeModuleDestination }
   | { id: string; kind: 'affiliation-bound-skill'; xp: number; skillId: 'skill.language' | 'skill.protocol' | 'skill.streetwise'; displayName: string }
-  | { id: string; kind: 'language-choice'; xp: number; choicesFrom: AffiliationLanguageSelectorGroupId; description: string }
-  | { id: string; kind: 'affiliation-skill-choice'; xp: number; skillId: string; displayName: string; description: string }
-  | { id: string; kind: 'any-skill-choice'; xp: number; skillId: string; displayName: string; count: number }
-  | { id: string; kind: 'multi-skill-choice'; xp: number; skillId: string; displayName: string; count: number }
-  | { id: string; kind: 'modeled-skill-choice'; xp: number; count: number; displayName: string; distinct: true; allowedDestinationKeys?: string[] }
+  | { id: string; kind: 'language-choice'; xp: number; choicesFrom: AffiliationLanguageSelectorGroupId; description: string; dependsOn?: LifeModuleChoiceDependency }
+  | { id: string; kind: 'affiliation-skill-choice'; xp: number; skillId: string; displayName: string; description: string; dependsOn?: LifeModuleChoiceDependency }
+  | { id: string; kind: 'any-skill-choice'; xp: number; skillId: string; displayName: string; count: number; dependsOn?: LifeModuleChoiceDependency }
+  | { id: string; kind: 'multi-skill-choice'; xp: number; skillId: string; displayName: string; count: number; dependsOn?: LifeModuleChoiceDependency }
+  | { id: string; kind: 'modeled-skill-choice'; xp: number; count: number; displayName: string; distinct: true; allowedDestinationKeys?: string[]; dependsOn?: LifeModuleChoiceDependency }
   | { id: string; kind: 'flexible-xp'; xpPerGrant: number; count: number; allowedTargetTypes: AwardTargetType[]; allocationMode?: 'fixed-grants'; excludedTargetIds?: string[]; allowedTargetIds?: string[] }
   | { id: string; kind: 'flexible-xp'; totalXp: number; allowedTargetTypes: AwardTargetType[]; allocationMode: 'pool'; maxXpPerTarget?: Partial<Record<AwardTargetType, number>> }
   | { id: string; kind: 'choice-package'; description: string; options: LifeModuleDestination[][] }

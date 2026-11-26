@@ -245,6 +245,21 @@ describe('Life Module engine', () => {
     expect(() => resolvePendingLifeModuleAward(backWoods, flexible.id, { type: 'skill', targetId: 'skill.perception', displayName: 'Perception' })).toThrow('not an allowed target')
   })
 
+  it('enforces dependent choices against the resolved prerequisite occurrence', () => {
+    let character = applyStage1Module(completeStage0(), BLUE_COLLAR_ID)
+    character = resolveByAward(character, 'blue-collar.interests', 'skill.interest', 'Interest/History', 'History')
+    const pending = character.creation.lifeModules!.pendingAwards.find((entry) => entry.awardId === 'blue-collar.interests')!
+    pending.dependsOn = { awardId: 'blue-collar.interests', parameter: 'BattleMechs' }
+    expect(() => resolvePendingLifeModuleAward(character, pending.id, {
+      type: 'skill', targetId: 'skill.interest', displayName: 'Interest/FedSuns History', parameter: { kind: 'subskill', value: 'FedSuns History' },
+    })).toThrow('This choice requires the prerequisite selection BattleMechs.')
+    pending.dependsOn = { awardId: 'blue-collar.interests', parameter: 'History' }
+    character = resolvePendingLifeModuleAward(character, pending.id, {
+      type: 'skill', targetId: 'skill.interest', displayName: 'Interest/FedSuns History', parameter: { kind: 'subskill', value: 'FedSuns History' },
+    })
+    expect(character.creation.lifeModules!.pendingAwards.some((entry) => entry.awardId === 'blue-collar.interests')).toBe(false)
+  })
+
   it('re-evaluates prerequisites after flexible awards resolve', () => {
     let character = applyStage1Module(completeStage0(), BACK_WOODS_ID)
     character = resolveByAward(character, 'commonality.language.fedsuns', 'skill.language', 'Language/French', 'French')

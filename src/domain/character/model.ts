@@ -296,6 +296,8 @@ export interface PendingLifeModuleAward {
   distinctDestinations?: boolean
   allowedDestinationKeys?: string[]
   choiceSource?: AffiliationLanguageSelectorGroupId
+  /** Optional dependency on an earlier choice in the same transaction. */
+  dependsOn?: import('../lifeModules/model').LifeModuleChoiceDependency
   requiredSkillId?: string
   skillFieldChoice?: {
     fieldId: string
@@ -488,6 +490,8 @@ export interface LifeModuleCreationState {
   resolvedAwards: ResolvedLifeModuleAward[]
   choiceGrantRequirements: LifeModuleChoiceGrantRequirement[]
   prerequisiteIssues: LifeModulePrerequisiteIssue[]
+  /** Added for deferred source-defined eligibility; absent on older saves. */
+  deferredEligibility?: import('./deferredEligibility').DeferredEligibilityRecord[]
   stopState: 'not-eligible' | 'alpha-partial-stop' | 'alpha-stage-2-stop' | 'alpha-stage-3-stop' | 'alpha-stage-4-stop'
   finalReview?: LifeModuleFinalReviewState
   limitations: string[]
@@ -572,6 +576,8 @@ export interface ArchetypeFoundationState {
 export interface CreationState {
   method: CreationMethod
   status: CharacterStatus
+  /** Explicit campaign reference year; absent on older saves until supplied by the player. */
+  campaignYear?: number
   rulesSnapshot: RulesSnapshot
   resolvedChoiceIds: string[]
   gmExceptions: GmException[]

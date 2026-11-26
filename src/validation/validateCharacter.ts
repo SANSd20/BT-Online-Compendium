@@ -88,7 +88,20 @@ function issue(
   }
 }
 
-export function validateCharacter(character: CharacterDefinition): ValidationResult {
+export type CharacterValidationOptions = {
+  lifeModuleHistoryAuthority?: (character: CharacterDefinition) => ValidationIssue[]
+}
+
+const CATALOG_COUPLED_LIFE_MODULE_ISSUES = new Set([
+  'life-modules.module.malformed',
+  'life-modules.module.unknown',
+  'life-modules.cost.balance',
+  'life-modules.choice-requirement.malformed',
+  'life-modules.choice-requirement.missing',
+  'life-modules.stage-0.affiliation-context.mismatch',
+])
+
+export function validateCharacter(character: CharacterDefinition, options: CharacterValidationOptions = {}): ValidationResult {
   const issues: ValidationIssue[] = []
 
   if (character.clanIdentity) {
@@ -238,10 +251,10 @@ export function validateCharacter(character: CharacterDefinition): ValidationRes
 
   validateFinalTouches(character, issues, provenanceIds)
 
-  return {
-    valid: !issues.some((item) => item.severity === 'error'),
-    issues,
-  }
+  const governedIssues = options.lifeModuleHistoryAuthority
+    ? [...issues.filter((item) => !CATALOG_COUPLED_LIFE_MODULE_ISSUES.has(item.id)), ...options.lifeModuleHistoryAuthority(character)]
+    : issues
+  return { valid: !governedIssues.some((item) => item.severity === 'error'), issues: governedIssues }
 }
 
 function validateConditionalPackageDraft(character: CharacterDefinition, issues: ValidationIssue[]): void {
@@ -836,6 +849,15 @@ function validateLifeModules(character: CharacterDefinition, issues: ValidationI
   const hasOutstandingPrerequisite = state.prerequisiteIssues.some((entry) => entry.status === 'outstanding')
   if (hasOutstandingPrerequisite) {
     issues.push(issue('life-modules.prerequisites.outstanding', 'creation.lifeModules.prerequisiteIssues', 'One or more Life Module prerequisites remain outstanding for final validation.', { severity: 'warning', kind: 'prerequisite', gmOverrideAllowed: true }))
+  }
+  for (const entry of state.deferredEligibility ?? []) {
+    if (!entry.id || !entry.subjectId || !entry.requirementId || !entry.source.sourceId || !entry.deferredResolutionAllowed || entry.dependencyKeys.length === 0) {
+      issues.push(issue('life-modules.deferred-eligibility.malformed', 'creation.lifeModules.deferredEligibility', 'Deferred eligibility state is malformed.'))
+    } else if (entry.status === 'pending') {
+      issues.push(issue(`life-modules.deferred-eligibility.pending.${entry.id}`, 'creation.lifeModules.deferredEligibility', `${entry.requiredInformation} remains unresolved.`, { severity: 'warning', kind: 'unresolved' }))
+    } else if (entry.status === 'ineligible') {
+      issues.push(issue(`life-modules.deferred-eligibility.ineligible.${entry.id}`, 'creation.lifeModules.deferredEligibility', `${entry.subjectId} is ineligible under ${entry.requirementId}.`, { severity: 'warning', kind: 'prerequisite' }))
+    }
   }
   if (stage1Count === 1) {
     const expectedPhase = state.finalReview

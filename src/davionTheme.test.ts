@@ -42,7 +42,7 @@ describe('shared government/faction theme palettes', () => {
 
   it('keeps prepared successor-state palettes inactive in the public resolver', async () => {
     const { lifeModulesAffiliationTheme } = await import('./ui/components/stage0PreviewModel')
-    expect(lifeModulesAffiliationTheme('affiliation.free-worlds-league')).toBe('')
+    expect(lifeModulesAffiliationTheme('affiliation.free-worlds-league')).toBe('fwl-theme')
     expect(lifeModulesAffiliationTheme('affiliation.lyran-commonwealth')).toBe('')
     expect(lifeModulesAffiliationTheme('affiliation.free-rasalhague-republic')).toBe('')
   })

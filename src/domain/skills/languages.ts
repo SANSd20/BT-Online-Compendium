@@ -8,17 +8,26 @@
 export const MODELED_LANGUAGE_SUBSKILLS = [
   'Arabic',
   'Cantonese',
+  'Danish',
   'English',
   'French',
   'German',
+  'Greek',
   'Hindi',
   'Japanese',
   'Mandarin Chinese',
+  'Italian',
+  'JàrnFòlk Norse',
+  'Mongolian',
   'Romanian',
   'Russian',
+  'Scots Gaelic',
+  'Swedish',
   'Spanish',
+  'Slovak',
   'Swedanese',
   'Vietnamese',
+  'Urdu',
 ] as const
 
 const LANGUAGE_ALIASES: Readonly<Record<string, (typeof MODELED_LANGUAGE_SUBSKILLS)[number]>> = {

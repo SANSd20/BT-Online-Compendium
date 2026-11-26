@@ -9,12 +9,12 @@ export const BROWSER_EXECUTABLE = process.env.ATOW_BROWSER_EXECUTABLE_PATH ?? 'C
 
 export const B12_FIXTURES = Object.freeze({
   capellan: Object.freeze({
-    name: 'B12 Capellan checkpoint', affiliation: 'Federated Suns', language: 'English', march: 'Capellan March',
+    name: 'B12 Capellan checkpoint', campaignYear: '3059', affiliation: 'Federated Suns', language: 'English', march: 'Capellan March',
     marchLanguage: 'Spanish', aptitude: 'Strategy', art: 'Painting',
     expected: Object.freeze(['Capellan March']),
   }),
   draconis: Object.freeze({
-    name: 'B12 Draconis checkpoint', affiliation: 'Federated Suns', language: 'English', march: 'Draconis March',
+    name: 'B12 Draconis checkpoint', campaignYear: '3059', affiliation: 'Federated Suns', language: 'English', march: 'Draconis March',
     aptitude: 'Strategy', art: 'Sculpture',
     expected: Object.freeze(['Draconis March']),
   }),
@@ -22,7 +22,7 @@ export const B12_FIXTURES = Object.freeze({
 
 export const V1D_FIXTURES = Object.freeze({
   capellanProgression: Object.freeze({
-    name: 'V1d Capellan progression', affiliation: 'Federated Suns', language: 'English', march: 'Capellan March',
+    name: 'V1d Capellan progression', campaignYear: '3059', affiliation: 'Federated Suns', language: 'English', march: 'Capellan March',
     marchLanguage: 'Spanish', aptitude: 'Strategy',
     stage1: Object.freeze({ module: 'Blue Collar · Available', career: 'Aerospace Pilot', interests: ['FedSuns History', 'Geology'] }),
     stage2: Object.freeze({ module: 'High School · Available', interests: ['FedSuns History', 'Geology'], flexibleAttribute: 'INT', flexibleXp: 185 }),
@@ -39,6 +39,7 @@ export async function launchVerificationBrowser(chromium) {
 export async function createMarchThroughStage0(page, fixture) {
   await page.getByRole('link', { name: 'Start Life Modules' }).click()
   await page.getByLabel('Character name').fill(fixture.name)
+  await page.getByLabel('Campaign Year').fill(fixture.campaignYear ?? '3059')
   await page.getByRole('button', { name: 'Next' }).click()
   await page.selectOption('#stage0-affiliation', { label: fixture.affiliation })
   await page.selectOption('#stage0-affiliation-language', { label: fixture.language })
@@ -55,6 +56,7 @@ export async function createMarchThroughStage0(page, fixture) {
 export async function createOutbackThroughStage0(page, fixture) {
   await page.getByRole('link', { name: 'Start Life Modules' }).click()
   await page.getByLabel('Character name').fill(fixture.name)
+  await page.getByLabel('Campaign Year').fill(fixture.campaignYear ?? '3059')
   await page.getByRole('button', { name: 'Next' }).click()
   await page.selectOption('#stage0-affiliation', { label: 'Federated Suns' })
   await page.selectOption('#stage0-affiliation-language', { value: fixture.language ?? 'English' })

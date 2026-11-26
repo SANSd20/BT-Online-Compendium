@@ -4,8 +4,8 @@ import { MODELED_LANGUAGE_SUBSKILLS, normalizeModeledLanguage } from './language
 describe('governed modeled language source', () => {
   it('exposes the explicit safe subset without duplicate semantic identities', () => {
     expect(MODELED_LANGUAGE_SUBSKILLS).toEqual([
-      'Arabic', 'Cantonese', 'English', 'French', 'German', 'Hindi', 'Japanese',
-      'Mandarin Chinese', 'Romanian', 'Russian', 'Spanish', 'Swedanese', 'Vietnamese',
+      'Arabic', 'Cantonese', 'Danish', 'English', 'French', 'German', 'Greek', 'Hindi', 'Japanese', 'Mandarin Chinese',
+      'Italian', 'JàrnFòlk Norse', 'Mongolian', 'Romanian', 'Russian', 'Scots Gaelic', 'Swedish', 'Spanish', 'Slovak', 'Swedanese', 'Vietnamese', 'Urdu',
     ])
     expect(new Set(MODELED_LANGUAGE_SUBSKILLS).size).toBe(MODELED_LANGUAGE_SUBSKILLS.length)
     expect(normalizeModeledLanguage('Mandarin')).toBe('Mandarin Chinese')

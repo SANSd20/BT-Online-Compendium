@@ -1,5 +1,5 @@
 import type { CharacterDefinition } from '../domain/character/model'
-import { decodeCharacter, encodeCharacter } from './characterCodec'
+import { decodeCharacter, encodeCharacter, type DecodeCharacterOptions } from './characterCodec'
 
 export function downloadCharacter(character: CharacterDefinition): void {
   const blob = new Blob([encodeCharacter(character)], { type: 'application/json' })
@@ -13,8 +13,8 @@ export function downloadCharacter(character: CharacterDefinition): void {
   URL.revokeObjectURL(url)
 }
 
-export async function importCharacterFile(file: File): Promise<CharacterDefinition> {
-  return decodeCharacter(await file.text())
+export async function importCharacterFile(file: File, options: DecodeCharacterOptions = {}): Promise<CharacterDefinition> {
+  return decodeCharacter(await file.text(), options)
 }
 
 function safeFilename(value: string): string {
