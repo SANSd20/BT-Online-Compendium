@@ -22,6 +22,16 @@ interface Stage0WizardStepProps {
   draconisWeaponChoice?: string
   draconisLanguageSubject?: string
   draconisArtSubject?: string
+  terranAttributeOne?: string
+  terranAttributeTwo?: string
+  terranLanguageOne?: string
+  terranLanguageTwo?: string
+  terranSkillOne?: string
+  terranSkillTwo?: string
+  terranSkillThree?: string
+  terranSkillFour?: string
+  terranTraitOne?: string
+  terranTraitTwo?: string
   orderAffiliation: OrderAffiliationSelection
   orderSelectorOpen?: boolean
   orderNearestStateContext: string
@@ -39,6 +49,7 @@ interface Stage0WizardStepProps {
   onDraconisWeaponChoiceChange?: (value: string) => void
   onDraconisLanguageSubjectChange?: (value: string) => void
   onDraconisArtSubjectChange?: (value: string) => void
+  onTerranChoiceChange?: (key: string, value: string) => void
   onOrderAffiliationChange: (value: OrderAffiliationSelection) => void
   onOrderSelectorOpenChange?: (value: boolean) => void
   onOrderNearestStateChange: (value: string) => void
@@ -66,6 +77,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
   const fwlSelected = context?.affiliationId === 'affiliation.free-worlds-league'
   const lyranSelected = context?.affiliationId === 'affiliation.lyran-alliance'
   const rasalhagueSelected = context?.affiliationId === FREE_RASALHAGUE_REPUBLIC_CONTEXT.affiliationId
+  const terranSelected = context?.affiliationId === 'affiliation.terran'
   const lyranAlarionSelected = effectiveSubAffiliation === 'stage0.lyran-alliance.alarion'
   const rasalhagueExpatriateSelected = effectiveSubAffiliation === RASALHAGUE_CLAN_WAR_EXPATRIATE_ID
   const capellanMarchSelected = context?.id === FEDERATED_SUNS_CAPELLAN_MARCH_CONTEXT.id
@@ -85,6 +97,9 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
   const nearestState = getNearestStateOptions().find((entry) => entry.id === props.orderNearestStateContext)
   const nearestLanguages = nearestState ? getLifeModuleLanguageSelectorOptions(nearestState.affiliationLanguageSelector) : []
   const orderReady = !orderSelectorOpen ? true : Boolean(orderSelected && nearestState && nearestLanguages.includes(props.orderSecondaryLanguage) && TECHNICIAN_SUBSKILLS.includes(props.orderTechnicianSubskill as (typeof TECHNICIAN_SUBSKILLS)[number]))
+  const terranSkills = [props.terranSkillOne, props.terranSkillTwo, props.terranSkillThree, props.terranSkillFour].filter(Boolean)
+  const terranDependentLanguageReady = !['stage0.terran.martian-citizen', 'stage0.terran.venusian-citizen'].includes(context?.id ?? '') || Boolean(props.secondaryLanguage)
+  const terranReady = !terranSelected || (Boolean(props.terranAttributeOne && props.terranAttributeTwo && props.terranLanguageOne && props.terranLanguageTwo) && props.terranAttributeOne !== props.terranAttributeTwo && props.terranLanguageOne !== props.terranLanguageTwo && terranDependentLanguageReady && (context?.id === 'stage0.terran' || Boolean(terranSkills.length)))
   const survivalSubjectValue = props.survivalSubject.startsWith('Survival/') ? props.survivalSubject.slice('Survival/'.length) : props.survivalSubject
   const survivalPreset = SURVIVAL_SUBJECT_OPTIONS.includes(survivalSubjectValue as (typeof SURVIVAL_SUBJECT_OPTIONS)[number]) ? survivalSubjectValue : ''
   const survivalOther = Boolean(props.survivalSubject) && !survivalPreset
@@ -99,12 +114,14 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
   const requirementDescriptionId = 'stage0-requirements-summary'
   const affiliationReady = Boolean(
     !props.previewFailed &&
+    terranReady &&
     context &&
     props.affiliationLanguage &&
     affiliationLanguages.includes(props.affiliationLanguage) &&
     (!lyranSelected || (['Combat Paralysis', 'Glass Jaw'].includes(props.draconisTraitChoice ?? 'Combat Paralysis') && (!lyranAlarionSelected || (Boolean(props.draconisLanguageSubject?.trim()) && Boolean(props.draconisArtSubject?.trim()))))) &&
     (draconisSelected ? ['Pain Resistance', 'Combat Sense'].includes(props.draconisTraitChoice ?? 'Pain Resistance') && ['Archery', 'Melee Weapons', 'Thrown Weapons/Blade'].includes(props.draconisWeaponChoice ?? 'Melee Weapons') && (!draconisAzamiSelected || validateOpenSkillSubject(props.survivalSubject).error === null) && (!draconisDieronSelected || (Boolean(props.draconisLanguageSubject?.trim()) && Boolean(props.draconisArtSubject?.trim()))) : capellanSelected ? (capellanSpecialSelected ? Boolean(props.draconisLanguageSubject?.trim()) && (context?.subAffiliationName !== 'Liao Commonality' || ['FedSuns', 'Lyran'].includes(props.davionNaturalAptitude)) && (!['Liao Commonality', 'St. Ives Commonality'].includes(context?.subAffiliationName ?? '') || Boolean(props.draconisArtSubject?.trim())) : secondaryLanguages.includes(props.secondaryLanguage)) : rasalhagueSelected ? Boolean(props.draconisArtSubject?.trim()) && (!rasalhagueExpatriateSelected || (Boolean(props.draconisLanguageSubject?.trim()) && ['Lyran', 'Draconis'].includes(props.draconisTraitChoice ?? ''))) : lyranSelected ? true : fwlSelected ? (getLifeModuleLanguageSelectorOptions('fwl-languages').includes(props.secondaryLanguage) && APPROVED_ART_ANY_SUBJECTS.includes(props.davionArt as (typeof APPROVED_ART_ANY_SUBJECTS)[number])) : davionSelected && ['Protocol', 'Strategy'].includes(props.davionNaturalAptitude) && (!subSelected || (outbackSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' && props.davionArt !== 'Interest/Other' && Boolean(props.survivalSubject.trim()) : draconisMarchSelected ? Boolean(props.davionArt.trim()) && props.davionArt !== '__other__' : capellanMarchSelected ? ['Cantonese', 'German', 'Mandarin Chinese', 'Russian', 'Spanish'].includes(props.davionArt) : APPROVED_ART_ANY_SUBJECTS.includes(props.davionArt as (typeof APPROVED_ART_ANY_SUBJECTS)[number]))) && orderReady
   ))
+  const terranAffiliationReady = terranSelected ? terranReady : affiliationReady
   return <div className={`stage0-package-stack${universalComplete ? ' stage0-affiliation-layout' : ''}`}>
     {!universalComplete && <section className="stage0-package-section current" aria-labelledby="stage0-universal-heading">
       <header className="stage0-package-heading">
@@ -230,6 +247,22 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
             </div>}
             {lyranSelected && <div className="stage0-secondary-action lyran-choices"><div><h4>{context?.displayName}</h4><p>150 XP · choose the source-defined Lyran Trait and any required province subjects.</p></div><div className="stage0-choice-grid"><label htmlFor="stage0-lyran-trait">Trait choice<select id="stage0-lyran-trait" value={props.draconisTraitChoice ?? 'Combat Paralysis'} onChange={(event) => props.onDraconisTraitChoiceChange?.(event.target.value)}><option>Combat Paralysis</option><option>Glass Jaw</option></select></label>{lyranAlarionSelected && <><label htmlFor="stage0-lyran-interest">Interest/Any subject<input id="stage0-lyran-interest" value={props.draconisArtSubject ?? ''} placeholder="Enter an Interest subject." onChange={(event) => props.onDraconisArtSubjectChange?.(event.target.value)} /></label><label htmlFor="stage0-lyran-language">Language/Any subject<input id="stage0-lyran-language" value={props.draconisLanguageSubject ?? ''} placeholder="Enter a language." onChange={(event) => props.onDraconisLanguageSubjectChange?.(event.target.value)} /></label></>}</div></div>}
             {rasalhagueSelected && <div className="stage0-secondary-action rasalhague-choices"><div><h4>{context?.displayName}</h4><p>100 XP · source-backed Rasalhague awards and required choices.</p></div><div className="stage0-choice-grid"><label htmlFor="stage0-rasalhague-interest">Interest/Any subject<input id="stage0-rasalhague-interest" value={props.draconisArtSubject ?? ''} placeholder="Enter an Interest subject." onChange={(event) => props.onDraconisArtSubjectChange?.(event.target.value)} /></label>{rasalhagueExpatriateSelected && <><label htmlFor="stage0-rasalhague-language">Clan War Expatriate language<select id="stage0-rasalhague-language" value={props.draconisLanguageSubject ?? ''} onChange={(event) => props.onDraconisLanguageSubjectChange?.(event.target.value)}><option value="">Choose a language.</option>{getLifeModuleLanguageSelectorOptions('rasalhague-choice-languages').map((language) => <option key={language}>{language}</option>)}</select></label><label htmlFor="stage0-rasalhague-protocol">Protocol destination<select id="stage0-rasalhague-protocol" value={props.draconisTraitChoice ?? ''} onChange={(event) => props.onDraconisTraitChoiceChange?.(event.target.value)}><option value="">Choose a destination.</option><option>Lyran</option><option>Draconis</option></select></label></>}</div></div>}
+            {terranSelected && <div className="stage0-secondary-action terran-choices">
+              <div><h4>{context?.displayName}</h4><p>Source-defined Terran awards and required choices. Parent choices must be distinct; sub-affiliation choices are independently resolved.</p></div>
+              <div className="stage0-choice-grid">
+                <label htmlFor="stage0-terran-attribute-one">Attribute choice 1<select id="stage0-terran-attribute-one" value={props.terranAttributeOne ?? ''} onChange={(event) => props.onTerranChoiceChange?.('attributeOne', event.target.value)}><option value="">Choose an Attribute.</option>{['STR','BOD','DEX','RFL','INT','WIL','CHA','EDG'].filter((id) => id !== 'INT' && id !== 'EDG').map((id) => <option key={id}>{id}</option>)}</select></label>
+                <label htmlFor="stage0-terran-attribute-two">Attribute choice 2<select id="stage0-terran-attribute-two" value={props.terranAttributeTwo ?? ''} onChange={(event) => props.onTerranChoiceChange?.('attributeTwo', event.target.value)}><option value="">Choose an Attribute.</option>{['STR','BOD','DEX','RFL','INT','WIL','CHA','EDG'].filter((id) => id !== 'INT' && id !== 'EDG').map((id) => <option key={id}>{id}</option>)}</select></label>
+                <label htmlFor="stage0-terran-language-one">Language choice 1<select id="stage0-terran-language-one" value={props.terranLanguageOne ?? ''} onChange={(event) => props.onTerranChoiceChange?.('languageOne', event.target.value)}><option value="">Choose a Language.</option>{getLifeModuleLanguageSelectorOptions('any-language').filter((language) => language !== 'English').map((language) => <option key={language}>{language}</option>)}</select></label>
+                <label htmlFor="stage0-terran-language-two">Language choice 2<select id="stage0-terran-language-two" value={props.terranLanguageTwo ?? ''} onChange={(event) => props.onTerranChoiceChange?.('languageTwo', event.target.value)}><option value="">Choose a Language.</option>{getLifeModuleLanguageSelectorOptions('any-language').filter((language) => language !== 'English').map((language) => <option key={language}>{language}</option>)}</select></label>
+                {['stage0.terran.martian-citizen','stage0.terran.venusian-citizen'].includes(context?.id ?? '') && <label htmlFor="stage0-terran-secondary-language">Dependent secondary Language<select id="stage0-terran-secondary-language" value={props.secondaryLanguage} onChange={(event) => props.onSecondaryLanguageChange(event.target.value)}><option value="">Choose a Language.</option>{getLifeModuleLanguageSelectorOptions('any-language').map((language) => <option key={language}>{language}</option>)}</select></label>}
+                {context?.id === 'stage0.terran.belter' && <><label htmlFor="stage0-terran-trait-one">Belter Trait 1<input id="stage0-terran-trait-one" value={props.terranTraitOne ?? ''} onChange={(event) => props.onTerranChoiceChange?.('traitOne', event.target.value)} placeholder="trait.id" /></label><label htmlFor="stage0-terran-trait-two">Belter Trait 2<input id="stage0-terran-trait-two" value={props.terranTraitTwo ?? ''} onChange={(event) => props.onTerranChoiceChange?.('traitTwo', event.target.value)} placeholder="trait.id" /></label></>}
+                {context?.id !== 'stage0.terran' && <label htmlFor="stage0-terran-skill-one">{context?.id === 'stage0.terran.terran-citizen' ? 'Skill choice 1' : 'Skill choice'}<input id="stage0-terran-skill-one" value={props.terranSkillOne ?? ''} onChange={(event) => props.onTerranChoiceChange?.('skillOne', event.target.value)} placeholder="skill.id|subject" /></label>}
+                {['stage0.terran.belter','stage0.terran.outer-system-citizen','stage0.terran.terran-citizen'].includes(context?.id ?? '') && <label htmlFor="stage0-terran-skill-two">Skill choice 2<input id="stage0-terran-skill-two" value={props.terranSkillTwo ?? ''} onChange={(event) => props.onTerranChoiceChange?.('skillTwo', event.target.value)} placeholder="skill.id|subject" /></label>}
+                {context?.id === 'stage0.terran.terran-citizen' && <><label htmlFor="stage0-terran-skill-three">Skill choice 3<input id="stage0-terran-skill-three" value={props.terranSkillThree ?? ''} onChange={(event) => props.onTerranChoiceChange?.('skill3', event.target.value)} placeholder="skill.id|subject" /></label><label htmlFor="stage0-terran-skill-four">Skill choice 4<input id="stage0-terran-skill-four" value={props.terranSkillFour ?? ''} onChange={(event) => props.onTerranChoiceChange?.('skill4', event.target.value)} placeholder="skill.id|subject" /></label></>}
+                {(context?.id === 'stage0.terran.martian-citizen' || context?.id === 'stage0.terran.venusian-citizen') && <p className="scope-note">Choose the secondary Language above; this package applies its dependent Language award to that selection.</p>}
+                {context?.id === 'stage0.terran.venusian-citizen' && <p className="scope-note">Birth Year remains deferred until chronology is available. Final completion stays blocked until the restriction is resolved.</p>}
+              </div>
+            </div>}
             {!context && <p className="stage0-inactive-choice">Choose an affiliation to view applicable attributes.</p>}
             </section>
             <section className="stage0-contextual-section stage0-sub-affiliation-attributes is-inactive">
@@ -256,7 +289,7 @@ export function Stage0WizardStep(props: Stage0WizardStepProps) {
               </> : <p className="stage0-inactive-choice">ComStar and Word of Blake character creation will be available in a future release.</p>}
             </div>
             <p id={requirementDescriptionId} className="sr-only">Complete each marked required control before continuing. Disabled controls become available after their prerequisite selection.</p>
-            <div className={`stage0-requirements${affiliationReady ? ' ready' : ''}`} role="status">{props.previewFailed ? <p role="alert">The selected Stage 0 choices could not be previewed. Adjust the selections before continuing.</p> : <p>{affiliationReady ? 'Previewing selected Stage 0 choices. Continue to apply them and advance to Stage 1.' : 'Complete each marked required control before continuing.'}</p>}<button className="button" type="button" disabled={!affiliationReady} onClick={props.onApplyAffiliation}>Continue</button></div>
+            <div className={`stage0-requirements${terranAffiliationReady ? ' ready' : ''}`} role="status">{props.previewFailed ? <p role="alert">The selected Stage 0 choices could not be previewed. Adjust the selections before continuing.</p> : <p>{terranAffiliationReady ? 'Previewing selected Stage 0 choices. Continue to apply them and advance to Stage 1.' : 'Complete each marked required control before continuing.'}</p>}<button className="button" type="button" disabled={!terranAffiliationReady} onClick={props.onApplyAffiliation}>Continue</button></div>
           </div>
         : <p className="stage0-package-pending">Complete the legacy compatibility step above to unlock the affiliation package.</p>}
     </section>

@@ -1,7 +1,7 @@
 import type { CharacterDefinition, ResolvedLifeModuleDestination } from '../../domain/character/model'
 import { CAPELLAN_COMMONALITY_ID, DRACONIS_COMBINE_ID, FEDERATED_SUNS_CAPELLAN_MARCH_ID, FEDERATED_SUNS_CRUCIS_MARCH_ID, FEDERATED_SUNS_DRACONIS_MARCH_ID, FEDERATED_SUNS_OUTBACK_ID } from '../../domain/lifeModules/catalog'
 import { type OrderAffiliationSelection, resolveLifeModuleAffiliationContext } from '../../domain/lifeModules/affiliations'
-import { applyCapellanCommonality, applyDraconisCombine, applyFederatedSunsMarch, applyFederatedSunsCrucisMarch, applyFreeRasalhagueRepublic, applyFreeWorldsLeague, applyUniversalStage0, previewFederatedSunsCrucisMarch, previewOrderAffiliation, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
+import { applyCapellanCommonality, applyDraconisCombine, applyFederatedSunsMarch, applyFederatedSunsCrucisMarch, applyFreeRasalhagueRepublic, applyFreeWorldsLeague, applyTerranAffiliation, applyUniversalStage0, previewFederatedSunsCrucisMarch, previewOrderAffiliation, resolvePendingLifeModuleAward } from '../../engine/lifeModuleEngine'
 
 export type LifeModulesThemeIdentity = {
   className: string
@@ -136,6 +136,18 @@ export function previewStage0Affiliation(
       const preview = ready ? applyFreeRasalhagueRepublic(withUniversal, affiliationContext, affiliationLanguage, { subAffiliation: subAffiliationSelection || 'no', languageSubject: draconisLanguageSubjectForRasalhague(draconisChoices), protocolSubject: draconisTraitChoice, interestSubject: draconisArtSubjectForRasalhague(draconisChoices) }) : withUniversal
       preview.creation.lifeModules!.stage0AffiliationContext = affiliationContext
       preview.creation.lifeModules!.stage0SubAffiliation = subAffiliationSelection || 'no'
+      return previewOrderAffiliation(preview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
+    }
+    const terranContext = resolveLifeModuleAffiliationContext(affiliationContext)
+    const terranChoices = draconisChoices
+    if (terranContext.support === 'supported' && terranContext.context.affiliationId === 'affiliation.terran') {
+      const preview = structuredClone(withUniversal)
+      preview.creation.lifeModules!.stage0AffiliationContext = affiliationContext
+      if (affiliationLanguage && terranChoices.attributeOne && terranChoices.attributeTwo && terranChoices.languageOne && terranChoices.languageTwo) {
+        const committed = applyTerranAffiliation(preview, affiliationContext, secondaryLanguage, terranChoices)
+        committed.creation.lifeModules!.stage0AffiliationContext = affiliationContext
+        return previewOrderAffiliation(committed, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
+      }
       return previewOrderAffiliation(preview, orderAffiliation, orderNearestStateContext, orderSecondaryLanguage, orderTechnicianSubskill)
     }
     if (capellanContext.support !== 'supported' || capellanContext.context.affiliationId !== 'affiliation.capellan-confederation') return null

@@ -1149,7 +1149,7 @@ function terranChoiceDestination(value: string): LifeModuleDestination {
   const [target, parameter] = value.trim().split('|')
   if (!target) throw new Error('Terran choices require a concrete destination.')
   if (['STR', 'BOD', 'DEX', 'RFL', 'INT', 'WIL', 'CHA', 'EDG'].includes(target)) return { type: 'attribute', attributeId: target }
-  if (target.startsWith('trait.')) return { type: 'trait', traitId: target, displayName: parameter ?? target.slice(6) }
+  if (target.startsWith('trait.')) return { type: 'trait', traitId: target, displayName: parameter ?? target.slice(6), ...(parameter ? { parameters: { subject: parameter } } : {}) }
   return { type: 'skill', address: { skillId: target.startsWith('skill.') ? target : `skill.${target}`, ...(parameter ? { parameter: { kind: 'subskill', value: parameter } } : {}) }, displayName: parameter ? `${target.replace(/^skill\./, '')}/${parameter}` : target.replace(/^skill\./, '') }
 }
 
@@ -1158,17 +1158,29 @@ export function applyTerranAffiliation(character: CharacterDefinition, contextId
   const subId = contextId === TERRAN_ID ? 'no' : contextId
   const sub = subId === 'no' ? undefined : getLifeModule(subId)
   const selected = (key: string): string => { const value = choices[key]?.trim(); if (!value) throw new Error(`Choose a concrete Terran ${key}.`); return value }
+  const selectedSkill = (index: number): string => {
+    const keys = index === 0 ? ['skillOne', 'skill1'] : index === 1 ? ['skillTwo', 'skill2'] : [`skill${index + 1}`]
+    for (const key of keys) { const value = choices[key]?.trim(); if (value) return value }
+    throw new Error(`Choose a concrete Terran ${keys[0]}.`)
+  }
+  const attributeOne = selected('attributeOne'); const attributeTwo = selected('attributeTwo')
+  const languageOne = selected('languageOne'); const languageTwo = selected('languageTwo')
+  if (attributeOne === attributeTwo) throw new Error('Terran Attribute choices must be distinct.')
+  if (languageOne === languageTwo) throw new Error('Terran Language choices must be distinct.')
   const fixedChoice = (id: string, xp: number, value: string): LifeModuleAward => ({ id, kind: 'fixed', xp, destination: terranChoiceDestination(value) })
   const parentAwards = parent.awards.flatMap((award): LifeModuleAward[] => {
-    if (award.id === 'terran.attributes') return [fixedChoice('terran.attribute.one', 50, selected('attributeOne')), fixedChoice('terran.attribute.two', 50, selected('attributeTwo'))]
-    if (award.id === 'terran.languages') return [fixedChoice('terran.language.one', 15, `skill.language|${selected('languageOne')}`), fixedChoice('terran.language.two', 15, `skill.language|${selected('languageTwo')}`)]
+    if (award.id === 'terran.attributes') return [fixedChoice('terran.attribute.one', 50, attributeOne), fixedChoice('terran.attribute.two', 50, attributeTwo)]
+    if (award.id === 'terran.languages') return [fixedChoice('terran.language.one', 15, `skill.language|${languageOne}`), fixedChoice('terran.language.two', 15, `skill.language|${languageTwo}`)]
     return [award]
   })
   const subAwards = (sub?.awards ?? []).flatMap((award): LifeModuleAward[] => {
-    if (award.kind === 'flexible-xp' && award.allocationMode !== 'pool') return [fixedChoice(`${award.id}.resolved`, award.xpPerGrant, selected(award.id === 'belter.attribute' ? 'attributeOne' : 'skillOne'))]
+    if (award.kind === 'flexible-xp' && award.allocationMode !== 'pool') {
+      const key = award.id === 'belter.attribute' ? 'attributeOne' : award.id === 'belter.trait.one' ? 'traitOne' : award.id === 'belter.trait.two' ? 'traitTwo' : 'skillOne'
+      return [fixedChoice(`${award.id}.resolved`, award.xpPerGrant, selected(key))]
+    }
     if (award.kind === 'modeled-skill-choice') return [fixedChoice(`${award.id}.one`, award.xp, selected('traitOne')), fixedChoice(`${award.id}.two`, award.xp, selected('traitTwo'))]
-    if (award.kind === 'multi-skill-choice') return Array.from({ length: award.count }, (_, index) => fixedChoice(`${award.id}.${index}`, award.xp, selected(`skill${index + 1}`)))
-    if (award.kind === 'any-skill-choice') return [fixedChoice(`${award.id}.resolved`, award.xp, selected('skillOne'))]
+    if (award.kind === 'multi-skill-choice') return Array.from({ length: award.count }, (_, index) => fixedChoice(`${award.id}.${index}`, award.xp, selectedSkill(index)))
+    if (award.kind === 'any-skill-choice') return Array.from({ length: award.count }, (_, index) => fixedChoice(`${award.id}.${index}`, award.xp, selectedSkill(index)))
     if (award.id.endsWith('language-secondary') && 'xp' in award) {
       const language = (choices.secondaryLanguage ?? secondaryLanguage)?.trim()
       if (!language) throw new Error('Choose the previously selected secondary Language for Terran eligibility.')
@@ -1178,11 +1190,12 @@ export function applyTerranAffiliation(character: CharacterDefinition, contextId
   })
   const module: LifeModuleDefinition = { ...parent, id: contextId, displayName: sub?.displayName ?? parent.displayName, source: sub?.source ?? parent.source, awards: [...parentAwards, ...subAwards] }
   let next = applyModule(character, module, {})
-  const state = requireLifeModules(next)
+  let state = requireLifeModules(next)
   if (contextId === TERRAN_VENUSIAN_ID) {
     const birthYear = choices.birthYear === undefined || choices.birthYear.trim() === '' ? undefined : Number(choices.birthYear)
     const record: DeferredEligibilityRecord = { id: 'terran.venusian.birth-year', stage: 0, subjectId: TERRAN_VENUSIAN_ID, requirementId: 'terran.venusian.birth-year-cutoff', dependencyKeys: ['birthYear'], rule: { kind: 'numeric-cutoff', field: 'birthYear', maximum: 3059 }, status: birthYear === undefined ? 'pending' : birthYear <= 3059 ? 'eligible' : 'ineligible', deferredResolutionAllowed: true, requiredInformation: 'Birth Year must be selected from the chronology-derived range', source: { ...TERRAN_CONTEXT.source, ruleId: 'terran-venusian-birth-year-cutoff' } }
     next = setDeferredEligibility(next, record)
+    state = requireLifeModules(next)
   }
   state.stage0SubAffiliation = subId
   state.phase = 'stage-1-selection'
